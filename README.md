@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="ULC - Universal Luminaire Cutsheet" width="400" />
+</p>
+
 # ULC
 
 **Universal Luminaire Cutsheet**
