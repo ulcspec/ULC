@@ -1113,6 +1113,94 @@
       ]
     },
 
+    "ComparisonOperator": {
+      "title": "Comparison operator",
+      "description": "Used on manufacturer-declared bound values (for example flicker upper bounds) when the manufacturer claims `value <= X` rather than a specific measured value. `eq` means exact equality (the scalar itself); `lte` means the declared value is an upper bound; `lt` is strict upper bound. Pairs with a `ProvenancedNumber` to describe bound-expression quantities.",
+      "type": "string",
+      "enum": [
+        "eq",
+        "lte",
+        "lt"
+      ]
+    },
+
+    "TemperatureAxis": {
+      "title": "Temperature axis",
+      "description": "Which temperature variable a thermal-derating curve is parameterized on. `case` is the LED case temperature at the measurement monitoring point (typical for LM-82 curves). `ambient` is the ambient air temperature around the fixture (used for system-level derating).",
+      "type": "string",
+      "enum": [
+        "case",
+        "ambient"
+      ]
+    },
+
+    "AmbientCleanliness": {
+      "title": "Ambient cleanliness category (CIE 97)",
+      "description": "Cleanliness of the ambient environment per CIE 97. Used as an axis in the Luminaire Maintenance Factor (LMF) table that European maintenance-factor declarations publish. `pure`, `clean`, `normal`, and `dirty` correspond to the four CIE 97 ambient categories from cleanest to dirtiest.",
+      "type": "string",
+      "enum": [
+        "pure",
+        "clean",
+        "normal",
+        "dirty"
+      ]
+    },
+
+    "SustainabilityDeclarationType": {
+      "title": "Sustainability declaration type",
+      "description": "The program a sustainability declaration belongs to, used on the top-level `sustainability_declaration.declaration_type` field. `ilfi_declare` is the full ILFI Declare label. The three `red_list_*` variants indicate the Living Building Challenge Red List tier claimed when the declaration is specifically a Red List statement without the broader Declare framework.",
+      "type": "string",
+      "enum": [
+        "ilfi_declare",
+        "red_list_free",
+        "red_list_approved",
+        "red_list_declared"
+      ]
+    },
+
+    "IngredientRedListStatus": {
+      "title": "Ingredient Red List status",
+      "description": "LBC Red List status of a single material in a Declare label's ingredient list. `free` means the material is not on the Red List. `declared` means the material is declared but falls below the disclosure threshold. `approved_exception` means it is on the Red List but qualifies for an ILFI-granted exception. `red_list_item` flags the material as a Red List chemical present in the product.",
+      "type": "string",
+      "enum": [
+        "free",
+        "declared",
+        "approved_exception",
+        "red_list_item"
+      ]
+    },
+
+    "AccessoryType": {
+      "title": "Accessory type",
+      "description": "Category of a mechanical or electrical accessory listed under a luminaire's `compatible_accessories[]`. These are orderable components (junction boxes, plaster frames, mounting rings, canopies, conduits, I.C. boxes, trims, cables, control boxes, poles) that do not themselves carry photometric attestations. Accessories that change fixture photometry are modeled as separate ULC records.",
+      "type": "string",
+      "enum": [
+        "junction_box",
+        "plaster_frame",
+        "mounting_ring",
+        "canopy",
+        "conduit",
+        "ic_box",
+        "trim",
+        "cable_leader",
+        "cable_jumper",
+        "control_box",
+        "pole",
+        "other"
+      ]
+    },
+
+    "AttestationVerificationType": {
+      "title": "Attestation verification type",
+      "description": "How an attestation's validity is established at consumer time. `unconditional` applies always. `requires_manufacturer_confirmation` is the case-by-case pattern used for BAA / BABA compliance, where the manufacturer confirms eligibility per project and consumers must not propagate the claim without that confirmation. `requires_project_documentation` indicates the claim holds only when specific project-level documentation is on file (for example certain LEED credits).",
+      "type": "string",
+      "enum": [
+        "unconditional",
+        "requires_manufacturer_confirmation",
+        "requires_project_documentation"
+      ]
+    },
+
     "RecordStatus": {
       "title": "Record commercial status",
       "description": "Where the product sits in its commercial lifecycle at the time the record was authored or last verified. `superseded` specifically indicates a product that has been replaced by a newer SKU but may still be referenced by existing project specifications or installed-base records.",

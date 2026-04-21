@@ -7,6 +7,8 @@ on:
       - 'tools/schema-drift-guard.py'
       - 'tools/build-index.py'
       - 'tools/builder-parity-guard.py'
+      - 'examples/**'
+      - 'templates/**'
       - '.github/workflows/schema-drift-guard.yml'
   push:
     branches: [main]
@@ -15,17 +17,39 @@ on:
       - 'tools/schema-drift-guard.py'
       - 'tools/build-index.py'
       - 'tools/builder-parity-guard.py'
+      - 'examples/**'
+      - 'templates/**'
+
+permissions:
+  contents: read
 
 jobs:
   check:
     name: Resolve every $ref across schema files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Schema $ref drift guard
         run: python3 tools/schema-drift-guard.py
       - name: Builder-schema parity guard
         run: python3 tools/builder-parity-guard.py
+      - name: Verify generated index on example and template records
+        run: |
+          shopt -s globstar nullglob
+          records=(examples/**/*.ulc examples/**/*.ulc.json templates/**/*.ulc templates/**/*.ulc.json)
+          if [ "${#records[@]}" -eq 0 ]; then
+            echo "No example or template ULC records found; skipping index parity check."
+            exit 0
+          fi
+          fail=0
+          for f in "${records[@]}"; do
+            echo "Checking $f"
+            if ! python3 tools/build-index.py --check "$f"; then
+              fail=1
+            fi
+          done
+          exit $fail
+        shell: bash

@@ -38,14 +38,36 @@ def walk_refs(node, path=""):
 
 
 def resolve_pointer(doc, pointer):
-    """Return True if a JSON Pointer like `#/$defs/Foo` resolves inside doc."""
+    """Return True if a JSON Pointer resolves inside doc.
+
+    Supports the full Draft 2020-12 pointer grammar that ULC cares about:
+
+      * `#`          resolves to the document root
+      * `#/foo/bar`  resolves through object keys
+      * `#/0/baz`    resolves through array indices (numeric segments)
+      * `~0` / `~1`  escape sequences for `~` / `/` within a segment
+    """
+    if pointer == "#":
+        return True
     if not pointer.startswith("#/"):
         return False
     parts = [p.replace("~1", "/").replace("~0", "~") for p in pointer[2:].split("/")]
     node = doc
     for p in parts:
-        if isinstance(node, dict) and p in node:
-            node = node[p]
+        if isinstance(node, dict):
+            if p in node:
+                node = node[p]
+            else:
+                return False
+        elif isinstance(node, list):
+            try:
+                idx = int(p)
+            except ValueError:
+                return False
+            if 0 <= idx < len(node):
+                node = node[idx]
+            else:
+                return False
         else:
             return False
     return True

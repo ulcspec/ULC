@@ -234,7 +234,7 @@
           "items": { "$ref": "taxonomy.schema.json#/$defs/AttestationProgram" }
         },
         "search_keywords": {
-          "description": "Optional free-text tokens the manufacturer wants indexed. Populated from product_family.family_display_name, catalog_line, and any manufacturer-specific tags in extensions. Deduplicated and sorted by the builder for deterministic output.",
+          "description": "Optional free-text tokens the manufacturer wants indexed. Populated by the builder from `product_family.family_display_name`, `product_family.catalog_line`, and `configuration.scenario_label`, then deduplicated and sorted for deterministic output. Future builder versions may ingest additional manufacturer-tagged fields; the exact set is a builder-version policy, not a schema-level contract.",
           "type": "array",
           "items": { "type": "string" }
         },
@@ -800,7 +800,7 @@
               "value": { "$ref": "#/$defs/ProvenancedNumber" },
               "bound_operator": {
                 "description": "Used when the manufacturer declares an upper bound (`<=`) rather than a specific measured value.",
-                "enum": ["eq", "lte", "lt"]
+                "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
               }
             },
             "required": ["metric"]
@@ -933,7 +933,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "temperature_axis": { "enum": ["case", "ambient"] },
+              "temperature_axis": { "$ref": "taxonomy.schema.json#/$defs/TemperatureAxis" },
               "temperature_points_c": {
                 "type": "array",
                 "items": { "type": "number" }
@@ -1000,7 +1000,7 @@
                 "type": "object",
                 "properties": {
                   "cleaning_interval_years": { "type": "integer", "minimum": 1 },
-                  "ambient_cleanliness": { "enum": ["pure", "clean", "normal", "dirty"] },
+                  "ambient_cleanliness": { "$ref": "taxonomy.schema.json#/$defs/AmbientCleanliness" },
                   "lmf": { "type": "number", "minimum": 0, "maximum": 1 }
                 },
                 "required": ["cleaning_interval_years", "ambient_cleanliness", "lmf"]
@@ -1059,7 +1059,7 @@
       "properties": {
         "declaration_type": {
           "description": "Which sustainability program the declaration belongs to.",
-          "enum": ["ilfi_declare", "red_list_free", "red_list_approved", "red_list_declared"]
+          "$ref": "taxonomy.schema.json#/$defs/SustainabilityDeclarationType"
         },
         "document_id": { "type": "string" },
         "original_issue_date": { "type": "string", "format": "date" },
@@ -1077,7 +1077,7 @@
             "type": "object",
             "properties": {
               "material_name": { "type": "string" },
-              "lbc_red_list_status": { "enum": ["free", "declared", "approved_exception", "red_list_item"] },
+              "lbc_red_list_status": { "$ref": "taxonomy.schema.json#/$defs/IngredientRedListStatus" },
               "notes": { "type": "string" }
             },
             "required": ["material_name"]
@@ -1098,9 +1098,7 @@
         "accessory_catalog_number": { "type": "string" },
         "display_name": { "type": "string" },
         "description": { "type": "string" },
-        "accessory_type": {
-          "enum": ["junction_box", "plaster_frame", "mounting_ring", "canopy", "conduit", "ic_box", "trim", "cable_leader", "cable_jumper", "control_box", "pole", "other"]
-        },
+        "accessory_type": { "$ref": "taxonomy.schema.json#/$defs/AccessoryType" },
         "mass": { "$ref": "#/$defs/DualUnitMass" },
         "changes_photometry": {
           "description": "True when the accessory changes fixture photometry. Accessories with changes_photometry=true should also have their own ULC record linked via `accessorized_record_ref`.",
@@ -1153,9 +1151,7 @@
           "description": "For case-by-case attestations (BAA, BABA, and similar), declares that manufacturer confirmation is required before a consumer can propagate the claim downstream.",
           "type": "object",
           "properties": {
-            "type": {
-              "enum": ["unconditional", "requires_manufacturer_confirmation", "requires_project_documentation"]
-            },
+            "type": { "$ref": "taxonomy.schema.json#/$defs/AttestationVerificationType" },
             "contact_reference": { "type": "string" },
             "notes": { "type": "string" }
           },
