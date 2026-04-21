@@ -1,0 +1,109 @@
+name: Codex Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  codex-review:
+    name: Codex Code Review
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    # Skip draft PRs and dependabot
+    if: |
+      !github.event.pull_request.draft &&
+      github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      # Ubuntu 24.04+ blocks unprivileged user namespaces via AppArmor, which
+      # prevents Codex's vendored bubblewrap (bwrap) from setting up its sandbox.
+      - name: Relax AppArmor for Codex sandbox (Ubuntu 24.04+)
+        run: |
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
+      - name: Pre-fetch base and head refs
+        run: |
+          git fetch --no-tags origin \
+            ${{ github.event.pull_request.base.ref }} \
+            +refs/pull/${{ github.event.pull_request.number }}/head
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@2d756ea4c53f7f6b397767d8723b3a10a9f35bf2 # v44
+        with:
+          files: |
+            # ULC schema files (the spec itself)
+            schema/**/*.json
+            # Python tooling
+            tools/**/*.py
+            # Narrative documentation
+            docs/**/*.md
+            mappings/**/*.md
+            # Root documents
+            README.md
+            CONTRIBUTING.md
+            CODE_OF_CONDUCT.md
+            GOVERNANCE.md
+            CHANGELOG.md
+            # CI/CD workflows (high security value — script injection, bad permissions, secret leaks)
+            .github/workflows/**/*.yml
+            .github/codex-review-prompt.md
+            # Example records and templates (when they land)
+            examples/**/*.json
+            examples/**/*.ulc
+            templates/**/*.json
+          files_ignore:
+            # Private research notes (gitignored anyway but belt and suspenders)
+            research/**
+            # Python bytecode
+            **/__pycache__/**
+            **/*.pyc
+            # Build artifacts
+            **/dist/**
+            **/node_modules/**
+
+      - name: Run Codex Review
+        id: codex-review
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: openai/codex-action@086169432f1d2ab2f4057540b1754d550f6a1189 # v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/codex-review-prompt.md
+          sandbox: read-only
+          safety-strategy: drop-sudo
+
+      - name: Post Review Comment
+        if: steps.changed-files.outputs.any_changed == 'true' && steps.codex-review.outcome == 'success'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          REVIEW_OUTPUT: ${{ steps.codex-review.outputs.final-message }}
+        with:
+          script: |
+            const reviewContent = process.env.REVIEW_OUTPUT || 'No issues found.';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## Codex Automated Code Review\n\n${reviewContent}\n\n---\n*Automated review by [OpenAI Codex](https://openai.com/codex/)*`
+            });
+
+      - name: Review skipped
+        if: steps.changed-files.outputs.any_changed == 'true' && steps.codex-review.outcome != 'success'
+        run: |
+          echo "::warning::Codex review step did not succeed (outcome: ${{ steps.codex-review.outcome }}). Review comment was not posted."
+
+      - name: Skip notification
+        if: steps.changed-files.outputs.any_changed != 'true'
+        run: echo "No reviewable files changed, skipping Codex review"
