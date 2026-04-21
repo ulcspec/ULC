@@ -63,7 +63,7 @@ jobs:
             examples/**/*.json
             examples/**/*.ulc
             templates/**/*.json
-          files_ignore:
+          files_ignore: |
             # Private research notes (gitignored anyway but belt and suspenders)
             research/**
             # Python bytecode
