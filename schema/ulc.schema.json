@@ -427,11 +427,12 @@
             },
             "ip_rating": { "type": "string", "pattern": "^IP[0-9X]{2}$" },
             "ik_rating": { "type": "string", "pattern": "^IK[0-9]{2}$" },
-            "ambient_operating_range_c": {
+            "ambient_operating_range": {
+              "description": "Declared ambient operating temperature range for the fixture. Dual-unit per spec: Celsius authoritative, Fahrenheit is the required derived companion.",
               "type": "object",
               "properties": {
-                "min": { "type": "number" },
-                "max": { "type": "number" }
+                "min": { "$ref": "#/$defs/DualUnitTemperature" },
+                "max": { "$ref": "#/$defs/DualUnitTemperature" }
               }
             }
           }
@@ -462,6 +463,10 @@
       "properties": {
         "photometric_scenario_id": {
           "description": "Identifier for the photometric scenario within the family. Typically a slug summarizing the tested axes.",
+          "type": "string"
+        },
+        "catalog_number": {
+          "description": "The specific manufacturer-assigned catalog number or order code this record represents. Populated by Pattern A manufacturers who publish one cutsheet per SKU. Pattern B manufacturers whose scenario covers a catalog pattern typically omit this field and rely on `applicability.applicable_catalog_pattern` plus `record_id` for identification.",
           "type": "string"
         },
         "scenario_label": {
@@ -935,6 +940,7 @@
             "properties": {
               "temperature_axis": { "$ref": "taxonomy.schema.json#/$defs/TemperatureAxis" },
               "temperature_points_c": {
+                "description": "Temperature sample points in degrees Celsius. Standards-native Celsius exception to the dual-unit rule: LM-82-20 and equivalent standards publish these arrays in Celsius only, and this field mirrors the source data verbatim. Consumers needing Fahrenheit convert at read time.",
                 "type": "array",
                 "items": { "type": "number" }
               },

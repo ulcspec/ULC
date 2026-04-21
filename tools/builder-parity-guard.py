@@ -27,12 +27,6 @@ from pathlib import Path
 
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schema" / "ulc.schema.json"
 
-# Import build_index from the sibling builder script.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from importlib import import_module
-
-build_index_module = import_module("build-index".replace("-", "_")) if False else None
-
 # Python cannot import a module whose filename uses hyphens, so load via importlib.util.
 import importlib.util
 

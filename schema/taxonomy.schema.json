@@ -1066,16 +1066,6 @@
       ]
     },
 
-    "UnitSystem": {
-      "title": "Unit system",
-      "description": "Declares which unit system is authoritative for a dual-unit value. ULC requires both SI and Imperial representations on unit-sensitive fields; one is authoritative and the other is the derived companion.",
-      "type": "string",
-      "enum": [
-        "si",
-        "imperial"
-      ]
-    },
-
     "ProvenanceSource": {
       "title": "Provenance source",
       "description": "The origin of an individual field value. Used inside the provenance section of a ULC record to record where each traced value came from.",

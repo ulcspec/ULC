@@ -78,7 +78,7 @@ Detailed guides are in `docs/`. A brief map:
 
 - To understand ULC as a reader, start with `docs/introduction.md`.
 - To author a ULC record, read `docs/creation-guide.md` and copy `templates/ulc.template.json`.
-- To validate a record, run the CLI in `tools/validator/` against your JSON file.
+- To validate a record, run the forthcoming CLI in `tools/validator/` against your JSON file (see `tools/README.md` for current status).
 - To implement ULC in your own software, read `docs/specification.md` and reference the schemas in `schema/`.
 
 ## Relationship to adjacent standards
