@@ -10,6 +10,8 @@
 
 ULC is an open specification for structured, machine-readable luminaire product data. A ULC file is a single JSON document that normalizes the information currently spread across manufacturer datasheets, IES photometric files, and EULUMDAT (LDT) files into one consistent, canonical record.
 
+**A single ULC record represents one attested photometric scenario for a luminaire.** A product family with multiple distributions, output tiers, or color-rendition variants produces multiple ULC records, one per scenario, each carrying its own measurements and an applicability block that declares which orderable SKU configurations the record covers.
+
 ULC does not replace those source files. It provides a normalized representation of their combined content that AI systems, design tools, specification software, and data pipelines can consume directly, with verifiable references back to the originals.
 
 ## Why ULC exists
@@ -62,13 +64,13 @@ This repository defines the standard. It does not ship an application.
 
 | Path | Contents |
 |---|---|
-| `schema/` | JSON Schema files that define the ULC record and taxonomy |
-| `docs/` | Narrative specification, field reference, and authoring guide |
+| `schema/` | Two JSON Schema files (Draft 2020-12): `ulc.schema.json` defines the record structure; `taxonomy.schema.json` defines the closed-enum vocabulary. They are split so the taxonomy can be loaded independently by search and classification tools. Cross-file references are validated in CI. |
+| `docs/` | Narrative specification, field reference, authoring guide, and `authoring-patterns.md` describing the four manufacturer authoring patterns the schema supports. |
 | `examples/` | Worked examples of conforming ULC records with reference source files |
 | `templates/` | Starter templates for authors |
 | `mappings/` | Crosswalks to GLDF and ETIM, plus guidance for parsing IES and LDT sources |
-| `tools/` | Reference validator |
-| `.github/` | Issue templates, pull request template, and continuous integration |
+| `tools/` | Reference utilities including the schema drift guard (`schema-drift-guard.py`), the index builder (`build-index.py`), and a forthcoming CLI validator |
+| `.github/` | Issue templates, pull request template, and continuous integration (including the schema drift guard workflow) |
 
 ## Getting started
 
