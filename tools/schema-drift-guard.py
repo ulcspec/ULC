@@ -80,7 +80,6 @@ def main():
     for source_name, doc in docs.items():
         for path, ref in walk_refs(doc):
             total += 1
-            has_fragment = "#" in ref
             file_part, _, pointer_tail = ref.partition("#")
             # Whole-document ref (empty pointer or no fragment) resolves to root.
             pointer = "#" + pointer_tail if pointer_tail else "#"

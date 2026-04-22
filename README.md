@@ -66,7 +66,7 @@ This repository defines the standard. It does not ship an application.
 |---|---|
 | `schema/` | Two JSON Schema files (Draft 2020-12): `ulc.schema.json` defines the record structure; `taxonomy.schema.json` defines the closed-enum vocabulary. They are split so the taxonomy can be loaded independently by search and classification tools. Cross-file references are validated in CI. |
 | `docs/` | Narrative specification, field reference, authoring guide, and `authoring-patterns.md` describing the four manufacturer authoring patterns the schema supports. |
-| `examples/` | Worked examples of conforming ULC records with reference source files |
+| `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by URL and SHA-256 hash, not committed. |
 | `templates/` | Starter templates for authors |
 | `mappings/` | Crosswalks to GLDF and ETIM, plus guidance for parsing IES and LDT sources |
 | `tools/` | Reference utilities including the schema drift guard (`schema-drift-guard.py`), the index builder (`build-index.py`), and a forthcoming CLI validator |
@@ -74,9 +74,10 @@ This repository defines the standard. It does not ship an application.
 
 ## Getting started
 
-v0.1 ships the schema, taxonomy, drift-guard tooling, and the authoring-patterns document. Deep narrative guides and the reference CLI validator are part of later batches.
+The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, and four canonical reference records covering the four manufacturer authoring patterns. Deep narrative guides and the reference CLI validator are part of later batches.
 
 - To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
+- To see those patterns in real data, read the four records in `examples/`. Each one exercises a distinct pattern against a real manufacturer spec sheet.
 - To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
 - To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
 - To regenerate a ULC record's `index` block, run `python3 tools/build-index.py <record>.ulc`. The index is always generated, never hand-authored.
@@ -94,7 +95,7 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 
 ## Project status
 
-Version `0.1.0` establishes the foundation of the specification: the split schema (`ulc.schema.json` plus `taxonomy.schema.json`), the authoring-patterns document, and the drift-guard tooling. Example records, the reference CLI validator, per-category authoring templates, and the ulcspec.org docs site land in subsequent batches. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
+Version `0.1.0` establishes the foundation of the specification: the split schema (`ulc.schema.json` plus `taxonomy.schema.json`), the authoring-patterns document, and the drift-guard tooling. Version `0.2.0` adds four canonical reference records in `examples/`, one per manufacturer authoring pattern. The reference CLI validator, per-category authoring templates, and the ulcspec.org docs site land in subsequent batches. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 
 ## Contributing
 

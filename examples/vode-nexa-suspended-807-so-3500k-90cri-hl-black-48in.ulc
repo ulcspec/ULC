@@ -1,0 +1,857 @@
+{
+  "ulc_version": "0.1.0",
+  "record_id": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
+  "record_status": "active",
+  "record_status_as_of": "2026-01-15",
+  "conformance_level": "full",
+  "product_family": {
+    "family_id": "vode-nexa-suspended-807",
+    "family_display_name": "Nexa Suspended | 807",
+    "family_description": "Suspended linear pendant in Vode's Nexa family on the NX3 (Nexa3) 3.25\" rail profile. Pattern D cutsheet: per-foot linear scaling anchors length variance, option-conditional attestations (Chicago Plenum) and case-by-case attestations (BAA, BABA) appear on top of the per-scenario photometric record.",
+    "manufacturer": {
+      "slug": "vode",
+      "display_name": "Vode Lighting LLC",
+      "parent_manufacturer_slug": "lumenpulse"
+    },
+    "catalog_line": "Nexa",
+    "catalog_model": "Nexa Suspended 807",
+    "cutsheet": {
+      "filename": "vode-nexa-suspended-hl-rg-bl-specsheet-feb2026.pdf",
+      "sha256": "3e0253e23e19f03e6a970170b9147fa7148a7ce4f6a3c58dc192f8caac003f5e",
+      "revision_label": "February 2026",
+      "revision_date": "2026-02-01"
+    },
+    "primary_category": "linear",
+    "secondary_function": [
+      "direct"
+    ],
+    "indoor_outdoor": "indoor",
+    "mounting_types": [
+      "pendant"
+    ],
+    "environment_rating": "damp",
+    "shape": "linear",
+    "shared_mechanical": {
+      "housing_material": "extruded_aluminum",
+      "lens_material": "acrylic",
+      "finish_color_options": [
+        "black_anodized"
+      ],
+      "ambient_operating_range": {
+        "min": {
+          "c": 0,
+          "f": 32,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        },
+        "max": {
+          "c": 40,
+          "f": 104,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        }
+      }
+    },
+    "shared_attestations": [
+      {
+        "attestation_id": "ul_1598_vode_nexa_807",
+        "program": "ul_1598",
+        "status": "listed",
+        "value_type": "rated",
+        "test_laboratory": "TUV",
+        "standard_revision": "UL 1598",
+        "verification": {
+          "type": "unconditional",
+          "notes": "All Vode products are listed/certified by TUV (NRTL) to UL 1598 per Vode certifications cheatsheet."
+        }
+      },
+      {
+        "attestation_id": "c_ul_listed_vode_nexa_807",
+        "program": "c_ul_listed",
+        "status": "listed",
+        "value_type": "rated",
+        "test_laboratory": "TUV",
+        "verification": {
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "nrtl_osha_vode_nexa_807",
+        "program": "nrtl_osha_recognized",
+        "status": "listed",
+        "value_type": "rated",
+        "test_laboratory": "TUV",
+        "verification": {
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "iec_60598_vode_nexa_807",
+        "program": "iec_60598",
+        "status": "verified",
+        "value_type": "rated",
+        "standard_revision": "IEC 60598 parts 1 and 2",
+        "verification": {
+          "type": "unconditional",
+          "notes": "All Vode products have been evaluated to IEC 60598 and are described in a CB Report per certifications cheatsheet."
+        }
+      },
+      {
+        "attestation_id": "cb_scheme_vode_nexa_807",
+        "program": "cb_scheme",
+        "status": "verified",
+        "value_type": "rated",
+        "verification": {
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "damp_location_ul_vode_nexa_807",
+        "program": "damp_location_ul",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "type": "unconditional",
+          "notes": "Listed to UL standards for damp location per spec sheet."
+        }
+      }
+    ]
+  },
+  "configuration": {
+    "photometric_scenario_id": "vode-nexa-807-so-3500k-90cri-hl-black-48in",
+    "scenario_label": "Nexa Suspended 807, NX3 rail, 48\" tested length, Standard Output, 3500K 90+ CRI, Honeycomb Louver, Black Anodized, 120V-277V universal",
+    "tested_axes": {
+      "distribution_code": {
+        "manufacturer_label": "HL (Honeycomb Louver)",
+        "distribution_type": "symmetric"
+      },
+      "light_engine_variant": "Z (Zipper Board)",
+      "output_tier": {
+        "manufacturer_label": "SO (Standard Output)",
+        "tier_meaning": "Standard Output tier: 319 lm/ft, 6.7 W/ft at 3500K 90+ CRI with HL optic."
+      },
+      "cri_tier": "cri_90",
+      "color_tunability": "static_white"
+    },
+    "tested_conditions": {
+      "nominal_cct_at_test": "3500",
+      "input_voltage_at_test": "120v",
+      "mounting_at_test": "surface_ceiling",
+      "ambient_temperature": {
+        "c": 25,
+        "f": 77,
+        "value_type": "nominal",
+        "provenance": {
+          "source": "inferred",
+          "method": "inferred",
+          "confidence": 0.8,
+          "conflict_notes": "IES file does not state ambient; LM-79-19 default of 25C assumed."
+        }
+      }
+    },
+    "source_ies_ref": "807-nexa3-35k-90cri-so-hl-bl.ies"
+  },
+  "applicability": {
+    "applicable_catalog_pattern": "807-NX3-S*-{LENGTH}-{ARM}-{MOUNTING}-{POWER_LOC}-{POWER_TYPE}-2-{EMERG}-Z-SO-359-HL-{SENSOR}-BL-{OPTIONS}",
+    "fixed_axes": {
+      "system": "807",
+      "rail_type": "NX3",
+      "voltage": "universal_120_277",
+      "led_type": "Z",
+      "lumen_output": "SO",
+      "color_temperature": "359",
+      "optics": "HL",
+      "finish": "BL"
+    },
+    "covered_axes": {
+      "length": {
+        "values": [
+          "48",
+          "60",
+          "72",
+          "84",
+          "96"
+        ],
+        "rationale": "Per Pattern D linear scaling. The 48\" length is the tested baseline (1276 lm / 26.5 W). All other lengths derive from the cutsheet's per-foot rates (319 lm/ft, 6.7 W/ft) published on page 9 of the spec sheet.",
+        "derivation": {
+          "method": "per_foot_linear_scaling",
+          "baseline_axis_value": "48",
+          "linear_rate": {
+            "value": 319,
+            "unit": "lm/ft"
+          },
+          "reference": "spec_sheet_page_9_performance_table",
+          "note": "Lumens scale at 319 lm/ft; input power scales at 6.7 W/ft. Efficacy is constant at 49 lm/W across lengths. Derived values tabulated in photometry.declared_by_length."
+        }
+      },
+      "mounting": {
+        "values": [
+          "CC",
+          "T1",
+          "T2",
+          "T3",
+          "T4",
+          "T5",
+          "T6",
+          "Suspended"
+        ],
+        "rationale": "Mounting is photometrically transparent: the NX3 rail light engine and HL optic are identical across Surface (the actual tested IES mounting, per LUMINAIRE field `Surface, 48\", Surface Mount`), Cable-to-Canopy, T1-T6 Canopy, and Suspended variants. Only the mechanical mounting hardware above the rail changes, which does not affect emitted photometry."
+      },
+      "arm_cable_length": {
+        "values": [
+          "any"
+        ],
+        "rationale": "Arm or cable length determines only suspension drop from the ceiling and is photometrically irrelevant."
+      },
+      "power_location": {
+        "values": [
+          "XX"
+        ],
+        "rationale": "Power location is Remote only for the Nexa 807 family; not a true variation axis. The driver is separated from the rail up to 100 ft / 31 m away."
+      },
+      "power_type": {
+        "values": [
+          "AE",
+          "AT",
+          "AD",
+          "AX",
+          "AH",
+          "AH2",
+          "AEO",
+          "ATO",
+          "ADO",
+          "AEF",
+          "ATF",
+          "ADF"
+        ],
+        "rationale": "Dimming driver protocol does not change photometric output at Standard Output tier. Some Power Types alter max drive current on HO/MO tiers, but at SO the output is driver-independent. The tested scenario's specific Power Type (XX in the LUMCAT field) is unspecified; any of these codes is covered."
+      },
+      "emergency_power": {
+        "values": [
+          "0",
+          "EMBS",
+          "EMBV",
+          "EMBG"
+        ],
+        "rationale": "Emergency power packs switch the fixture to battery backup operation in a loss-of-power event; they do not affect normal-mode photometry."
+      },
+      "sensors": {
+        "values": [
+          "0",
+          "OCC",
+          "DL",
+          "OCCDL"
+        ],
+        "rationale": "Integrated sensor modules affect control behavior, not emitted photometry."
+      },
+      "options": {
+        "values": [
+          "0",
+          "CPP",
+          "9"
+        ],
+        "rationale": "CPP (Chicago Plenum Power) and 9 (Cord and Plug) do not alter photometric output. CPP compliance is captured as an option-conditional attestation below rather than excluding the combination."
+      }
+    },
+    "excluded_combinations": [
+      {
+        "axes": {
+          "color_temperature": "RGBW",
+          "length": [
+            "72",
+            "84",
+            "96"
+          ]
+        },
+        "reason": "RGBW output is limited to 60\" max length on Standard Output and High Output tiers. Not in scope for this record (this record is 3500K 90+ CRI static white), noted for family-level completeness."
+      }
+    ],
+    "applicable_sku_count_estimate": 120
+  },
+  "electrical": {
+    "input_power_w": {
+      "value": 26.5,
+      "unit": "W",
+      "value_type": "measured",
+      "provenance": {
+        "source": "ies",
+        "method": "extracted",
+        "attestation_ref": "lm79_19_vode_nexa_807_l072310201"
+      }
+    },
+    "input_voltage_v": {
+      "value": 120,
+      "unit": "V",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted"
+      }
+    },
+    "input_voltage_class": "universal_120_277",
+    "driver_protocol": "0-10v",
+    "control_gear_type": "led_driver_constant_current"
+  },
+  "photometry": {
+    "total_luminous_flux_lm": {
+      "value": 1276,
+      "unit": "lm",
+      "value_type": "measured",
+      "provenance": {
+        "source": "ies",
+        "method": "extracted",
+        "attestation_ref": "lm79_19_vode_nexa_807_l072310201"
+      }
+    },
+    "luminaire_efficacy_lm_per_w": {
+      "value": 49,
+      "unit": "lm/W",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "computed",
+        "attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+        "conflict_notes": "Spec sheet rounds to 49 lm/W; measured value from IES is 48.15 lm/W (1276/26.5). Published rated value retained."
+      }
+    },
+    "maximum_intensity_cd": {
+      "value": 1229,
+      "unit": "cd",
+      "value_type": "measured",
+      "provenance": {
+        "source": "ies",
+        "method": "extracted",
+        "attestation_ref": "lm79_19_vode_nexa_807_l072310201"
+      }
+    },
+    "beam_family": "medium_flood",
+    "distribution_type": "symmetric",
+    "symmetry_type": "symm_bi_0",
+    "photometric_coordinate_system": "ies_c",
+    "luminous_opening_shape": "rectangular",
+    "emission_face": "bottom",
+    "ugr_4h_8h": {
+      "value": 7.6,
+      "unit": "ratio",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted",
+        "conflict_notes": "Spec sheet page 1 states `UGR as low as 7.6` for the HL (Honeycomb Louver) variant; encoded as an upper bound via bound_operator on the flicker-style pattern, but ugr_4h_8h is a scalar field so the bound is noted here."
+      }
+    },
+    "per_length_normalized": {
+      "lumens_per_foot": {
+        "value": 319,
+        "unit": "lm/ft",
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "watts_per_foot": {
+        "value": 6.7,
+        "unit": "W/ft",
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "reference_length": {
+        "mm": 1219.2,
+        "in": 48,
+        "value_type": "nominal",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "normalized"
+        }
+      }
+    }
+  },
+  "colorimetry": {
+    "nominal_cct_k": "3500",
+    "cri_ra": {
+      "value": 96,
+      "unit": "ratio",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted",
+        "conflict_notes": "Spec sheet page 9 lists 96 as the typical/average CRI Ra for this tier. The 90+ CRI label is the rated minimum; 96 is the typical value."
+      }
+    }
+  },
+  "flicker_measurements": {
+    "metrics": []
+  },
+  "operating_point": {
+    "input_voltage_v": {
+      "value": 120,
+      "unit": "V",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted"
+      }
+    },
+    "input_frequency_hz": {
+      "value": 60,
+      "unit": "Hz",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted"
+      }
+    }
+  },
+  "test_conditions": {
+    "photometry_basis": "absolute",
+    "file_generation_type": "test_accredited_lab"
+  },
+  "instrumentation": {
+    "measurement_regime": "far_field",
+    "laboratory_certification": "accredited",
+    "laboratory_accreditation_scheme": "nvlap",
+    "laboratory_report_id": "L072310201-1"
+  },
+  "lumen_maintenance_luminaire": {
+    "declaration_framework": "manufacturer_rated_claim",
+    "manufacturer_rated_claim": {
+      "claim_type": "L80",
+      "claimed_hours": {
+        "value": 60000,
+        "unit": "h",
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "transcribed",
+          "conflict_notes": "Spec sheet states `L80 >60,000 hours`; no TM-28 or LM-84 projection method cited."
+        }
+      }
+    }
+  },
+  "sustainability_declaration": {
+    "declaration_type": "red_list_approved",
+    "document_id": "VDE-0001",
+    "original_issue_date": "2018-01-01",
+    "expiration_date": "2026-02-01",
+    "final_assembly_location": "Sonoma, California, US",
+    "life_expectancy_years": 10,
+    "end_of_life_options": [
+      "recyclable_100_percent"
+    ],
+    "recyclable_percent": 100,
+    "ingredient_list": [
+      {
+        "material_name": "Steel",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Anodized Aluminum (6063-T5 Alloy)",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Small Electrical Component (RoHS)",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Copper",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Fluorinated Ethylene Propylene (masterbatch)",
+        "lbc_red_list_status": "approved_exception",
+        "notes": "LBC Red List material granted ILFI exception; product retains Red List Approved status."
+      },
+      {
+        "material_name": "Polymethyl methacrylate (PMMA)",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Stainless Steel",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Polyoxymethylene Copolymer (POM)",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Styrene-butadiene polymer, hydrogenated",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Poly(methyl methacrylate/butyl acrylate/styrene) (PMMA/BA/S)",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Styrene/butadiene copolymer",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Distillates",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Polypropylene",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Calcium carbonate",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Polycarbonate",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "EVA Copolymer",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Methyl methacrylate (MMA)",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Polyphenylene Oxide",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Brass",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Tin",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Organic",
+        "lbc_red_list_status": "free"
+      }
+    ],
+    "lbc_criteria_compliance": true,
+    "voc_content": "not_applicable",
+    "interior_performance": "not_applicable",
+    "responsible_sourcing": "not_applicable"
+  },
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "vode-nexa-suspended-hl-rg-bl-specsheet-feb2026.pdf",
+        "sha256": "3e0253e23e19f03e6a970170b9147fa7148a7ce4f6a3c58dc192f8caac003f5e",
+        "revision_label": "February 2026",
+        "revision_date": "2026-02-01"
+      }
+    },
+    {
+      "file_type": "ies",
+      "reference": {
+        "filename": "807-nexa3-35k-90cri-so-hl-bl.ies",
+        "sha256": "8c98f66f8a61102daf7fe79520c698a4e83ef41715cb876a2c630f441d3078e4",
+        "revision_label": "L072310201-1",
+        "revision_date": "2023-07-19"
+      }
+    },
+    {
+      "file_type": "article_text",
+      "reference": {
+        "filename": "certificationscheatsheet-0.pdf",
+        "sha256": "8e76080c4c935c8ace28b25c1058f17796df419a2e0672d66d12c5685bff42fb",
+        "revision_date": "2024-02-26"
+      }
+    }
+  ],
+  "attestations": [
+    {
+      "attestation_id": "lm79_19_vode_nexa_807_l072310201",
+      "program": "lm_79_19",
+      "status": "verified",
+      "value_type": "measured",
+      "issued_date": "2023-07-19",
+      "test_laboratory": "NVLAP-accredited lab (per IES TESTLAB field)",
+      "test_report_id": "L072310201-1",
+      "standard_revision": "LM-79-19",
+      "measured_quantities": [
+        "electrical.input_power_w",
+        "photometry.total_luminous_flux_lm",
+        "photometry.maximum_intensity_cd"
+      ],
+      "verification": {
+        "type": "unconditional",
+        "notes": "Source IES LUMINAIRE field declares `Surface, 48\", Surface Mount`: the base LM-79 test ran on the Surface-mount NX3 rail at 48\". The Suspended mounting variant reuses this photometry because the light engine and HL optic are identical; only mechanical mounting changes. Mounting is declared as a photometrically-transparent covered axis rather than requiring a separate test."
+      },
+      "source_document_ref": {
+        "filename": "807-nexa3-35k-90cri-so-hl-bl.ies",
+        "sha256": "8c98f66f8a61102daf7fe79520c698a4e83ef41715cb876a2c630f441d3078e4"
+      }
+    },
+    {
+      "attestation_id": "lbc_red_list_approved_vode_nexa_807",
+      "program": "lbc_red_list_approved",
+      "status": "listed",
+      "value_type": "rated",
+      "issued_date": "2018-01-01",
+      "valid_until": "2026-02-01",
+      "listing_number": "VDE-0001",
+      "verification": {
+        "type": "unconditional",
+        "notes": "ILFI Declare label VDE-0001, Red List Approved tier with ILFI-granted exception for fluorinated ethylene propylene masterbatch."
+      }
+    },
+    {
+      "attestation_id": "declare_vode_nexa_807",
+      "program": "declare",
+      "status": "listed",
+      "value_type": "rated",
+      "issued_date": "2018-01-01",
+      "valid_until": "2026-02-01",
+      "listing_number": "VDE-0001",
+      "verification": {
+        "type": "unconditional"
+      }
+    },
+    {
+      "attestation_id": "living_building_challenge_vode_nexa_807",
+      "program": "living_building_challenge",
+      "status": "verified",
+      "value_type": "rated",
+      "verification": {
+        "type": "unconditional",
+        "notes": "Declare label declares `Living Building Challenge Criteria: Compliant`."
+      }
+    },
+    {
+      "attestation_id": "chicago_plenum_vode_nexa_807",
+      "program": "chicago_plenum",
+      "status": "listed",
+      "value_type": "rated",
+      "applicability": {
+        "required_order_code_options": [
+          "CPP"
+        ],
+        "required_constraints": {
+          "power_location": "remote_power"
+        }
+      },
+      "verification": {
+        "type": "unconditional",
+        "notes": "Chicago Plenum compliance requires the CPP option code AND Remote Power location. Since Nexa 807 is Remote-only, only the CPP option gates the claim in practice."
+      }
+    },
+    {
+      "attestation_id": "baa_vode_nexa_807",
+      "program": "baa",
+      "status": "claimed",
+      "value_type": "nominal",
+      "verification": {
+        "type": "requires_manufacturer_confirmation",
+        "contact_reference": "vodecares@vode.com",
+        "notes": "Per spec sheet page 4: Vode supports domestic manufacturing but BAA eligibility depends on specific product configuration; project-level confirmation required."
+      }
+    },
+    {
+      "attestation_id": "baba_vode_nexa_807",
+      "program": "baba",
+      "status": "claimed",
+      "value_type": "nominal",
+      "verification": {
+        "type": "requires_manufacturer_confirmation",
+        "contact_reference": "vodecares@vode.com",
+        "notes": "Per spec sheet page 4: BABA (Build America Buy America) compliance requires per-project manufacturer confirmation."
+      }
+    },
+    {
+      "attestation_id": "cie_13_vode_nexa_807",
+      "program": "cie_13",
+      "status": "claimed",
+      "value_type": "rated",
+      "standard_revision": "CIE 13",
+      "measured_quantities": [
+        "colorimetry.cri_ra"
+      ],
+      "verification": {
+        "type": "unconditional"
+      }
+    }
+  ],
+  "extensions": {
+    "manufacturer_specific": {
+      "vode": {
+        "lumcat": "807-NX3-SL-48-XX-0-XX-XX-2-0-Z-SO-359-HL-0-BL-0",
+        "ies_luminaire_string": "System 807, Nexa3, Surface, 48\", Surface Mount, 35K, 90CRI",
+        "ies_more_string": "Honeycomb Louvre, Standard Output, Clear Anodized finish",
+        "rail_profile": {
+          "name": "NX3 (Nexa3)",
+          "profile_width_in": 3.25,
+          "profile_width_mm": 83,
+          "profile_height_in": 0.66,
+          "profile_height_mm": 16.76
+        },
+        "cri_minimum_rated": {
+          "value": 90,
+          "note": "Spec sheet declares 90+ CRI as the rated minimum; colorimetry.cri_ra carries the average (96) from page 9 table."
+        },
+        "dimming": {
+          "protocols_available": [
+            "0-10v",
+            "dali",
+            "dmx"
+          ],
+          "protocol_on_this_scenario": "0-10v",
+          "range_percent": {
+            "min": 3,
+            "max": 100
+          },
+          "method": "constant_current_reduction",
+          "note": "No ULC field for dimming range/method at v0.1; parked here pending schema support."
+        },
+        "driver": {
+          "location": "remote",
+          "max_distance_ft": 100,
+          "max_distance_m": 31,
+          "class": "class_2",
+          "output": "constant_current",
+          "enclosure": "galvanized_steel"
+        },
+        "humidity_operating_range_percent": {
+          "min": 0,
+          "max": 95,
+          "condensing": false
+        },
+        "weight_per_foot": {
+          "lb": 0.75,
+          "kg": 0.34
+        },
+        "weight_at_48in": {
+          "lb": 3.0,
+          "kg": 1.36
+        },
+        "mounting_hardware": {
+          "type": "Twist and Lock Suspension Hub",
+          "capacity_lbs_each": 20
+        },
+        "materials": {
+          "housing": "6063 aluminum (hard anodized black)",
+          "led_board": "Flexboard, Polyimide Flex PCB substrate (RoHS)",
+          "lens": "High-impact extruded acrylic (PMMA)",
+          "optic_hl": "Honeycomb Louver",
+          "wire_harness": "18/2 AWG, Plenum (CMP) rated semi-rigid PVC or FEP, flame tested UL-910, red list free",
+          "remote_driver_housing": "galvanized steel"
+        },
+        "ugr_note": "Spec sheet claims `UGR as low as 7.6`; captured as a scalar rated value in photometry.ugr_4h_8h with a provenance note documenting it as an upper bound. ULC v0.1 ugr_4h_8h is a plain scalar without bound_operator support.",
+        "mounting_options_available": [
+          "cable_to_canopy",
+          "t1_canopy",
+          "t2_canopy",
+          "t3_canopy",
+          "t4_canopy",
+          "t5_canopy",
+          "t6_canopy",
+          "suspended"
+        ],
+        "product_page": "https://vode.com/nexa/nexa-807"
+      }
+    }
+  },
+  "photometry_declared_by_length": [
+    {
+      "length_in": 48,
+      "length_mm": 1219.2,
+      "total_lumens": 1276,
+      "input_power_w": 26.5,
+      "efficacy_lm_per_w": 48.15,
+      "value_type": "measured",
+      "note": "Baseline tested length; values from LM-79-19 test L072310201-1 and spec sheet page 9 table."
+    },
+    {
+      "length_in": 60,
+      "length_mm": 1524.0,
+      "total_lumens": 1595,
+      "input_power_w": 33.5,
+      "efficacy_lm_per_w": 47.61,
+      "value_type": "rated",
+      "note": "Per-foot scaled: 319 lm/ft x 5 ft, 6.7 W/ft x 5 ft."
+    },
+    {
+      "length_in": 72,
+      "length_mm": 1828.8,
+      "total_lumens": 1914,
+      "input_power_w": 40.2,
+      "efficacy_lm_per_w": 47.61,
+      "value_type": "rated",
+      "note": "Per-foot scaled: 319 lm/ft x 6 ft, 6.7 W/ft x 6 ft."
+    },
+    {
+      "length_in": 96,
+      "length_mm": 2438.4,
+      "total_lumens": 2552,
+      "input_power_w": 53.6,
+      "efficacy_lm_per_w": 47.61,
+      "value_type": "rated",
+      "note": "Per-foot scaled: 319 lm/ft x 8 ft, 6.7 W/ft x 8 ft."
+    }
+  ],
+  "index": {
+    "x-ulc-generated": true,
+    "builder_version": "0.1.0",
+    "manufacturer_slug": "vode",
+    "catalog_model": "Nexa Suspended 807",
+    "primary_category": "linear",
+    "catalog_number": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
+    "display_name": "Nexa Suspended 807, NX3 rail, 48\" tested length, Standard Output, 3500K 90+ CRI, Honeycomb Louver, Black Anodized, 120V-277V universal",
+    "secondary_function": [
+      "direct"
+    ],
+    "indoor_outdoor": "indoor",
+    "mounting_types": [
+      "pendant"
+    ],
+    "environment_rating": "damp",
+    "nominal_cct_k": "3500",
+    "nominal_total_lumens": 1276,
+    "nominal_input_power_w": 26.5,
+    "nominal_cri_ra": 96,
+    "nominal_efficacy_lm_per_w": 49,
+    "primary_distribution": "symmetric",
+    "beam_family": "medium_flood",
+    "color_tunability": "static_white",
+    "dimming_protocols": [
+      "0-10v"
+    ],
+    "ugr_4h_8h": 7.6,
+    "attestation_programs": [
+      "baa",
+      "baba",
+      "c_ul_listed",
+      "cb_scheme",
+      "chicago_plenum",
+      "cie_13",
+      "damp_location_ul",
+      "declare",
+      "iec_60598",
+      "lbc_red_list_approved",
+      "living_building_challenge",
+      "lm_79_19",
+      "nrtl_osha_recognized",
+      "ul_1598"
+    ],
+    "search_keywords": [
+      "Nexa",
+      "Nexa Suspended 807, NX3 rail, 48\" tested length, Standard Output, 3500K 90+ CRI, Honeycomb Louver, Black Anodized, 120V-277V universal",
+      "Nexa Suspended | 807"
+    ],
+    "source_file_types_present": [
+      "article_text",
+      "datasheet_pdf",
+      "ies"
+    ]
+  }
+}
