@@ -1,0 +1,1041 @@
+{
+  "ulc_version": "0.1.0",
+  "record_id": "selux-aya-pole-sr-ho-3000k",
+  "record_status": "active",
+  "record_status_as_of": "2026-01-15",
+  "conformance_level": "full",
+  "product_family": {
+    "family_id": "selux-aya-pole-pendant",
+    "family_display_name": "Aya Pole or Pendant",
+    "family_description": "Outdoor architectural pole-top (and pendant) luminaire in Selux's AYA family at pedestrian scale. Pattern B cutsheet: one spec sheet covers roughly 54,000 theoretical SKUs across optics, mounting, output, CCT, finish, power cord length, voltage, and options; 21 tested photometric scenarios (3 distributions x 3 outputs for white plus 12 BioRed scenarios) anchor the family. CCT variance is declared via a manufacturer multiplier table applied to a single tested 3000K baseline per optic x output combination.",
+    "manufacturer": {
+      "slug": "selux",
+      "display_name": "Selux Corporation"
+    },
+    "catalog_line": "Aya",
+    "catalog_model": "Aya Pole or Pendant (AYAP)",
+    "cutsheet": {
+      "filename": "aya_pole_ss.pdf",
+      "sha256": "d3b91bcd080fb6d2b789fadac8b9139776ad02381e51fdd0e0fd131065e7be12",
+      "revision_label": "AYAP_SS_v0.7 (Rev. 1/2026)",
+      "revision_date": "2026-01-01"
+    },
+    "primary_category": "flood_area_site",
+    "secondary_function": [
+      "direct"
+    ],
+    "indoor_outdoor": "outdoor",
+    "mounting_types": [
+      "pole_top",
+      "pendant"
+    ],
+    "environment_rating": "outdoor_rated",
+    "shape": "round",
+    "shared_mechanical": {
+      "housing_material": "die_cast_aluminum",
+      "finish_color_options": [
+        "WH",
+        "BK",
+        "BL",
+        "BZ",
+        "SV",
+        "SP"
+      ],
+      "ip_rating": "IP65",
+      "ik_rating": "IK08",
+      "ambient_operating_range": {
+        "min": {
+          "c": -40,
+          "f": -40,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        },
+        "max": {
+          "c": 45,
+          "f": 113,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        }
+      }
+    },
+    "shared_attestations": [
+      {
+        "attestation_id": "ip65_selux_aya_pole",
+        "program": "iec_60598",
+        "status": "listed",
+        "value_type": "rated",
+        "standard_revision": "IEC 60598 (IP65 ingress protection)",
+        "verification": {
+          "type": "unconditional",
+          "notes": "IP65 ingress protection declared on spec sheet page 2; carried here under the IEC 60598 luminaire-safety family since a dedicated `ip_rating` attestation program enum is not defined in v0.1 taxonomy."
+        }
+      },
+      {
+        "attestation_id": "rohs_selux_aya_pole",
+        "program": "rohs",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "type": "unconditional",
+          "notes": "LED driver declared RoHS compliant per spec sheet page 2."
+        }
+      }
+    ]
+  },
+  "configuration": {
+    "photometric_scenario_id": "selux-aya-pole-sr-ho-3000k",
+    "scenario_label": "Aya Pole AYAP-SR-1-HO-30-BL-UNV: Symmetric Round (Type V) optic, Single Post Top, High Output, 3000K DarkSky-compliant, Black Semi-Matte, 120-277V universal",
+    "tested_axes": {
+      "distribution_code": {
+        "manufacturer_label": "SR (Symmetric Round)",
+        "outdoor_distribution_type": "type_v"
+      },
+      "output_tier": {
+        "manufacturer_label": "HO (High Output)",
+        "tier_meaning": "High Output tier: 5074 lm at 45 W input, 112 lm/W luminaire efficacy at 3000K."
+      },
+      "cri_tier": "cri_80",
+      "color_tunability": "static_white"
+    },
+    "tested_conditions": {
+      "nominal_cct_at_test": "3000",
+      "input_voltage_at_test": "universal_120_277",
+      "mounting_at_test": "pole_top",
+      "ambient_temperature": {
+        "c": 25,
+        "f": 77,
+        "value_type": "nominal",
+        "provenance": {
+          "source": "inferred",
+          "method": "inferred",
+          "confidence": 0.85,
+          "conflict_notes": "IES file does not state ambient; LM-79-08 default of 25C assumed."
+        }
+      }
+    },
+    "source_ies_ref": "AYAP-SR-1-HO-30-BL-UNV.ies"
+  },
+  "applicability": {
+    "applicable_catalog_pattern": "AYAP-SR-{MOUNT}-HO-{CCT}-{CORD}-{FINISH}-{VOLT}-{OPTIONS}",
+    "fixed_axes": {
+      "series": "AYAP",
+      "optics": "SR",
+      "output": "HO"
+    },
+    "covered_axes": {
+      "cct": {
+        "values": [
+          "2200",
+          "2700",
+          "3000",
+          "3500",
+          "4000",
+          "5000"
+        ],
+        "rationale": "White CCT variance is declared on spec sheet page 9 (CCT multiplier table). The 3000K baseline is LM-79 tested at 5074 lm; other CCTs derive from the manufacturer multiplier table. The per-CCT lumen and efficacy projections are enumerated in photometry.declared_by_cct.",
+        "derivation": {
+          "method": "manufacturer_lumen_multiplier",
+          "baseline_axis_value": "3000",
+          "multiplier_table": {
+            "2200": 0.86,
+            "2700": 0.93,
+            "3000": 1.0,
+            "3500": 1.0,
+            "4000": 1.07,
+            "5000": 1.07
+          },
+          "reference": "spec_sheet_page_9_cct_multiplier_table",
+          "note": "Multiplier applied to the measured 3000K total luminous flux (5074 lm). 3000K and 3500K share multiplier 1.00; 4000K and 5000K share multiplier 1.07. 2200K and 2700K are attenuated relative to 3000K baseline. Note 2 on page 9 of the spec sheet: 2700K and 3000K meet DarkSky requirements."
+        }
+      },
+      "mounting": {
+        "values": [
+          "1",
+          "1A",
+          "2"
+        ],
+        "rationale": "Mounting variants share light engine and SR optic. `1` is Single Post Top (the tested configuration per LUMCAT). `1A` is Single Pendant and `2` is Dual Pendant; both substitute a welded aluminum pendant arm for the self-leveling fitter base but route the same light engine through the same SR optic. Photometrically equivalent; only mechanical attachment changes."
+      },
+      "power_cord_length": {
+        "values": [
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18",
+          "XX"
+        ],
+        "rationale": "Power cord length is the external feed from fixture to driver; it is photometrically irrelevant. The LUMCAT `AYAP-SR-1-HO-30-BL-UNV` does not carry a cord-length segment (pendant/pole-top variants order cord length separately)."
+      },
+      "finish": {
+        "values": [
+          "WH",
+          "BK",
+          "BL",
+          "BZ",
+          "SV",
+          "SP"
+        ],
+        "rationale": "Finish is external polyester powder coat (Tiger Drylac certified, five-stage pretreatment, ASTM/PCI tested). The SR optic is internal and does not carry a finish-dependent glare shield, so external finish has no photometric effect. BL (Black Semi-Matte) is the tested finish in this LUMCAT."
+      },
+      "voltage": {
+        "values": [
+          "120",
+          "240",
+          "277",
+          "347",
+          "480",
+          "UNV"
+        ],
+        "rationale": "The LED driver is a regulated constant-current driver. Luminaire input power and light output are independent of input voltage within the driver's range. For 347V and 480V, a step-down transformer adds approximately 10% nominal wattage penalty; photometric output is unchanged.",
+        "derivation": {
+          "method": "regulated_driver_voltage_independence",
+          "baseline_axis_value": "UNV",
+          "reference": "spec_sheet_page_2_driver_specifications",
+          "note": "347V and 480V options add step-down transformer with ~10% input power penalty; output flux is unchanged because the driver is regulated."
+        }
+      },
+      "options": {
+        "values": [
+          "DD",
+          "TLR",
+          "TLRP",
+          "MS0",
+          "MS1",
+          "MS2",
+          "MS3",
+          "MS4",
+          "none"
+        ],
+        "rationale": "DD (DALI-2 driver), TLR (7-pin NEMA twist-lock receptacle), TLRP (twist-lock photocell), and MSxx (motion sensors with orientation variants) change control behavior, not emitted photometric output. The tested LUMCAT does not carry an option suffix."
+      }
+    },
+    "excluded_combinations": [
+      {
+        "axes": {
+          "output": "BR"
+        },
+        "reason": "BR (BioRed) is a two-channel light engine alternating 630 nm BioRed LEDs with 2700K White and uses a different photometric record set; out of scope for this white-light SR + HO record."
+      },
+      {
+        "axes": {
+          "output": "MO",
+          "cct": "2200"
+        },
+        "reason": "Max Output tier is not available at 2200K per spec sheet note 3 on page 9 (MO+2200K excluded combination). Noted for family-level completeness; this record is HO so the constraint is informational here."
+      }
+    ],
+    "applicable_sku_count_estimate": 4000
+  },
+  "electrical": {
+    "input_power_w": {
+      "value": 45.3938,
+      "unit": "W",
+      "value_type": "measured",
+      "provenance": {
+        "source": "ies",
+        "method": "extracted",
+        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "conflict_notes": "IES reports 45.3938 W; spec sheet rounds to 45 W."
+      }
+    },
+    "input_voltage_class": "universal_120_277",
+    "driver_protocol": "0-10v",
+    "control_gear_type": "led_driver_constant_current"
+  },
+  "photometry": {
+    "total_luminous_flux_lm": {
+      "value": 5074,
+      "unit": "lm",
+      "value_type": "measured",
+      "provenance": {
+        "source": "ies",
+        "method": "extracted",
+        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "conflict_notes": "IES reports 5073.8 lm; spec sheet and this record round to 5074 lm."
+      }
+    },
+    "luminaire_efficacy_lm_per_w": {
+      "value": 112,
+      "unit": "lm/W",
+      "value_type": "measured",
+      "provenance": {
+        "source": "article_text",
+        "method": "extracted",
+        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "conflict_notes": "LER reported on IES Road Report as 112 lm/W. Computed from raw IES values: 5073.8 / 45.3938 = 111.8 lm/W; rounded LER retained to match published report."
+      }
+    },
+    "maximum_intensity_cd": {
+      "value": 1521.8,
+      "unit": "cd",
+      "value_type": "measured",
+      "provenance": {
+        "source": "ies",
+        "method": "extracted",
+        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "conflict_notes": "Maximum candela at vertical 57.5 degrees, horizontal 0 degrees per IES file and IES Road Report."
+      }
+    },
+    "distribution_type": "symmetric",
+    "symmetry_type": "symm_full",
+    "photometric_coordinate_system": "ies_c",
+    "emission_face": "bottom",
+    "zonal_lumens": [
+      {
+        "zone_label": "0-30",
+        "lumens": {
+          "value": 725.6,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "conflict_notes": "Sum of LCS FL (362.8) + BL (362.8) = 725.6 lm in the 0-30 degree downward band."
+          }
+        }
+      },
+      {
+        "zone_label": "0-60",
+        "lumens": {
+          "value": 3620.0,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "conflict_notes": "Sum of FL + FM + BL + BM = 362.8 + 1447.2 + 362.8 + 1447.2."
+          }
+        }
+      },
+      {
+        "zone_label": "0-90",
+        "lumens": {
+          "value": 5073.8,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "conflict_notes": "Total downward flux (0-90 degrees); matches total luminous flux since upward is 0."
+          }
+        }
+      },
+      {
+        "zone_label": "90-180",
+        "lumens": {
+          "value": 0,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "conflict_notes": "Zero uplight (UL + UH) per LCS breakdown. Consistent with B2-U0-G1 BUG rating and DarkSky compliance."
+          }
+        }
+      }
+    ],
+    "declared_by_cct": [
+      {
+        "cct": "2200",
+        "lumens": {
+          "value": 4364,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "extension_method": "cct_multiplier"
+          }
+        }
+      },
+      {
+        "cct": "2700",
+        "lumens": {
+          "value": 4719,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "extension_method": "cct_multiplier"
+          }
+        }
+      },
+      {
+        "cct": "3000",
+        "lumens": {
+          "value": 5074,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "ies",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "cct": "3500",
+        "lumens": {
+          "value": 5074,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "extension_method": "cct_multiplier"
+          }
+        }
+      },
+      {
+        "cct": "4000",
+        "lumens": {
+          "value": 5429,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "extension_method": "cct_multiplier"
+          }
+        }
+      },
+      {
+        "cct": "5000",
+        "lumens": {
+          "value": 5429,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "extension_method": "cct_multiplier"
+          }
+        }
+      }
+    ]
+  },
+  "colorimetry": {
+    "nominal_cct_k": "3000",
+    "sdcm_step": {
+      "value": 3,
+      "unit": "ratio",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted",
+        "conflict_notes": "Spec sheet note: 3-step MacAdam ellipse for 2700K, 3000K, 3500K, 4000K, and 5000K. 2200K is not inside the 3-step envelope."
+      }
+    },
+    "cri_ra": {
+      "value": 80,
+      "unit": "ratio",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted",
+        "conflict_notes": "Spec sheet declares CRI 80+ for white CCTs (2700K/3000K/3500K/4000K/5000K); 80 is the rated minimum. CRI for 2200K is 70+; not represented here since baseline is 3000K."
+      }
+    }
+  },
+  "outdoor_classification": {
+    "bug_rating": {
+      "b": 2,
+      "u": 0,
+      "g": 1
+    },
+    "outdoor_distribution_type": "type_v",
+    "longitudinal_distribution_range": "short",
+    "lcs_zonal_lumens": [
+      {
+        "zone": "fl",
+        "lumens": {
+          "value": 362.8,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "fm",
+        "lumens": {
+          "value": 1447.2,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "fh",
+        "lumens": {
+          "value": 703.8,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "fvh",
+        "lumens": {
+          "value": 23.1,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "bl",
+        "lumens": {
+          "value": 362.8,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "conflict_notes": "BL equals FL because SR is axially symmetric (Type V); the front/back split is arbitrary for a rotationally symmetric distribution."
+          }
+        }
+      },
+      {
+        "zone": "bm",
+        "lumens": {
+          "value": 1447.2,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "bh",
+        "lumens": {
+          "value": 703.8,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "bvh",
+        "lumens": {
+          "value": 23.1,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "ul",
+        "lumens": {
+          "value": 0,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      },
+      {
+        "zone": "uh",
+        "lumens": {
+          "value": 0,
+          "unit": "lm",
+          "value_type": "measured",
+          "provenance": {
+            "source": "article_text",
+            "method": "extracted",
+            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+          }
+        }
+      }
+    ]
+  },
+  "operating_point": {
+    "input_voltage_v": {
+      "value": 120,
+      "unit": "V",
+      "value_type": "nominal",
+      "provenance": {
+        "source": "inferred",
+        "method": "inferred",
+        "confidence": 0.6,
+        "conflict_notes": "Universal 120-277V driver; specific input voltage at test not cited on IES or spec sheet. 120V assumed as typical low-voltage test point."
+      }
+    }
+  },
+  "test_conditions": {
+    "photometry_basis": "absolute",
+    "file_generation_type": "test_accredited_lab"
+  },
+  "instrumentation": {
+    "measurement_regime": "far_field",
+    "laboratory_certification": "accredited",
+    "laboratory_accreditation_scheme": "nvlap",
+    "laboratory_name": "UL Verification Services Inc.",
+    "laboratory_report_id": "16033338.03"
+  },
+  "lumen_maintenance_luminaire": {
+    "declaration_framework": "manufacturer_rated_claim",
+    "manufacturer_rated_claim": {
+      "claim_type": "L70",
+      "claimed_hours": {
+        "value": 0,
+        "unit": "h",
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "transcribed",
+          "conflict_notes": "Spec sheet page 2 states `LED tested to LM-80 standards` but does not cite a specific L-factor hours claim for this luminaire. Manufacturer-rated framework is declared without a quantified projection; claimed_hours is 0 as placeholder to indicate no hours value was published."
+        }
+      }
+    }
+  },
+  "sustainability_declaration": {
+    "declaration_type": "red_list_approved",
+    "document_id": "SLK-002",
+    "original_issue_date": "2025-01-01",
+    "expiration_date": "2026-11-01",
+    "final_assembly_location": "Highland, New York, USA",
+    "life_expectancy_years": 5,
+    "end_of_life_options": [
+      "recyclable_90_percent",
+      "landfill_10_percent"
+    ],
+    "recyclable_percent": 90,
+    "ingredient_list": [
+      {
+        "material_name": "Aluminum",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Cast Aluminum",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "LED Driver",
+        "lbc_red_list_status": "approved_exception",
+        "notes": "LBC Temp Exception RL-002 (Small Electrical Components); granted ILFI exception per Declare label."
+      },
+      {
+        "material_name": "Carbonic acid, polymer with 4,4'-(1-methylethylidene)phenol",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Copper",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Stainless Steel",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "RTV silicone rubber",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Styrene-butadiene copolymers",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Acryl-und Methacrylmodifiziertes Polydimethylsiloxane (mittlere Molmasse 1200 bis 19,000 g/mol, Restgehalte an Acrylsaeure und Ostamethyl-trcyclotetrasiloxan < 0.1%)",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Nylon 6/6",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "Nickel Plated Steel",
+        "lbc_red_list_status": "free"
+      },
+      {
+        "material_name": "B-9 Stainless Steel Steel",
+        "lbc_red_list_status": "free",
+        "notes": "Verbatim from Declare label (duplicated `Steel Steel` appears in original)."
+      }
+    ],
+    "lbc_criteria_compliance": true,
+    "voc_content": "not_applicable",
+    "interior_performance": "not_applicable",
+    "responsible_sourcing": "not_applicable"
+  },
+  "compatible_accessories": [
+    {
+      "accessory_catalog_number": "A40",
+      "display_name": "4\" Round Straight Aluminum Pole",
+      "description": "4-inch round straight aluminum pole available in 12 ft and 14 ft heights; wall thicknesses 0.188 in and 0.250 in.",
+      "accessory_type": "pole",
+      "changes_photometry": false
+    },
+    {
+      "accessory_catalog_number": "AT54",
+      "display_name": "5\" to 4\" Round Tapered Aluminum Pole",
+      "description": "Tapered aluminum pole, 5-inch base to 4-inch top; heights 12, 14, 16, 18, and 20 ft.",
+      "accessory_type": "pole",
+      "changes_photometry": false
+    },
+    {
+      "accessory_catalog_number": "AT64",
+      "display_name": "6\" to 4\" Round Tapered Aluminum Pole",
+      "description": "Tapered aluminum pole, 6-inch base to 4-inch top; heights 16, 18, and 20 ft.",
+      "accessory_type": "pole",
+      "changes_photometry": false
+    },
+    {
+      "accessory_catalog_number": "BC13",
+      "display_name": "Base Cover for A40 pole",
+      "description": "Base cover trim for the A40 4-inch round straight aluminum pole.",
+      "accessory_type": "other",
+      "changes_photometry": false
+    },
+    {
+      "accessory_catalog_number": "REC",
+      "display_name": "GFCI Duplex Receptacle (120V)",
+      "description": "GFCI-protected duplex receptacle, 120V only; USB-option variants (REC2/REC3/REC4) available.",
+      "accessory_type": "other",
+      "changes_photometry": false
+    },
+    {
+      "accessory_catalog_number": "MS",
+      "display_name": "Motion Sensor (Wattstopper FSP-321)",
+      "description": "Motion sensor with optional photocell, based on Wattstopper FSP-321; orientation variants (MS0/MS1/MS2/MS3/MS4) select mounting azimuth.",
+      "accessory_type": "other",
+      "changes_photometry": false
+    }
+  ],
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "aya_pole_ss.pdf",
+        "sha256": "d3b91bcd080fb6d2b789fadac8b9139776ad02381e51fdd0e0fd131065e7be12",
+        "revision_label": "AYAP_SS_v0.7 (Rev. 1/2026)",
+        "revision_date": "2026-01-01"
+      }
+    },
+    {
+      "file_type": "ies",
+      "reference": {
+        "filename": "AYAP-SR-1-HO-30-BL-UNV.ies",
+        "sha256": "36dfe9eb21bb2283e65d15b9990292a7025caa63b0a6aa1ad72574dcbb10aad4",
+        "revision_label": "Test 16033338.03",
+        "revision_date": "2025-10-08"
+      }
+    },
+    {
+      "file_type": "article_text",
+      "reference": {
+        "filename": "AYAP-SR-1-HO-30-BL-UNV.pdf",
+        "sha256": "8e9337f6cb6e611fd99d591736284e4c32ba036ea99acd317d700bbc0c1fba93",
+        "revision_label": "IES Road Report (computed analysis)",
+        "revision_date": "2025-10-08"
+      }
+    }
+  ],
+  "attestations": [
+    {
+      "attestation_id": "lm79_selux_aya_sr_ho_16033338_03",
+      "program": "lm_79",
+      "status": "verified",
+      "value_type": "measured",
+      "issued_date": "2025-10-08",
+      "test_laboratory": "UL Verification Services Inc.",
+      "test_report_id": "16033338.03",
+      "standard_revision": "LM-79-08",
+      "measured_quantities": [
+        "electrical.input_power_w",
+        "photometry.total_luminous_flux_lm",
+        "photometry.luminaire_efficacy_lm_per_w",
+        "photometry.maximum_intensity_cd",
+        "photometry.zonal_lumens",
+        "outdoor_classification.lcs_zonal_lumens",
+        "outdoor_classification.bug_rating"
+      ],
+      "verification": {
+        "type": "unconditional",
+        "notes": "NVLAP-accredited photometric test at UL Verification Services Inc.; IES file generated 10/8/2025. Note: spec sheet page 2 cites LM-79-08 (2008 edition); ULC taxonomy does not enumerate `lm_79_08` as a version-specific AttestationProgram value. The generic `lm_79` family label is used with `standard_revision: LM-79-08` preserving the exact edition."
+      },
+      "source_document_ref": {
+        "filename": "AYAP-SR-1-HO-30-BL-UNV.ies",
+        "sha256": "36dfe9eb21bb2283e65d15b9990292a7025caa63b0a6aa1ad72574dcbb10aad4"
+      }
+    },
+    {
+      "attestation_id": "lm80_selux_aya_sr_ho_package",
+      "program": "lm_80",
+      "status": "claimed",
+      "value_type": "rated",
+      "verification": {
+        "type": "unconditional",
+        "notes": "Spec sheet page 2 states `LED tested to LM-80 standards`; specific LM-80 edition and L-factor hours not cited on cutsheet."
+      }
+    },
+    {
+      "attestation_id": "darksky_selux_aya_sr_ho_3000k",
+      "program": "darksky_approved",
+      "status": "listed",
+      "value_type": "rated",
+      "applicability": {
+        "required_constraints": {
+          "cct": "2700_or_3000"
+        }
+      },
+      "verification": {
+        "type": "unconditional",
+        "notes": "Per spec sheet note 2 on CCT options: `Meets DarkSky requirements.` Applies to 2700K and 3000K CCT variants. Consistent with B2-U0-G1 BUG rating and zero uplight in the LCS breakdown."
+      }
+    },
+    {
+      "attestation_id": "cie_13_selux_aya_sr_ho",
+      "program": "cie_13",
+      "status": "claimed",
+      "value_type": "rated",
+      "standard_revision": "CIE 13",
+      "measured_quantities": [
+        "colorimetry.cri_ra"
+      ],
+      "verification": {
+        "type": "unconditional"
+      }
+    },
+    {
+      "attestation_id": "lbc_red_list_approved_selux_aya",
+      "program": "lbc_red_list_approved",
+      "status": "listed",
+      "value_type": "rated",
+      "issued_date": "2025-01-01",
+      "valid_until": "2026-11-01",
+      "listing_number": "SLK-002",
+      "verification": {
+        "type": "unconditional",
+        "notes": "ILFI Declare label SLK-002, Red List Approved tier with ILFI-granted LBC Temp Exception RL-002 for the LED Driver (Small Electrical Components)."
+      }
+    },
+    {
+      "attestation_id": "declare_selux_aya",
+      "program": "declare",
+      "status": "listed",
+      "value_type": "rated",
+      "issued_date": "2025-01-01",
+      "valid_until": "2026-11-01",
+      "listing_number": "SLK-002",
+      "verification": {
+        "type": "unconditional"
+      }
+    },
+    {
+      "attestation_id": "living_building_challenge_selux_aya",
+      "program": "living_building_challenge",
+      "status": "verified",
+      "value_type": "rated",
+      "verification": {
+        "type": "unconditional",
+        "notes": "Declare label declares `Living Building Challenge Criteria: Compliant`."
+      }
+    },
+    {
+      "attestation_id": "baa_selux_aya_pole",
+      "program": "baa",
+      "status": "claimed",
+      "value_type": "nominal",
+      "verification": {
+        "type": "requires_manufacturer_confirmation",
+        "contact_reference": "Selux factory: 845-834-1400 or 800-735-8927",
+        "notes": "Spec sheet page 1 shows `BUY AMERICAN` badge. Page 2 footer: `For Buy American compliance on poles, please consult the factory.` Case-by-case verification required."
+      }
+    }
+  ],
+  "extensions": {
+    "manufacturer_specific": {
+      "selux": {
+        "lumcat": "AYAP-SR-1-HO-30-BL-UNV",
+        "ies_manufacturer_string": "Selux Corporation",
+        "ies_test_id": "16033338.03",
+        "distribution_classification_ies": "Type V",
+        "longitudinal_classification_ies": "Short",
+        "ies_photometric_type": 1,
+        "ies_units_type": 1,
+        "legacy_cutoff_classification_note": "IES Road Report shows cutoff field marked deprecated; not populated.",
+        "dimming": {
+          "protocol": "0-10v",
+          "range_percent": {
+            "min": 1,
+            "max": 100
+          },
+          "note": "0-10V dimming to 1% standard; protocol bindings for DD (DALI-2), TLR (7-pin NEMA), TLRP, and MS motion-sensor variants listed as options. No ULC field for dimming range at v0.1."
+        },
+        "driver": {
+          "type": "constant_current_programmable",
+          "rohs_compliant": true,
+          "ip_rating": "IP66",
+          "location": "internal",
+          "surge_protection_ka": 20
+        },
+        "physical_dimensions": {
+          "diameter": {
+            "mm": 500,
+            "in": 19.6875
+          },
+          "height_pole_top": {
+            "mm": 309,
+            "in": 12.1875
+          },
+          "height_pendant": {
+            "mm": 278,
+            "in": 10.9375
+          },
+          "weight_pole_top": {
+            "kg": 9.1,
+            "lb": 20
+          },
+          "weight_single_pendant": {
+            "kg": 13.2,
+            "lb": 29
+          },
+          "epa_pole_top": {
+            "ft2": 0.4,
+            "m2": 0.04
+          },
+          "epa_pendant": {
+            "ft2": 1.0,
+            "m2": 0.1
+          },
+          "note": "No ULC fields for luminaire overall dimensions, weight, and EPA at v0.1; parked here pending schema support."
+        },
+        "materials": {
+          "cover": "Die cast aluminum (low copper)",
+          "arm": "Welded aluminum (pendant variants)",
+          "fitter_base": "Self-leveling die cast aluminum (pole-top variant)",
+          "finish": "Polyester powder coat, Tiger Drylac certified, five-stage intensive pretreatment, ASTM and PCI tested",
+          "gasket": "Continuous weatherproofing",
+          "pole_fitter": "Self-leveling, for 3\" tenon"
+        },
+        "attestations_not_in_taxonomy": {
+          "astm_pci_finish_standards": {
+            "note": "Powder-coat finish certified to ASTM and PCI test methods; no ULC AttestationProgram enum for `astm` or `astm_pci_finish` in v0.1.",
+            "source": "spec_sheet_page_2_finish_specification"
+          },
+          "ik08_impact_resistance": {
+            "value": "IK08",
+            "note": "Carried on product_family.shared_mechanical.ik_rating; no dedicated ik_rating AttestationProgram enum in v0.1."
+          },
+          "ip65_ingress_protection": {
+            "value": "IP65",
+            "note": "Carried on product_family.shared_mechanical.ip_rating and as an IEC 60598 attestation; no dedicated ip_rating AttestationProgram enum in v0.1."
+          },
+          "union_made_usa": {
+            "note": "Spec sheet page 1 shows `UNION MADE USA` badge. No ULC AttestationProgram enum for `union_made` in v0.1.",
+            "source": "spec_sheet_page_1_badge"
+          },
+          "aashto_2013_lts_6": {
+            "note": "Spec sheet page 6 Pole Data Chart footer cites AASHTO 2013 LTS-6-I3 wind-speed compliance. Applies to pole accessories, not this luminaire directly; no ULC AttestationProgram enum for `aashto_2013` in v0.1.",
+            "source": "spec_sheet_page_6_pole_data_chart_footer"
+          }
+        },
+        "product_page": "https://www.selux.us/",
+        "manufacturer_location": "Highland, New York, USA"
+      }
+    }
+  },
+  "index": {
+    "x-ulc-generated": true,
+    "builder_version": "0.1.0",
+    "manufacturer_slug": "selux",
+    "catalog_model": "Aya Pole or Pendant (AYAP)",
+    "catalog_number": "selux-aya-pole-sr-ho-3000k",
+    "display_name": "Aya Pole AYAP-SR-1-HO-30-BL-UNV: Symmetric Round (Type V) optic, Single Post Top, High Output, 3000K DarkSky-compliant, Black Semi-Matte, 120-277V universal",
+    "primary_category": "flood_area_site",
+    "secondary_function": [
+      "direct"
+    ],
+    "indoor_outdoor": "outdoor",
+    "mounting_types": [
+      "pendant",
+      "pole_top"
+    ],
+    "environment_rating": "outdoor_rated",
+    "nominal_cct_k": "3000",
+    "nominal_total_lumens": 5074,
+    "nominal_input_power_w": 45.3938,
+    "nominal_cri_ra": 80,
+    "nominal_efficacy_lm_per_w": 112,
+    "primary_distribution": "symmetric",
+    "outdoor_distribution": "type_v",
+    "color_tunability": "static_white",
+    "dimming_protocols": [
+      "0-10v"
+    ],
+    "ip_rating": "IP65",
+    "ik_rating": "IK08",
+    "bug_rating": "B2-U0-G1",
+    "attestation_programs": [
+      "baa",
+      "cie_13",
+      "darksky_approved",
+      "declare",
+      "iec_60598",
+      "lbc_red_list_approved",
+      "living_building_challenge",
+      "lm_79",
+      "lm_80",
+      "rohs"
+    ],
+    "search_keywords": [
+      "Aya",
+      "Aya Pole AYAP-SR-1-HO-30-BL-UNV: Symmetric Round (Type V) optic, Single Post Top, High Output, 3000K DarkSky-compliant, Black Semi-Matte, 120-277V universal",
+      "Aya Pole or Pendant"
+    ],
+    "source_file_types_present": [
+      "article_text",
+      "datasheet_pdf",
+      "ies"
+    ]
+  }
+}

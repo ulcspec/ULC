@@ -47,6 +47,7 @@ jobs:
             schema/**/*.json
             # Python tooling
             tools/**/*.py
+            tools/hooks/**
             # Narrative documentation
             docs/**/*.md
             mappings/**/*.md
@@ -63,6 +64,7 @@ jobs:
             examples/**/*.json
             examples/**/*.ulc
             templates/**/*.json
+            templates/**/*.ulc
           files_ignore: |
             # Private research notes (gitignored anyway but belt and suspenders)
             research/**
