@@ -432,48 +432,6 @@
     "declared_by_length": [
       {
         "length": {
-          "mm": 1219.2,
-          "in": 48,
-          "value_type": "measured",
-          "provenance": {
-            "source": "ies",
-            "method": "extracted",
-            "attestation_ref": "lm79_19_vode_nexa_807_l072310201"
-          }
-        },
-        "lumens": {
-          "value": 1276,
-          "unit": "lm",
-          "value_type": "measured",
-          "provenance": {
-            "source": "ies",
-            "method": "extracted",
-            "attestation_ref": "lm79_19_vode_nexa_807_l072310201"
-          }
-        },
-        "input_power_w": {
-          "value": 26.5,
-          "unit": "W",
-          "value_type": "measured",
-          "provenance": {
-            "source": "ies",
-            "method": "extracted",
-            "attestation_ref": "lm79_19_vode_nexa_807_l072310201"
-          }
-        },
-        "efficacy_lm_per_w": {
-          "value": 48.15,
-          "unit": "lm/W",
-          "value_type": "measured",
-          "provenance": {
-            "source": "ies",
-            "method": "computed",
-            "attestation_ref": "lm79_19_vode_nexa_807_l072310201"
-          }
-        }
-      },
-      {
-        "length": {
           "mm": 1524.0,
           "in": 60,
           "value_type": "nominal",

@@ -20,7 +20,11 @@ When a version is ready to release:
 
 ## 0.3.0 (unreleased)
 
-Schema refinement informed by the four reference records. All changes are additive; no fields were removed and no existing records' shape was invalidated. Breaking semantic changes (single-valued fields becoming arrays, single references becoming plural) are deferred to a later revision so pilot-program feedback can inform them.
+Schema refinement informed by the four reference records. The vast majority of changes are additive; one field was tightened (see below) but no existing records' data was invalidated. Larger breaking semantic changes (single-valued fields becoming arrays, single references becoming plural) are deferred to a later revision so pilot-program feedback can inform them.
+
+### One compatibility-tightening change
+
+- `Configuration.tested_axes.cri_tier` changed from free-string to a closed-enum reference (`taxonomy.schema.json#/$defs/CriTier`). Strictly this narrows the accepted values, so per semver it is compatibility-tightening rather than purely additive. Practical impact on existing records is zero: all four v0.2 reference records use values already enumerated by the new CriTier (`cri_80`, `cri_90`, and so on), and those values remain valid. Authors of records that used non-enumerated CRI strings must migrate to an enumerated value.
 
 ### Schema additions
 

@@ -1265,6 +1265,11 @@
       },
       "then": {
         "required": ["incompatibility_reason"]
+      },
+      "else": {
+        "properties": {
+          "incompatibility_reason": false
+        }
       }
     },
 
