@@ -66,7 +66,7 @@ This repository defines the standard. It does not ship an application.
 |---|---|
 | `schema/` | Two JSON Schema files (Draft 2020-12): `ulc.schema.json` defines the record structure; `taxonomy.schema.json` defines the closed-enum vocabulary. They are split so the taxonomy can be loaded independently by search and classification tools. Cross-file references are validated in CI. |
 | `docs/` | Narrative specification, field reference, authoring guide, and `authoring-patterns.md` describing the four manufacturer authoring patterns the schema supports. |
-| `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by URL and SHA-256 hash, not committed. |
+| `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by required SHA-256 hash and optional URL, not committed. |
 | `templates/` | Starter templates for authors |
 | `mappings/` | Crosswalks to GLDF and ETIM, plus guidance for parsing IES and LDT sources |
 | `tools/` | Reference utilities including the schema drift guard (`schema-drift-guard.py`), the index builder (`build-index.py`), and a forthcoming CLI validator |

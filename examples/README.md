@@ -21,11 +21,13 @@ SHA-256 hashes in the `source_files[]` array reference the specific file version
 
 ## Using these records
 
-To validate any of them against the schema with a Draft 2020-12 JSON Schema validator:
+To confirm a record parses as valid JSON and see its identifier:
 
 ```
 python3 -c "import json; print(json.load(open('examples/erco-quintessence-30416-023.ulc'))['record_id'])"
 ```
+
+This is a parse sanity check, not schema validation. Formal Draft 2020-12 validation against `schema/ulc.schema.json` requires a JSON Schema library that handles cross-file `$ref` (for example Python's `jsonschema` with `referencing`, or any equivalent in another language); the forthcoming reference CLI validator will package this in one command.
 
 To regenerate the index block in place:
 
