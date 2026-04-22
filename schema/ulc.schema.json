@@ -39,7 +39,7 @@
     },
 
     "index": {
-      "description": "Denormalized scan surface for AI agents, search indexers, and filter UIs. Every field is a projection of authoritative values from the deeper blocks below. GENERATED, NOT HAND-AUTHORED: produced deterministically by `tools/build-index.py` from the deep blocks and stamped with `x-ulc-generated: true` plus a `builder_version` so consumers can detect stale indices. Manufacturers never type these values; their PIM export or ULC CLI writes them. Drift is prevented by construction — the builder is a pure function of the deep blocks.",
+      "description": "Denormalized scan surface for AI agents, search indexers, and filter UIs. Every field is a projection of authoritative values from the deeper blocks below. GENERATED, NOT HAND-AUTHORED: produced deterministically by the `ulc build-index` reference CLI (see `tools/validator/`) from the deep blocks and stamped with `x-ulc-generated: true` plus a `builder_version` so consumers can detect stale indices. Manufacturers never type these values; their PIM export or ULC CLI writes them. Drift is prevented by construction, because the builder is a pure function of the deep blocks.",
       "$ref": "#/$defs/Index"
     },
 
@@ -179,7 +179,7 @@
 
     "Index": {
       "title": "Denormalized scan index",
-      "description": "Generated summary view. Every field projects from an authoritative deep-block value. The builder (`tools/build-index.py`) is the single source of these projections; manufacturers never hand-author them. Selection policies the builder applies: (1) `nominal_cct_k` = `configuration.tested_conditions.nominal_cct_at_test`; (2) `nominal_total_lumens` = `photometry.total_luminous_flux_lm.value` at the tested baseline, not `declared_by_cct` derivatives; (3) `nominal_input_power_w` = `electrical.input_power_w.value`; (4) `primary_category` = `product_family.primary_category`; (5) `source_file_types_present` = deduplicated sorted list of `source_files[].file_type` values; (6) other fields follow analogous rules documented in the builder's source. Consumers reading `x-ulc-generated: true` can treat the index as trustworthy; absence or a stale `builder_version` is the signal to re-run the builder.",
+      "description": "Generated summary view. Every field projects from an authoritative deep-block value. The builder (`ulc build-index`, under `tools/validator/`) is the single source of these projections; manufacturers never hand-author them. Selection policies the builder applies: (1) `nominal_cct_k` = `configuration.tested_conditions.nominal_cct_at_test`; (2) `nominal_total_lumens` = `photometry.total_luminous_flux_lm.value` at the tested baseline, not `declared_by_cct` derivatives; (3) `nominal_input_power_w` = `electrical.input_power_w.value`; (4) `primary_category` = `product_family.primary_category`; (5) `source_file_types_present` = deduplicated sorted list of `source_files[].file_type` values; (6) other fields follow analogous rules documented in the builder's source. Consumers reading `x-ulc-generated: true` can treat the index as trustworthy; absence or a stale `builder_version` is the signal to re-run the builder.",
       "type": "object",
       "readOnly": true,
       "properties": {

@@ -19,6 +19,18 @@ import (
 //
 // recordDir is the directory the record lives in, used to resolve relative
 // `filename` entries. Absolute paths are honored as-is.
+//
+// Each source_files entry wraps the integrity fields inside a `reference`
+// object:
+//
+//	"source_files": [
+//	  { "file_type": "datasheet_pdf",
+//	    "reference": { "filename": "...", "sha256": "..." } }
+//	]
+//
+// The schema enforces that wrapper shape (`$defs/SourceFile` requires
+// `reference`), so missing `reference` or missing nested fields will already
+// be flagged as schema errors and are not re-reported here.
 func VerifyHashes(recordDir string, record map[string]any, report *findings.Report) {
 	arr, ok := record["source_files"].([]any)
 	if !ok {
@@ -29,18 +41,19 @@ func VerifyHashes(recordDir string, record map[string]any, report *findings.Repo
 		if !ok {
 			continue
 		}
-		path := jsonPath("source_files", i)
-		verifyOne(recordDir, m, path, report)
+		ref, ok := m["reference"].(map[string]any)
+		if !ok {
+			continue
+		}
+		path := jsonPath("source_files", i) + "/reference"
+		verifyOne(recordDir, ref, path, report)
 	}
 }
 
-func verifyOne(recordDir string, entry map[string]any, path string, report *findings.Report) {
-	filename := asString(entry["filename"])
-	declared := strings.ToLower(asString(entry["sha256"]))
+func verifyOne(recordDir string, ref map[string]any, path string, report *findings.Report) {
+	filename := asString(ref["filename"])
+	declared := strings.ToLower(asString(ref["sha256"]))
 	if filename == "" || declared == "" {
-		// The JSON Schema enforces both fields as required on SourceFile, so
-		// any missing value will already have been flagged as a schema error.
-		// Skip here to avoid duplicate reporting.
 		return
 	}
 	resolved := filename
