@@ -31,6 +31,31 @@ from pathlib import Path
 # Bump on any change to builder logic so stale indices are detectable.
 BUILDER_VERSION = "0.1.0"
 
+# Keys the schema's Index.required list demands. Must stay aligned with
+# schema/ulc.schema.json#/$defs/Index.required. tools/builder-parity-guard.py
+# enforces that alignment at CI time so this local copy cannot drift unnoticed.
+REQUIRED_INDEX_KEYS = {
+    "x-ulc-generated",
+    "builder_version",
+    "manufacturer_slug",
+    "catalog_model",
+    "primary_category",
+    "nominal_cct_k",
+    "nominal_total_lumens",
+    "nominal_input_power_w",
+}
+
+# Human-readable source paths for each required key, used when the builder
+# refuses to emit an invalid index.
+REQUIRED_KEY_SOURCES = {
+    "manufacturer_slug": "product_family.manufacturer.slug",
+    "catalog_model": "product_family.catalog_model",
+    "primary_category": "product_family.primary_category",
+    "nominal_cct_k": "configuration.tested_conditions.nominal_cct_at_test",
+    "nominal_total_lumens": "photometry.total_luminous_flux_lm.value",
+    "nominal_input_power_w": "electrical.input_power_w.value",
+}
+
 
 def _get(d, *path, default=None):
     """Safe nested getter. _get(obj, 'a', 'b', 'c') returns obj['a']['b']['c'] or default."""
@@ -207,6 +232,11 @@ def build_index(record: dict) -> dict:
     return index
 
 
+def missing_required_keys(built: dict) -> list[str]:
+    """Return the sorted list of Index.required keys absent from a built index."""
+    return sorted(REQUIRED_INDEX_KEYS - set(built.keys()))
+
+
 def _diff(a: dict, b: dict) -> list[str]:
     """Shallow per-key diff, good enough for mismatch reporting."""
     diffs = []
@@ -231,6 +261,18 @@ def main():
 
     record = json.loads(args.record.read_text())
     built = build_index(record)
+
+    # Refuse to proceed if the builder cannot derive every Index.required key.
+    # This catches records whose deep blocks are too sparse to produce a
+    # schema-valid index, which `--check` parity-diffing alone would miss when
+    # both the stored and built indices are missing the same required key.
+    missing = missing_required_keys(built)
+    if missing:
+        print(f"ERROR: builder cannot derive required index keys for {args.record}:", file=sys.stderr)
+        for key in missing:
+            src = REQUIRED_KEY_SOURCES.get(key, "(always-present marker)")
+            print(f"  - {key}  (populate {src})", file=sys.stderr)
+        sys.exit(1)
 
     if args.stdout:
         print(json.dumps(built, indent=2))
