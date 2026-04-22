@@ -96,8 +96,15 @@
           "conflict_notes": "Pole-top variant mass. The single-pendant variant weighs 13.2 kg / 29 lb but is not represented in this record's SKU."
         }
       },
-      "epa_ft2": 0.4,
-      "epa_m2": 0.04
+      "epa": {
+        "m2": 0.04,
+        "ft2": 0.4,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      }
     },
     "shared_attestations": [
       {
@@ -960,8 +967,10 @@
             "lb": 29,
             "note": "Single-pendant variant mass. This record is pole-top."
           },
-          "epa_ft2": 1.0,
-          "epa_m2": 0.1,
+          "epa": {
+            "m2": 0.1,
+            "ft2": 1.0
+          },
           "note": "Family-level pendant-variant dimensions retained for traceability. Pole-top dimensions for this SKU live in product_family.physical_dimensions."
         },
         "materials": {

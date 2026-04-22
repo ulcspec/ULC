@@ -97,8 +97,8 @@
         }
       },
       "linear_mass_per_foot": {
-        "kg": 0.34,
-        "lb": 0.75,
+        "kg_per_m": 1.12,
+        "lb_per_ft": 0.75,
         "value_type": "rated",
         "provenance": {
           "source": "datasheet_pdf",

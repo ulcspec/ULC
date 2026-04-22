@@ -229,7 +229,7 @@
         },
         "ugr_4h_8h": { "type": "number" },
         "attestation_programs": {
-          "description": "Flat array of every AttestationProgram value claimed anywhere in the record (shared_attestations, attestations[], sustainability_declaration). Deduplicated. Lets consumers filter by certification without walking all attestation records.",
+          "description": "Flat array of every AttestationProgram value claimed anywhere in the record (shared_attestations, attestations[], and sustainability_declaration declaration types that correspond to an external certified program). Deduplicated. Lets consumers filter by certification without walking all attestation records. Manufacturer-self-operated sustainability declaration types that are not certified external programs (for example `manufacturer_recycle_program`) intentionally do not contribute an entry here; they appear only in the `sustainability_declaration.declaration_type` field and are filterable from there when needed.",
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/AttestationProgram" }
         },
@@ -336,6 +336,32 @@
         "provenance": { "$ref": "#/$defs/Provenance" }
       },
       "required": ["c", "f"]
+    },
+
+    "DualUnitMassPerLength": {
+      "title": "Dual-unit mass-per-length",
+      "description": "Linear mass rate (mass per unit length) with mandatory SI (kg per meter) and Imperial (lb per foot) representations. Used for linear fixtures where total mass scales with fixture length. Distinct from DualUnitMass, which represents an absolute mass. SI is authoritative; Imperial is the required derived companion.",
+      "type": "object",
+      "properties": {
+        "kg_per_m": { "type": "number", "minimum": 0 },
+        "lb_per_ft": { "type": "number", "minimum": 0 },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "required": ["kg_per_m", "lb_per_ft"]
+    },
+
+    "DualUnitArea": {
+      "title": "Dual-unit area",
+      "description": "Area value with mandatory SI (square meters) and Imperial (square feet) representations. Used for Effective Projected Area (EPA) on pole-mounted outdoor fixtures. SI is authoritative; Imperial is the required derived companion.",
+      "type": "object",
+      "properties": {
+        "m2": { "type": "number", "minimum": 0 },
+        "ft2": { "type": "number", "minimum": 0 },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "required": ["m2", "ft2"]
     },
 
     "ProvenancedNumber": {
@@ -469,8 +495,8 @@
               "$ref": "#/$defs/DualUnitMass"
             },
             "linear_mass_per_foot": {
-              "description": "Per-foot mass rate for linear fixtures where mass scales with length (typical of Pattern D products). Pairs with photometry.per_length_normalized.lumens_per_foot.",
-              "$ref": "#/$defs/DualUnitMass"
+              "description": "Per-length mass rate for linear fixtures where total mass scales with fixture length (typical of Pattern D products). Pairs with photometry.per_length_normalized.lumens_per_foot. Uses DualUnitMassPerLength, not DualUnitMass, because the quantity is a mass rate (kg per meter, lb per foot), not an absolute mass.",
+              "$ref": "#/$defs/DualUnitMassPerLength"
             },
             "lens_width": {
               "description": "Width of the light-emitting lens or optical opening, when distinct from the overall luminaire width.",
@@ -505,15 +531,9 @@
                 "height": { "$ref": "#/$defs/DualUnitLength" }
               }
             },
-            "epa_ft2": {
-              "description": "Effective Projected Area in square feet, used for pole-mounted outdoor fixtures under AASHTO 2013 wind-loading analysis. Companion to epa_m2 under the dual-unit policy; epa_m2 is authoritative for SI consumers.",
-              "type": "number",
-              "minimum": 0
-            },
-            "epa_m2": {
-              "description": "Effective Projected Area in square meters. SI-authoritative companion to epa_ft2.",
-              "type": "number",
-              "minimum": 0
+            "epa": {
+              "description": "Effective Projected Area for pole-mounted outdoor fixtures under AASHTO 2013 wind-loading analysis. Uses DualUnitArea so SI (m2) and Imperial (ft2) are both required, matching the ULC dual-unit policy.",
+              "$ref": "#/$defs/DualUnitArea"
             }
           }
         },
@@ -720,12 +740,13 @@
           "$ref": "taxonomy.schema.json#/$defs/DimmingMethod"
         },
         "dimming_range_percent": {
-          "description": "Minimum and maximum dim levels as percentages of full output. For example a 3%-100% dim range captures the common architectural driver range. `min` is the lowest stable output the fixture can sustain before turning off; `max` is full output. Both values are manufacturer-declared at this level; actual on-site dim behavior also depends on the dimmer or controller.",
+          "description": "Minimum and maximum dim levels as percentages of full output. For example a 3%-100% dim range captures the common architectural driver range. `min` is the lowest stable output the fixture can sustain before turning off; `max` is full output. Both values are manufacturer-declared at this level; actual on-site dim behavior also depends on the dimmer or controller. Both `min` and `max` are required when this block is present so that partial ranges do not silently validate.",
           "type": "object",
           "properties": {
             "min": { "type": "number", "minimum": 0, "maximum": 100 },
             "max": { "type": "number", "minimum": 0, "maximum": 100 }
-          }
+          },
+          "required": ["min", "max"]
         },
         "control_gear_type": { "$ref": "taxonomy.schema.json#/$defs/ControlGearType" },
         "led_module_power_w": {
@@ -1233,11 +1254,18 @@
           "default": true
         },
         "incompatibility_reason": {
-          "description": "Optional free-text explanation of why is_compatible_with_this_sku is false. Populated only when is_compatible_with_this_sku is false.",
+          "description": "Free-text explanation of why is_compatible_with_this_sku is false. Required when is_compatible_with_this_sku is false; should be omitted otherwise.",
           "type": "string"
         }
       },
-      "required": ["accessory_catalog_number"]
+      "required": ["accessory_catalog_number"],
+      "if": {
+        "properties": { "is_compatible_with_this_sku": { "const": false } },
+        "required": ["is_compatible_with_this_sku"]
+      },
+      "then": {
+        "required": ["incompatibility_reason"]
+      }
     },
 
     "Attestation": {
