@@ -1,0 +1,1261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ulcspec.org/schema/taxonomy.schema.json",
+  "title": "ULC Taxonomy",
+  "description": "Closed enumerations referenced by the ULC record schema. Each definition below is a distinct vocabulary for a categorical field in a ULC record. Vocabularies are intentionally closed so that values are interoperable across records and across manufacturers. Rare or manufacturer-specific cases that do not fit these vocabularies are represented via the top-level extensions field on a ULC record.",
+  "type": "object",
+
+  "$defs": {
+
+    "PrimaryCategory": {
+      "title": "Primary luminaire category",
+      "description": "The canonical luminaire type for a ULC record. A record has exactly one primary category. Hybrid products (for example a downlight that also wall-washes) carry a single primary category plus one or more SecondaryFunction tags. Categories follow an application-first organization consistent with common industry navigation and with the ETIM luminaire product group (EG000027).",
+      "type": "string",
+      "enum": [
+        "downlight",
+        "wall_washer",
+        "grazer",
+        "linear",
+        "panel_troffer",
+        "tracklight",
+        "cove",
+        "pendant",
+        "chandelier",
+        "sconce",
+        "cylinder",
+        "direct_view",
+        "task_desk",
+        "under_cabinet",
+        "step_marker",
+        "flood_area_site",
+        "bollard",
+        "in_ground_uplight",
+        "facade_projector",
+        "bulkhead_wall_pack",
+        "landscape_path_marker",
+        "roadway_street",
+        "tunnel",
+        "walkway",
+        "high_bay",
+        "low_bay",
+        "sports_flood",
+        "horticultural",
+        "medical_exam",
+        "emergency_luminaire",
+        "exit_sign",
+        "portable"
+      ]
+    },
+
+    "SecondaryFunction": {
+      "title": "Secondary optical function tag",
+      "description": "An optical behavior that a luminaire exhibits in addition to or instead of its primary category. Multiple tags may apply to one record.",
+      "type": "string",
+      "enum": [
+        "wall_wash",
+        "graze",
+        "spot",
+        "flood",
+        "wide",
+        "asymmetric",
+        "batwing",
+        "direct",
+        "indirect",
+        "direct_indirect"
+      ]
+    },
+
+    "Shape": {
+      "title": "Luminaire shape",
+      "description": "Overall physical form of the luminaire body.",
+      "type": "string",
+      "enum": [
+        "round",
+        "square",
+        "rectangular",
+        "linear",
+        "hexagonal",
+        "oval",
+        "custom"
+      ]
+    },
+
+    "Orientation": {
+      "title": "Primary emission orientation",
+      "description": "Direction in which the luminaire primarily distributes light when installed in its intended orientation. `horizontal` describes fixtures that emit primarily sideways, such as sconces, wall-mount task lights, and facade projectors. `omnidirectional` describes fixtures with 360-degree emission in the horizontal plane, such as certain bollards, bare-lamp styles, and candelabra forms. `multi_directional` describes fixtures with multiple distinct emission directions, such as direct-indirect pendants or bidirectional wall grazers. `adjustable` means the emission direction is user-configurable at installation.",
+      "type": "string",
+      "enum": [
+        "downward",
+        "upward",
+        "horizontal",
+        "wall_washing",
+        "omnidirectional",
+        "multi_directional",
+        "adjustable"
+      ]
+    },
+
+    "IndoorOutdoor": {
+      "title": "Indoor or outdoor suitability",
+      "description": "Whether the luminaire is intended for indoor use, outdoor use, or either. Luminaires with both ratings must carry ingress protection and location ratings that support both environments.",
+      "type": "string",
+      "enum": [
+        "indoor",
+        "outdoor",
+        "both"
+      ]
+    },
+
+    "MountingType": {
+      "title": "Mounting method",
+      "description": "How the luminaire is physically installed. A record can declare one or more mounting types if the product supports multiple mounting configurations. Aligns with ETIM mounting-suitability features (including EF006760, EF007793, EF001265).",
+      "type": "string",
+      "enum": [
+        "recessed_ceiling",
+        "recessed_wall",
+        "recessed_floor",
+        "surface_ceiling",
+        "surface_wall",
+        "surface_floor",
+        "pendant",
+        "track",
+        "in_ground",
+        "pole_top",
+        "pole_side_entry",
+        "catenary",
+        "clamp",
+        "stake",
+        "portable",
+        "mast_arm_bracket",
+        "high_mast",
+        "utility_pole_mount",
+        "canopy"
+      ]
+    },
+
+    "EnvironmentRating": {
+      "title": "Environmental suitability",
+      "description": "Conditions under which the luminaire is rated for safe and compliant operation. Multiple values may apply. These ratings are attestations by the manufacturer and should be corroborated by the corresponding IP and IK ratings and applicable compliance records.",
+      "type": "string",
+      "enum": [
+        "dry",
+        "damp",
+        "wet",
+        "indoor_only",
+        "outdoor_rated",
+        "hazardous_atex",
+        "hazardous_iecex",
+        "hazardous_nema",
+        "marine_coastal",
+        "corrosive",
+        "cleanroom",
+        "food_safe",
+        "vandal_resistant",
+        "tunnel_duty",
+        "high_vibration",
+        "bridge_rated"
+      ]
+    },
+
+    "DimmingProtocol": {
+      "title": "Dimming control protocol",
+      "description": "Protocol by which the luminaire's output can be controlled. A record may declare multiple protocols if the product supports more than one. Corresponds to ETIM feature series EF012152 through EF012168. `dali_dt6` and `dali_dt8` name the DALI device type (DT6 for colour-control-gear for LED modules, DT8 for colour control with sub-types Tc, XY, and RGBWAF). `dali_2_dt8` explicitly names a DALI-2 certified device implementing DT8, which is the control path used by RGBW and tunable-white architectural fixtures. `dmx_rdm` is DMX512 with the RDM (Remote Device Management) bidirectional extension, common on color-changing exterior products. `lumentalk` is a licensed powerline control protocol originated by Lumenpulse and adopted by multiple fixture manufacturers; it is included here rather than in `extensions.manufacturer_specific` because it is implemented across more than one vendor's product lines. Truly single-vendor proprietary protocols that are not industry-standardized and not licensed beyond their originator belong in `extensions.manufacturer_specific` rather than this enum.",
+      "type": "string",
+      "enum": [
+        "0-10v",
+        "1-10v",
+        "dali",
+        "dali_2",
+        "dali_dt6",
+        "dali_dt8",
+        "dali_2_dt8",
+        "dmx",
+        "dmx_rdm",
+        "dsi",
+        "phase_forward",
+        "phase_reverse",
+        "pwm",
+        "bluetooth",
+        "zigbee",
+        "casambi",
+        "lumentalk",
+        "wireless_proprietary",
+        "non_dimming"
+      ]
+    },
+
+    "AdaptiveLightingMode": {
+      "title": "Adaptive lighting mode",
+      "description": "A built-in adaptive control capability the luminaire provides. Multiple values may apply. Complements DimmingProtocol, which describes the protocol used to dim, by describing the control behavior the fixture supports. Definitions aligned with ANSI/IES RP-8-22 Section 6.10.",
+      "type": "string",
+      "enum": [
+        "integrated_photocell",
+        "integrated_motion_sensor",
+        "external_sensor_input",
+        "scheduled_dimming_internal",
+        "networked_control"
+      ]
+    },
+
+    "ColorTunabilityCapability": {
+      "title": "Color tunability capability",
+      "description": "The fixture's color-adjustment capability. `static_white` means the fixture emits a single fixed CCT with no user-accessible color adjustment. `tunable_white` means the fixture can vary CCT across a declared range (for example 2700K to 6500K) on a single control axis. `dim_to_warm` is a specialized CCT variability where the CCT shifts warmer as the dim level decreases, mimicking incandescent dimming behavior. `rgb`, `rgbw`, `rgba`, and `rgbww` describe multi-channel color-mixing fixtures with the respective channel sets: red/green/blue, plus a dedicated white channel, plus a dedicated amber channel (for warmer hues and richer sunset tones in exterior architectural applications), or plus warm-white and cool-white channels. `multichannel` covers advanced fixtures with more than five channels, typically used for art, museum, hospitality, or horticultural applications.",
+      "type": "string",
+      "enum": [
+        "static_white",
+        "tunable_white",
+        "dim_to_warm",
+        "rgb",
+        "rgbw",
+        "rgba",
+        "rgbww",
+        "multichannel"
+      ]
+    },
+
+    "DistributionType": {
+      "title": "Photometric distribution class",
+      "description": "High-level description of an indoor or architectural luminaire's light distribution pattern. Aligns with ETIM feature EF004283. Detailed photometric data lives in the IES or LDT file referenced by the record; this vocabulary is a searchable summary. For outdoor and roadway luminaires, use OutdoorDistributionType to carry the IESNA Type I through Type V classification.",
+      "type": "string",
+      "enum": [
+        "direct",
+        "indirect",
+        "direct_indirect",
+        "asymmetric",
+        "symmetric",
+        "wall_wash",
+        "grazing",
+        "corridor"
+      ]
+    },
+
+    "OutdoorDistributionType": {
+      "title": "Outdoor or roadway distribution classification",
+      "description": "IESNA outdoor distribution classification used for area, site, and roadway luminaires, per ANSI/IES RP-8-22 Section 2.6.2 and ANSI/IES TM-15-20 Annex A. Types I through IV describe asymmetric footprint shapes; Type V is circular symmetric; Type VS is the square variant of Type V, defined as quadrilaterally symmetric with zonal lumens in the eight horizontal octants within plus-or-minus 10 percent of the octant average (TM-15-20 Annex A Note 4). The four-way variants type_i_four_way and type_ii_four_way apply to luminaires with four orthogonal beam lobes rather than a single asymmetric footprint. This vocabulary is distinct from DistributionType: DistributionType describes direct/indirect/wall-wash behavior typical of indoor architectural products, while OutdoorDistributionType describes the outdoor footprint geometry.",
+      "type": "string",
+      "enum": [
+        "type_i",
+        "type_i_four_way",
+        "type_ii",
+        "type_ii_four_way",
+        "type_iii",
+        "type_iv",
+        "type_v",
+        "type_vs"
+      ]
+    },
+
+    "LongitudinalDistributionRange": {
+      "title": "Longitudinal distribution range",
+      "description": "Coarse classification of where the maximum luminous intensity falls relative to the luminaire's mounting height, per ANSI/IES RP-8-22 Section 2.6.1. Derived from the fixture's photometric data (IES LM-63 file). Short distributions place the maximum candela within 1.0 to just under 2.25 mounting heights; medium distributions 2.25 to just under 3.75; long distributions 3.75 to 6.0. This is a derived photometric classification used for coarse search and comparison; the precise luminous intensity distribution lives in the referenced photometric file.",
+      "type": "string",
+      "enum": [
+        "short",
+        "medium",
+        "long"
+      ]
+    },
+
+    "LegacyCutoffClassification": {
+      "title": "Legacy cutoff classification (deprecated)",
+      "description": "Deprecated luminaire cutoff classification superseded by the Luminaire Classification System (LCS) and BUG rating since 2009, per ANSI/IES TM-15-20 Section 3.1 and ANSI/IES RP-8-22 Section 2.6.3.1. The original four-class system was lamp-lumens-based and was invalidated by LED absolute photometry. Retained in the taxonomy only so that legacy manufacturer datasheets can still be ingested without data loss. New records should use the BUG rating fields and LCS zonal lumens in the main schema instead. The reference validator emits an INFO-level diagnostic when this field is populated on a new record.",
+      "type": "string",
+      "enum": [
+        "full_cutoff",
+        "cutoff",
+        "semi_cutoff",
+        "non_cutoff"
+      ]
+    },
+
+    "BeamFamily": {
+      "title": "Beam angle family",
+      "description": "Coarse categorization of beam spread, useful for quick comparison and search. Precise beam angle values are carried in the record's optical section.",
+      "type": "string",
+      "enum": [
+        "very_narrow_spot",
+        "narrow_spot",
+        "spot",
+        "narrow_flood",
+        "medium_flood",
+        "flood",
+        "wide_flood",
+        "very_wide_flood",
+        "asymmetric"
+      ]
+    },
+
+    "HousingMaterial": {
+      "title": "Housing material",
+      "description": "Material used for the primary structural housing of the luminaire. Corresponds to ETIM feature EF001596. `aluminum_unspecified` is a catch-all for cutsheets that describe the housing as aluminum without distinguishing cast, die-cast, extruded, or sheet variants. Authors should prefer the more specific values when the manufacturing process is known.",
+      "type": "string",
+      "enum": [
+        "aluminum_unspecified",
+        "cast_aluminum",
+        "die_cast_aluminum",
+        "extruded_aluminum",
+        "sheet_aluminum",
+        "steel",
+        "stainless_steel",
+        "galvanized_steel",
+        "polymer",
+        "polycarbonate",
+        "composite",
+        "wood",
+        "glass",
+        "ceramic",
+        "brass",
+        "copper"
+      ]
+    },
+
+    "LensMaterial": {
+      "title": "Lens or cover material",
+      "description": "Material used for the luminaire's light-transmitting lens or cover. Corresponds to ETIM feature EF004284. `cone_only` is the correct value for architectural downlights that use a darklight reflector or baffle with no separate lens element (typical of trim-only architectural downlights such as Erco Quintessence). `none` means there is genuinely no cover, lens, or reflective cone visible in the optical path.",
+      "type": "string",
+      "enum": [
+        "optical_polymer",
+        "polycarbonate",
+        "acrylic",
+        "glass",
+        "tempered_glass",
+        "prismatic_polymer",
+        "prismatic_glass",
+        "diffuser_polymer",
+        "diffuser_glass",
+        "cone_only",
+        "none"
+      ]
+    },
+
+    "ControlGearType": {
+      "title": "Control gear type",
+      "description": "Type of driver or ballast supplied with or required by the luminaire.",
+      "type": "string",
+      "enum": [
+        "led_driver_constant_current",
+        "led_driver_constant_voltage",
+        "magnetic_ballast",
+        "electronic_ballast",
+        "external_required",
+        "none_included"
+      ]
+    },
+
+    "LEDDeviceClass": {
+      "title": "LED device class",
+      "description": "The class of solid-state emitter component used inside the luminaire, per LM-80-21 Section 1.2 and Annex B. Chip-on-board (COB) is a discrete class because LM-80-21 Annex B prescribes distinct thermal and attachment practices. Laser diode classes are included because LM-80-21 extends its scope to laser diode packages, arrays, and modules in the 200-2000 nm band.",
+      "type": "string",
+      "enum": [
+        "led_package",
+        "led_array",
+        "led_module",
+        "led_chip_on_board",
+        "laser_diode_package",
+        "laser_diode_array",
+        "laser_diode_module"
+      ]
+    },
+
+    "OpticalRadiationBand": {
+      "title": "Optical radiation band",
+      "description": "The wavelength band that characterizes a luminaire's primary emission, per LM-80-21 Section 1.2 which scopes measurement to sources in the 200-2000 nm range. Visible covers typical general-lighting SSL products. UV and IR are significant for disinfection, horticulture, medical, and industrial applications. Broadband indicates emission spanning multiple bands.",
+      "type": "string",
+      "enum": [
+        "uv",
+        "visible",
+        "ir",
+        "broadband"
+      ]
+    },
+
+    "PhotometryFormat": {
+      "title": "Photometric data format and version",
+      "description": "The specific standard and version of a photometric data source file. Used in the photometry section of a ULC record to declare which format a source file conforms to. TM-33 is the newer XML and JSON format for luminaire optical data; LM-63 is the legacy candela-table format; EULUMDAT is the European equivalent of LM-63.",
+      "type": "string",
+      "enum": [
+        "lm63_1986",
+        "lm63_1991",
+        "lm63_1995",
+        "lm63_2002",
+        "lm63_2019",
+        "tm33_2018",
+        "tm33_2023",
+        "eulumdat"
+      ]
+    },
+
+    "PhotometricCoordinateSystem": {
+      "title": "Photometric coordinate system",
+      "description": "The angular coordinate convention in which photometric data is encoded. CIE and IES systems that share the same letter are geometrically equivalent per LM-75-19 Annex A; only the naming convention differs. LM-63 photometric-type integers map as follows: 1 = ies_c (LM-75-19 Section 5.4.3), 2 = ies_b (Section 5.4.2), 3 = ies_a (Section 5.4.1). Handedness trap: IES-B is right-handed, while IES-A and IES-C are left-handed. Tilt during measurement is only defined for IES-C and CIE-C.",
+      "type": "string",
+      "enum": [
+        "cie_a",
+        "cie_b",
+        "cie_c",
+        "ies_a",
+        "ies_b",
+        "ies_c"
+      ]
+    },
+
+    "GoniometerType": {
+      "title": "Goniometer type per LM-75-19",
+      "description": "The physical goniometer class used to produce the photometric data, per LM-75-19 Section 6. Types A, B, and D tilt the source during measurement and are not suitable for position-sensitive sources. Type C preserves gravitational orientation and is the only type LM-79-24 permits for SSL products. Typically populated in provenance only when a formal test report is referenced; most manufacturer datasheets do not disclose goniometer type.",
+      "type": "string",
+      "enum": [
+        "type_a",
+        "type_b",
+        "type_c",
+        "type_d"
+      ]
+    },
+
+    "MeasurementRegime": {
+      "title": "Photometric measurement regime",
+      "description": "Whether the photometric data represents a far-field intensity distribution (the assumption in LM-75-19, LM-63, EULUMDAT, and TM-33) or a near-field luminance field (the domain of ray files such as IES TM-25). Far-field data treats the source as a point for inverse-square-law applications. Near-field data preserves spatial extent for close-coupled optical systems.",
+      "type": "string",
+      "enum": [
+        "far_field",
+        "near_field"
+      ]
+    },
+
+    "PhotometryMethod": {
+      "title": "Integrated photometric measurement method",
+      "description": "The method used to measure total luminous flux and related integrated quantities, per LM-79-24 Section 7. Integrating sphere is appropriate for small, directionally-uniform sources. Goniophotometer is required for directional or large sources. Hybrid refers to two-stage methods that use both instruments.",
+      "type": "string",
+      "enum": [
+        "integrating_sphere",
+        "goniophotometer",
+        "hybrid_sphere_gonio"
+      ]
+    },
+
+    "PhotometryBasis": {
+      "title": "Photometric measurement basis",
+      "description": "Whether photometric values are measured on the complete SSL system as sold (absolute) or are scaled to a separately-measured bare lamp or source (relative). LM-79-24 covers absolute photometry only; relative photometry is not valid for SSL products where the source and luminaire are not separable. A record claiming LM-79-24 compliance must declare absolute basis.",
+      "type": "string",
+      "enum": [
+        "absolute",
+        "relative"
+      ]
+    },
+
+    "StabilizationMethod": {
+      "title": "LM-79 stabilization method",
+      "description": "The stabilization-verification approach used before the measurement began, per LM-79-24 Section 6.4. Variation threshold is the primary method: less than 0.5 percent max-minus-min over a 20-minute window with at least three readings at intervals no greater than 10 minutes. Linear regression projection is an alternate method for repeat tests of already-stabilized products, where linear regression of at least three readings at intervals of at least 1 minute projects less than 0.5 percent change over 20 minutes.",
+      "type": "string",
+      "enum": [
+        "variation_threshold",
+        "linear_regression_projection"
+      ]
+    },
+
+    "NegativeIntensityHandling": {
+      "title": "Negative luminous intensity handling",
+      "description": "How negative luminous intensity values, which arise from stray-light subtraction in goniophotometry, are treated in the reported data per LM-75-19 Section 9.3.2 and IES LM-63 file-format conventions. Retained for flux integration preserves negatives so total flux integrates correctly. Set to zero replaces negatives with zero for distribution-visualization purposes. Both recorded carries two parallel datasets.",
+      "type": "string",
+      "enum": [
+        "retained_for_flux_integration",
+        "set_to_zero",
+        "both_recorded"
+      ]
+    },
+
+    "TemperatureMonitoringPoint": {
+      "title": "Temperature monitoring point",
+      "description": "Physical location on or near the device under test where a reported temperature was measured. The values t_b and t_d follow LM-82-20 definitions for LED engine and driver monitoring points respectively. The remaining values cover common but less formalized cases.",
+      "type": "string",
+      "enum": [
+        "t_b",
+        "t_d",
+        "ambient",
+        "pcb",
+        "case",
+        "not_measured"
+      ]
+    },
+
+    "SymmetryType": {
+      "title": "Horizontal symmetry of a photometric distribution",
+      "description": "The assumed horizontal symmetry of the photometric data set. Follows TM-33 convention. LM-63 encodes the same concept implicitly via the last horizontal angle value (0, 90, 180, or 360); ULC normalizes it into this enum.",
+      "type": "string",
+      "enum": [
+        "symm_none",
+        "symm_bi_0",
+        "symm_bi_90",
+        "symm_quad",
+        "symm_full",
+        "symm_arbitrary"
+      ]
+    },
+
+    "EmissionFace": {
+      "title": "Luminaire emission face",
+      "description": "One of the six faces of the enclosing box that represents a luminaire for emission-area purposes, following TM-33. The top and bottom faces are perpendicular to the zenith axis; the C-faces are perpendicular to the corresponding horizontal-angle axis. Each face may contain zero or more emission areas.",
+      "type": "string",
+      "enum": [
+        "top",
+        "bottom",
+        "c0",
+        "c90",
+        "c180",
+        "c270"
+      ]
+    },
+
+    "LuminousOpeningShape": {
+      "title": "LM-63 luminous opening shape",
+      "description": "The geometric shape of the luminous (light-emitting) opening as encoded by the sign conventions on LM-63 width, length, and height fields. Used when a ULC record derives emission geometry from an LM-63 file. TM-33 sources use the richer emission-areas model instead.",
+      "type": "string",
+      "enum": [
+        "point",
+        "rectangular",
+        "rectangular_with_luminous_sides",
+        "circular",
+        "ellipse",
+        "vertical_cylinder",
+        "vertical_ellipsoidal_cylinder",
+        "sphere",
+        "ellipsoidal_spheroid",
+        "horizontal_cylinder_along_photometric_horizontal",
+        "horizontal_ellipsoidal_cylinder_along_photometric_horizontal",
+        "horizontal_cylinder_perpendicular_to_photometric_horizontal",
+        "horizontal_ellipsoidal_cylinder_perpendicular_to_photometric_horizontal",
+        "vertical_circle_facing_photometric_horizontal",
+        "vertical_ellipse_facing_photometric_horizontal"
+      ]
+    },
+
+    "FileGenerationType": {
+      "title": "LM-63 file generation type",
+      "description": "How an LM-63 photometric file was produced, per LM-63-19 Section 5.13 and Annex H. Encodes whether the data came from an accredited lab, an unaccredited lab, or a computer simulation; whether the data were lumen-scaled from a different drive level; and whether the angle set was interpolated. This is the primary trust signal for LM-63 photometric provenance. TM-33 sources use the richer DataGeneration structure instead.",
+      "type": "string",
+      "enum": [
+        "undefined",
+        "computer_simulation",
+        "test_unaccredited_lab",
+        "test_unaccredited_lab_lumen_scaled",
+        "test_unaccredited_lab_interpolated",
+        "test_unaccredited_lab_interpolated_lumen_scaled",
+        "test_accredited_lab",
+        "test_accredited_lab_lumen_scaled",
+        "test_accredited_lab_interpolated",
+        "test_accredited_lab_interpolated_lumen_scaled"
+      ]
+    },
+
+    "ReferenceIlluminantType": {
+      "title": "TM-30 reference illuminant regime",
+      "description": "The reference illuminant class used in TM-30 color-rendition calculations, determined by the test-source correlated color temperature per TM-30-24 Section 2.3. A Planckian blackbody radiator is used at or below 4000 K. A blended mixture of Planckian and CIE D-series daylight is used between 4000 K and 5000 K. CIE D-series daylight is used at or above 5000 K. The reference illuminant CCT equals the test-source CCT by definition.",
+      "type": "string",
+      "enum": [
+        "planckian",
+        "blended_planckian_daylight",
+        "cie_d_series"
+      ]
+    },
+
+    "TM30DesignIntent": {
+      "title": "TM-30-24 design intent",
+      "description": "One of three design intents defined in TM-30-24 Annex E for classifying color-rendition performance. Preference prioritizes perceived color preference, naturalness, and acceptability. Vividness prioritizes chroma enhancement. Fidelity prioritizes similarity to the reference illuminant. A source can carry independent claims against all three intents, encoded together as the PVF code on a TM-30-24 report.",
+      "type": "string",
+      "enum": [
+        "preference",
+        "vividness",
+        "fidelity"
+      ]
+    },
+
+    "TM30Level": {
+      "title": "TM-30-24 priority level",
+      "description": "Priority level within a TM-30-24 design intent, where 1 is most stringent and 3 is most lenient. Levels are nested: meeting level 1 implies meeting levels 2 and 3. The value `none` corresponds to the dash designator in the TM-30-24 PVF code and means the source does not meet any priority level for this intent. Thresholds per intent and level are defined in TM-30-24 Table E-1. Note that P1 and V1 are mutually exclusive by design, and V1 and F1 are mutually exclusive via the Rf-Rg Pareto front.",
+      "type": "string",
+      "enum": [
+        "1",
+        "2",
+        "3",
+        "none"
+      ]
+    },
+
+    "NominalCCT": {
+      "title": "Nominal correlated color temperature (CCT) bin",
+      "description": "Standard nominal CCT bin center per ANSI C78.377-2024, which defines the chromaticity quadrangles for solid-state lighting products. The 1800K and 2000K values were added in the 2024 revision to support HPS-replacement outdoor and special indoor applications; the remaining ten values are legacy bins present in prior editions. When a fixture's CCT is reported with RegulatoryValueType `nominal`, it should correspond to one of these bin centers. Measured CCT values (from LM-79 testing) may deviate from these centers and are carried as numeric Kelvin fields with value_type `measured`. The chromaticity quadrangle coordinates themselves are ANSI C78.377-protected table content and are not embedded in ULC; only the bin-center labels are taxonomized here.",
+      "type": "string",
+      "enum": [
+        "1800",
+        "2000",
+        "2200",
+        "2500",
+        "2700",
+        "3000",
+        "3500",
+        "4000",
+        "4500",
+        "5000",
+        "5700",
+        "6500"
+      ]
+    },
+
+    "AlphaOpicChannel": {
+      "title": "Alpha-opic photoreceptor channel",
+      "description": "One of the five human photoreceptor channels defined in CIE S 026:2018 for quantifying the non-visual (ipRGC-influenced) effects of light on physiology, and recommended by ANSI/IES RP-46-23 Section 4 for reporting fixture alpha-opic quantities. The three cone-opic channels (s_cone_opic, m_cone_opic, l_cone_opic) correspond to the short, medium, and long wavelength cone fundamentals. Rhodopic corresponds to the rod response. Melanopic corresponds to the melanopsin-containing intrinsically photosensitive retinal ganglion cell (ipRGC) response. Per-channel quantities such as alpha-opic irradiance, alpha-opic equivalent daylight illuminance (alpha-EDI), and alpha-opic daylight efficacy ratio (alpha-DER) are derivable from the fixture's SPD via the CIE S 026 action-spectra weighting functions. ULC stores fixture-intrinsic (scale-invariant) forms such as melanopic DER and melanopic EDI per photopic lux; absolute alpha-EDI values that depend on installed illuminance at the occupant's eye are site properties and do not belong in ULC. The naming follows the CIE S 026 cone-fundamental convention; the older opsin-template names (cyanopic, chloropic, erythropic) are not used.",
+      "type": "string",
+      "enum": [
+        "s_cone_opic",
+        "m_cone_opic",
+        "l_cone_opic",
+        "rhodopic",
+        "melanopic"
+      ]
+    },
+
+    "FluxMaintenanceQuantity": {
+      "title": "Flux maintenance quantity",
+      "description": "The flux type whose maintenance over time is being tracked or projected. Luminous flux is the general-lighting default. Photon flux is the standard quantity for horticultural applications, typically expressed in micromoles per second over a defined wavelength range. Radiant flux is the broadband optical power, relevant for UV, IR, and mixed-band products. Defined in LM-80-21 Section 1.2 and LM-84-20 Section 1.1.",
+      "type": "string",
+      "enum": [
+        "luminous_flux",
+        "photon_flux",
+        "radiant_flux"
+      ]
+    },
+
+    "TestedProductType": {
+      "title": "Tested product type",
+      "description": "The product type that was the device under test (DUT) for a fixture-level or package-level test method. Applies to any luminaire-level, engine-level, or package-level test that characterizes the product as a whole, including LM-80-21 LED package lumen maintenance, LM-82-20 thermal derating, LM-84-20 luminaire lumen maintenance, and similar. OLED products (light engines and luminaires) were added as first-class DUT types in LM-84-20. `led_package` is the correct DUT for an LM-80-21 test; while LM-84-20 Section 3.1 scopes itself to fixture- and engine-level tests, LM-80-21 covers the package level and records citing LM-80 data should use this value. The value `retrofit_kit` is not formally enumerated in LM-84-20 Section 3.1 but is commonly treated as a test DUT by DLC and similar programs; when used, the attestation record should describe the host fixture.",
+      "type": "string",
+      "enum": [
+        "led_package",
+        "led_lamp_integrated",
+        "led_lamp_non_integrated",
+        "led_light_engine",
+        "led_luminaire",
+        "oled_light_engine",
+        "oled_luminaire",
+        "retrofit_kit"
+      ]
+    },
+
+    "ThermalControlMethod": {
+      "title": "Thermal control method",
+      "description": "The method used to establish and maintain the DUT monitoring-point temperature during an LM-82-20 thermal characterization, per LM-82-20 Section 4.4. Integrating sphere temperature controlled means the sphere itself is regulated to the target temperature. Thermoelectric cooler heatsink means the DUT is bonded to a Peltier-regulated heatsink. Local thermal chamber means a small chamber surrounds the DUT while the photometric instrument is external. Other covers equivalent realizations permitted by Section 4.4.",
+      "type": "string",
+      "enum": [
+        "integrating_sphere_temperature_controlled",
+        "thermoelectric_cooler_heatsink",
+        "local_thermal_chamber",
+        "other"
+      ]
+    },
+
+    "FluxMaintenanceThreshold": {
+      "title": "Flux maintenance threshold",
+      "description": "The maintained-flux percentage threshold used in a lumen-maintenance projection claim. `L70` means 70 percent of initial flux; `L80` means 80 percent; and so on. Per TM-21-21 Section 5.2.7, projections shall not be reported below 70 percent; `L50` is retained for cases where the threshold was crossed experimentally in an extended LM-80 test, which must be encoded with `RegulatoryValueType = measured` rather than as a projection.",
+      "type": "string",
+      "enum": [
+        "L50",
+        "L70",
+        "L80",
+        "L85",
+        "L90",
+        "L95",
+        "L99"
+      ]
+    },
+
+    "ProjectionReliability": {
+      "title": "Lumen-maintenance projection reliability",
+      "description": "The reliability class of a reported maintenance threshold, per TM-21-21 Section 5.2.5 and TM-28-20 Section 5.1.6. `within_test_duration` means the threshold was crossed experimentally in the underlying measurement dataset and the reported hours are an interpolation between real data points. `extrapolated_within_cap` means the threshold lies beyond measured data but inside the extrapolation cap (typically 6x the test duration). `at_cap_greater_than` means the threshold exceeds the extrapolation cap and must be reported with a greater-than qualifier (for example `L70(6k) > 36,000 hours`).",
+      "type": "string",
+      "enum": [
+        "within_test_duration",
+        "extrapolated_within_cap",
+        "at_cap_greater_than"
+      ]
+    },
+
+    "ProjectionBasis": {
+      "title": "Fixture lifetime projection basis",
+      "description": "The basis on which a lumen-maintenance or chromaticity-shift projection was produced. `package_lm80_tm21` means TM-21 flux-maintenance projection from LM-80 LED-package data; package-level. `package_lm80_tm35` means TM-35 chromaticity-shift projection from LM-80 LED-package color data; package-level only (no luminaire-level chromaticity-shift projection standard exists as of the 2024 horizon). `luminaire_lm84_tm28_direct` means TM-28 direct extrapolation from LM-84 luminaire-level data with at least 6000 hours of test data. `luminaire_lm84_tm28_combined` means TM-28 combined extrapolation using LM-84 data between 3000 and 6000 hours supplemented by at least 6000 hours of LM-80 data on the packages inside the DUT. When both package-level and luminaire-level flux projections exist for the same product, luminaire-level is authoritative for lifetime claims.",
+      "type": "string",
+      "enum": [
+        "package_lm80_tm21",
+        "package_lm80_tm35",
+        "luminaire_lm84_tm28_direct",
+        "luminaire_lm84_tm28_combined"
+      ]
+    },
+
+    "LumenMaintenanceProjectionMethod": {
+      "title": "TM-28 projection method",
+      "description": "The TM-28 projection method used to produce a luminaire-level lumen-maintenance projection. `direct_extrapolation` is TM-28-20 Section 5.1, which uses LM-84 data only and requires at least 6000 hours. `combined_extrapolation` is TM-28-20 Section 5.2, which combines LM-84 data of 3000 to 6000 hours with at least 6000 hours of underlying LM-80 package data. The two methods use different multiplier tables and produce different notation (`Lp(Dk)` vs `Lp(Dlamp k, DLED k)`) and must be tracked separately.",
+      "type": "string",
+      "enum": [
+        "direct_extrapolation",
+        "combined_extrapolation"
+      ]
+    },
+
+    "LumenMaintenanceDeclarationFramework": {
+      "title": "Lumen-maintenance declaration framework",
+      "description": "The overarching framework a manufacturer uses to declare lumen maintenance. Distinguishes between quantitative IES projections (TM-21, TM-28), European maintenance-factor tables (CIE 97 Luminaire Maintenance Factor by ambient cleanliness × operating hours, as seen on European cutsheets for design-stage calculations), and bare manufacturer-rated claims that cite no specific method (for example a datasheet stating `L70 >50,000 hours` without TM-21 or TM-28 backing). The validator uses this field to decide which downstream schema blocks apply: `tm_21_projection` pairs with `lumen_maintenance_package`; `tm_28_projection` pairs with `lumen_maintenance_luminaire` and `LumenMaintenanceProjectionMethod`; `cie_97_maintenance_factor` pairs with LMF/LLMF tables; `manufacturer_rated_claim` pairs with a plain rated value and hours. Multiple frameworks may coexist on one record when a cutsheet declares both a TM-21 projection and a CIE 97 LMF table.",
+      "type": "string",
+      "enum": [
+        "tm_21_projection",
+        "tm_28_projection",
+        "cie_97_maintenance_factor",
+        "manufacturer_rated_claim"
+      ]
+    },
+
+    "TM21InterpolationType": {
+      "title": "TM-21 interpolation type",
+      "description": "The interpolation regime used by TM-21-21 to project in-situ conditions from LM-80 test data. `none_exact_match` means in-situ case temperature and drive current match a tested point exactly. `arrhenius_temperature` is case-temperature-only interpolation per Section 6.3. `linear_current` is drive-current-only linear interpolation per Section 7.2. `simultaneous_current_then_temperature` is the two-dimensional interpolation in Section 8 and Annex H; order is fixed (current first, then temperature). The two `boundary_substitution_*` values indicate that in-situ conditions fell below the lowest tested value and the nearest tested-boundary value was substituted per Section 9; extrapolation above the highest tested value is forbidden.",
+      "type": "string",
+      "enum": [
+        "none_exact_match",
+        "arrhenius_temperature",
+        "linear_current",
+        "simultaneous_current_then_temperature",
+        "boundary_substitution_low_current",
+        "boundary_substitution_low_temperature"
+      ]
+    },
+
+    "DutOperatingMode": {
+      "title": "DUT operating mode during maintenance test",
+      "description": "The operating mode held by the device under test during an LM-80 or LM-84 maintenance measurement. `single_fixed` applies to non-dimmable, single-output products. `maximum_input_power` is the LM-84-20 Section 6.1 default for dimmable products. `max_per_cct_setting` applies to tunable-white products where each CCT setting is measured at its own maximum input power. `other_reported` covers any non-standard mode that must be described in free-text metadata.",
+      "type": "string",
+      "enum": [
+        "single_fixed",
+        "maximum_input_power",
+        "max_per_cct_setting",
+        "other_reported"
+      ]
+    },
+
+    "FailureMode": {
+      "title": "DUT failure mode",
+      "description": "The classification of a sample failure during an LM-80 or LM-84 maintenance test, per LM-80-21 Section 8.3. Mechanical covers damage from mishandling or assembly defects. Electrical covers forward-voltage or forward-current drift greater than 50 percent from nominal. Optical covers flux drop to 10 percent or less of the initial value (i.e., a 90 percent or greater loss). Failed DUT photometric data is excluded from projection analyses per LM-80-21 and LM-84-20 Section 7.8.",
+      "type": "string",
+      "enum": [
+        "mechanical",
+        "electrical",
+        "optical"
+      ]
+    },
+
+    "ChromaticityShiftMetric": {
+      "title": "Chromaticity shift metric",
+      "description": "A named chromaticity-shift quantity reported by ANSI/IES TM-35-19 (with Errata 1) for LED package color-over-time projection. `delta_u_prime_v_prime` is the scalar Euclidean distance in the CIE 1976 u'v' plane between initial and current chromaticity, per TM-35 Section 3.1. `delta_u_prime` and `delta_v_prime` are the signed components, per Section 3.6. TM-35 does not project ANSI delta-uv (blackbody-referenced) or CCT shift; only the u'v'-plane metrics.",
+      "type": "string",
+      "enum": [
+        "delta_u_prime_v_prime",
+        "delta_u_prime",
+        "delta_v_prime"
+      ]
+    },
+
+    "ChromaticityShiftThreshold": {
+      "title": "Chromaticity shift threshold",
+      "description": "A named Delta u'v' threshold used in TM-35-19 (with Errata 1) chromaticity shift projections. `cs4` is the time required to reach Delta u'v' = 0.004; `cs7` is the time to reach Delta u'v' = 0.007. These two thresholds are called out explicitly in TM-35 Section 3.2 and the worked examples. For other integer CSn thresholds, use the numeric `custom_n_thousandths` field in the main schema instead of extending this enum. TM-35 prohibits projections beyond Delta u'v' = 0.010; thresholds above that are non-conformant.",
+      "type": "string",
+      "enum": [
+        "cs4",
+        "cs7"
+      ]
+    },
+
+    "ChromaticityShiftMode": {
+      "title": "Observed chromaticity shift mode",
+      "description": "An optional classification of the observed direction of chromaticity drift for a phosphor-converted LED package, per TM-35-19 Annex B Table B-1. The five modes represent terminal-direction categories (blue, green, yellow, yellow-then-blue, red) linked to candidate physical degradation mechanisms such as phosphor degradation, encapsulant yellowing, and binder yellowing. TM-35 does not require reporting the mode; this enum is provided so manufacturers or labs may optionally carry the classification as a non-required field.",
+      "type": "string",
+      "enum": [
+        "csm_1_blue",
+        "csm_2_green",
+        "csm_3_yellow",
+        "csm_4_yellow_then_blue",
+        "csm_5_red"
+      ]
+    },
+
+    "FlickerTestChamberType": {
+      "title": "Flicker test chamber type",
+      "description": "The test chamber configuration used during a flicker waveform measurement, per ANSI/IES LM-90-20 Section 4.3. The chamber shields the device under test from external light. Integrating sphere is appropriate when an LM-78-compatible setup is used. Optically isolated chamber provides equivalent shielding without the integrating geometry. Dark room is permitted under specific dimensional and ambient-light conditions per Section 4.3.2.",
+      "type": "string",
+      "enum": [
+        "integrating_sphere",
+        "optically_isolated_chamber",
+        "dark_room"
+      ]
+    },
+
+    "FlickerDimmingType": {
+      "title": "Flicker test dimming configuration",
+      "description": "The dimming method used during a flicker waveform measurement per LM-90-20 Section 4.2. Describes the test-condition dimmer setup, distinct from the fixture's declared DimmingProtocol capability. `none_non_dimmable` means the DUT is not dimmable. `forward_phase_cut_nema_ssl_7a` means a NEMA SSL 7A-compliant forward-phase-cut dimmer was used. `application_specific_integral` means an integral dimming driver applicable to the specific luminaire class. `commercial_dimmer_external` means a commercial external dimmer whose make and model are identified in the test report.",
+      "type": "string",
+      "enum": [
+        "none_non_dimmable",
+        "forward_phase_cut_nema_ssl_7a",
+        "application_specific_integral",
+        "commercial_dimmer_external"
+      ]
+    },
+
+    "FlickerPhotodetectorSpectralCorrection": {
+      "title": "Flicker photodetector spectral correction",
+      "description": "Whether the photodetector used to capture the flicker waveform is V(lambda)-corrected per LM-90-20 Section 4.7, or is uncorrected radiometric. LM-90-20 compliance requires V(lambda)-matched response. Radiometric uncorrected is retained as a value so non-conformant legacy reports can be ingested and flagged via NonstandardConditionFlag.",
+      "type": "string",
+      "enum": [
+        "v_lambda_corrected",
+        "radiometric_uncorrected"
+      ]
+    },
+
+    "FlickerSamplingClass": {
+      "title": "Flicker sampling class",
+      "description": "The analysis-band classification of the sampling rate used to capture the waveform, per LM-90-20 Section 4.4. Low-frequency class supports flicker-band analysis (up to approximately 80 Hz) with a minimum sampling rate appropriate for that band. High-frequency class supports stroboscopic-band analysis (approximately 80 Hz to 2000 Hz) with a correspondingly higher minimum sampling rate. The exact numeric sampling rate used is carried separately in a sampling_rate_hz field in the main schema.",
+      "type": "string",
+      "enum": [
+        "low_frequency_class",
+        "high_frequency_class"
+      ]
+    },
+
+    "FlickerWaveformFileFormat": {
+      "title": "Flicker waveform file format",
+      "description": "The file format of a flicker waveform data file referenced by a ULC record, per LM-90-20 Section 5.6 and Section 6.0. The LM-90 XML schema version 1.1 is the normative format defined in LM-90-20 Annex B. CSV time-series is a permitted alternative. Other covers equipment-native or proprietary formats, which should be described in free-text metadata on the referencing record.",
+      "type": "string",
+      "enum": [
+        "lm_90_xml_v1_1",
+        "csv_time_series",
+        "other"
+      ]
+    },
+
+    "FlickerMetric": {
+      "title": "Flicker and temporal light artifact metric",
+      "description": "A named metric derived from a flicker waveform. Pst_LM (short-term flicker indicator for light modulation) and SVM (stroboscopic effect visibility measure) are defined in CIE TN 006:2016. Percent flicker is the Michelson-form modulation depth: (max minus min) divided by (max plus min), expressed as a percentage. Flicker index is the area-ratio form (area above average divided by total area per cycle). Modulation depth is the same underlying quantity as percent flicker but expressed as a decimal fraction (0 to 1) rather than a percentage (0 to 100). Calculation formulas are defined in the referenced normative standards (CIE TN 006:2016, IEEE 1789-2015, ANSI/IES TM-39); ULC only names the metric and carries its computed numeric value in the main schema.",
+      "type": "string",
+      "enum": [
+        "pst_lm",
+        "svm",
+        "percent_flicker",
+        "flicker_index",
+        "modulation_depth"
+      ]
+    },
+
+    "FlickerRiskLevel": {
+      "title": "IEEE 1789 flicker risk level",
+      "description": "A fixture's modulation-frequency and modulation-depth position relative to the three-zone risk framework defined in IEEE 1789-2015. `no_effect` means the combination falls below the No Observable Effect Level (NOEL) curve. `low_risk` means the combination is above NOEL but below the high-risk threshold curve; sensitive individuals may experience effects. `high_risk` means the combination is above the low-risk curve. `unknown` applies when IEEE 1789 evaluation has not been performed for the fixture. The numeric threshold curves themselves are IEEE 1789-protected content and are not embedded in ULC; only the resulting classification is carried.",
+      "type": "string",
+      "enum": [
+        "no_effect",
+        "low_risk",
+        "high_risk",
+        "unknown"
+      ]
+    },
+
+    "AttestationProgram": {
+      "title": "Compliance or certification program",
+      "description": "An external program, listing, certification, or test-method standard that a product may claim. Programs are referenced by identifier only; ULC does not redistribute the text of any paid or restricted standard. For IES test-method standards, both a family label (for example `lm_79`, `tm_30`, `lm_80`) and version-specific values (for example `lm_79_24`, `tm_30_24`, `lm_80_21`) are provided. Claim records should use the version-specific value whenever the revision is known, because numeric results may not be comparable across revisions (for example the TM-30 fidelity scaling factor changed between -15 and -18). The family label is a coarse filter for cases where the revision is genuinely unknown. When an errata changes normative content, the errata-corrected version is encoded as a distinct enum value with a numeric suffix (for example `lm_84_20_e1` for LM-84-20 with Errata 1). Legacy versions are retained so that datasheets published before the current revision can be ingested without data loss; the reference validator emits a WARNING when a legacy version is used to encourage migration to current revisions. Programs span several categories: trade-body and lab accreditation (LIA, ICEL, ISO 9001, NRTL), product-safety listings and marks (UL, ETL, TUV, CE, UKCA, CCC, NOM, CB Scheme, IEC 60598 / 62031 / 62471, UL 1598 / 1574 / 8750), energy and efficiency programs (DLC Standard / Premium / QPL, ENERGY STAR, California Title 24 JA8), U.S. domestic-procurement compliance (BAA, BABA), specialty building-code compliance (Chicago Plenum for plenum-rated installations), sustainability and green-building (Declare and its three LBC Red List tiers, Living Building Challenge, Living Product Challenge, Living Community Challenge, Just Label, Well Building Standard, LEED v4 / v4.1 / v5), color-rendition method references (CIE 13), and IES/ANSI test-method standards across photometry, maintenance, color, chromaticity, flicker, and melanopic metrics (LM-75, LM-78, LM-79, LM-80, LM-82, LM-84, LM-85, LM-90, TM-15, TM-21, TM-27, TM-28, TM-30, TM-35, RP-46, ANSI C78.377, ANSI C136.25/31, CSA C653/C811, NTCIP 1213, IEEE 1789, NEMA 77).",
+      "type": "string",
+      "enum": [
+        "lia_member",
+        "lia_audited",
+        "liaqa",
+        "liasc_plus",
+        "performance_verified",
+        "tm66_assured",
+        "tm65_2",
+        "icel",
+        "iso_9001",
+        "ul_listed",
+        "c_ul_listed",
+        "etl",
+        "tuv",
+        "nom",
+        "cb_scheme",
+        "ul_1598",
+        "ul_1574",
+        "ul_8750",
+        "nrtl_osha_recognized",
+        "iec_60598",
+        "iec_62031",
+        "iec_62471",
+        "dlc_standard",
+        "dlc_premium",
+        "dlc_qpl",
+        "energy_star",
+        "ja8_title_24",
+        "baa",
+        "baba",
+        "chicago_plenum",
+        "ce",
+        "ukca",
+        "ccc",
+        "fcc",
+        "atex",
+        "iecex",
+        "darksky_approved",
+        "enec",
+        "rohs",
+        "reach",
+        "wet_location_ul",
+        "damp_location_ul",
+        "declare",
+        "lbc_red_list_free",
+        "lbc_red_list_approved",
+        "lbc_red_list_declared",
+        "living_building_challenge",
+        "living_product_challenge",
+        "living_community_challenge",
+        "just_label",
+        "well_building_standard",
+        "leed_v4",
+        "leed_v4_1",
+        "leed_v5",
+        "cie_13",
+        "lm_75_19",
+        "lm_78_20",
+        "lm_79",
+        "lm_79_08",
+        "lm_79_19",
+        "lm_79_24",
+        "lm_82_20",
+        "tm_30",
+        "tm_30_15",
+        "tm_30_18",
+        "tm_30_20",
+        "tm_30_24",
+        "lm_80",
+        "lm_80_08",
+        "lm_80_15",
+        "lm_80_20",
+        "lm_80_21",
+        "lm_84",
+        "lm_84_14",
+        "lm_84_20",
+        "lm_84_20_e1",
+        "lm_85_20",
+        "tm_21",
+        "tm_21_11",
+        "tm_21_21",
+        "tm_27_20",
+        "tm_28",
+        "tm_28_20",
+        "tm_15",
+        "tm_15_11",
+        "tm_15_20",
+        "lm_31_20",
+        "lm_35_20",
+        "ntcip_1213",
+        "ansi_c136_25",
+        "ansi_c136_31",
+        "csa_c653",
+        "csa_c811",
+        "lm_90_20",
+        "ieee_1789_2015",
+        "nema_77_2017",
+        "ansi_c78_377_2024",
+        "ansi_c78_377_2017",
+        "tm_35",
+        "tm_35_19",
+        "tm_35_19_e1",
+        "rp_46",
+        "rp_46_23"
+      ]
+    },
+
+    "AttestationStatus": {
+      "title": "Attestation status",
+      "description": "The claim's current standing for a given program. Used together with optional issuer identifiers and evidence URLs to make claims verifiable without exposing gated standards text.",
+      "type": "string",
+      "enum": [
+        "claimed",
+        "verified",
+        "listed",
+        "audited_member",
+        "provisional_member",
+        "expired",
+        "withdrawn",
+        "not_applicable"
+      ]
+    },
+
+    "NonstandardConditionFlag": {
+      "title": "Nonstandard test condition flag",
+      "description": "Flags measurements taken outside the standard test conditions of the applicable test method. Originally defined for LM-79-24 (25 degrees Celsius plus or minus 1.2 degrees ambient per Section 4.2.1, design orientation per Section 6.5, and standard electrical settings per Section 5.4). Extended for LM-90-20 flicker-waveform measurements, which define their own nonstandard-condition set (ambient temperature range per Section 3.1, humidity range per Section 3.4, stability criterion per Section 5.5, dark signal threshold per Section 5.6.1, and input-power or voltage-waveform deviations per Sections 5.2.2 and 5.3). A record using `standard` asserts full compliance with the applicable standard. Any deviation should select the specific flag so downstream consumers can weight the data appropriately.",
+      "type": "string",
+      "enum": [
+        "standard",
+        "nonstandard_temperature",
+        "nonstandard_orientation",
+        "nonstandard_electrical",
+        "nonstandard_multiple",
+        "flicker_ambient_temp_out_of_range",
+        "flicker_humidity_out_of_range",
+        "flicker_stability_not_achieved",
+        "flicker_dark_signal_excessive",
+        "flicker_nonstandard_input_power",
+        "flicker_nonstandard_input_voltage_waveform"
+      ]
+    },
+
+    "LaboratoryCertification": {
+      "title": "Photometric laboratory certification type",
+      "description": "Certification tier of the laboratory that produced a photometric measurement, per TM-33. Used together with an approval body identifier (for example NVLAP) and an approval scope (for example a reference to LM-79 section numbers) to characterize the trust level of measured data.",
+      "type": "string",
+      "enum": [
+        "accredited",
+        "associated",
+        "customer",
+        "none"
+      ]
+    },
+
+    "LaboratoryAccreditationScheme": {
+      "title": "Laboratory accreditation scheme",
+      "description": "A formal laboratory-accreditation program that a testing lab may hold. Orthogonal to LaboratoryCertification, which carries the TM-33 trust tier. A lab can be `associated` under TM-33 conventions while also holding an ISO 17025 accreditation; both vocabularies apply.",
+      "type": "string",
+      "enum": [
+        "iso_17025",
+        "nvlap",
+        "dlc_recognized",
+        "energy_star_lab",
+        "none"
+      ]
+    },
+
+    "RegulatoryValueType": {
+      "title": "Regulatory value type",
+      "description": "Whether a numeric quantity is a direct laboratory measurement, a nominal designation used for product identification, or a rated specification value established for defined operating conditions. Follows TM-33 Regulatory element conventions. Applied per-field on quantities such as luminous flux, input power, CCT, and CRI so consumers can distinguish measured data from claimed specifications.",
+      "type": "string",
+      "enum": [
+        "measured",
+        "nominal",
+        "rated"
+      ]
+    },
+
+    "ConformanceLevel": {
+      "title": "ULC conformance level",
+      "description": "The declared completeness target of a ULC record. Core is the minimum identifying and photometric dataset; standard covers what a typical LM-79 test report produces; full covers the comprehensive set including TM-30 hue bins, lumen-maintenance projections, BUG for outdoor, uncertainty, operating-point qualifiers, and instrumentation metadata. The reference validator grades records against their declared level and emits ERROR, WARNING, or INFO diagnostics without hard-blocking partial implementations. Required fields in the JSON Schema are limited to the core level; everything beyond core is schema-optional and graded by the validator.",
+      "type": "string",
+      "enum": [
+        "core",
+        "standard",
+        "full"
+      ]
+    },
+
+    "SourceFileType": {
+      "title": "Source file type",
+      "description": "A manufacturer-published source file from which a ULC record derives its data. Each ULC record references its source files by type; the files themselves remain with the manufacturer or in archival storage and are identified in the record by filename and SHA-256 content hash. `uld` is DIALux's proprietary binary bundle (CFBF container carrying 3D geometry, materials, light-emitting surface definition, thumbnail, and photometry). `gldf` is the open-standard Global Luminaire Data Format (zipped XML bundle intended to replace ULD). Neither is parsed or embedded by ULC; they are referenced for consumers that want the 3D or rendering data. `supplementary_pdf` covers ancillary PDFs that accompany the primary datasheet: certifications cheat sheets, installation-option matrices, end-of-life program documents, and similar content that informs authoring but is not itself a photometric or safety source.",
+      "type": "string",
+      "enum": [
+        "datasheet_pdf",
+        "ies",
+        "ldt",
+        "tm33",
+        "uld",
+        "gldf",
+        "article_text",
+        "installation_instructions_pdf",
+        "supplementary_pdf"
+      ]
+    },
+
+    "ProvenanceSource": {
+      "title": "Provenance source",
+      "description": "The origin of an individual field value. Used inside the provenance section of a ULC record to record where each traced value came from. The file-type values in this enum should stay synchronized with `SourceFileType`; any value in SourceFileType should also be available here for per-field provenance traceability.",
+      "type": "string",
+      "enum": [
+        "datasheet_pdf",
+        "ies",
+        "ldt",
+        "tm33",
+        "uld",
+        "gldf",
+        "article_text",
+        "installation_instructions_pdf",
+        "supplementary_pdf",
+        "manufacturer_direct",
+        "computed",
+        "inferred",
+        "manual_entry"
+      ]
+    },
+
+    "ProvenanceMethod": {
+      "title": "Provenance method",
+      "description": "How the field value was produced from its source. `optical_simulation` indicates the photometric distribution was generated by a ray-tracing optical design tool (LightTools, OpticStudio, TracePro, Radiant) rather than a physical LM-79 test, and should be treated as `rated` value-type at best. `extended_photometry` indicates a derivative photometric file produced from a base LM-79 attestation by manufacturer-applied scaling rules (length scaling for linear products, accessory-adjustment scaling, color-variant scaling); the base attestation it derives from is named in the record's `provenance.base_attestation_ref`. `scaled` is the general verb covering any closed-form mathematical scaling from a base measurement (for example a CCT multiplier table applied to a 3000K baseline to yield a 4000K declared lumen value, or a per-foot lm/W efficacy applied to a linear fixture length).",
+      "type": "string",
+      "enum": [
+        "extracted",
+        "normalized",
+        "computed",
+        "inferred",
+        "transcribed",
+        "validated",
+        "optical_simulation",
+        "extended_photometry",
+        "scaled"
+      ]
+    },
+
+    "ComparisonOperator": {
+      "title": "Comparison operator",
+      "description": "Used on manufacturer-declared bound values (for example flicker upper bounds) when the manufacturer claims `value <= X` rather than a specific measured value. `eq` means exact equality (the scalar itself); `lte` means the declared value is an upper bound; `lt` is strict upper bound. Pairs with a `ProvenancedNumber` to describe bound-expression quantities.",
+      "type": "string",
+      "enum": [
+        "eq",
+        "lte",
+        "lt"
+      ]
+    },
+
+    "TemperatureAxis": {
+      "title": "Temperature axis",
+      "description": "Which temperature variable a thermal-derating curve is parameterized on. `case` is the LED case temperature at the measurement monitoring point (typical for LM-82 curves). `ambient` is the ambient air temperature around the fixture (used for system-level derating).",
+      "type": "string",
+      "enum": [
+        "case",
+        "ambient"
+      ]
+    },
+
+    "AmbientCleanliness": {
+      "title": "Ambient cleanliness category (CIE 97)",
+      "description": "Cleanliness of the ambient environment per CIE 97. Used as an axis in the Luminaire Maintenance Factor (LMF) table that European maintenance-factor declarations publish. `pure`, `clean`, `normal`, and `dirty` correspond to the four CIE 97 ambient categories from cleanest to dirtiest.",
+      "type": "string",
+      "enum": [
+        "pure",
+        "clean",
+        "normal",
+        "dirty"
+      ]
+    },
+
+    "SustainabilityDeclarationType": {
+      "title": "Sustainability declaration type",
+      "description": "The program a sustainability declaration belongs to, used on the top-level `sustainability_declaration.declaration_type` field. `ilfi_declare` is the full ILFI Declare label. The three `red_list_*` variants indicate the Living Building Challenge Red List tier claimed when the declaration is specifically a Red List statement without the broader Declare framework. `manufacturer_recycle_program` is for manufacturer-operated repair-restore-recycle initiatives (for example Lumenpulse's Lumencycle program) that extend fixture life and manage end-of-life responsibly but are not themselves an ILFI program.",
+      "type": "string",
+      "enum": [
+        "ilfi_declare",
+        "red_list_free",
+        "red_list_approved",
+        "red_list_declared",
+        "manufacturer_recycle_program"
+      ]
+    },
+
+    "IngredientRedListStatus": {
+      "title": "Ingredient Red List status",
+      "description": "LBC Red List status of a single material in a Declare label's ingredient list. Terminology note: at the label level, a product is called `red_list_approved` when every ingredient is either off the Red List or covered by an ILFI exception. At the individual ingredient level (this enum), that same concept is expressed as either `free` (the material is not a Red List chemical at all) or `approved_exception` (the material IS on the Red List but has ILFI-granted relief via a published Temp Exception). `declared` is used when a material is disclosed but falls below the disclosure threshold and is therefore not subject to Red List review. `red_list_item` flags a Red List chemical present in the product without an exception; the presence of any `red_list_item` ingredient disqualifies the product from Red-List-Approved status at the label level.",
+      "type": "string",
+      "enum": [
+        "free",
+        "declared",
+        "approved_exception",
+        "red_list_item"
+      ]
+    },
+
+    "AccessoryType": {
+      "title": "Accessory type",
+      "description": "Category of a mechanical or electrical accessory listed under a luminaire's `compatible_accessories[]`. These are orderable components (junction boxes, plaster frames, mounting rings, canopies, conduits, I.C. boxes, trims, cables, control boxes, poles) that do not themselves carry photometric attestations. Accessories that change fixture photometry are modeled as separate ULC records.",
+      "type": "string",
+      "enum": [
+        "junction_box",
+        "plaster_frame",
+        "mounting_ring",
+        "canopy",
+        "conduit",
+        "ic_box",
+        "trim",
+        "cable_leader",
+        "cable_jumper",
+        "control_box",
+        "pole",
+        "other"
+      ]
+    },
+
+    "TM35Edition": {
+      "title": "TM-35 edition",
+      "description": "Which TM-35 edition a chromaticity shift projection was computed under. TM-35-19 Errata 1 substantively changed the extrapolation-multiplier table, so the edition must be tracked to interpret projection outputs correctly. Use this enum on `chromaticity_shift_projection.tm_35_edition` instead of the broader `AttestationProgram` so the field cannot hold non-TM-35 values.",
+      "type": "string",
+      "enum": [
+        "tm_35",
+        "tm_35_19",
+        "tm_35_19_e1"
+      ]
+    },
+
+    "AttestationVerificationType": {
+      "title": "Attestation verification type",
+      "description": "How an attestation's validity is established at consumer time. `unconditional` applies always. `requires_manufacturer_confirmation` is the case-by-case pattern used for BAA / BABA compliance, where the manufacturer confirms eligibility per project and consumers must not propagate the claim without that confirmation.",
+      "type": "string",
+      "enum": [
+        "unconditional",
+        "requires_manufacturer_confirmation"
+      ]
+    },
+
+    "RecordStatus": {
+      "title": "Record commercial status",
+      "description": "Where the product sits in its commercial lifecycle at the time the record was authored or last verified. `superseded` specifically indicates a product that has been replaced by a newer SKU but may still be referenced by existing project specifications or installed-base records.",
+      "type": "string",
+      "enum": [
+        "active",
+        "limited_availability",
+        "superseded",
+        "discontinued",
+        "announced",
+        "prototype"
+      ]
+    },
+
+    "DimmingMethod": {
+      "title": "Dimming method",
+      "description": "The underlying electrical method by which the driver changes LED output. Independent of the control protocol (DimmingProtocol), which is the signaling layer. `ccr` means constant current reduction (LED forward current is reduced directly) and is typical of architectural drivers for lowest-noise operation. `pwm` means pulse-width modulation (the LED is switched on and off at high frequency with varying duty cycle) and is typical of color-changing and precise-dim applications. `hybrid` combines CCR at higher dim levels with PWM at lower levels to extend the dim range while minimizing visible flicker.",
+      "type": "string",
+      "enum": [
+        "ccr",
+        "pwm",
+        "hybrid"
+      ]
+    },
+
+    "TechnicalRegion": {
+      "title": "Technical region",
+      "description": "Market-region configuration of the fixture, declared at the product-family level. Captures the voltage, frequency, and typical regulatory footprint of the SKU variant. Many product families ship in parallel configurations for different markets (North American 120 V / 60 Hz variants, European 230 V / 50 Hz variants, Japanese 100 V / 50-60 Hz variants). These variants typically share optics and light engines but differ in driver and certifications; listing the technical region on the record makes the market variant explicit for consumers filtering records. `universal` indicates a driver that accepts multiple voltage ranges across regions without a step-down transformer (typical of 120-277 V universal products sold across the North American market).",
+      "type": "string",
+      "enum": [
+        "120v_60hz_north_america",
+        "230v_50hz_europe",
+        "100v_50_60hz_japan",
+        "universal"
+      ]
+    },
+
+    "CriTier": {
+      "title": "CRI tier",
+      "description": "Catalog-code grade of color-rendering index offered by a fixture's configurable LED binning. `cri_70` covers low-CRI bins including the BioRed and similar narrowband color options (Selux Aya BioRed 2200K falls here). `cri_80` is the IES-standard 80+ CRI minimum that most interior and exterior architectural white fixtures meet. `cri_90` is the 90+ CRI grade typical of spec-grade interior architectural products. `cri_95` is the highest grade available in catalog configurators, typical of museum and hospitality specifications.",
+      "type": "string",
+      "enum": [
+        "cri_70",
+        "cri_80",
+        "cri_90",
+        "cri_95"
+      ]
+    }
+  }
+}

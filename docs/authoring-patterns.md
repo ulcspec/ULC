@@ -145,7 +145,7 @@ Typical contents: `declaration_type` (for example `ilfi_declare`), `document_id`
 
 Every ULC record carries a top-level `index` block: a flat, denormalized summary of the record's most commonly queried values (manufacturer, catalog, primary category, nominal CCT, total lumens, input power, BUG, attestation programs, search keywords). The index exists to make AI scan, search indexing, and filter UIs cheap. Consumers can read the index without walking the deep blocks below.
 
-The index is **generated, not hand-authored**. The spec forbids manufacturers from typing index values. The canonical builder is `tools/build-index.py`, which reads the deep blocks (`product_family`, `configuration`, `electrical`, `photometry`, `colorimetry`, `outdoor_classification`, `attestations`, `sustainability_declaration`) and writes the index deterministically. Manufacturer PIMs and authoring tools are expected to call the builder as the final step before emitting a ULC record.
+The index is **generated, not hand-authored**. The spec forbids manufacturers from typing index values. The canonical builder is the `ulc build-index` subcommand of the Go reference CLI at `tools/validator/`, which reads the deep blocks (`product_family`, `configuration`, `electrical`, `photometry`, `colorimetry`, `outdoor_classification`, `attestations`, `sustainability_declaration`) and writes the index deterministically. Manufacturer PIMs and authoring tools are expected to call the builder as the final step before emitting a ULC record.
 
 Two markers make the provenance of the index self-describing:
 
@@ -154,7 +154,7 @@ Two markers make the provenance of the index self-describing:
 
 Consumers reading `x-ulc-generated: true` can treat the index as trustworthy. Absence or a stale builder version is the signal to re-run the builder.
 
-Drift is prevented by construction: the index is a pure function of the deep blocks. The builder encodes the selection policies (which CCT counts as nominal, how SI-authoritative scalars are extracted from dual-unit fields, which variant of a multi-CCT record provides the baseline value) in one place. SI is always authoritative in v0.1; the dual-unit policy is fixed, not per-record. CI runs `build-index.py --check` against every committed record as a belt-and-suspenders second line of defense. An optional local pre-commit hook with the same check ships at `tools/hooks/pre-commit` (see `CONTRIBUTING.md` for installation).
+Drift is prevented by construction: the index is a pure function of the deep blocks. The builder encodes the selection policies (which CCT counts as nominal, how SI-authoritative scalars are extracted from dual-unit fields, which variant of a multi-CCT record provides the baseline value) in one place. SI is always authoritative in v0.1; the dual-unit policy is fixed, not per-record. CI runs `ulc build-index --check` against every committed record as a belt-and-suspenders second line of defense. An optional local pre-commit hook with the same check ships at `tools/hooks/pre-commit` (see `CONTRIBUTING.md` for installation).
 
 This pattern matches precedent across the industry: DLC QPL, ETIM MC catalogs, and GLDF-authoring tools all emit their scan surfaces from tooling rather than having manufacturers hand-author them.
 

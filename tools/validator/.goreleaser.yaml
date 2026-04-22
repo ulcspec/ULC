@@ -1,0 +1,67 @@
+version: 2
+
+project_name: ulc
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ulc
+    main: ./cmd/ulc
+    binary: ulc
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.CLIVersion={{.Version}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: ulc
+    name_template: "ulc_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    # The `ulc` binary ships with the ULC schemas embedded via go:embed, so
+    # the archive only needs the binary plus the validator README. The
+    # repo-root LICENSE is omitted here to avoid a second LICENSE copy in
+    # the module; users who want the license text should consult the GitHub
+    # release page or the repository.
+    files:
+      - src: README.md
+        dst: README.md
+
+checksum:
+  name_template: "ulc_{{ .Version }}_checksums.txt"
+
+snapshot:
+  version_template: "{{ .Version }}-next"
+
+# Release-note body is managed in CHANGELOG.md and GitHub Releases, not here.
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: ulcspec
+    name: ULC
+  draft: false
+  prerelease: auto
+  name_template: "ULC {{ .Tag }}"
+  header: |
+    ## `ulc` CLI {{ .Tag }}
+
+    Download a single-file binary for your platform below. See `CHANGELOG.md`
+    at the tag for what landed in this release.

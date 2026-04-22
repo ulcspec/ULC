@@ -13,14 +13,25 @@ jobs:
     name: Resolve every $ref across schema files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
+
       - name: Schema $ref drift guard
         run: python3 tools/schema-drift-guard.py
-      - name: Builder-schema parity guard
-        run: python3 tools/builder-parity-guard.py
+
+      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version-file: 'tools/validator/go.mod'
+          cache: true
+          cache-dependency-path: tools/validator/go.sum
+
+      - name: Build ulc CLI
+        working-directory: tools/validator
+        run: go build -o bin/ulc ./cmd/ulc
+
       - name: Verify generated index on example and template records
         run: |
           shopt -s globstar nullglob
@@ -32,7 +43,7 @@ jobs:
           fail=0
           for f in "${records[@]}"; do
             echo "Checking $f"
-            if ! python3 tools/build-index.py --check "$f"; then
+            if ! ./tools/validator/bin/ulc build-index --check "$f"; then
               fail=1
             fi
           done

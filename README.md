@@ -69,7 +69,7 @@ This repository defines the standard. It does not ship an application.
 | `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by required SHA-256 hash and optional URL, not committed. |
 | `templates/` | Starter templates for authors |
 | `mappings/` | Crosswalks to GLDF and ETIM, plus guidance for parsing IES and LDT sources |
-| `tools/` | Reference utilities including the schema drift guard (`schema-drift-guard.py`), the index builder (`build-index.py`), and a forthcoming CLI validator |
+| `tools/` | Reference utilities: the schema drift guard (`schema-drift-guard.py`, Python) and the `ulc` reference command-line validator at `tools/validator/` (Go, ships as a single-file binary via GoReleaser). |
 | `.github/` | Issue templates, pull request template, and continuous integration (including the schema drift guard workflow) |
 
 ## Getting started
@@ -80,8 +80,8 @@ The current working state ships the schema, taxonomy, drift-guard tooling, the a
 - To see those patterns in real data, read the four records in `examples/`. Each one exercises a distinct pattern against a real manufacturer spec sheet.
 - To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
 - To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
-- To regenerate a ULC record's `index` block, run `python3 tools/build-index.py <record>.ulc`. The index is always generated, never hand-authored.
-- A forthcoming CLI validator in `tools/validator/` (later batch) will wrap conformance grading, source-file hash verification, and builder consistency checks in one command. Its status is tracked in `tools/README.md`.
+- To validate a record end-to-end (schema, index-builder parity, source-file hashes), run `ulc validate <record>.ulc` using the reference CLI. Download a release binary from the GitHub Releases page, or build from source with `cd tools/validator && go build -o bin/ulc ./cmd/ulc`.
+- To regenerate a record's `index` block, run `ulc build-index <record>.ulc`. The index is always generated, never hand-authored.
 
 ## Relationship to adjacent standards
 
@@ -95,7 +95,7 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 
 ## Project status
 
-Version `0.1.0` establishes the foundation of the specification: the split schema (`ulc.schema.json` plus `taxonomy.schema.json`), the authoring-patterns document, and the drift-guard tooling. Version `0.2.0` adds four canonical reference records in `examples/`, one per manufacturer authoring pattern. Version `0.3.0` refines the schema primarily through additive changes informed by those reference records, moving previously extension-parked content into native fields (physical dimensions, dimming range and method, cutoff angle, UGR bound operator, per-length photometric declarations, technical region, and others). One field (`Configuration.tested_axes.cri_tier`) was tightened from free-string to a closed enum; all v0.2 reference records use values that remain valid, so practical impact is zero. See `CHANGELOG.md` for the full breakdown. The reference CLI validator, per-category authoring templates, and the ulcspec.org docs site land in subsequent batches. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
+Version `0.1.0` establishes the foundation of the specification: the split schema (`ulc.schema.json` plus `taxonomy.schema.json`), the authoring-patterns document, and the drift-guard tooling. Version `0.2.0` adds four canonical reference records in `examples/`, one per manufacturer authoring pattern. Version `0.3.0` refines the schema primarily through additive changes informed by those reference records, moving previously extension-parked content into native fields (physical dimensions, dimming range and method, cutoff angle, UGR bound operator, per-length photometric declarations, technical region, and others). One field (`Configuration.tested_axes.cri_tier`) was tightened from free-string to a closed enum; all v0.2 reference records use values that remain valid, so practical impact is zero. Version `0.4.0` ships the reference command-line validator as `ulc` — a Go single-file binary that validates records against the schema, verifies source-file hashes, and regenerates the `index` block. The legacy Python `build-index.py` and `builder-parity-guard.py` scripts retire in this release; the `ulc` CLI is now the authoritative builder. See `CHANGELOG.md` for the full breakdown. Per-category authoring templates and the ulcspec.org docs site land in subsequent batches. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 
 ## Contributing
 

@@ -18,6 +18,40 @@ When a version is ready to release:
 4. Push the tag: `git push origin v0.1.0`.
 5. Optionally create a GitHub Release pointing at the tag, copying the version's changelog entry into the release notes.
 
+## 0.4.0 (2026-04-22)
+
+Reference CLI validator and index builder. Pure tooling release — no schema or taxonomy changes. All four v0.3 canonical reference records pass the new validator end-to-end unchanged.
+
+### `ulc` command-line tool (new)
+
+- **Language:** Go 1.22+, using `santhosh-tekuri/jsonschema/v6` for JSON Schema Draft 2020-12 validation with cross-file `$ref` resolution. Selected on 2026-04-22 after an independent re-evaluation that pivoted from an earlier tentative TypeScript + AJV choice — Go's stronger Draft 2020-12 compliance pedigree, static-binary distribution story, and manufacturer-CI fit made it the better language for the reference validator.
+- **Location:** `tools/validator/`
+- **Subcommands:**
+  - `ulc validate <record.ulc>` runs JSON Schema Draft 2020-12 structural validation, builder parity (stored index matches the deterministic projection), source-file SHA-256 hash verification for files reachable on the local filesystem, and a conformance-grading stub. Emits `ERROR` / `WARNING` / `INFO` findings through a structured report.
+  - `ulc build-index <record.ulc>` regenerates the record's index block. Supports `--check` and `--stdout` modes. Becomes the authoritative builder; the Python `tools/build-index.py` is retired.
+  - `ulc version`, `ulc help`.
+- **Output modes:** human-readable text by default, `--json` for machine-readable findings.
+- **Distribution:** single-file binaries for Linux / macOS / Windows × x64 / arm64 via GoReleaser, built on tag push by `.github/workflows/release.yml`. Schemas are embedded into the binary via `go:embed`, so the CLI runs outside the source repository with no external files required.
+- **Conformance grading rubric beyond structural / parity / hash checks is deferred** to a follow-up CLI release informed by manufacturer pilot feedback on what the `standard` and `full` levels should require.
+
+### Retired Python tooling
+
+- `tools/build-index.py` — retired. The Go CLI is the single source of truth for index projection logic. Users and CI invoke `ulc build-index` instead.
+- `tools/builder-parity-guard.py` — retired. Parity is guaranteed by construction inside the Go binary.
+- `tools/schema-drift-guard.py` — kept; still Python, still internal-only. Extended with an additional check that the embedded-schema mirrors under `tools/validator/schema/` stay byte-identical with the canonical `schema/` files.
+
+### CI and automation updates
+
+- Added `.github/workflows/release.yml` — cuts platform binaries on tag push via GoReleaser.
+- Added `.github/workflows/validator-ci.yml` — `go vet`, `go test -race`, `go build`, end-to-end validation of every example record, and `goreleaser check` on every pull request.
+- Updated `.github/workflows/schema-drift-guard.yml` — drops the Python builder-parity step; now builds the Go CLI and runs `ulc build-index --check` against example and template records.
+- Updated `tools/hooks/pre-commit` — auto-detects `ulc` on `PATH` or at `tools/validator/bin/ulc`, auto-builds on first run when Go is available, and fails with a clear installation hint when neither the binary nor Go is present.
+
+### Documentation
+
+- Updated `README.md`, `CONTRIBUTING.md`, and `docs/authoring-patterns.md` to reference the Go CLI in place of the retired Python scripts.
+- Added `tools/validator/README.md` with build instructions, feature checklist, and the relationship between the Go CLI and the (retained) Python drift guard.
+
 ## 0.3.0 (2026-04-22)
 
 Schema refinement informed by the four reference records. The vast majority of changes are additive; one field was tightened (see below) but no existing records' data was invalidated. Larger breaking semantic changes (single-valued fields becoming arrays, single references becoming plural) are deferred to a later revision so pilot-program feedback can inform them.
