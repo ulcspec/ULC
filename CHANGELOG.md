@@ -18,7 +18,7 @@ When a version is ready to release:
 4. Push the tag: `git push origin v0.1.0`.
 5. Optionally create a GitHub Release pointing at the tag, copying the version's changelog entry into the release notes.
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-04-22)
 
 Canonical reference records for the four manufacturer authoring patterns, plus minor schema and tooling cleanups.
 
@@ -32,7 +32,7 @@ Canonical reference records for the four manufacturer authoring patterns, plus m
 - Expanded the automated pre-merge review workflow's file-match pattern to include `templates/**/*.ulc` and `tools/hooks/**`
 - Removed a dead `has_fragment` variable in `tools/schema-drift-guard.py`
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-04-22)
 
 Foundation of the ULC specification: schemas, authoring patterns, drift-guard tooling.
 

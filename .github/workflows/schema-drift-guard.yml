@@ -2,23 +2,8 @@ name: Schema drift guard
 
 on:
   pull_request:
-    paths:
-      - 'schema/**'
-      - 'tools/schema-drift-guard.py'
-      - 'tools/build-index.py'
-      - 'tools/builder-parity-guard.py'
-      - 'examples/**'
-      - 'templates/**'
-      - '.github/workflows/schema-drift-guard.yml'
   push:
     branches: [main]
-    paths:
-      - 'schema/**'
-      - 'tools/schema-drift-guard.py'
-      - 'tools/build-index.py'
-      - 'tools/builder-parity-guard.py'
-      - 'examples/**'
-      - 'templates/**'
 
 permissions:
   contents: read
