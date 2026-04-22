@@ -53,7 +53,7 @@ Additional source types and fields may be supported in future versions.
 |---|---|
 | Specifiers and designers | Consume ULC data indirectly through tools that read it. Benefit from fast, accurate, AI-assisted comparisons, luminaire schedules, and value engineering review. |
 | Manufacturers | Publish ULC files alongside datasheet PDFs, IES, and LDT files on their product pages. Gain machine-discoverability by AI systems and improved data fidelity in downstream workflows. |
-| Software vendors | Implement readers, writers, and validators against the ULC schema. Use the reference validator in this repository to confirm conformance. |
+| Software vendors | Implement readers, writers, and validators against the ULC schema. A forthcoming reference CLI validator (see `tools/README.md`) will package conformance grading and source-file hash verification in one command; any JSON Schema Draft 2020-12 library can validate ULC records against the schemas today. |
 | AI agents and assistants | Parse ULC files directly to answer product queries, compare alternates, generate documentation, and automate design tasks. Any JSON-aware system can consume the format, including general-purpose assistants such as ChatGPT and Claude and domain-specific agents such as LightingAgent.AI. |
 
 Product discoverability is shifting. General-purpose search engines that once indexed PDF datasheets are being supplemented, and in some workflows replaced, by AI agents that retrieve and compare product data on the user's behalf. Machine-readable product data that can be parsed directly, without PDF extraction, is the input AI agents prefer. Manufacturers who publish ULC records put their products in reach of that new retrieval path.
@@ -94,7 +94,7 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 
 ## Project status
 
-Version `0.1.0` establishes the foundation of the specification: schema, narrative documentation, examples, mappings, and reference validator. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
+Version `0.1.0` establishes the foundation of the specification: the split schema (`ulc.schema.json` plus `taxonomy.schema.json`), the authoring-patterns document, and the drift-guard tooling. Example records, the reference CLI validator, per-category authoring templates, and the ulcspec.org docs site land in subsequent batches. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 
 ## Contributing
 

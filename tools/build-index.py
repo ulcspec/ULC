@@ -211,11 +211,14 @@ def build_index(record: dict) -> dict:
         index["attestation_programs"] = programs
 
     # Search keywords from family display + catalog line + scenario. Dedupe +
-    # sort for deterministic output across runs.
+    # sort for deterministic output across runs. Skip whitespace-only values
+    # so "   " does not land as an empty entry after strip().
     keywords = set()
     for candidate in [pf.get("family_display_name"), pf.get("catalog_line"), cfg.get("scenario_label")]:
         if candidate and isinstance(candidate, str):
-            keywords.add(candidate.strip())
+            stripped = candidate.strip()
+            if stripped:
+                keywords.add(stripped)
     if keywords:
         index["search_keywords"] = sorted(keywords)
 

@@ -73,16 +73,20 @@ if [ -n "$parity_triggers" ]; then
   fi
 fi
 
-# Guard 4: record-index parity (runs on staged ULC records)
+# Guard 4: record-index parity (runs on staged ULC records).
+# Iterate line-by-line with `read -r` so filenames containing spaces survive.
 record_files=$(echo "$staged" | grep -E "\.ulc(\.json)?$" || true)
 if [ -n "$record_files" ]; then
   echo "ULC record(s) staged -- running record-index parity check..."
   fail=0
-  for f in $record_files; do
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
     if [ -f "$f" ] && ! python3 tools/build-index.py --check "$f"; then
       fail=1
     fi
-  done
+  done <<EOF
+$record_files
+EOF
   if [ "$fail" -ne 0 ]; then
     echo ""
     echo "COMMIT ABORTED: one or more records have a stale index."

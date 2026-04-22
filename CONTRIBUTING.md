@@ -38,7 +38,7 @@ ULC is a fixture metadata specification. Every field in the schema describes the
 2. **Declared capability of the fixture** — dimming protocols, network interfaces, adaptive control modes, operating conditions the fixture supports.
 3. **Attestation earned through testing** — LM-79 results, BUG rating, DLC listing, UL or CE compliance, along with the test context (stabilization method, ambient condition flags, temperature monitoring point) that makes the attestation meaningful.
 4. **Derivable from fixture data** — zonal lumens from the IES file, Rf and Rg from an SPD, beam angle from the candela distribution, symmetry type from the photometric grid.
-5. **Record-level metadata about the ULC document itself** — conformance level, unit system declaration, source-file format, provenance pointers, record lifecycle status.
+5. **Record-level metadata about the ULC document itself** — conformance level, source-file format, provenance pointers, record lifecycle status, generated index markers.
 
 If a proposed field requires knowing something a manufacturer cannot authoritatively publish — the pavement reflectance class of the road, the pedestrian activity level of the site, the mounting height and pole spacing of the installation, the specific design criteria for a jurisdiction — then it belongs in a lighting-design tool, a project specification, or a separate standard, not in ULC.
 

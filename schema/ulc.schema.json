@@ -739,7 +739,7 @@
             "rf": { "$ref": "#/$defs/ProvenancedNumber" },
             "rg": { "$ref": "#/$defs/ProvenancedNumber" },
             "pvf_code": {
-              "description": "Preference/Vividness/Fidelity three-character code per TM-30-24 (for example `P2`, `V1`, `F3`). A single PVF code expresses the highest-priority design intent level achieved.",
+              "description": "Preference/Vividness/Fidelity two-character code per TM-30-24: a letter (P / V / F) identifying the design-intent axis, followed by a level digit (1-3). Example values: `P2`, `V1`, `F3`. A single PVF code expresses the highest-priority design intent level achieved.",
               "type": "string",
               "pattern": "^[PVF][1-3]$"
             },
