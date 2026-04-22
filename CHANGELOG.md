@@ -18,6 +18,65 @@ When a version is ready to release:
 4. Push the tag: `git push origin v0.1.0`.
 5. Optionally create a GitHub Release pointing at the tag, copying the version's changelog entry into the release notes.
 
+## 0.3.0 (unreleased)
+
+Schema refinement informed by the four reference records. The vast majority of changes are additive; one field was tightened (see below) but no existing records' data was invalidated. Larger breaking semantic changes (single-valued fields becoming arrays, single references becoming plural) are deferred to a later revision so pilot-program feedback can inform them.
+
+### One compatibility-tightening change
+
+- `Configuration.tested_axes.cri_tier` changed from free-string to a closed-enum reference (`taxonomy.schema.json#/$defs/CriTier`). Strictly this narrows the accepted values, so per semver it is compatibility-tightening rather than purely additive. Practical impact on existing records is zero: all four v0.2 reference records use values already enumerated by the new CriTier (`cri_80`, `cri_90`, and so on), and those values remain valid. Authors of records that used non-enumerated CRI strings must migrate to an enumerated value.
+
+### Schema additions
+
+- `Photometry.cutoff_angle_from_horizontal_deg` — architectural cutoff angle for glare control, distinct from the deprecated IES outdoor cutoff classification.
+- `Photometry.ugr_4h_8h_bound_operator` — sibling to `ugr_4h_8h`. Carry `lte` when a manufacturer declares "UGR as low as X" rather than a specific measured value, matching the flicker metric bound-operator pattern.
+- `Photometry.declared_by_length[]` — native home for Pattern D length-scaled photometric arrays. Mirrors the existing `declared_by_cct[]` shape but keyed on fixture length via DualUnitLength.
+- `Electrical.dimming_range_percent: {min, max}` and `Electrical.dimming_method` — structured dimming depth and driver method. `dimming_method` is a new enum with values `ccr`, `pwm`, and `hybrid`.
+- `ProductFamily.technical_region` — market-variant declaration. New enum `TechnicalRegion` with values `120v_60hz_north_america`, `230v_50hz_europe`, `100v_50_60hz_japan`, and `universal`.
+- `ProductFamily.physical_dimensions` — block with slots for overall dimensions, luminaire mass, linear mass per foot, lens width, ceiling aperture, recess depth, ceiling thickness accommodation, connection cable length, driver dimensions, and EPA for pole-top outdoor products.
+- `ProductFamily.shared_mechanical.reflector_material` — free-string slot for internal reflector material descriptions.
+- `CompatibleAccessory.is_compatible_with_this_sku` (boolean, default true) and `incompatibility_reason` — lets records declare accessories that are listed at the family level but not compatible with the specific SKU the record represents.
+- `Index.required` no longer includes `nominal_cct_k`. Color-changing fixtures (RGB, RGBW, RGBA, multichannel) legitimately have no nominal CCT and now produce a valid index without a placeholder.
+
+### Taxonomy additions
+
+- `AttestationProgram.lm_79_08` — the 2008 original edition of LM-79 is now a first-class enum value; previously required the generic `lm_79` family label with a free-text `standard_revision` workaround.
+- `TestedProductType.led_package` — canonical DUT for LM-80-21 LED package lumen-maintenance testing.
+- `DimmingProtocol.lumentalk` — promoted from `extensions.manufacturer_specific` because it is used across multiple fixture manufacturers under license.
+- `HousingMaterial.aluminum_unspecified` — for cutsheets that describe aluminum housings without distinguishing cast, die-cast, extruded, or sheet variants.
+- `LensMaterial.cone_only` — for darklight-reflector architectural downlights with no lens element beyond the reflective cone.
+- `SourceFileType.supplementary_pdf` and `ProvenanceSource.supplementary_pdf` — for certifications cheatsheets, end-of-life guidelines, IES road reports, and similar ancillary PDFs previously classified as `article_text`.
+- `SustainabilityDeclarationType.manufacturer_recycle_program` — for manufacturer-operated repair-restore-recycle initiatives (for example Lumenpulse's Lumencycle program).
+- New `DimmingMethod` enum: `ccr`, `pwm`, `hybrid`.
+- New `TechnicalRegion` enum (values listed above).
+- New `CriTier` enum: `cri_70`, `cri_80`, `cri_90`, `cri_95`. `Configuration.tested_axes.cri_tier` now references this enum instead of accepting free-string values.
+
+### Builder
+
+- `tools/build-index.py` bumped to `BUILDER_VERSION 0.2.0` to signal the Index.required change. Records' stored indices automatically re-stamp to `0.2.0` on the next `build-index.py` run.
+
+### Reference record migrations
+
+All four reference records were migrated from `extensions.manufacturer_specific.<slug>.*` parking spots into the new native fields where applicable:
+
+- `examples/erco-quintessence-30416-023.ulc` — physical dimensions, cutoff angle, dimming range and method, LM-79-08 and LM-80-08 program values, technical region, reflector material, cone-only lens material, and led_package tested product type on the lumen-maintenance package entry all moved to native. Internal manufacturer code, environmental flags, and other genuinely extension-appropriate content retained in extensions.
+- `examples/vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc` — `photometry_declared_by_length` moved into native `photometry.declared_by_length[]`, UGR bound operator moved to native, physical dimensions with linear mass per foot moved to native, technical region set to `universal`, and the certifications cheatsheet file type changed from `article_text` to `supplementary_pdf`.
+- `examples/selux-aya-pole-sr-ho-3000k.ulc` — physical dimensions including EPA, technical region, lens material, LM-79-08 program value, and IES Road Report file type all moved to native. Multi-variant data (pendant vs pole-top masses and EPAs) remains extension-parked pending a future multi-variant pattern.
+- `examples/lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc` — dropped the placeholder `nominal_cct_at_test: "6500"` entirely (RGB has no nominal CCT), dropped the matching colorimetry placeholder, moved the LOI-JBOX incompatibility into a native `compatible_accessories[]` entry with `is_compatible_with_this_sku: false`, changed the end-of-life guidelines PDF type to `supplementary_pdf`, and updated physical dimensions and technical region to native slots.
+
+Records' `ulc_version` fields bumped from `0.1.0` to `0.3.0` reflecting their dependence on v0.3 schema additions.
+
+### Not yet addressed
+
+Breaking semantic changes are intentionally deferred. These remain extension-parked or schema-flagged as future work:
+
+- `declaration_framework` single-valued becoming an array
+- `attestation_ref` single-string becoming plural (to cite both data-collection and method-definition attestations)
+- `manufacturer_rated_claim` single-claim becoming multi-claim
+- `DerivationRule.linear_rate` single-number becoming named slots for flux and power
+
+These are expected to land in a future major revision informed by the reference CLI validator (a later batch) and manufacturer pilot feedback.
+
 ## 0.2.0 (2026-04-22)
 
 Canonical reference records for the four manufacturer authoring patterns, plus minor schema and tooling cleanups.

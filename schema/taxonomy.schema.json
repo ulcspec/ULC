@@ -159,7 +159,7 @@
 
     "DimmingProtocol": {
       "title": "Dimming control protocol",
-      "description": "Protocol by which the luminaire's output can be controlled. A record may declare multiple protocols if the product supports more than one. Corresponds to ETIM feature series EF012152 through EF012168. `dali_dt6` and `dali_dt8` name the DALI device type (DT6 for colour-control-gear for LED modules, DT8 for colour control with sub-types Tc, XY, and RGBWAF). `dali_2_dt8` explicitly names a DALI-2 certified device implementing DT8, which is the control path used by RGBW and tunable-white architectural fixtures. `dmx_rdm` is DMX512 with the RDM (Remote Device Management) bidirectional extension, common on color-changing exterior products. Manufacturer-proprietary protocols that are not industry-standardized belong in the record's `extensions.manufacturer_specific` rather than this enum.",
+      "description": "Protocol by which the luminaire's output can be controlled. A record may declare multiple protocols if the product supports more than one. Corresponds to ETIM feature series EF012152 through EF012168. `dali_dt6` and `dali_dt8` name the DALI device type (DT6 for colour-control-gear for LED modules, DT8 for colour control with sub-types Tc, XY, and RGBWAF). `dali_2_dt8` explicitly names a DALI-2 certified device implementing DT8, which is the control path used by RGBW and tunable-white architectural fixtures. `dmx_rdm` is DMX512 with the RDM (Remote Device Management) bidirectional extension, common on color-changing exterior products. `lumentalk` is a licensed powerline control protocol originated by Lumenpulse and adopted by multiple fixture manufacturers; it is included here rather than in `extensions.manufacturer_specific` because it is implemented across more than one vendor's product lines. Truly single-vendor proprietary protocols that are not industry-standardized and not licensed beyond their originator belong in `extensions.manufacturer_specific` rather than this enum.",
       "type": "string",
       "enum": [
         "0-10v",
@@ -178,6 +178,7 @@
         "bluetooth",
         "zigbee",
         "casambi",
+        "lumentalk",
         "wireless_proprietary",
         "non_dimming"
       ]
@@ -286,9 +287,10 @@
 
     "HousingMaterial": {
       "title": "Housing material",
-      "description": "Material used for the primary structural housing of the luminaire. Corresponds to ETIM feature EF001596.",
+      "description": "Material used for the primary structural housing of the luminaire. Corresponds to ETIM feature EF001596. `aluminum_unspecified` is a catch-all for cutsheets that describe the housing as aluminum without distinguishing cast, die-cast, extruded, or sheet variants. Authors should prefer the more specific values when the manufacturing process is known.",
       "type": "string",
       "enum": [
+        "aluminum_unspecified",
         "cast_aluminum",
         "die_cast_aluminum",
         "extruded_aluminum",
@@ -309,7 +311,7 @@
 
     "LensMaterial": {
       "title": "Lens or cover material",
-      "description": "Material used for the luminaire's light-transmitting lens or cover. Corresponds to ETIM feature EF004284.",
+      "description": "Material used for the luminaire's light-transmitting lens or cover. Corresponds to ETIM feature EF004284. `cone_only` is the correct value for architectural downlights that use a darklight reflector or baffle with no separate lens element (typical of trim-only architectural downlights such as Erco Quintessence). `none` means there is genuinely no cover, lens, or reflective cone visible in the optical path.",
       "type": "string",
       "enum": [
         "optical_polymer",
@@ -321,6 +323,7 @@
         "prismatic_glass",
         "diffuser_polymer",
         "diffuser_glass",
+        "cone_only",
         "none"
       ]
     },
@@ -623,9 +626,10 @@
 
     "TestedProductType": {
       "title": "Tested product type",
-      "description": "The product type that was the device under test (DUT) for a fixture-level test method. Applies to any luminaire-level or engine-level test that characterizes the product as a whole, including LM-82-20 thermal derating, LM-84-20 lumen maintenance, and similar. OLED products (light engines and luminaires) were added as first-class DUT types in LM-84-20. The value `retrofit_kit` is not formally enumerated in LM-84-20 Section 3.1 but is commonly treated as a test DUT by DLC and similar programs; when used, the attestation record should describe the host fixture.",
+      "description": "The product type that was the device under test (DUT) for a fixture-level or package-level test method. Applies to any luminaire-level, engine-level, or package-level test that characterizes the product as a whole, including LM-80-21 LED package lumen maintenance, LM-82-20 thermal derating, LM-84-20 luminaire lumen maintenance, and similar. OLED products (light engines and luminaires) were added as first-class DUT types in LM-84-20. `led_package` is the correct DUT for an LM-80-21 test; while LM-84-20 Section 3.1 scopes itself to fixture- and engine-level tests, LM-80-21 covers the package level and records citing LM-80 data should use this value. The value `retrofit_kit` is not formally enumerated in LM-84-20 Section 3.1 but is commonly treated as a test DUT by DLC and similar programs; when used, the attestation record should describe the host fixture.",
       "type": "string",
       "enum": [
+        "led_package",
         "led_lamp_integrated",
         "led_lamp_non_integrated",
         "led_light_engine",
@@ -921,6 +925,7 @@
         "lm_75_19",
         "lm_78_20",
         "lm_79",
+        "lm_79_08",
         "lm_79_19",
         "lm_79_24",
         "lm_82_20",
@@ -1052,23 +1057,7 @@
 
     "SourceFileType": {
       "title": "Source file type",
-      "description": "A manufacturer-published source file from which a ULC record derives its data. Each ULC record references its source files by type; the files themselves remain with the manufacturer or in archival storage and are identified in the record by filename and SHA-256 content hash. `uld` is DIALux's proprietary binary bundle (CFBF container carrying 3D geometry, materials, light-emitting surface definition, thumbnail, and photometry). `gldf` is the open-standard Global Luminaire Data Format (zipped XML bundle intended to replace ULD). Neither is parsed or embedded by ULC; they are referenced for consumers that want the 3D or rendering data.",
-      "type": "string",
-      "enum": [
-        "datasheet_pdf",
-        "ies",
-        "ldt",
-        "tm33",
-        "uld",
-        "gldf",
-        "article_text",
-        "installation_instructions_pdf"
-      ]
-    },
-
-    "ProvenanceSource": {
-      "title": "Provenance source",
-      "description": "The origin of an individual field value. Used inside the provenance section of a ULC record to record where each traced value came from.",
+      "description": "A manufacturer-published source file from which a ULC record derives its data. Each ULC record references its source files by type; the files themselves remain with the manufacturer or in archival storage and are identified in the record by filename and SHA-256 content hash. `uld` is DIALux's proprietary binary bundle (CFBF container carrying 3D geometry, materials, light-emitting surface definition, thumbnail, and photometry). `gldf` is the open-standard Global Luminaire Data Format (zipped XML bundle intended to replace ULD). Neither is parsed or embedded by ULC; they are referenced for consumers that want the 3D or rendering data. `supplementary_pdf` covers ancillary PDFs that accompany the primary datasheet: certifications cheat sheets, installation-option matrices, end-of-life program documents, and similar content that informs authoring but is not itself a photometric or safety source.",
       "type": "string",
       "enum": [
         "datasheet_pdf",
@@ -1079,6 +1068,24 @@
         "gldf",
         "article_text",
         "installation_instructions_pdf",
+        "supplementary_pdf"
+      ]
+    },
+
+    "ProvenanceSource": {
+      "title": "Provenance source",
+      "description": "The origin of an individual field value. Used inside the provenance section of a ULC record to record where each traced value came from. The file-type values in this enum should stay synchronized with `SourceFileType`; any value in SourceFileType should also be available here for per-field provenance traceability.",
+      "type": "string",
+      "enum": [
+        "datasheet_pdf",
+        "ies",
+        "ldt",
+        "tm33",
+        "uld",
+        "gldf",
+        "article_text",
+        "installation_instructions_pdf",
+        "supplementary_pdf",
         "manufacturer_direct",
         "computed",
         "inferred",
@@ -1138,19 +1145,20 @@
 
     "SustainabilityDeclarationType": {
       "title": "Sustainability declaration type",
-      "description": "The program a sustainability declaration belongs to, used on the top-level `sustainability_declaration.declaration_type` field. `ilfi_declare` is the full ILFI Declare label. The three `red_list_*` variants indicate the Living Building Challenge Red List tier claimed when the declaration is specifically a Red List statement without the broader Declare framework.",
+      "description": "The program a sustainability declaration belongs to, used on the top-level `sustainability_declaration.declaration_type` field. `ilfi_declare` is the full ILFI Declare label. The three `red_list_*` variants indicate the Living Building Challenge Red List tier claimed when the declaration is specifically a Red List statement without the broader Declare framework. `manufacturer_recycle_program` is for manufacturer-operated repair-restore-recycle initiatives (for example Lumenpulse's Lumencycle program) that extend fixture life and manage end-of-life responsibly but are not themselves an ILFI program.",
       "type": "string",
       "enum": [
         "ilfi_declare",
         "red_list_free",
         "red_list_approved",
-        "red_list_declared"
+        "red_list_declared",
+        "manufacturer_recycle_program"
       ]
     },
 
     "IngredientRedListStatus": {
       "title": "Ingredient Red List status",
-      "description": "LBC Red List status of a single material in a Declare label's ingredient list. `free` means the material is not on the Red List. `declared` means the material is declared but falls below the disclosure threshold. `approved_exception` means it is on the Red List but qualifies for an ILFI-granted exception. `red_list_item` flags the material as a Red List chemical present in the product.",
+      "description": "LBC Red List status of a single material in a Declare label's ingredient list. Terminology note: at the label level, a product is called `red_list_approved` when every ingredient is either off the Red List or covered by an ILFI exception. At the individual ingredient level (this enum), that same concept is expressed as either `free` (the material is not a Red List chemical at all) or `approved_exception` (the material IS on the Red List but has ILFI-granted relief via a published Temp Exception). `declared` is used when a material is disclosed but falls below the disclosure threshold and is therefore not subject to Red List review. `red_list_item` flags a Red List chemical present in the product without an exception; the presence of any `red_list_item` ingredient disqualifies the product from Red-List-Approved status at the label level.",
       "type": "string",
       "enum": [
         "free",
@@ -1212,6 +1220,41 @@
         "discontinued",
         "announced",
         "prototype"
+      ]
+    },
+
+    "DimmingMethod": {
+      "title": "Dimming method",
+      "description": "The underlying electrical method by which the driver changes LED output. Independent of the control protocol (DimmingProtocol), which is the signaling layer. `ccr` means constant current reduction (LED forward current is reduced directly) and is typical of architectural drivers for lowest-noise operation. `pwm` means pulse-width modulation (the LED is switched on and off at high frequency with varying duty cycle) and is typical of color-changing and precise-dim applications. `hybrid` combines CCR at higher dim levels with PWM at lower levels to extend the dim range while minimizing visible flicker.",
+      "type": "string",
+      "enum": [
+        "ccr",
+        "pwm",
+        "hybrid"
+      ]
+    },
+
+    "TechnicalRegion": {
+      "title": "Technical region",
+      "description": "Market-region configuration of the fixture, declared at the product-family level. Captures the voltage, frequency, and typical regulatory footprint of the SKU variant. Many product families ship in parallel configurations for different markets (North American 120 V / 60 Hz variants, European 230 V / 50 Hz variants, Japanese 100 V / 50-60 Hz variants). These variants typically share optics and light engines but differ in driver and certifications; listing the technical region on the record makes the market variant explicit for consumers filtering records. `universal` indicates a driver that accepts multiple voltage ranges across regions without a step-down transformer (typical of 120-277 V universal products sold across the North American market).",
+      "type": "string",
+      "enum": [
+        "120v_60hz_north_america",
+        "230v_50hz_europe",
+        "100v_50_60hz_japan",
+        "universal"
+      ]
+    },
+
+    "CriTier": {
+      "title": "CRI tier",
+      "description": "Catalog-code grade of color-rendering index offered by a fixture's configurable LED binning. `cri_70` covers low-CRI bins including the BioRed and similar narrowband color options (Selux Aya BioRed 2200K falls here). `cri_80` is the IES-standard 80+ CRI minimum that most interior and exterior architectural white fixtures meet. `cri_90` is the 90+ CRI grade typical of spec-grade interior architectural products. `cri_95` is the highest grade available in catalog configurators, typical of museum and hospitality specifications.",
+      "type": "string",
+      "enum": [
+        "cri_70",
+        "cri_80",
+        "cri_90",
+        "cri_95"
       ]
     }
   }

@@ -1,5 +1,5 @@
 {
-  "ulc_version": "0.1.0",
+  "ulc_version": "0.3.0",
   "record_id": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
   "record_status": "active",
   "record_status_as_of": "2026-01-15",
@@ -26,6 +26,7 @@
       "direct"
     ],
     "indoor_outdoor": "indoor",
+    "technical_region": "universal",
     "mounting_types": [
       "pendant"
     ],
@@ -55,6 +56,53 @@
             "source": "datasheet_pdf",
             "method": "extracted"
           }
+        }
+      }
+    },
+    "physical_dimensions": {
+      "overall_length": {
+        "mm": 1219.2,
+        "in": 48,
+        "value_type": "nominal",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "normalized"
+        }
+      },
+      "overall_width": {
+        "mm": 83,
+        "in": 3.25,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "overall_height": {
+        "mm": 16.76,
+        "in": 0.66,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "luminaire_mass": {
+        "kg": 1.36,
+        "lb": 3.0,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "linear_mass_per_foot": {
+        "kg_per_m": 1.12,
+        "lb_per_ft": 0.75,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
         }
       }
     },
@@ -296,6 +344,11 @@
     },
     "input_voltage_class": "universal_120_277",
     "driver_protocol": "0-10v",
+    "dimming_method": "ccr",
+    "dimming_range_percent": {
+      "min": 1,
+      "max": 100
+    },
     "control_gear_type": "led_driver_constant_current"
   },
   "photometry": {
@@ -343,9 +396,10 @@
       "provenance": {
         "source": "datasheet_pdf",
         "method": "extracted",
-        "conflict_notes": "Spec sheet page 1 states `UGR as low as 7.6` for the HL (Honeycomb Louver) variant; encoded as an upper bound via bound_operator on the flicker-style pattern, but ugr_4h_8h is a scalar field so the bound is noted here."
+        "conflict_notes": "Spec sheet page 1 states `UGR as low as 7.6` for the HL (Honeycomb Louver) variant; encoded as a bound via ugr_4h_8h_bound_operator=lte."
       }
     },
+    "ugr_4h_8h_bound_operator": "lte",
     "per_length_normalized": {
       "lumens_per_foot": {
         "value": 319,
@@ -374,7 +428,141 @@
           "method": "normalized"
         }
       }
-    }
+    },
+    "declared_by_length": [
+      {
+        "length": {
+          "mm": 1524.0,
+          "in": 60,
+          "value_type": "nominal",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "normalized"
+          }
+        },
+        "lumens": {
+          "value": 1595,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        },
+        "input_power_w": {
+          "value": 33.5,
+          "unit": "W",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        },
+        "efficacy_lm_per_w": {
+          "value": 47.61,
+          "unit": "lm/W",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "computed",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        }
+      },
+      {
+        "length": {
+          "mm": 1828.8,
+          "in": 72,
+          "value_type": "nominal",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "normalized"
+          }
+        },
+        "lumens": {
+          "value": 1914,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        },
+        "input_power_w": {
+          "value": 40.2,
+          "unit": "W",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        },
+        "efficacy_lm_per_w": {
+          "value": 47.61,
+          "unit": "lm/W",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "computed",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        }
+      },
+      {
+        "length": {
+          "mm": 2438.4,
+          "in": 96,
+          "value_type": "nominal",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "normalized"
+          }
+        },
+        "lumens": {
+          "value": 2552,
+          "unit": "lm",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        },
+        "input_power_w": {
+          "value": 53.6,
+          "unit": "W",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "scaled",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        },
+        "efficacy_lm_per_w": {
+          "value": 47.61,
+          "unit": "lm/W",
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "computed",
+            "base_attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "extension_method": "per_foot_linear_scaling"
+          }
+        }
+      }
+    ]
   },
   "colorimetry": {
     "nominal_cct_k": "3500",
@@ -561,7 +749,7 @@
       }
     },
     {
-      "file_type": "article_text",
+      "file_type": "supplementary_pdf",
       "reference": {
         "filename": "certificationscheatsheet-0.pdf",
         "sha256": "8e76080c4c935c8ace28b25c1058f17796df419a2e0672d66d12c5685bff42fb",
@@ -688,30 +876,19 @@
         "lumcat": "807-NX3-SL-48-XX-0-XX-XX-2-0-Z-SO-359-HL-0-BL-0",
         "ies_luminaire_string": "System 807, Nexa3, Surface, 48\", Surface Mount, 35K, 90CRI",
         "ies_more_string": "Honeycomb Louvre, Standard Output, Clear Anodized finish",
-        "rail_profile": {
-          "name": "NX3 (Nexa3)",
-          "profile_width_in": 3.25,
-          "profile_width_mm": 83,
-          "profile_height_in": 0.66,
-          "profile_height_mm": 16.76
-        },
+        "rail_profile_name": "NX3 (Nexa3)",
         "cri_minimum_rated": {
           "value": 90,
           "note": "Spec sheet declares 90+ CRI as the rated minimum; colorimetry.cri_ra carries the average (96) from page 9 table."
         },
-        "dimming": {
-          "protocols_available": [
-            "0-10v",
-            "dali",
-            "dmx"
-          ],
-          "protocol_on_this_scenario": "0-10v",
-          "range_percent": {
-            "min": 3,
-            "max": 100
-          },
-          "method": "constant_current_reduction",
-          "note": "No ULC field for dimming range/method at v0.1; parked here pending schema support."
+        "dimming_protocols_available": [
+          "0-10v",
+          "dali",
+          "dmx"
+        ],
+        "dalit8_dim_depth_percent": {
+          "value": 0.1,
+          "note": "DALIT8 (DALI-2 T8) power type achieves 0.1% dim depth per spec sheet page 2. The AE (0-10V) power type this scenario represents dims to 1%, captured in electrical.dimming_range_percent. No schema slot for a per-power-type dim depth table."
         },
         "driver": {
           "location": "remote",
@@ -726,27 +903,17 @@
           "max": 95,
           "condensing": false
         },
-        "weight_per_foot": {
-          "lb": 0.75,
-          "kg": 0.34
-        },
-        "weight_at_48in": {
-          "lb": 3.0,
-          "kg": 1.36
-        },
         "mounting_hardware": {
           "type": "Twist and Lock Suspension Hub",
           "capacity_lbs_each": 20
         },
-        "materials": {
-          "housing": "6063 aluminum (hard anodized black)",
+        "materials_detail": {
           "led_board": "Flexboard, Polyimide Flex PCB substrate (RoHS)",
-          "lens": "High-impact extruded acrylic (PMMA)",
           "optic_hl": "Honeycomb Louver",
           "wire_harness": "18/2 AWG, Plenum (CMP) rated semi-rigid PVC or FEP, flame tested UL-910, red list free",
-          "remote_driver_housing": "galvanized steel"
+          "remote_driver_housing": "galvanized steel",
+          "note": "Housing (6063 extruded aluminum, black anodized) and lens (high-impact extruded acrylic PMMA) migrated to product_family.shared_mechanical housing_material and lens_material. Remaining entries have no schema slot."
         },
-        "ugr_note": "Spec sheet claims `UGR as low as 7.6`; captured as a scalar rated value in photometry.ugr_4h_8h with a provenance note documenting it as an upper bound. ULC v0.1 ugr_4h_8h is a plain scalar without bound_operator support.",
         "mounting_options_available": [
           "cable_to_canopy",
           "t1_canopy",
@@ -761,47 +928,9 @@
       }
     }
   },
-  "photometry_declared_by_length": [
-    {
-      "length_in": 48,
-      "length_mm": 1219.2,
-      "total_lumens": 1276,
-      "input_power_w": 26.5,
-      "efficacy_lm_per_w": 48.15,
-      "value_type": "measured",
-      "note": "Baseline tested length; values from LM-79-19 test L072310201-1 and spec sheet page 9 table."
-    },
-    {
-      "length_in": 60,
-      "length_mm": 1524.0,
-      "total_lumens": 1595,
-      "input_power_w": 33.5,
-      "efficacy_lm_per_w": 47.61,
-      "value_type": "rated",
-      "note": "Per-foot scaled: 319 lm/ft x 5 ft, 6.7 W/ft x 5 ft."
-    },
-    {
-      "length_in": 72,
-      "length_mm": 1828.8,
-      "total_lumens": 1914,
-      "input_power_w": 40.2,
-      "efficacy_lm_per_w": 47.61,
-      "value_type": "rated",
-      "note": "Per-foot scaled: 319 lm/ft x 6 ft, 6.7 W/ft x 6 ft."
-    },
-    {
-      "length_in": 96,
-      "length_mm": 2438.4,
-      "total_lumens": 2552,
-      "input_power_w": 53.6,
-      "efficacy_lm_per_w": 47.61,
-      "value_type": "rated",
-      "note": "Per-foot scaled: 319 lm/ft x 8 ft, 6.7 W/ft x 8 ft."
-    }
-  ],
   "index": {
     "x-ulc-generated": true,
-    "builder_version": "0.1.0",
+    "builder_version": "0.2.0",
     "manufacturer_slug": "vode",
     "catalog_model": "Nexa Suspended 807",
     "primary_category": "linear",
@@ -849,9 +978,9 @@
       "Nexa Suspended | 807"
     ],
     "source_file_types_present": [
-      "article_text",
       "datasheet_pdf",
-      "ies"
+      "ies",
+      "supplementary_pdf"
     ]
   }
 }

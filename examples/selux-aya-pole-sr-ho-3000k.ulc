@@ -1,5 +1,5 @@
 {
-  "ulc_version": "0.1.0",
+  "ulc_version": "0.3.0",
   "record_id": "selux-aya-pole-sr-ho-3000k",
   "record_status": "active",
   "record_status_as_of": "2026-01-15",
@@ -25,6 +25,7 @@
       "direct"
     ],
     "indoor_outdoor": "outdoor",
+    "technical_region": "universal",
     "mounting_types": [
       "pole_top",
       "pendant"
@@ -33,6 +34,7 @@
     "shape": "round",
     "shared_mechanical": {
       "housing_material": "die_cast_aluminum",
+      "lens_material": "tempered_glass",
       "finish_color_options": [
         "WH",
         "BK",
@@ -61,6 +63,46 @@
             "source": "datasheet_pdf",
             "method": "extracted"
           }
+        }
+      }
+    },
+    "physical_dimensions": {
+      "overall_diameter": {
+        "mm": 500,
+        "in": 19.6875,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "overall_height": {
+        "mm": 309,
+        "in": 12.1875,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted",
+          "conflict_notes": "Pole-top variant height. The single-pendant variant has height 278 mm / 10.9375 in but is not represented in this record's SKU."
+        }
+      },
+      "luminaire_mass": {
+        "kg": 9.1,
+        "lb": 20,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted",
+          "conflict_notes": "Pole-top variant mass. The single-pendant variant weighs 13.2 kg / 29 lb but is not represented in this record's SKU."
+        }
+      },
+      "epa": {
+        "m2": 0.04,
+        "ft2": 0.4,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
         }
       }
     },
@@ -242,12 +284,17 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
         "conflict_notes": "IES reports 45.3938 W; spec sheet rounds to 45 W."
       }
     },
     "input_voltage_class": "universal_120_277",
     "driver_protocol": "0-10v",
+    "dimming_method": "ccr",
+    "dimming_range_percent": {
+      "min": 1,
+      "max": 100
+    },
     "control_gear_type": "led_driver_constant_current"
   },
   "photometry": {
@@ -258,7 +305,7 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
         "conflict_notes": "IES reports 5073.8 lm; spec sheet and this record round to 5074 lm."
       }
     },
@@ -269,7 +316,7 @@
       "provenance": {
         "source": "article_text",
         "method": "extracted",
-        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
         "conflict_notes": "LER reported on IES Road Report as 112 lm/W. Computed from raw IES values: 5073.8 / 45.3938 = 111.8 lm/W; rounded LER retained to match published report."
       }
     },
@@ -280,7 +327,7 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+        "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
         "conflict_notes": "Maximum candela at vertical 57.5 degrees, horizontal 0 degrees per IES file and IES Road Report."
       }
     },
@@ -298,7 +345,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "conflict_notes": "Sum of LCS FL (362.8) + BL (362.8) = 725.6 lm in the 0-30 degree downward band."
           }
         }
@@ -312,7 +359,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "conflict_notes": "Sum of FL + FM + BL + BM = 362.8 + 1447.2 + 362.8 + 1447.2."
           }
         }
@@ -326,7 +373,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "conflict_notes": "Total downward flux (0-90 degrees); matches total luminous flux since upward is 0."
           }
         }
@@ -340,7 +387,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "conflict_notes": "Zero uplight (UL + UH) per LCS breakdown. Consistent with B2-U0-G1 BUG rating and DarkSky compliance."
           }
         }
@@ -356,7 +403,7 @@
           "provenance": {
             "source": "datasheet_pdf",
             "method": "scaled",
-            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "base_attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "extension_method": "cct_multiplier"
           }
         }
@@ -370,7 +417,7 @@
           "provenance": {
             "source": "datasheet_pdf",
             "method": "scaled",
-            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "base_attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "extension_method": "cct_multiplier"
           }
         }
@@ -384,7 +431,7 @@
           "provenance": {
             "source": "ies",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -397,7 +444,7 @@
           "provenance": {
             "source": "datasheet_pdf",
             "method": "scaled",
-            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "base_attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "extension_method": "cct_multiplier"
           }
         }
@@ -411,7 +458,7 @@
           "provenance": {
             "source": "datasheet_pdf",
             "method": "scaled",
-            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "base_attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "extension_method": "cct_multiplier"
           }
         }
@@ -425,7 +472,7 @@
           "provenance": {
             "source": "datasheet_pdf",
             "method": "scaled",
-            "base_attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "base_attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "extension_method": "cct_multiplier"
           }
         }
@@ -473,7 +520,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -486,7 +533,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -499,7 +546,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -512,7 +559,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -525,7 +572,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03",
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03",
             "conflict_notes": "BL equals FL because SR is axially symmetric (Type V); the front/back split is arbitrary for a rotationally symmetric distribution."
           }
         }
@@ -539,7 +586,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -552,7 +599,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -565,7 +612,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -578,7 +625,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       },
@@ -591,7 +638,7 @@
           "provenance": {
             "source": "article_text",
             "method": "extracted",
-            "attestation_ref": "lm79_selux_aya_sr_ho_16033338_03"
+            "attestation_ref": "lm79_08_selux_aya_sr_ho_16033338_03"
           }
         }
       }
@@ -770,7 +817,7 @@
       }
     },
     {
-      "file_type": "article_text",
+      "file_type": "supplementary_pdf",
       "reference": {
         "filename": "AYAP-SR-1-HO-30-BL-UNV.pdf",
         "sha256": "8e9337f6cb6e611fd99d591736284e4c32ba036ea99acd317d700bbc0c1fba93",
@@ -781,14 +828,13 @@
   ],
   "attestations": [
     {
-      "attestation_id": "lm79_selux_aya_sr_ho_16033338_03",
-      "program": "lm_79",
+      "attestation_id": "lm79_08_selux_aya_sr_ho_16033338_03",
+      "program": "lm_79_08",
       "status": "verified",
       "value_type": "measured",
       "issued_date": "2025-10-08",
       "test_laboratory": "UL Verification Services Inc.",
       "test_report_id": "16033338.03",
-      "standard_revision": "LM-79-08",
       "measured_quantities": [
         "electrical.input_power_w",
         "photometry.total_luminous_flux_lm",
@@ -800,7 +846,7 @@
       ],
       "verification": {
         "type": "unconditional",
-        "notes": "NVLAP-accredited photometric test at UL Verification Services Inc.; IES file generated 10/8/2025. Note: spec sheet page 2 cites LM-79-08 (2008 edition); ULC taxonomy does not enumerate `lm_79_08` as a version-specific AttestationProgram value. The generic `lm_79` family label is used with `standard_revision: LM-79-08` preserving the exact edition."
+        "notes": "NVLAP-accredited photometric test at UL Verification Services Inc.; IES file generated 10/8/2025. Spec sheet page 2 cites LM-79-08 (2008 edition), which corresponds to the version-specific `lm_79_08` AttestationProgram enum."
       },
       "source_document_ref": {
         "filename": "AYAP-SR-1-HO-30-BL-UNV.ies",
@@ -903,14 +949,6 @@
         "ies_photometric_type": 1,
         "ies_units_type": 1,
         "legacy_cutoff_classification_note": "IES Road Report shows cutoff field marked deprecated; not populated.",
-        "dimming": {
-          "protocol": "0-10v",
-          "range_percent": {
-            "min": 1,
-            "max": 100
-          },
-          "note": "0-10V dimming to 1% standard; protocol bindings for DD (DALI-2), TLR (7-pin NEMA), TLRP, and MS motion-sensor variants listed as options. No ULC field for dimming range at v0.1."
-        },
         "driver": {
           "type": "constant_current_programmable",
           "rohs_compliant": true,
@@ -918,44 +956,30 @@
           "location": "internal",
           "surge_protection_ka": 20
         },
-        "physical_dimensions": {
-          "diameter": {
-            "mm": 500,
-            "in": 19.6875
-          },
-          "height_pole_top": {
-            "mm": 309,
-            "in": 12.1875
-          },
-          "height_pendant": {
+        "pendant_variant_dimensions": {
+          "overall_height": {
             "mm": 278,
-            "in": 10.9375
+            "in": 10.9375,
+            "note": "Single-pendant variant height. This record represents the pole-top SKU (AYAP-SR-1-HO-30-BL-UNV); pendant-variant height is informational for the family."
           },
-          "weight_pole_top": {
-            "kg": 9.1,
-            "lb": 20
-          },
-          "weight_single_pendant": {
+          "luminaire_mass": {
             "kg": 13.2,
-            "lb": 29
+            "lb": 29,
+            "note": "Single-pendant variant mass. This record is pole-top."
           },
-          "epa_pole_top": {
-            "ft2": 0.4,
-            "m2": 0.04
+          "epa": {
+            "m2": 0.1,
+            "ft2": 1.0
           },
-          "epa_pendant": {
-            "ft2": 1.0,
-            "m2": 0.1
-          },
-          "note": "No ULC fields for luminaire overall dimensions, weight, and EPA at v0.1; parked here pending schema support."
+          "note": "Family-level pendant-variant dimensions retained for traceability. Pole-top dimensions for this SKU live in product_family.physical_dimensions."
         },
         "materials": {
-          "cover": "Die cast aluminum (low copper)",
           "arm": "Welded aluminum (pendant variants)",
           "fitter_base": "Self-leveling die cast aluminum (pole-top variant)",
           "finish": "Polyester powder coat, Tiger Drylac certified, five-stage intensive pretreatment, ASTM and PCI tested",
           "gasket": "Continuous weatherproofing",
-          "pole_fitter": "Self-leveling, for 3\" tenon"
+          "pole_fitter": "Self-leveling, for 3\" tenon",
+          "note": "housing cover material (die_cast_aluminum, low copper) migrated to product_family.shared_mechanical.housing_material."
         },
         "attestations_not_in_taxonomy": {
           "astm_pci_finish_standards": {
@@ -986,12 +1010,12 @@
   },
   "index": {
     "x-ulc-generated": true,
-    "builder_version": "0.1.0",
+    "builder_version": "0.2.0",
     "manufacturer_slug": "selux",
     "catalog_model": "Aya Pole or Pendant (AYAP)",
+    "primary_category": "flood_area_site",
     "catalog_number": "selux-aya-pole-sr-ho-3000k",
     "display_name": "Aya Pole AYAP-SR-1-HO-30-BL-UNV: Symmetric Round (Type V) optic, Single Post Top, High Output, 3000K DarkSky-compliant, Black Semi-Matte, 120-277V universal",
-    "primary_category": "flood_area_site",
     "secondary_function": [
       "direct"
     ],
@@ -1023,7 +1047,7 @@
       "iec_60598",
       "lbc_red_list_approved",
       "living_building_challenge",
-      "lm_79",
+      "lm_79_08",
       "lm_80",
       "rohs"
     ],
@@ -1033,9 +1057,9 @@
       "Aya Pole or Pendant"
     ],
     "source_file_types_present": [
-      "article_text",
       "datasheet_pdf",
-      "ies"
+      "ies",
+      "supplementary_pdf"
     ]
   }
 }

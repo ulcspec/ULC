@@ -29,18 +29,25 @@ import sys
 from pathlib import Path
 
 # Bump on any change to builder logic so stale indices are detectable.
-BUILDER_VERSION = "0.1.0"
+# 0.2.0: removed `nominal_cct_k` from REQUIRED_INDEX_KEYS in sync with the
+# v0.3 schema change. Color-changing fixtures (RGB, RGBW, RGBA, multichannel)
+# no longer need a placeholder CCT value to pass validation.
+BUILDER_VERSION = "0.2.0"
 
 # Keys the schema's Index.required list demands. Must stay aligned with
 # schema/ulc.schema.json#/$defs/Index.required. tools/builder-parity-guard.py
 # enforces that alignment at CI time so this local copy cannot drift unnoticed.
+# `nominal_cct_k` is intentionally NOT required at Index level: color-changing
+# fixtures (RGB, RGBW, RGBA, multichannel) have no meaningful single CCT and
+# would otherwise be forced to populate a placeholder value. The builder still
+# emits nominal_cct_k when configuration.tested_conditions.nominal_cct_at_test
+# is populated (every white-only fixture); it just does not require it.
 REQUIRED_INDEX_KEYS = {
     "x-ulc-generated",
     "builder_version",
     "manufacturer_slug",
     "catalog_model",
     "primary_category",
-    "nominal_cct_k",
     "nominal_total_lumens",
     "nominal_input_power_w",
 }
@@ -51,7 +58,6 @@ REQUIRED_KEY_SOURCES = {
     "manufacturer_slug": "product_family.manufacturer.slug",
     "catalog_model": "product_family.catalog_model",
     "primary_category": "product_family.primary_category",
-    "nominal_cct_k": "configuration.tested_conditions.nominal_cct_at_test",
     "nominal_total_lumens": "photometry.total_luminous_flux_lm.value",
     "nominal_input_power_w": "electrical.input_power_w.value",
 }

@@ -1,5 +1,5 @@
 {
-  "ulc_version": "0.1.0",
+  "ulc_version": "0.3.0",
   "record_id": "erco-quintessence-30416-023",
   "record_status": "active",
   "record_status_as_of": "2026-04-21",
@@ -25,6 +25,7 @@
       "direct"
     ],
     "indoor_outdoor": "indoor",
+    "technical_region": "120v_60hz_north_america",
     "mounting_types": [
       "recessed_ceiling"
     ],
@@ -32,10 +33,98 @@
     "shape": "round",
     "shared_mechanical": {
       "housing_material": "cast_aluminum",
-      "lens_material": "optical_polymer",
+      "lens_material": "cone_only",
+      "reflector_material": "polymer, aluminum vaporized, silver, specular (darklight reflector)",
       "finish_color_options": [
         "white_ral9002"
       ]
+    },
+    "physical_dimensions": {
+      "overall_diameter": {
+        "mm": 113,
+        "in": 4.5,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "ceiling_aperture": {
+        "mm": 104,
+        "in": 4.125,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "recess_depth": {
+        "mm": 160,
+        "in": 6.3125,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "luminaire_mass": {
+        "kg": 0.7,
+        "lb": 1.54,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "connection_cable_length": {
+        "mm": 500,
+        "in": 19.6875,
+        "value_type": "rated",
+        "provenance": {
+          "source": "datasheet_pdf",
+          "method": "extracted"
+        }
+      },
+      "accommodated_ceiling_thickness_range": {
+        "min": {
+          "mm": 1,
+          "in": 0.0625,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        },
+        "max": {
+          "mm": 25,
+          "in": 1.0,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        }
+      },
+      "driver_dimensions": {
+        "length": {
+          "mm": 165,
+          "in": 6.5,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        },
+        "width": {
+          "mm": 77,
+          "in": 3.0625,
+          "value_type": "rated",
+          "provenance": {
+            "source": "datasheet_pdf",
+            "method": "extracted"
+          }
+        }
+      }
     },
     "shared_attestations": [
       {
@@ -139,7 +228,7 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_erco_30416_023_2026_02_24"
+        "attestation_ref": "lm79_08_erco_30416_023_2026_02_24"
       }
     },
     "input_voltage_v": {
@@ -153,6 +242,11 @@
     },
     "input_voltage_class": "120v",
     "driver_protocol": "0-10v",
+    "dimming_method": "ccr",
+    "dimming_range_percent": {
+      "min": 3,
+      "max": 100
+    },
     "control_gear_type": "led_driver_constant_current",
     "led_module_power_w": {
       "value": 12.1,
@@ -172,7 +266,7 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_erco_30416_023_2026_02_24"
+        "attestation_ref": "lm79_08_erco_30416_023_2026_02_24"
       }
     },
     "led_module_luminous_flux_lm": {
@@ -191,7 +285,7 @@
       "provenance": {
         "source": "ies",
         "method": "computed",
-        "attestation_ref": "lm79_erco_30416_023_2026_02_24"
+        "attestation_ref": "lm79_08_erco_30416_023_2026_02_24"
       }
     },
     "maximum_intensity_cd": {
@@ -201,7 +295,7 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_erco_30416_023_2026_02_24"
+        "attestation_ref": "lm79_08_erco_30416_023_2026_02_24"
       }
     },
     "beam_angle_deg": {
@@ -211,7 +305,16 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_erco_30416_023_2026_02_24"
+        "attestation_ref": "lm79_08_erco_30416_023_2026_02_24"
+      }
+    },
+    "cutoff_angle_from_horizontal_deg": {
+      "value": 40,
+      "unit": "deg",
+      "value_type": "rated",
+      "provenance": {
+        "source": "datasheet_pdf",
+        "method": "extracted"
       }
     },
     "beam_family": "wide_flood",
@@ -239,7 +342,7 @@
       "provenance": {
         "source": "ies",
         "method": "extracted",
-        "attestation_ref": "lm79_erco_30416_023_2026_02_24"
+        "attestation_ref": "lm79_08_erco_30416_023_2026_02_24"
       }
     }
   },
@@ -330,6 +433,7 @@
   "lumen_maintenance_package": [
     {
       "package_identifier": "erco-quintessence-30416-023-led-package",
+      "tested_product_type": "led_package",
       "flux_maintenance_quantity": "luminous_flux",
       "flux_maintenance_threshold": "L90",
       "tm_21_projection_hours": {
@@ -607,13 +711,12 @@
   ],
   "attestations": [
     {
-      "attestation_id": "lm79_erco_30416_023_2026_02_24",
-      "program": "lm_79",
+      "attestation_id": "lm79_08_erco_30416_023_2026_02_24",
+      "program": "lm_79_08",
       "status": "verified",
       "value_type": "measured",
       "issued_date": "2026-02-24",
       "test_report_id": "lu000044",
-      "standard_revision": "LM-79-08",
       "measured_quantities": [
         "electrical.input_power_w",
         "photometry.total_luminous_flux_lm",
@@ -635,7 +738,6 @@
       "program": "lm_80_08",
       "status": "claimed",
       "value_type": "rated",
-      "standard_revision": "LM-80-08",
       "measured_quantities": [
         "lumen_maintenance_package[0].tm_21_projection_hours",
         "lumen_maintenance_luminaire.manufacturer_rated_claim.claimed_hours",
@@ -664,70 +766,17 @@
       "erco": {
         "internal_code": "B5000116 Version 3",
         "construction_size": 3,
-        "technical_region": "120V/60Hz",
-        "dimming": {
-          "protocol": "0-10v_external",
-          "range_percent": {
-            "min": 3,
-            "max": 100
-          },
-          "method": "constant_current_reduction"
+        "housing_depth": {
+          "mm": 39,
+          "in": 1.5625,
+          "note": "Housing depth above the driver box; distinct from recess_depth (which is the total depth above the ceiling plane). No ULC schema slot for this sub-dimension yet."
         },
-        "physical_dimensions": {
-          "diameter": {
-            "mm": 113,
-            "in": 4.5
-          },
-          "ceiling_aperture_diameter": {
-            "mm": 104,
-            "in": 4.125
-          },
-          "recess_depth": {
-            "mm": 160,
-            "in": 6.3125
-          },
-          "housing_depth": {
-            "mm": 39,
-            "in": 1.5625
-          },
-          "driver_dimensions": {
-            "length_mm": 165,
-            "length_in": 6.5,
-            "width_mm": 77,
-            "width_in": 3.0625
-          },
-          "weight": {
-            "kg": 0.7,
-            "lb": 1.54
-          },
-          "connection_cable_length": {
-            "mm": 500,
-            "in": 19.6875
-          },
-          "ceiling_thickness_range_standard": {
-            "min_mm": 1,
-            "max_mm": 25,
-            "min_in": 0.0625,
-            "max_in": 1.0
-          },
-          "ceiling_thickness_range_with_mounting_ring": {
-            "min_mm": 12.5,
-            "max_mm": 25
-          }
+        "ceiling_thickness_range_with_mounting_ring": {
+          "min_mm": 12.5,
+          "max_mm": 25,
+          "note": "Alternate ceiling thickness range when the optional mounting ring accessory (82935.000) is used. The standard range (1-25 mm) is carried in product_family.physical_dimensions.accommodated_ceiling_thickness_range; this mounting-ring variant has no schema slot."
         },
-        "materials": {
-          "housing": "cast aluminum (designed as heat sink)",
-          "fixing_ring": "polymer, black",
-          "mounting_ring": "polymer, white RAL9002",
-          "diffusor_lens": "optical polymer",
-          "reflector": "polymer, aluminum-vaporized, silver, specular (darklight reflector)",
-          "terminal_count": 5
-        },
-        "photometric_extras": {
-          "cutoff_angle_from_horizontal_deg": 40,
-          "c0_beam_angle_deg": 56,
-          "notes": "Cut-off angle and C0 beam angle published on cutsheet page 1; no dedicated ULC fields yet."
-        },
+        "terminal_count": 5,
         "environmental": {
           "location_rating": "dry_only",
           "non_ic": true,
@@ -741,7 +790,7 @@
   },
   "index": {
     "x-ulc-generated": true,
-    "builder_version": "0.1.0",
+    "builder_version": "0.2.0",
     "manufacturer_slug": "erco",
     "catalog_model": "Quintessence Downlight 30416",
     "primary_category": "downlight",
@@ -772,7 +821,7 @@
       "iec_60598",
       "iec_62031",
       "iec_62471",
-      "lm_79",
+      "lm_79_08",
       "lm_80_08",
       "ul_1598",
       "ul_8750"
