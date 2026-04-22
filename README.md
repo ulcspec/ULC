@@ -74,12 +74,13 @@ This repository defines the standard. It does not ship an application.
 
 ## Getting started
 
-Detailed guides are in `docs/`. A brief map:
+v0.1 ships the schema, taxonomy, drift-guard tooling, and the authoring-patterns document. Deep narrative guides and the reference CLI validator are part of later batches.
 
-- To understand ULC as a reader, start with `docs/introduction.md`.
-- To author a ULC record, read `docs/creation-guide.md` and copy `templates/ulc.template.json`.
-- To validate a record, run the forthcoming CLI in `tools/validator/` against your JSON file (see `tools/README.md` for current status).
-- To implement ULC in your own software, read `docs/specification.md` and reference the schemas in `schema/`.
+- To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
+- To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
+- To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
+- To regenerate a ULC record's `index` block, run `python3 tools/build-index.py <record>.ulc`. The index is always generated, never hand-authored.
+- A forthcoming CLI validator in `tools/validator/` (later batch) will wrap conformance grading, source-file hash verification, and builder consistency checks in one command. Its status is tracked in `tools/README.md`.
 
 ## Relationship to adjacent standards
 

@@ -1,0 +1,95 @@
+#!/bin/sh
+# ULC pre-commit hook (shipped sample).
+#
+# Install as `.git/hooks/pre-commit` to run the same guards locally that
+# GitHub Actions runs in CI:
+#
+#     cp tools/hooks/pre-commit .git/hooks/pre-commit
+#     chmod +x .git/hooks/pre-commit
+#
+# Git does not track `.git/hooks/`, so this file is the canonical version.
+# Optional: contributors who skip installation still get CI enforcement on
+# pull requests.
+#
+# Four guards run in sequence:
+#
+#   1. Research-folder guard. Anything staged under research/ aborts the
+#      commit even if added with git add -f. Keeps private ingestion notes
+#      out of the public repo.
+#
+#   2. Schema $ref drift guard. When any schema/*.json file is staged, runs
+#      tools/schema-drift-guard.py to confirm every $ref pointer resolves
+#      across taxonomy.schema.json and ulc.schema.json. Aborts the commit
+#      on any dangling reference.
+#
+#   3. Builder-schema parity guard. When schema/ulc.schema.json or
+#      tools/build-index.py is staged, runs tools/builder-parity-guard.py
+#      to confirm the builder's emitted keys match the schema's Index
+#      definition and that every required Index field is produced.
+#
+#   4. Record-index parity guard. When any *.ulc or *.ulc.json record is
+#      staged, runs tools/build-index.py --check against each to confirm
+#      its `index` block matches what the builder would produce. Enforces
+#      the generate-only rule for the denormalized scan surface.
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# Guard 1: research/ folder
+blocked=$(echo "$staged" | grep -E "^research/" || true)
+if [ -n "$blocked" ]; then
+  echo ""
+  echo "COMMIT ABORTED: refusing to commit files under research/"
+  echo ""
+  echo "Matched files:"
+  echo "$blocked" | sed 's/^/  /'
+  echo ""
+  echo "This path is gitignored and must not be committed."
+  echo "If this was intentional, inspect .gitignore and git hooks."
+  echo ""
+  exit 1
+fi
+
+# Guard 2: schema drift
+schema_staged=$(echo "$staged" | grep -E "^schema/.*\.json$" || true)
+if [ -n "$schema_staged" ]; then
+  echo "Schema files staged -- running drift guard..."
+  if ! python3 tools/schema-drift-guard.py; then
+    echo ""
+    echo "COMMIT ABORTED: schema drift detected. See output above."
+    echo ""
+    exit 1
+  fi
+fi
+
+# Guard 3: builder-schema parity
+parity_triggers=$(echo "$staged" | grep -E "^(schema/ulc\.schema\.json|tools/build-index\.py|tools/builder-parity-guard\.py)$" || true)
+if [ -n "$parity_triggers" ]; then
+  echo "Schema or builder staged -- running builder-schema parity guard..."
+  if ! python3 tools/builder-parity-guard.py; then
+    echo ""
+    echo "COMMIT ABORTED: builder-schema parity failure. See output above."
+    echo ""
+    exit 1
+  fi
+fi
+
+# Guard 4: record-index parity (runs on staged ULC records)
+record_files=$(echo "$staged" | grep -E "\.ulc(\.json)?$" || true)
+if [ -n "$record_files" ]; then
+  echo "ULC record(s) staged -- running record-index parity check..."
+  fail=0
+  for f in $record_files; do
+    if [ -f "$f" ] && ! python3 tools/build-index.py --check "$f"; then
+      fail=1
+    fi
+  done
+  if [ "$fail" -ne 0 ]; then
+    echo ""
+    echo "COMMIT ABORTED: one or more records have a stale index."
+    echo "Run 'python3 tools/build-index.py <record>' to regenerate, then re-stage."
+    echo ""
+    exit 1
+  fi
+fi
+
+exit 0

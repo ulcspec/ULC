@@ -1180,6 +1180,17 @@
       ]
     },
 
+    "TM35Edition": {
+      "title": "TM-35 edition",
+      "description": "Which TM-35 edition a chromaticity shift projection was computed under. TM-35-19 Errata 1 substantively changed the extrapolation-multiplier table, so the edition must be tracked to interpret projection outputs correctly. Use this enum on `chromaticity_shift_projection.tm_35_edition` instead of the broader `AttestationProgram` so the field cannot hold non-TM-35 values.",
+      "type": "string",
+      "enum": [
+        "tm_35",
+        "tm_35_19",
+        "tm_35_19_e1"
+      ]
+    },
+
     "AttestationVerificationType": {
       "title": "Attestation verification type",
       "description": "How an attestation's validity is established at consumer time. `unconditional` applies always. `requires_manufacturer_confirmation` is the case-by-case pattern used for BAA / BABA compliance, where the manufacturer confirms eligibility per project and consumers must not propagate the claim without that confirmation. `requires_project_documentation` indicates the claim holds only when specific project-level documentation is on file (for example certain LEED credits).",

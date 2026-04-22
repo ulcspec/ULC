@@ -113,7 +113,7 @@ Check thoroughly for:
 
 - `taxonomy.schema.json` and `ulc.schema.json` live in `schema/` only. Do not allow enum definitions to leak into `ulc.schema.json`.
 - Errata-corrected standards versions use the suffix convention `_e1`, `_e2` in `AttestationProgram` (for example `lm_84_20_e1`, `tm_35_19_e1`).
-- The `research/` directory is gitignored and must never appear in any PR. A local pre-commit hook enforces this; flag any PR that tries to add files under `research/`.
+- The `research/` directory is gitignored and must never appear in any PR. An optional local pre-commit hook (shipped at `tools/hooks/pre-commit`) enforces this for contributors who install it; flag any PR that tries to add files under `research/`.
 - Source file references carry a SHA-256 content hash. URL is optional; hash is mandatory.
 
 **DO NOT flag:**

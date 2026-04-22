@@ -997,15 +997,16 @@
           }
         },
         "cie_97_lmf_table": {
-          "description": "Luminaire Maintenance Factor values by ambient cleanliness and operating hours, per CIE 97.",
+          "description": "Luminaire Maintenance Factor values the manufacturer declares for their fixture across the four standardized CIE 97 ambient cleanliness categories (pure / clean / normal / dirty) at the three standardized cleaning intervals (1 / 2 / 3 years). These are NOT site-specific installation inputs: they are reference categories defined by CIE 97 so manufacturers can publish comparable LMF data. This field therefore describes a declared capability of the fixture (rubric filter 2), not project or installation context. Specifiers pick the row that matches their installation conditions when computing project-specific maintenance factors downstream.",
           "type": "object",
           "properties": {
             "lmf_by_cleanliness_and_interval": {
+              "description": "Array of LMF values keyed by the CIE 97 reference conditions. The manufacturer supplies one entry per (interval, cleanliness) combination they publish; typical cutsheets publish all 12.",
               "type": "array",
               "items": {
                 "type": "object",
                 "properties": {
-                  "cleaning_interval_years": { "type": "integer", "minimum": 1 },
+                  "cleaning_interval_years": { "type": "integer", "minimum": 1, "maximum": 3 },
                   "ambient_cleanliness": { "$ref": "taxonomy.schema.json#/$defs/AmbientCleanliness" },
                   "lmf": { "type": "number", "minimum": 0, "maximum": 1 }
                 },
@@ -1054,7 +1055,7 @@
         "shift_threshold": { "$ref": "taxonomy.schema.json#/$defs/ChromaticityShiftThreshold" },
         "shift_mode": { "$ref": "taxonomy.schema.json#/$defs/ChromaticityShiftMode" },
         "projected_hours": { "$ref": "#/$defs/ProvenancedNumber" },
-        "tm_35_edition": { "$ref": "taxonomy.schema.json#/$defs/AttestationProgram" }
+        "tm_35_edition": { "$ref": "taxonomy.schema.json#/$defs/TM35Edition" }
       }
     },
 

@@ -78,7 +78,7 @@ Grouping key: consumers group records by `family_id` to reconstruct cutsheet-lev
 
 A top-level block identifying the specific photometric scenario this record represents. Fields describe the tested configuration, not the applicability range.
 
-Typical contents: `photometric_scenario_id`, `scenario_label`, `tested_axes` (distribution code, light-engine variant, output tier, CRI tier), `tested_conditions` (tested CCT, tested voltage, tested mounting, ambient temperature), `source_ies` (filename + hash reference).
+Typical contents: `photometric_scenario_id`, `catalog_number` (when the scenario represents one specific SKU), `scenario_label`, `tested_axes` (distribution code, light-engine variant, output tier, CRI tier), `tested_conditions` (tested CCT, tested voltage, tested mounting, ambient temperature), `source_ies_ref` (string reference that points to the corresponding entry in the top-level `source_files[]` array).
 
 ### `applicability` block
 
@@ -139,7 +139,7 @@ Validators should refuse to propagate a case-by-case attestation downstream as i
 
 Declare (International Living Future Institute) carries structured data beyond a simple "the product has a Declare label" boolean. ULC models this as a dedicated `sustainability_declaration` block to preserve the ingredient list, expiration date, LBC Red List tier, and document identifier.
 
-Typical contents: `declaration_type` (for example `ilfi_declare`), `document_id`, `expiration_date`, `original_issue_date`, `final_assembly_location`, `life_expectancy_years`, `end_of_life_options`, `ingredient_list[]` (each with material name and LBC Red List notes), `lbc_criteria` (status + tier), `voc_content`, `interior_performance`, `responsible_sourcing`.
+Typical contents: `declaration_type` (for example `ilfi_declare`), `document_id`, `expiration_date`, `original_issue_date`, `final_assembly_location`, `life_expectancy_years`, `end_of_life_options`, `recyclable_percent`, `ingredient_list[]` (each with `material_name` and `lbc_red_list_status`), `lbc_criteria_compliance` (boolean for overall Living Building Challenge criteria compliance), `voc_content`, `interior_performance`, `responsible_sourcing`. The Red List tier claim itself lives on the top-level `declaration_type` field (one of `red_list_free`, `red_list_approved`, `red_list_declared`) when the declaration is specifically a Red List statement rather than a full Declare label.
 
 ### Generated `index` block (denormalized scan surface)
 
@@ -154,31 +154,35 @@ Two markers make the provenance of the index self-describing:
 
 Consumers reading `x-ulc-generated: true` can treat the index as trustworthy. Absence or a stale builder version is the signal to re-run the builder.
 
-Drift is prevented by construction: the index is a pure function of the deep blocks. The builder encodes the selection policies (which CCT counts as nominal, which unit is authoritative, which variant of a multi-CCT record provides the baseline value) in one place. Validators in CI and the pre-commit hook also run `build-index.py --check` against committed records to catch any hand edits, as a belt-and-suspenders second line of defense.
+Drift is prevented by construction: the index is a pure function of the deep blocks. The builder encodes the selection policies (which CCT counts as nominal, which unit is authoritative, which variant of a multi-CCT record provides the baseline value) in one place. CI runs `build-index.py --check` against every committed record as a belt-and-suspenders second line of defense. An optional local pre-commit hook with the same check ships at `tools/hooks/pre-commit` (see `CONTRIBUTING.md` for installation).
 
 This pattern matches precedent across the industry: DLC QPL, ETIM MC catalogs, and GLDF-authoring tools all emit their scan surfaces from tooling rather than having manufacturers hand-author them.
 
-### Dual-source photometric values
+### Measured baseline plus declared-by-axis scaling
 
-Measurements with manufacturer-declared scaling (Selux CCT multipliers, Vode per-foot rates) carry two parallel representations:
+Measurements with manufacturer-declared scaling (Selux CCT multipliers, Vode per-foot rates) are modeled by pairing the measured baseline value with a sibling array of declared values across the covered axis.
 
-- `baseline_measured` — the single tested value with its full measurement context (tested CCT, tested length, tested voltage). `value_type: measured`.
-- `declared_by_axis` — an array of rated values for each covered-axis value, each tagged with the derivation method and multiplier.
+- The baseline field (for example `photometry.total_luminous_flux_lm`) is a single `ProvenancedNumber` holding the tested value. `value_type: measured`, with `provenance.attestation_ref` pointing at the LM-79 that produced it.
+- A sibling `declared_by_cct[]` (or `declared_by_length[]`, per the relevant axis) array carries one rated entry per covered axis value, each with its derivation method. `value_type: rated`.
 
 Example for a Selux record:
 
 ```json
-"total_luminous_flux_lm": {
-  "baseline_measured": {
+"photometry": {
+  "total_luminous_flux_lm": {
     "value": 5074,
+    "unit": "lm",
     "value_type": "measured",
-    "tested_at_cct": 3000,
-    "provenance": { "source": "ies", "method": "extracted", "attestation_ref": "lm79_selux_aya_sr_ho" }
+    "provenance": {
+      "source": "ies",
+      "method": "extracted",
+      "attestation_ref": "lm79_selux_aya_sr_ho"
+    }
   },
   "declared_by_cct": [
-    { "cct": 2200, "value": 4364, "value_type": "rated", "method": "multiplier_0.86" },
-    { "cct": 3000, "value": 5074, "value_type": "measured" },
-    { "cct": 4000, "value": 5429, "value_type": "rated", "method": "multiplier_1.07" }
+    { "cct": 2200, "lumens": { "value": 4364, "unit": "lm", "value_type": "rated" } },
+    { "cct": 3000, "lumens": { "value": 5074, "unit": "lm", "value_type": "measured" } },
+    { "cct": 4000, "lumens": { "value": 5429, "unit": "lm", "value_type": "rated" } }
   ]
 }
 ```

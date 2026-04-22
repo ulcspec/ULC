@@ -80,8 +80,10 @@ def main():
     for source_name, doc in docs.items():
         for path, ref in walk_refs(doc):
             total += 1
+            has_fragment = "#" in ref
             file_part, _, pointer_tail = ref.partition("#")
-            pointer = "#" + pointer_tail if pointer_tail else ""
+            # Whole-document ref (empty pointer or no fragment) resolves to root.
+            pointer = "#" + pointer_tail if pointer_tail else "#"
             if file_part == "":
                 target_doc, target_name = doc, source_name
             elif file_part in docs:
@@ -89,7 +91,7 @@ def main():
             else:
                 errors.append(f"{source_name} at {path}: unknown target file in {ref}")
                 continue
-            if not pointer or not resolve_pointer(target_doc, pointer):
+            if not resolve_pointer(target_doc, pointer):
                 errors.append(
                     f"{source_name} at {path}: dangling $ref {ref} (no {pointer} in {target_name})"
                 )
