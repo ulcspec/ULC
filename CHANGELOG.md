@@ -20,7 +20,7 @@ When a version is ready to release:
 
 ## 0.4.0 (2026-04-22)
 
-Reference CLI validator and index builder. Pure tooling release — no schema or taxonomy changes. All four v0.3 canonical reference records pass the new validator end-to-end unchanged.
+Reference CLI validator and index builder. No normative schema or taxonomy changes: enum values, required fields, and validation rules are unchanged. Two `$defs/Index` description strings in `schema/ulc.schema.json` were edited to reference the new `ulc build-index` CLI instead of the retired `tools/build-index.py`, but the structural surface of the schema is identical to v0.3.0 and all four canonical reference records pass the new validator end-to-end unchanged.
 
 ### `ulc` command-line tool (new)
 

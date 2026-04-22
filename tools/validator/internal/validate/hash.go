@@ -56,9 +56,33 @@ func verifyOne(recordDir string, ref map[string]any, path string, report *findin
 	if filename == "" || declared == "" {
 		return
 	}
-	resolved := filename
-	if !filepath.IsAbs(resolved) {
-		resolved = filepath.Join(recordDir, filename)
+	// Constrain hash verification to files at-or-below the record's directory.
+	// `ulc validate` runs in CI on PR-provided records, so honoring absolute
+	// paths or `../` traversal would let a crafted record cause the runner to
+	// open arbitrary readable files and report their SHA-256 in the findings
+	// output — a fingerprint-leak vector.
+	if filepath.IsAbs(filename) {
+		report.AddInfo(findings.CodeSourceFileNotFound, path,
+			fmt.Sprintf("filename %q is absolute; hash verification only runs against files under the record's directory", filename))
+		return
+	}
+	recordDirAbs, err := filepath.Abs(recordDir)
+	if err != nil {
+		report.AddWarning(findings.CodeSourceFileUnreadable, path,
+			fmt.Sprintf("could not resolve record directory %q: %v", recordDir, err))
+		return
+	}
+	resolved, err := filepath.Abs(filepath.Join(recordDirAbs, filename))
+	if err != nil {
+		report.AddWarning(findings.CodeSourceFileUnreadable, path,
+			fmt.Sprintf("could not resolve filename %q: %v", filename, err))
+		return
+	}
+	rel, err := filepath.Rel(recordDirAbs, resolved)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		report.AddInfo(findings.CodeSourceFileNotFound, path,
+			fmt.Sprintf("filename %q resolves outside the record directory; hash verification skipped", filename))
+		return
 	}
 	f, err := os.Open(resolved)
 	if err != nil {

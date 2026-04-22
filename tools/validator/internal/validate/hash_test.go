@@ -107,6 +107,116 @@ func TestVerifyHashesAllOutcomes(t *testing.T) {
 	}
 }
 
+// TestVerifyHashesRefusesAbsolutePath confirms the verifier refuses to hash
+// files referenced by absolute path. `ulc validate` runs in CI on records
+// supplied by pull requests; hashing arbitrary readable files on the runner
+// would leak file fingerprints.
+func TestVerifyHashesRefusesAbsolutePath(t *testing.T) {
+	tmp := t.TempDir()
+
+	// A real sensitive-looking path does not need to exist on disk — the guard
+	// refuses absolute paths before the filesystem is touched.
+	record := map[string]any{
+		"source_files": []any{
+			map[string]any{
+				"file_type": "datasheet_pdf",
+				"reference": map[string]any{
+					"filename": "/etc/passwd",
+					"sha256":   strings.Repeat("0", 64),
+				},
+			},
+		},
+	}
+	report := findings.NewReport()
+	VerifyHashes(tmp, record, report)
+
+	if len(report.Findings) != 1 {
+		t.Fatalf("expected exactly 1 finding, got %d (%v)", len(report.Findings), report.Findings)
+	}
+	got := report.Findings[0]
+	if got.Level != findings.LevelInfo {
+		t.Errorf("level = %s, want %s", got.Level, findings.LevelInfo)
+	}
+	if got.Code != findings.CodeSourceFileNotFound {
+		t.Errorf("code = %s, want %s (any non-error is fine; absolute paths are not ERRORs)",
+			got.Code, findings.CodeSourceFileNotFound)
+	}
+	if !strings.Contains(got.Message, "absolute") {
+		t.Errorf("expected message to mention 'absolute', got %q", got.Message)
+	}
+}
+
+// TestVerifyHashesRefusesTraversal confirms the verifier refuses relative
+// paths that escape the record's directory via `../`, which is the same
+// fingerprint-leak vector as absolute paths.
+func TestVerifyHashesRefusesTraversal(t *testing.T) {
+	outer := t.TempDir()
+	recordDir := filepath.Join(outer, "records")
+	if err := os.MkdirAll(recordDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	// Write a file outside recordDir; the attacker's record tries to point
+	// at it via `../secret.txt`.
+	secretPath := filepath.Join(outer, "secret.txt")
+	writeFile(t, secretPath, []byte("top secret"))
+
+	record := map[string]any{
+		"source_files": []any{
+			map[string]any{
+				"file_type": "datasheet_pdf",
+				"reference": map[string]any{
+					"filename": "../secret.txt",
+					"sha256":   strings.Repeat("0", 64),
+				},
+			},
+		},
+	}
+	report := findings.NewReport()
+	VerifyHashes(recordDir, record, report)
+
+	if len(report.Findings) != 1 {
+		t.Fatalf("expected exactly 1 finding, got %d (%v)", len(report.Findings), report.Findings)
+	}
+	got := report.Findings[0]
+	if got.Level != findings.LevelInfo {
+		t.Errorf("level = %s, want %s", got.Level, findings.LevelInfo)
+	}
+	if !strings.Contains(got.Message, "outside the record directory") {
+		t.Errorf("expected message to mention 'outside the record directory', got %q", got.Message)
+	}
+}
+
+// TestVerifyHashesAllowsNestedPath confirms relative paths to subdirectories
+// under the record's directory still work normally.
+func TestVerifyHashesAllowsNestedPath(t *testing.T) {
+	recordDir := t.TempDir()
+	sub := filepath.Join(recordDir, "assets")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	content := []byte("nested source")
+	writeFile(t, filepath.Join(sub, "ies.dat"), content)
+
+	record := map[string]any{
+		"source_files": []any{
+			map[string]any{
+				"file_type": "ies_file",
+				"reference": map[string]any{
+					"filename": "assets/ies.dat",
+					"sha256":   sha256Hex(content),
+				},
+			},
+		},
+	}
+	report := findings.NewReport()
+	VerifyHashes(recordDir, record, report)
+
+	if len(report.Findings) != 0 {
+		t.Fatalf("expected 0 findings for valid nested path, got %d (%v)",
+			len(report.Findings), report.Findings)
+	}
+}
+
 // TestVerifyHashesSkipsFlatShape confirms the verifier silently skips entries
 // that do not have the schema-required `reference` wrapper object. Those
 // entries will already have been flagged as schema errors elsewhere in the
