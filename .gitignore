@@ -34,3 +34,11 @@ yarn-error.log*
 coverage/
 .nyc_output/
 
+# Python tooling
+__pycache__/
+*.pyc
+*.pyo
+
+# Local files
+research/
+

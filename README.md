@@ -10,6 +10,8 @@
 
 ULC is an open specification for structured, machine-readable luminaire product data. A ULC file is a single JSON document that normalizes the information currently spread across manufacturer datasheets, IES photometric files, and EULUMDAT (LDT) files into one consistent, canonical record.
 
+**A single ULC record represents one attested photometric scenario for a luminaire.** A product family with multiple distributions, output tiers, or color-rendition variants produces multiple ULC records, one per scenario, each carrying its own measurements and an applicability block that declares which orderable SKU configurations the record covers.
+
 ULC does not replace those source files. It provides a normalized representation of their combined content that AI systems, design tools, specification software, and data pipelines can consume directly, with verifiable references back to the originals.
 
 ## Why ULC exists
@@ -51,7 +53,7 @@ Additional source types and fields may be supported in future versions.
 |---|---|
 | Specifiers and designers | Consume ULC data indirectly through tools that read it. Benefit from fast, accurate, AI-assisted comparisons, luminaire schedules, and value engineering review. |
 | Manufacturers | Publish ULC files alongside datasheet PDFs, IES, and LDT files on their product pages. Gain machine-discoverability by AI systems and improved data fidelity in downstream workflows. |
-| Software vendors | Implement readers, writers, and validators against the ULC schema. Use the reference validator in this repository to confirm conformance. |
+| Software vendors | Implement readers, writers, and validators against the ULC schema. A forthcoming reference CLI validator (see `tools/README.md`) will package conformance grading and source-file hash verification in one command; any JSON Schema Draft 2020-12 library can validate ULC records against the schemas today. |
 | AI agents and assistants | Parse ULC files directly to answer product queries, compare alternates, generate documentation, and automate design tasks. Any JSON-aware system can consume the format, including general-purpose assistants such as ChatGPT and Claude and domain-specific agents such as LightingAgent.AI. |
 
 Product discoverability is shifting. General-purpose search engines that once indexed PDF datasheets are being supplemented, and in some workflows replaced, by AI agents that retrieve and compare product data on the user's behalf. Machine-readable product data that can be parsed directly, without PDF extraction, is the input AI agents prefer. Manufacturers who publish ULC records put their products in reach of that new retrieval path.
@@ -62,22 +64,23 @@ This repository defines the standard. It does not ship an application.
 
 | Path | Contents |
 |---|---|
-| `schema/` | JSON Schema files that define the ULC record and taxonomy |
-| `docs/` | Narrative specification, field reference, and authoring guide |
+| `schema/` | Two JSON Schema files (Draft 2020-12): `ulc.schema.json` defines the record structure; `taxonomy.schema.json` defines the closed-enum vocabulary. They are split so the taxonomy can be loaded independently by search and classification tools. Cross-file references are validated in CI. |
+| `docs/` | Narrative specification, field reference, authoring guide, and `authoring-patterns.md` describing the four manufacturer authoring patterns the schema supports. |
 | `examples/` | Worked examples of conforming ULC records with reference source files |
 | `templates/` | Starter templates for authors |
 | `mappings/` | Crosswalks to GLDF and ETIM, plus guidance for parsing IES and LDT sources |
-| `tools/` | Reference validator |
-| `.github/` | Issue templates, pull request template, and continuous integration |
+| `tools/` | Reference utilities including the schema drift guard (`schema-drift-guard.py`), the index builder (`build-index.py`), and a forthcoming CLI validator |
+| `.github/` | Issue templates, pull request template, and continuous integration (including the schema drift guard workflow) |
 
 ## Getting started
 
-Detailed guides are in `docs/`. A brief map:
+v0.1 ships the schema, taxonomy, drift-guard tooling, and the authoring-patterns document. Deep narrative guides and the reference CLI validator are part of later batches.
 
-- To understand ULC as a reader, start with `docs/introduction.md`.
-- To author a ULC record, read `docs/creation-guide.md` and copy `templates/ulc.template.json`.
-- To validate a record, run the CLI in `tools/validator/` against your JSON file.
-- To implement ULC in your own software, read `docs/specification.md` and reference the schemas in `schema/`.
+- To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
+- To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
+- To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
+- To regenerate a ULC record's `index` block, run `python3 tools/build-index.py <record>.ulc`. The index is always generated, never hand-authored.
+- A forthcoming CLI validator in `tools/validator/` (later batch) will wrap conformance grading, source-file hash verification, and builder consistency checks in one command. Its status is tracked in `tools/README.md`.
 
 ## Relationship to adjacent standards
 
@@ -91,7 +94,7 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 
 ## Project status
 
-Version `0.1.0` establishes the foundation of the specification: schema, narrative documentation, examples, mappings, and reference validator. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
+Version `0.1.0` establishes the foundation of the specification: the split schema (`ulc.schema.json` plus `taxonomy.schema.json`), the authoring-patterns document, and the drift-guard tooling. Example records, the reference CLI validator, per-category authoring templates, and the ulcspec.org docs site land in subsequent batches. The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 
 ## Contributing
 

@@ -1,0 +1,1190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ulcspec.org/schema/ulc.schema.json",
+  "title": "ULC Record",
+  "description": "The canonical ULC (Universal Luminaire Cutsheet) record. One record describes one attested photometric scenario for a luminaire, with an applicability block that declares which orderable SKU configurations the record covers. Enumerated values are defined in taxonomy.schema.json and referenced here by $ref. Dual-unit conventions (SI authoritative with Imperial companion) apply to every unit-sensitive field. Conformance is graded at three levels (core, standard, full); JSON Schema `required` is used sparingly and only for core-level fields, with the reference validator emitting ERROR / WARNING / INFO diagnostics for fields that are absent at higher declared levels. This schema is machine-readable; docs/authoring-patterns.md explains the four manufacturer authoring patterns this schema supports and how to map real cutsheets into it.",
+  "type": "object",
+
+  "properties": {
+    "ulc_version": {
+      "description": "The ULC specification version this record conforms to. Required on every record.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["0.1.0"]
+    },
+
+    "record_id": {
+      "description": "Stable identifier for this record. Convention: `<manufacturer-slug>-<catalog-slug>-<scenario-slug>` with lowercase ASCII and hyphens. Matches the filename (minus .ulc.json extension). Must be unique within a manufacturer's namespace.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 3,
+      "maxLength": 128,
+      "examples": ["selux-aya-sr-ho-white", "erco-30416-023", "vode-nexa-807-ce-ho-4000-90"]
+    },
+
+    "record_status": {
+      "description": "Commercial lifecycle status of the product this record describes.",
+      "$ref": "taxonomy.schema.json#/$defs/RecordStatus"
+    },
+
+    "record_status_as_of": {
+      "description": "Calendar date on which the record_status was last verified. ISO 8601 date (YYYY-MM-DD).",
+      "type": "string",
+      "format": "date"
+    },
+
+    "conformance_level": {
+      "description": "The completeness target this record declares. The reference validator grades the record against this level.",
+      "$ref": "taxonomy.schema.json#/$defs/ConformanceLevel"
+    },
+
+    "index": {
+      "description": "Denormalized scan surface for AI agents, search indexers, and filter UIs. Every field is a projection of authoritative values from the deeper blocks below. GENERATED, NOT HAND-AUTHORED: produced deterministically by `tools/build-index.py` from the deep blocks and stamped with `x-ulc-generated: true` plus a `builder_version` so consumers can detect stale indices. Manufacturers never type these values; their PIM export or ULC CLI writes them. Drift is prevented by construction — the builder is a pure function of the deep blocks.",
+      "$ref": "#/$defs/Index"
+    },
+
+    "product_family": {
+      "description": "Family-level identity and metadata shared by every ULC record derived from the same cutsheet. Populated once by the manufacturer's PIM and replicated into each record in the family.",
+      "$ref": "#/$defs/ProductFamily"
+    },
+
+    "configuration": {
+      "description": "The specific photometric scenario this record represents. Identifies the tested axes and tested conditions that anchor the record's measurements.",
+      "$ref": "#/$defs/Configuration"
+    },
+
+    "applicability": {
+      "description": "Declares the range of orderable SKU configurations this record's measurements apply to. Covers axes where multiple order-code values share the same photometric record, with derivation rules for scaled values (CCT multipliers, per-foot scaling, voltage-independence rationale).",
+      "$ref": "#/$defs/Applicability"
+    },
+
+    "electrical": {
+      "description": "Electrical measurements and nominal values at the luminaire input.",
+      "$ref": "#/$defs/Electrical"
+    },
+
+    "photometry": {
+      "description": "Photometric measurements including total luminous flux, intensity distribution summary, zonal lumens, beam and field angles, UGR, and BUG classification when applicable.",
+      "$ref": "#/$defs/Photometry"
+    },
+
+    "colorimetry": {
+      "description": "Color measurements including nominal and measured CCT, Duv, CRI, and TM-30 color-rendition metrics.",
+      "$ref": "#/$defs/Colorimetry"
+    },
+
+    "alpha_opic_metrics": {
+      "description": "Alpha-opic and melanopic metrics per CIE S 026 and IES RP-46-23. Includes per-channel alpha-opic efficacies and the melanopic daylight efficacy ratio used for circadian metric calculation.",
+      "$ref": "#/$defs/AlphaOpicMetrics"
+    },
+
+    "flicker_measurements": {
+      "description": "Temporal light artefact (TLA) measurements per LM-90-20 and metric values per CIE TN 006 and IEEE 1789.",
+      "$ref": "#/$defs/FlickerMeasurements"
+    },
+
+    "outdoor_classification": {
+      "description": "Outdoor luminaire classification per TM-15 (LCS and BUG), applicable only to outdoor fixtures.",
+      "$ref": "#/$defs/OutdoorClassification"
+    },
+
+    "operating_point": {
+      "description": "Declared operating conditions at which measured values were taken (input voltage, ambient temperature, drive current).",
+      "$ref": "#/$defs/OperatingPoint"
+    },
+
+    "test_conditions": {
+      "description": "Additional measurement-context metadata that qualifies attested values (stabilization method, nonstandard-condition flags, temperature monitoring point).",
+      "$ref": "#/$defs/TestConditions"
+    },
+
+    "instrumentation": {
+      "description": "Equipment and facility metadata for the laboratory that produced the measurements (goniometer type, photometric coordinate system, spectroradiometer).",
+      "$ref": "#/$defs/Instrumentation"
+    },
+
+    "corrections_applied": {
+      "description": "Corrections applied during measurement or data reduction (self-absorption, stray light, spectral mismatch, f1' correction).",
+      "$ref": "#/$defs/CorrectionsApplied"
+    },
+
+    "uncertainty": {
+      "description": "Reported measurement uncertainty values with coverage factor.",
+      "$ref": "#/$defs/Uncertainty"
+    },
+
+    "thermal_derating": {
+      "description": "Thermal performance curves relating case or ambient temperature to flux, efficacy, or color per LM-82-20.",
+      "$ref": "#/$defs/ThermalDerating"
+    },
+
+    "lumen_maintenance_package": {
+      "description": "Package-level lumen maintenance per LM-80 and TM-21 for each LED package used in the luminaire. One luminaire may reference multiple packages.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/LumenMaintenancePackageEntry" }
+    },
+
+    "lumen_maintenance_luminaire": {
+      "description": "Luminaire-level lumen maintenance. Supports three frameworks: TM-28 projection (direct or combined extrapolation), CIE 97 Luminaire Maintenance Factor tables, or a bare manufacturer-rated claim with no cited method.",
+      "$ref": "#/$defs/LumenMaintenanceLuminaire"
+    },
+
+    "chromaticity_shift_projection": {
+      "description": "Projected chromaticity shift over luminaire life per TM-35.",
+      "$ref": "#/$defs/ChromaticityShiftProjection"
+    },
+
+    "sustainability_declaration": {
+      "description": "Structured sustainability attestation (Declare label and similar). Preserves the ingredient list, LBC Red List tier, expiration date, and document identifier.",
+      "$ref": "#/$defs/SustainabilityDeclaration"
+    },
+
+    "compatible_accessories": {
+      "description": "Mechanical accessories (junction boxes, plaster frames, mounting rings, canopies, conduits) that are compatible with this luminaire SKU but are ordered separately under their own catalog numbers. Accessories that do not change photometry are listed here rather than getting their own ULC records.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/CompatibleAccessory" }
+    },
+
+    "source_files": {
+      "description": "Source files from which this record derives its data. Each file is referenced by filename, optional URL, and SHA-256 content hash. Files are not embedded. At least one source file is required at core level.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/SourceFile" },
+      "minItems": 1
+    },
+
+    "attestations": {
+      "description": "External program attestations (listings, certifications, test-method conformance). Each attestation carries a program identifier, value type, and optional measured_quantities array listing the ULC field paths it covers. Attestations may be absolute, option-conditional, or case-by-case verification-required.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Attestation" }
+    },
+
+    "extensions": {
+      "description": "Top-level escape hatch for values that do not fit the core schema. `manufacturer_specific` holds vendor-specific fields; `experimental` holds values under active review for future promotion into the main schema. Consumers should treat extensions as informational only.",
+      "$ref": "#/$defs/Extensions"
+    }
+  },
+
+  "required": [
+    "ulc_version",
+    "record_id",
+    "record_status",
+    "conformance_level",
+    "index",
+    "product_family",
+    "configuration",
+    "source_files"
+  ],
+
+  "$defs": {
+
+    "Index": {
+      "title": "Denormalized scan index",
+      "description": "Generated summary view. Every field projects from an authoritative deep-block value. The builder (`tools/build-index.py`) is the single source of these projections; manufacturers never hand-author them. Selection policies the builder applies: (1) `nominal_cct_k` = `configuration.tested_conditions.nominal_cct_at_test`; (2) `nominal_total_lumens` = `photometry.total_luminous_flux_lm.value` at the tested baseline, not `declared_by_cct` derivatives; (3) `nominal_input_power_w` = `electrical.input_power_w.value`; (4) `primary_category` = `product_family.primary_category`; (5) `source_file_types_present` = deduplicated sorted list of `source_files[].file_type` values; (6) other fields follow analogous rules documented in the builder's source. Consumers reading `x-ulc-generated: true` can treat the index as trustworthy; absence or a stale `builder_version` is the signal to re-run the builder.",
+      "type": "object",
+      "readOnly": true,
+      "properties": {
+        "x-ulc-generated": {
+          "description": "Marker asserting this index was produced by the canonical builder. Always true in valid records; absence is the signal that the index was hand-edited or predates a builder revision.",
+          "const": true
+        },
+        "builder_version": {
+          "description": "Semver of the builder that produced this index. Consumers compare against the current builder version to detect stale indices.",
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "manufacturer_slug": { "type": "string" },
+        "catalog_model": { "type": "string" },
+        "catalog_number": { "type": "string" },
+        "display_name": { "type": "string" },
+        "primary_category": { "$ref": "taxonomy.schema.json#/$defs/PrimaryCategory" },
+        "secondary_function": {
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/SecondaryFunction" }
+        },
+        "indoor_outdoor": { "$ref": "taxonomy.schema.json#/$defs/IndoorOutdoor" },
+        "mounting_types": {
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/MountingType" }
+        },
+        "environment_rating": { "$ref": "taxonomy.schema.json#/$defs/EnvironmentRating" },
+        "nominal_cct_k": { "$ref": "taxonomy.schema.json#/$defs/NominalCCT" },
+        "nominal_total_lumens": { "type": "number", "minimum": 0 },
+        "nominal_input_power_w": { "type": "number", "minimum": 0 },
+        "nominal_cri_ra": { "type": "number", "minimum": 0, "maximum": 100 },
+        "nominal_efficacy_lm_per_w": { "type": "number", "minimum": 0 },
+        "primary_distribution": { "$ref": "taxonomy.schema.json#/$defs/DistributionType" },
+        "outdoor_distribution": { "$ref": "taxonomy.schema.json#/$defs/OutdoorDistributionType" },
+        "beam_family": { "$ref": "taxonomy.schema.json#/$defs/BeamFamily" },
+        "color_tunability": { "$ref": "taxonomy.schema.json#/$defs/ColorTunabilityCapability" },
+        "dimming_protocols": {
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/DimmingProtocol" }
+        },
+        "ip_rating": { "type": "string", "pattern": "^IP[0-9X]{2}$" },
+        "ik_rating": { "type": "string", "pattern": "^IK[0-9]{2}$" },
+        "bug_rating": {
+          "description": "Short string form of BUG (for example `B1-U0-G1`). Computed from `outdoor_classification.bug_rating` when present.",
+          "type": "string",
+          "pattern": "^B[0-5]-U[0-5]-G[0-5]$"
+        },
+        "ugr_4h_8h": { "type": "number" },
+        "attestation_programs": {
+          "description": "Flat array of every AttestationProgram value claimed anywhere in the record (shared_attestations, attestations[], sustainability_declaration). Deduplicated. Lets consumers filter by certification without walking all attestation records.",
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/AttestationProgram" }
+        },
+        "search_keywords": {
+          "description": "Optional free-text tokens the manufacturer wants indexed. Populated by the builder from `product_family.family_display_name`, `product_family.catalog_line`, and `configuration.scenario_label`, then deduplicated and sorted for deterministic output. Future builder versions may ingest additional manufacturer-tagged fields; the exact set is a builder-version policy, not a schema-level contract.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "source_file_types_present": {
+          "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, ULD, GLDF) exist for this record without walking the full `source_files` array.",
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" }
+        }
+      },
+      "required": [
+        "x-ulc-generated",
+        "builder_version",
+        "manufacturer_slug",
+        "catalog_model",
+        "primary_category",
+        "nominal_cct_k",
+        "nominal_total_lumens",
+        "nominal_input_power_w"
+      ]
+    },
+
+    "Provenance": {
+      "title": "Per-field provenance",
+      "description": "Traceability metadata attached to an individual field value. Every extracted, derived, or computed value should carry provenance so consumers can verify how each number was produced.",
+      "type": "object",
+      "properties": {
+        "source": {
+          "description": "Origin of the value.",
+          "$ref": "taxonomy.schema.json#/$defs/ProvenanceSource"
+        },
+        "method": {
+          "description": "How the value was produced from its source.",
+          "$ref": "taxonomy.schema.json#/$defs/ProvenanceMethod"
+        },
+        "confidence": {
+          "description": "Optional confidence score in the range [0, 1] when the value was inferred or extracted with uncertainty.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "conflict_notes": {
+          "description": "Optional note recording a disagreement between two sources for the same value.",
+          "type": "string"
+        },
+        "attestation_ref": {
+          "description": "Reference to an attestation record's test ID when the value is anchored to a specific lab attestation. Required for fields with value_type `measured`.",
+          "type": "string"
+        },
+        "base_attestation_ref": {
+          "description": "Reference to the base measured attestation from which this value was derived by simulation, extended photometry, or scaling.",
+          "type": "string"
+        },
+        "simulation_tool": {
+          "description": "Name and version of the optical simulation tool, when method is `optical_simulation`.",
+          "type": "string"
+        },
+        "extension_method": {
+          "description": "The specific extension rule applied, when method is `extended_photometry` or `scaled`.",
+          "type": "string",
+          "examples": ["length_scaling", "cct_multiplier", "accessory_adjustment", "wattage_tier_scaling"]
+        }
+      },
+      "required": ["source", "method"]
+    },
+
+    "DualUnitLength": {
+      "title": "Dual-unit length",
+      "description": "Length value with mandatory SI (mm) and Imperial (in) representations. SI is authoritative per the ULC spec; the Imperial representation is the required derived companion.",
+      "type": "object",
+      "properties": {
+        "mm": { "type": "number", "minimum": 0 },
+        "in": { "type": "number", "minimum": 0 },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "required": ["mm", "in"]
+    },
+
+    "DualUnitMass": {
+      "title": "Dual-unit mass",
+      "description": "Mass value with mandatory SI (kg) and Imperial (lb) representations.",
+      "type": "object",
+      "properties": {
+        "kg": { "type": "number", "minimum": 0 },
+        "lb": { "type": "number", "minimum": 0 },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "required": ["kg", "lb"]
+    },
+
+    "DualUnitTemperature": {
+      "title": "Dual-unit temperature",
+      "description": "Temperature value with mandatory Celsius and Fahrenheit representations.",
+      "type": "object",
+      "properties": {
+        "c": { "type": "number" },
+        "f": { "type": "number" },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "required": ["c", "f"]
+    },
+
+    "ProvenancedNumber": {
+      "title": "Provenanced scalar number",
+      "description": "A single numeric value with its unit, regulatory value type, and provenance. Used for single-unit quantities (lumens, watts, CRI, Duv, candela, efficacy).",
+      "type": "object",
+      "properties": {
+        "value": { "type": "number" },
+        "unit": { "type": "string", "examples": ["lm", "W", "cd", "lm/W", "K", "ratio", "percent"] },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "required": ["value", "value_type"]
+    },
+
+    "FileReference": {
+      "title": "File reference",
+      "description": "Reference to a source file by filename, optional URL, and mandatory SHA-256 content hash. The hash is the integrity anchor; URLs may rot.",
+      "type": "object",
+      "properties": {
+        "filename": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "revision_label": { "type": "string" },
+        "revision_date": { "type": "string", "format": "date" }
+      },
+      "required": ["filename", "sha256"]
+    },
+
+    "SourceFile": {
+      "title": "Source file entry",
+      "description": "One source file that contributes data to this ULC record.",
+      "type": "object",
+      "properties": {
+        "file_type": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" },
+        "reference": { "$ref": "#/$defs/FileReference" }
+      },
+      "required": ["file_type", "reference"]
+    },
+
+    "ProductFamily": {
+      "title": "Product family",
+      "description": "Cutsheet-level identity and metadata shared by every ULC record in the family.",
+      "type": "object",
+      "properties": {
+        "family_id": {
+          "description": "Stable slug grouping all records from the same cutsheet.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "family_display_name": { "type": "string" },
+        "family_description": { "type": "string" },
+        "manufacturer": {
+          "type": "object",
+          "properties": {
+            "slug": { "type": "string" },
+            "display_name": { "type": "string" },
+            "parent_manufacturer_slug": {
+              "description": "Optional parent company slug when the manufacturer is a subsidiary (for example Vode is a subsidiary of Lumenpulse).",
+              "type": "string"
+            }
+          },
+          "required": ["slug", "display_name"]
+        },
+        "catalog_line": { "type": "string" },
+        "catalog_model": { "type": "string" },
+        "cutsheet": { "$ref": "#/$defs/FileReference" },
+        "primary_category": { "$ref": "taxonomy.schema.json#/$defs/PrimaryCategory" },
+        "secondary_function": {
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/SecondaryFunction" }
+        },
+        "indoor_outdoor": { "$ref": "taxonomy.schema.json#/$defs/IndoorOutdoor" },
+        "mounting_types": {
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/MountingType" }
+        },
+        "environment_rating": { "$ref": "taxonomy.schema.json#/$defs/EnvironmentRating" },
+        "shape": { "$ref": "taxonomy.schema.json#/$defs/Shape" },
+        "shared_mechanical": {
+          "type": "object",
+          "properties": {
+            "housing_material": { "$ref": "taxonomy.schema.json#/$defs/HousingMaterial" },
+            "lens_material": { "$ref": "taxonomy.schema.json#/$defs/LensMaterial" },
+            "finish_color_options": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "ip_rating": { "type": "string", "pattern": "^IP[0-9X]{2}$" },
+            "ik_rating": { "type": "string", "pattern": "^IK[0-9]{2}$" },
+            "ambient_operating_range": {
+              "description": "Declared ambient operating temperature range for the fixture. Dual-unit per spec: Celsius authoritative, Fahrenheit is the required derived companion.",
+              "type": "object",
+              "properties": {
+                "min": { "$ref": "#/$defs/DualUnitTemperature" },
+                "max": { "$ref": "#/$defs/DualUnitTemperature" }
+              }
+            }
+          }
+        },
+        "shared_warranty": {
+          "type": "object",
+          "properties": {
+            "term_years": { "type": "integer", "minimum": 0 },
+            "scope": { "type": "string" },
+            "conditions_reference": { "type": "string" }
+          }
+        },
+        "shared_attestations": {
+          "description": "Attestations that apply to every SKU in the family without qualification. SKU-specific or option-conditional attestations live in the top-level `attestations[]` array instead.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/Attestation" }
+        },
+        "introduced_at": { "type": "string", "format": "date" },
+        "end_of_life_program_url": { "type": "string", "format": "uri" }
+      },
+      "required": ["family_id", "manufacturer", "catalog_model", "cutsheet"]
+    },
+
+    "Configuration": {
+      "title": "Tested configuration",
+      "description": "The specific photometric scenario this record represents. Fields describe what was tested, not what the record's measurements apply to (that is the applicability block's job).",
+      "type": "object",
+      "properties": {
+        "photometric_scenario_id": {
+          "description": "Identifier for the photometric scenario within the family. Typically a slug summarizing the tested axes.",
+          "type": "string"
+        },
+        "catalog_number": {
+          "description": "The specific manufacturer-assigned catalog number or order code this record represents. Populated by Pattern A manufacturers who publish one cutsheet per SKU. Pattern B manufacturers whose scenario covers a catalog pattern typically omit this field and rely on `applicability.applicable_catalog_pattern` plus `record_id` for identification.",
+          "type": "string"
+        },
+        "scenario_label": {
+          "description": "Human-readable description of the tested scenario.",
+          "type": "string"
+        },
+        "tested_axes": {
+          "description": "Axes of the configurator that this scenario's measurement varies. Each axis names its manufacturer-label, optional ULC category mapping, and tested value.",
+          "type": "object",
+          "properties": {
+            "distribution_code": {
+              "type": "object",
+              "properties": {
+                "manufacturer_label": { "type": "string" },
+                "distribution_type": { "$ref": "taxonomy.schema.json#/$defs/DistributionType" },
+                "outdoor_distribution_type": { "$ref": "taxonomy.schema.json#/$defs/OutdoorDistributionType" }
+              }
+            },
+            "light_engine_variant": { "type": "string" },
+            "output_tier": {
+              "type": "object",
+              "properties": {
+                "manufacturer_label": { "type": "string" },
+                "tier_meaning": { "type": "string" }
+              }
+            },
+            "cri_tier": { "type": "string", "examples": ["cri_80", "cri_90", "cri_95"] },
+            "color_tunability": { "$ref": "taxonomy.schema.json#/$defs/ColorTunabilityCapability" }
+          }
+        },
+        "tested_conditions": {
+          "description": "Conditions fixed during the test that anchor this record's measurements.",
+          "type": "object",
+          "properties": {
+            "nominal_cct_at_test": { "$ref": "taxonomy.schema.json#/$defs/NominalCCT" },
+            "input_voltage_at_test": { "type": "string", "examples": ["120v", "277v", "347v"] },
+            "mounting_at_test": { "$ref": "taxonomy.schema.json#/$defs/MountingType" },
+            "ambient_temperature": { "$ref": "#/$defs/DualUnitTemperature" },
+            "case_temperature": { "$ref": "#/$defs/DualUnitTemperature" }
+          }
+        },
+        "source_ies_ref": {
+          "description": "Reference to the IES file this scenario's photometry anchors to, if applicable. Matches a source_files entry.",
+          "type": "string"
+        }
+      },
+      "required": ["photometric_scenario_id"]
+    },
+
+    "Applicability": {
+      "title": "Applicability block",
+      "description": "Declares the range of orderable SKU configurations this record's measurements apply to. This is the mechanism that lets one ULC record cover many orderable SKUs without duplication.",
+      "type": "object",
+      "properties": {
+        "applicable_catalog_pattern": {
+          "description": "Order-code skeleton where `{AXIS}` placeholders mark axes covered by this record. Example: `AYAP-SR-{MOUNT}-HO-{CCT}-{CORD}-{FINISH}-{VOLT}-{OPTIONS}`.",
+          "type": "string"
+        },
+        "fixed_axes": {
+          "description": "Order-code axes that must match a fixed value for this record to apply.",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "covered_axes": {
+          "description": "Order-code axes where multiple values share this record's photometry. Each entry lists the covered values and optionally a derivation rule (multiplier table, linear scaling, voltage-independence rationale).",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/CoveredAxis" }
+        },
+        "excluded_combinations": {
+          "description": "Combinations that are orderable elsewhere in the family but not covered by this record.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "axes": {
+                "type": "object",
+                "additionalProperties": {
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "array", "items": { "type": "string" } }
+                  ]
+                }
+              },
+              "reason": { "type": "string" }
+            },
+            "required": ["axes", "reason"]
+          }
+        },
+        "applicable_sku_count_estimate": {
+          "description": "Informational count of orderable SKUs this record covers. Not used for validation.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+
+    "CoveredAxis": {
+      "title": "Covered axis",
+      "description": "One order-code axis covered by a record's applicability block.",
+      "type": "object",
+      "properties": {
+        "values": {
+          "description": "Order-code values for this axis that share the record's photometry.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "rationale": {
+          "description": "Why these values share one record (for example `regulated driver renders voltage variance photometrically immaterial` or `finish is cosmetic`).",
+          "type": "string"
+        },
+        "derivation": {
+          "description": "Optional derivation rule for values that are not photometrically identical to the baseline but derive from it by a disclosed method.",
+          "$ref": "#/$defs/DerivationRule"
+        },
+        "excludes": {
+          "description": "Values that are part of this axis's order-code menu but are NOT covered by this record.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["values", "rationale"]
+    },
+
+    "DerivationRule": {
+      "title": "Scaling derivation rule",
+      "description": "Manufacturer-declared rule for deriving per-axis values from a baseline measurement. Examples: CCT multiplier table (Selux), per-foot linear scaling (Vode), wattage-tier scaling, voltage step-down delta.",
+      "type": "object",
+      "properties": {
+        "method": {
+          "description": "Named derivation method.",
+          "type": "string",
+          "examples": ["manufacturer_lumen_multiplier", "per_foot_linear_scaling", "wattage_tier_scaling", "voltage_stepdown_percent", "regulated_driver_voltage_independence"]
+        },
+        "baseline_axis_value": { "type": "string" },
+        "multiplier_table": {
+          "description": "Keyed multiplier table when the method produces values by multiplying a baseline. Keys are axis values, values are multipliers relative to the baseline.",
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "linear_rate": {
+          "description": "Per-unit rate for linear scaling (for example lumens per foot).",
+          "type": "object",
+          "properties": {
+            "value": { "type": "number" },
+            "unit": { "type": "string" }
+          }
+        },
+        "reference": {
+          "description": "Citation for where on the cutsheet the rule is published (for example `cutsheet_page_10_table`).",
+          "type": "string"
+        },
+        "note": { "type": "string" }
+      },
+      "required": ["method"]
+    },
+
+    "Electrical": {
+      "title": "Electrical measurements",
+      "description": "Electrical quantities measured at the luminaire input.",
+      "type": "object",
+      "properties": {
+        "input_power_w": { "$ref": "#/$defs/ProvenancedNumber" },
+        "input_current_a": { "$ref": "#/$defs/ProvenancedNumber" },
+        "input_voltage_v": { "$ref": "#/$defs/ProvenancedNumber" },
+        "input_voltage_class": { "type": "string", "examples": ["120v", "277v", "347v", "universal_120_277"] },
+        "power_factor": { "$ref": "#/$defs/ProvenancedNumber" },
+        "thd_percent": { "$ref": "#/$defs/ProvenancedNumber" },
+        "driver_protocol": { "$ref": "taxonomy.schema.json#/$defs/DimmingProtocol" },
+        "control_gear_type": { "$ref": "taxonomy.schema.json#/$defs/ControlGearType" },
+        "led_module_power_w": {
+          "description": "Optional LED-module-only input power (typically smaller than luminaire input due to driver losses). Useful when the cutsheet distinguishes module from luminaire.",
+          "$ref": "#/$defs/ProvenancedNumber"
+        }
+      }
+    },
+
+    "Photometry": {
+      "title": "Photometry",
+      "description": "Luminous flux, intensity, beam geometry, efficacy, UGR, and BUG summary.",
+      "type": "object",
+      "properties": {
+        "total_luminous_flux_lm": { "$ref": "#/$defs/ProvenancedNumber" },
+        "led_module_luminous_flux_lm": {
+          "description": "Optional LED-module-only flux (upstream of luminaire optics). Paired with led_module_power_w when the cutsheet distinguishes module from luminaire.",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "luminaire_efficacy_lm_per_w": { "$ref": "#/$defs/ProvenancedNumber" },
+        "maximum_intensity_cd": { "$ref": "#/$defs/ProvenancedNumber" },
+        "center_beam_intensity_cd": { "$ref": "#/$defs/ProvenancedNumber" },
+        "beam_angle_deg": { "$ref": "#/$defs/ProvenancedNumber" },
+        "field_angle_deg": { "$ref": "#/$defs/ProvenancedNumber" },
+        "beam_family": { "$ref": "taxonomy.schema.json#/$defs/BeamFamily" },
+        "distribution_type": { "$ref": "taxonomy.schema.json#/$defs/DistributionType" },
+        "symmetry_type": { "$ref": "taxonomy.schema.json#/$defs/SymmetryType" },
+        "photometric_coordinate_system": { "$ref": "taxonomy.schema.json#/$defs/PhotometricCoordinateSystem" },
+        "luminous_opening_shape": { "$ref": "taxonomy.schema.json#/$defs/LuminousOpeningShape" },
+        "emission_face": { "$ref": "taxonomy.schema.json#/$defs/EmissionFace" },
+        "spacing_criterion": { "$ref": "#/$defs/ProvenancedNumber" },
+        "ugr_4h_8h": {
+          "description": "Unified Glare Rating for the CIE 4H/8H reference room geometry. Published by manufacturers of interior architectural fixtures for European glare assessments.",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "zonal_lumens": {
+          "description": "Luminous flux summed over zonal angle bands (for example 0-30, 0-40, 0-60, 0-90, 90-180 degrees).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "zone_label": { "type": "string", "examples": ["0-30", "0-40", "0-60", "0-90", "90-180"] },
+              "lumens": { "$ref": "#/$defs/ProvenancedNumber" }
+            },
+            "required": ["zone_label", "lumens"]
+          }
+        },
+        "per_length_normalized": {
+          "description": "For linear products, per-unit-length photometric values that scale with fixture length.",
+          "type": "object",
+          "properties": {
+            "lumens_per_foot": { "$ref": "#/$defs/ProvenancedNumber" },
+            "lumens_per_meter": { "$ref": "#/$defs/ProvenancedNumber" },
+            "watts_per_foot": { "$ref": "#/$defs/ProvenancedNumber" },
+            "watts_per_meter": { "$ref": "#/$defs/ProvenancedNumber" },
+            "reference_length": { "$ref": "#/$defs/DualUnitLength" }
+          }
+        },
+        "declared_by_cct": {
+          "description": "Manufacturer-declared photometric values at CCTs other than the tested baseline, derived via a CCT multiplier table or similar rule. See applicability.covered_axes.CCT for the derivation context.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cct": { "$ref": "taxonomy.schema.json#/$defs/NominalCCT" },
+              "lumens": { "$ref": "#/$defs/ProvenancedNumber" },
+              "efficacy_lm_per_w": { "$ref": "#/$defs/ProvenancedNumber" }
+            },
+            "required": ["cct"]
+          }
+        }
+      }
+    },
+
+    "Colorimetry": {
+      "title": "Colorimetry",
+      "description": "Color metrics including CCT, Duv, CRI, and TM-30 color rendition.",
+      "type": "object",
+      "properties": {
+        "nominal_cct_k": { "$ref": "taxonomy.schema.json#/$defs/NominalCCT" },
+        "measured_cct_k": { "$ref": "#/$defs/ProvenancedNumber" },
+        "duv": { "$ref": "#/$defs/ProvenancedNumber" },
+        "chromaticity_x": { "$ref": "#/$defs/ProvenancedNumber" },
+        "chromaticity_y": { "$ref": "#/$defs/ProvenancedNumber" },
+        "sdcm_step": { "$ref": "#/$defs/ProvenancedNumber" },
+        "cri_ra": { "$ref": "#/$defs/ProvenancedNumber" },
+        "cri_r9": { "$ref": "#/$defs/ProvenancedNumber" },
+        "cri_per_sample": {
+          "description": "Optional per-sample CIE 13 CRI values (R1 through R15).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sample_index": { "type": "integer", "minimum": 1, "maximum": 15 },
+              "value": { "$ref": "#/$defs/ProvenancedNumber" }
+            },
+            "required": ["sample_index", "value"]
+          }
+        },
+        "tm_30": {
+          "type": "object",
+          "properties": {
+            "rf": { "$ref": "#/$defs/ProvenancedNumber" },
+            "rg": { "$ref": "#/$defs/ProvenancedNumber" },
+            "pvf_code": {
+              "description": "Preference/Vividness/Fidelity two-character code per TM-30-24: a letter (P / V / F) identifying the design-intent axis, followed by a level digit (1-3). Example values: `P2`, `V1`, `F3`. A single PVF code expresses the highest-priority design intent level achieved.",
+              "type": "string",
+              "pattern": "^[PVF][1-3]$"
+            },
+            "rf_h_per_bin": {
+              "description": "Local chroma shift / hue shift / local fidelity per hue bin (16 bins).",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "bin": { "type": "integer", "minimum": 1, "maximum": 16 },
+                  "rf_h": { "$ref": "#/$defs/ProvenancedNumber" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "AlphaOpicMetrics": {
+      "title": "Alpha-opic / melanopic metrics",
+      "description": "Per CIE S 026 and IES RP-46-23. Melanopic DER (MDER) is the most commonly published value on cutsheets.",
+      "type": "object",
+      "properties": {
+        "reference_illuminant": {
+          "description": "Reference illuminant for alpha-opic DER calculations. Per CIE S 026, always D65.",
+          "const": "d65"
+        },
+        "standard_observer": {
+          "description": "Colorimetric observer used. Per CIE S 026, always the CIE 1931 2-degree standard observer.",
+          "const": "cie_1931_2_degree"
+        },
+        "melanopic_der": {
+          "description": "Melanopic Daylight Efficacy Ratio (MDER / gamma_mel,v,D65). Multiplied by photopic illuminance to compute MEDI (Melanopic Equivalent Daylight Illuminance).",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "per_channel": {
+          "description": "Alpha-opic efficacy of luminous radiation per photoreceptor channel.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "channel": { "$ref": "taxonomy.schema.json#/$defs/AlphaOpicChannel" },
+              "efficacy": { "$ref": "#/$defs/ProvenancedNumber" }
+            },
+            "required": ["channel", "efficacy"]
+          }
+        }
+      }
+    },
+
+    "FlickerMeasurements": {
+      "title": "Flicker measurements",
+      "description": "TLA metrics per LM-90-20, CIE TN 006, and IEEE 1789. Values may be measured scalars or manufacturer-rated upper bounds.",
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": { "$ref": "taxonomy.schema.json#/$defs/FlickerMetric" },
+              "value": { "$ref": "#/$defs/ProvenancedNumber" },
+              "bound_operator": {
+                "description": "Used when the manufacturer declares an upper bound (`<=`) rather than a specific measured value.",
+                "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
+              }
+            },
+            "required": ["metric"]
+          }
+        },
+        "risk_level": { "$ref": "taxonomy.schema.json#/$defs/FlickerRiskLevel" },
+        "test_chamber_type": { "$ref": "taxonomy.schema.json#/$defs/FlickerTestChamberType" },
+        "dimming_type_at_test": { "$ref": "taxonomy.schema.json#/$defs/FlickerDimmingType" },
+        "photodetector_correction": { "$ref": "taxonomy.schema.json#/$defs/FlickerPhotodetectorSpectralCorrection" },
+        "sampling_class": { "$ref": "taxonomy.schema.json#/$defs/FlickerSamplingClass" },
+        "waveform_file_format": { "$ref": "taxonomy.schema.json#/$defs/FlickerWaveformFileFormat" }
+      }
+    },
+
+    "OutdoorClassification": {
+      "title": "Outdoor classification",
+      "description": "TM-15 LCS and BUG classification for outdoor luminaires.",
+      "type": "object",
+      "properties": {
+        "bug_rating": {
+          "type": "object",
+          "properties": {
+            "b": { "type": "integer", "minimum": 0, "maximum": 5 },
+            "u": { "type": "integer", "minimum": 0, "maximum": 5 },
+            "g": { "type": "integer", "minimum": 0, "maximum": 5 }
+          },
+          "required": ["b", "u", "g"]
+        },
+        "outdoor_distribution_type": { "$ref": "taxonomy.schema.json#/$defs/OutdoorDistributionType" },
+        "longitudinal_distribution_range": { "$ref": "taxonomy.schema.json#/$defs/LongitudinalDistributionRange" },
+        "legacy_cutoff": { "$ref": "taxonomy.schema.json#/$defs/LegacyCutoffClassification" },
+        "lcs_zonal_lumens": {
+          "description": "Luminous flux per LCS zone per TM-15.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "zone": {
+                "type": "string",
+                "examples": ["fl", "fm", "fh", "fvh", "bl", "bm", "bh", "bvh", "ul", "uh"]
+              },
+              "lumens": { "$ref": "#/$defs/ProvenancedNumber" }
+            },
+            "required": ["zone", "lumens"]
+          }
+        }
+      }
+    },
+
+    "OperatingPoint": {
+      "title": "Operating point",
+      "description": "Declared operating conditions at which measured values were taken.",
+      "type": "object",
+      "properties": {
+        "input_voltage_v": { "$ref": "#/$defs/ProvenancedNumber" },
+        "input_frequency_hz": { "$ref": "#/$defs/ProvenancedNumber" },
+        "drive_current_ma": { "$ref": "#/$defs/ProvenancedNumber" },
+        "ambient_temperature": { "$ref": "#/$defs/DualUnitTemperature" },
+        "case_temperature_monitoring_point": { "$ref": "taxonomy.schema.json#/$defs/TemperatureMonitoringPoint" },
+        "case_temperature": { "$ref": "#/$defs/DualUnitTemperature" },
+        "dut_operating_mode": { "$ref": "taxonomy.schema.json#/$defs/DutOperatingMode" }
+      }
+    },
+
+    "TestConditions": {
+      "title": "Test conditions",
+      "description": "Context qualifying attested values.",
+      "type": "object",
+      "properties": {
+        "stabilization_method": { "$ref": "taxonomy.schema.json#/$defs/StabilizationMethod" },
+        "nonstandard_condition_flags": {
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/NonstandardConditionFlag" }
+        },
+        "photometry_method": { "$ref": "taxonomy.schema.json#/$defs/PhotometryMethod" },
+        "photometry_basis": { "$ref": "taxonomy.schema.json#/$defs/PhotometryBasis" },
+        "negative_intensity_handling": { "$ref": "taxonomy.schema.json#/$defs/NegativeIntensityHandling" },
+        "file_generation_type": { "$ref": "taxonomy.schema.json#/$defs/FileGenerationType" }
+      }
+    },
+
+    "Instrumentation": {
+      "title": "Instrumentation",
+      "description": "Laboratory equipment and accreditation.",
+      "type": "object",
+      "properties": {
+        "goniometer_type": { "$ref": "taxonomy.schema.json#/$defs/GoniometerType" },
+        "measurement_regime": { "$ref": "taxonomy.schema.json#/$defs/MeasurementRegime" },
+        "laboratory_certification": { "$ref": "taxonomy.schema.json#/$defs/LaboratoryCertification" },
+        "laboratory_accreditation_scheme": { "$ref": "taxonomy.schema.json#/$defs/LaboratoryAccreditationScheme" },
+        "laboratory_name": { "type": "string" },
+        "laboratory_report_id": { "type": "string" }
+      }
+    },
+
+    "CorrectionsApplied": {
+      "title": "Corrections applied",
+      "description": "Corrections performed during measurement or data reduction.",
+      "type": "object",
+      "properties": {
+        "self_absorption_corrected": { "type": "boolean" },
+        "stray_light_corrected": { "type": "boolean" },
+        "spectral_mismatch_corrected": { "type": "boolean" },
+        "f1_prime_value": { "$ref": "#/$defs/ProvenancedNumber" },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "Uncertainty": {
+      "title": "Measurement uncertainty",
+      "description": "Reported expanded uncertainty values with coverage factor per GUM conventions.",
+      "type": "object",
+      "properties": {
+        "coverage_factor_k": { "type": "number", "examples": [2.0] },
+        "expanded_uncertainty_total_flux_percent": { "$ref": "#/$defs/ProvenancedNumber" },
+        "expanded_uncertainty_input_power_percent": { "$ref": "#/$defs/ProvenancedNumber" },
+        "expanded_uncertainty_cct_k": { "$ref": "#/$defs/ProvenancedNumber" },
+        "expanded_uncertainty_efficacy_percent": { "$ref": "#/$defs/ProvenancedNumber" }
+      }
+    },
+
+    "ThermalDerating": {
+      "title": "Thermal derating",
+      "description": "Flux, efficacy, and color shift vs. case or ambient temperature per LM-82-20.",
+      "type": "object",
+      "properties": {
+        "thermal_control_method": { "$ref": "taxonomy.schema.json#/$defs/ThermalControlMethod" },
+        "curves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "temperature_axis": { "$ref": "taxonomy.schema.json#/$defs/TemperatureAxis" },
+              "temperature_points_c": {
+                "description": "Temperature sample points in degrees Celsius. Standards-native Celsius exception to the dual-unit rule: LM-82-20 and equivalent standards publish these arrays in Celsius only, and this field mirrors the source data verbatim. Consumers needing Fahrenheit convert at read time.",
+                "type": "array",
+                "items": { "type": "number" }
+              },
+              "flux_values_normalized": {
+                "type": "array",
+                "items": { "type": "number" }
+              },
+              "efficacy_values_lm_per_w": {
+                "type": "array",
+                "items": { "type": "number" }
+              },
+              "cct_shift_points_k": {
+                "type": "array",
+                "items": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "LumenMaintenancePackageEntry": {
+      "title": "Lumen maintenance (package level)",
+      "description": "Per-package LM-80 data and TM-21 projection. A luminaire using multiple LED packages has one entry per distinct package.",
+      "type": "object",
+      "properties": {
+        "package_identifier": { "type": "string" },
+        "tested_product_type": { "$ref": "taxonomy.schema.json#/$defs/TestedProductType" },
+        "flux_maintenance_quantity": { "$ref": "taxonomy.schema.json#/$defs/FluxMaintenanceQuantity" },
+        "flux_maintenance_threshold": { "$ref": "taxonomy.schema.json#/$defs/FluxMaintenanceThreshold" },
+        "tm_21_projection_hours": { "$ref": "#/$defs/ProvenancedNumber" },
+        "projection_reliability": { "$ref": "taxonomy.schema.json#/$defs/ProjectionReliability" },
+        "tm_21_interpolation_type": { "$ref": "taxonomy.schema.json#/$defs/TM21InterpolationType" },
+        "test_hours": { "$ref": "#/$defs/ProvenancedNumber" },
+        "test_temperature_c": { "$ref": "#/$defs/ProvenancedNumber" },
+        "drive_current_ma": { "$ref": "#/$defs/ProvenancedNumber" }
+      }
+    },
+
+    "LumenMaintenanceLuminaire": {
+      "title": "Lumen maintenance (luminaire level)",
+      "description": "Framework-aware block. The framework field selects which sub-block applies. Multiple frameworks may coexist if the cutsheet publishes more than one.",
+      "type": "object",
+      "properties": {
+        "declaration_framework": { "$ref": "taxonomy.schema.json#/$defs/LumenMaintenanceDeclarationFramework" },
+        "tm_28": {
+          "type": "object",
+          "properties": {
+            "projection_method": { "$ref": "taxonomy.schema.json#/$defs/LumenMaintenanceProjectionMethod" },
+            "projection_basis": { "$ref": "taxonomy.schema.json#/$defs/ProjectionBasis" },
+            "tm_28_projection_hours": { "$ref": "#/$defs/ProvenancedNumber" },
+            "projection_reliability": { "$ref": "taxonomy.schema.json#/$defs/ProjectionReliability" },
+            "test_hours": { "$ref": "#/$defs/ProvenancedNumber" }
+          }
+        },
+        "cie_97_lmf_table": {
+          "description": "Luminaire Maintenance Factor values the manufacturer declares for their fixture across the four standardized CIE 97 ambient cleanliness categories (pure / clean / normal / dirty) at the three standardized cleaning intervals (1 / 2 / 3 years). These are NOT site-specific installation inputs: they are reference categories defined by CIE 97 so manufacturers can publish comparable LMF data. This field therefore describes a declared capability of the fixture (rubric filter 2), not project or installation context. Specifiers pick the row that matches their installation conditions when computing project-specific maintenance factors downstream.",
+          "type": "object",
+          "properties": {
+            "lmf_by_cleanliness_and_interval": {
+              "description": "Array of LMF values keyed by the CIE 97 reference conditions. The manufacturer supplies one entry per (interval, cleanliness) combination they publish; typical cutsheets publish all 12.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "cleaning_interval_years": { "type": "integer", "minimum": 1, "maximum": 3 },
+                  "ambient_cleanliness": { "$ref": "taxonomy.schema.json#/$defs/AmbientCleanliness" },
+                  "lmf": { "type": "number", "minimum": 0, "maximum": 1 }
+                },
+                "required": ["cleaning_interval_years", "ambient_cleanliness", "lmf"]
+              }
+            },
+            "llmf_by_hours": {
+              "description": "Lamp Lumen Maintenance Factor by operating hours.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "hours": { "type": "integer" },
+                  "llmf": { "type": "number", "minimum": 0, "maximum": 1 },
+                  "lsf": { "type": "number", "minimum": 0, "maximum": 1 }
+                },
+                "required": ["hours"]
+              }
+            }
+          }
+        },
+        "manufacturer_rated_claim": {
+          "description": "Bare manufacturer claim like `L70 > 50,000h` or `L80 > 60,000h` with no cited method. Present when declaration_framework is `manufacturer_rated_claim`.",
+          "type": "object",
+          "properties": {
+            "claim_type": {
+              "description": "Maintenance threshold being claimed (L70, L80, L90, L95).",
+              "$ref": "taxonomy.schema.json#/$defs/FluxMaintenanceThreshold"
+            },
+            "claimed_hours": { "$ref": "#/$defs/ProvenancedNumber" },
+            "failure_percent": {
+              "description": "Claimed cumulative failure rate at the claimed hours (for example `0.1%` failure at 50,000 hours).",
+              "$ref": "#/$defs/ProvenancedNumber"
+            }
+          }
+        }
+      }
+    },
+
+    "ChromaticityShiftProjection": {
+      "title": "Chromaticity shift projection",
+      "description": "Per TM-35.",
+      "type": "object",
+      "properties": {
+        "shift_metric": { "$ref": "taxonomy.schema.json#/$defs/ChromaticityShiftMetric" },
+        "shift_threshold": { "$ref": "taxonomy.schema.json#/$defs/ChromaticityShiftThreshold" },
+        "shift_mode": { "$ref": "taxonomy.schema.json#/$defs/ChromaticityShiftMode" },
+        "projected_hours": { "$ref": "#/$defs/ProvenancedNumber" },
+        "tm_35_edition": { "$ref": "taxonomy.schema.json#/$defs/TM35Edition" }
+      }
+    },
+
+    "SustainabilityDeclaration": {
+      "title": "Sustainability declaration",
+      "description": "Structured representation of a Declare label or similar sustainability attestation.",
+      "type": "object",
+      "properties": {
+        "declaration_type": {
+          "description": "Which sustainability program the declaration belongs to.",
+          "$ref": "taxonomy.schema.json#/$defs/SustainabilityDeclarationType"
+        },
+        "document_id": { "type": "string" },
+        "original_issue_date": { "type": "string", "format": "date" },
+        "expiration_date": { "type": "string", "format": "date" },
+        "final_assembly_location": { "type": "string" },
+        "life_expectancy_years": { "type": "number", "minimum": 0 },
+        "end_of_life_options": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recyclable_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "ingredient_list": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "material_name": { "type": "string" },
+              "lbc_red_list_status": { "$ref": "taxonomy.schema.json#/$defs/IngredientRedListStatus" },
+              "notes": { "type": "string" }
+            },
+            "required": ["material_name"]
+          }
+        },
+        "lbc_criteria_compliance": { "type": "boolean" },
+        "voc_content": { "type": "string" },
+        "interior_performance": { "type": "string" },
+        "responsible_sourcing": { "type": "string" }
+      }
+    },
+
+    "CompatibleAccessory": {
+      "title": "Compatible accessory",
+      "description": "Mechanical accessory (junction box, plaster frame, mounting ring, canopy, conduit) compatible with this luminaire but ordered separately. Accessories that alter fixture photometry are modeled as separate ULC records and referenced via their own record_id instead of this block.",
+      "type": "object",
+      "properties": {
+        "accessory_catalog_number": { "type": "string" },
+        "display_name": { "type": "string" },
+        "description": { "type": "string" },
+        "accessory_type": { "$ref": "taxonomy.schema.json#/$defs/AccessoryType" },
+        "mass": { "$ref": "#/$defs/DualUnitMass" },
+        "changes_photometry": {
+          "description": "True when the accessory changes fixture photometry. Accessories with changes_photometry=true should also have their own ULC record linked via `accessorized_record_ref`.",
+          "type": "boolean",
+          "default": false
+        },
+        "accessorized_record_ref": { "type": "string" }
+      },
+      "required": ["accessory_catalog_number"]
+    },
+
+    "Attestation": {
+      "title": "Attestation record",
+      "description": "An attestation claim against this ULC record. An attestation may be absolute (applies always), option-conditional (applies when specific order-code options are selected), or case-by-case (requires per-project manufacturer verification). The measured_quantities array lists ULC field paths the attestation covers so consumers can verify coverage.",
+      "type": "object",
+      "properties": {
+        "attestation_id": {
+          "description": "Stable identifier for this attestation within the record (for example `lm79_selux_aya_sr_ho`). Used as the target of `provenance.attestation_ref` from individual values.",
+          "type": "string"
+        },
+        "program": { "$ref": "taxonomy.schema.json#/$defs/AttestationProgram" },
+        "status": { "$ref": "taxonomy.schema.json#/$defs/AttestationStatus" },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "issued_date": { "type": "string", "format": "date" },
+        "valid_until": { "type": "string", "format": "date" },
+        "listing_number": { "type": "string" },
+        "test_laboratory": { "type": "string" },
+        "test_report_id": { "type": "string" },
+        "standard_revision": { "type": "string" },
+        "measured_quantities": {
+          "description": "JSON paths of ULC fields this attestation covers. Validators check that each claimed field's `provenance.attestation_ref` matches the attestation_id.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "applicability": {
+          "description": "Order-code conditions under which this attestation applies (for option-conditional attestations like Chicago Plenum requiring the CPP option).",
+          "type": "object",
+          "properties": {
+            "required_order_code_options": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "required_constraints": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        },
+        "verification": {
+          "description": "For case-by-case attestations (BAA, BABA, and similar), declares that manufacturer confirmation is required before a consumer can propagate the claim downstream.",
+          "type": "object",
+          "properties": {
+            "type": { "$ref": "taxonomy.schema.json#/$defs/AttestationVerificationType" },
+            "contact_reference": { "type": "string" },
+            "notes": { "type": "string" }
+          },
+          "required": ["type"]
+        },
+        "source_document_ref": { "$ref": "#/$defs/FileReference" }
+      },
+      "required": ["program", "value_type"]
+    },
+
+    "Extensions": {
+      "title": "Extensions",
+      "description": "Escape hatch for values outside the core schema. Treated as informational by validators.",
+      "type": "object",
+      "properties": {
+        "manufacturer_specific": {
+          "description": "Vendor-specific fields keyed by manufacturer slug.",
+          "type": "object",
+          "additionalProperties": true
+        },
+        "experimental": {
+          "description": "Fields under active review for promotion into the main schema.",
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}
