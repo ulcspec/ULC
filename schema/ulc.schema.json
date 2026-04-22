@@ -250,7 +250,6 @@
         "manufacturer_slug",
         "catalog_model",
         "primary_category",
-        "nominal_cct_k",
         "nominal_total_lumens",
         "nominal_input_power_w"
       ]
@@ -410,6 +409,10 @@
           "items": { "$ref": "taxonomy.schema.json#/$defs/SecondaryFunction" }
         },
         "indoor_outdoor": { "$ref": "taxonomy.schema.json#/$defs/IndoorOutdoor" },
+        "technical_region": {
+          "description": "Market-region configuration of the fixture. Captures the voltage and frequency variant of the SKU family. Many product families ship parallel North American, European, and Japanese variants sharing optics and light engines but with different drivers and certifications; this field makes the market variant explicit for consumer filter UIs.",
+          "$ref": "taxonomy.schema.json#/$defs/TechnicalRegion"
+        },
         "mounting_types": {
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/MountingType" }
@@ -421,6 +424,10 @@
           "properties": {
             "housing_material": { "$ref": "taxonomy.schema.json#/$defs/HousingMaterial" },
             "lens_material": { "$ref": "taxonomy.schema.json#/$defs/LensMaterial" },
+            "reflector_material": {
+              "description": "Material of the internal reflector or darklight cone, when the optic uses one. Free-string to accommodate manufacturer-specific descriptions such as 'polymer, aluminum vaporized, silver, specular' (a typical architectural darklight reflector). A future revision may promote this to a closed enum.",
+              "type": "string"
+            },
             "finish_color_options": {
               "type": "array",
               "items": { "type": "string" }
@@ -434,6 +441,79 @@
                 "min": { "$ref": "#/$defs/DualUnitTemperature" },
                 "max": { "$ref": "#/$defs/DualUnitTemperature" }
               }
+            }
+          }
+        },
+        "physical_dimensions": {
+          "description": "Luminaire geometric and mass characteristics. All dimensional fields use the dual-unit SI-authoritative pattern via DualUnitLength and DualUnitMass. Not every field applies to every product category; authors populate only what the cutsheet publishes. The block is flexible by design so indoor recessed, pendant, pole-top outdoor, and linear products can each use the appropriate subset of slots.",
+          "type": "object",
+          "properties": {
+            "overall_diameter": {
+              "description": "Outside diameter of the luminaire for round fixtures.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "overall_length": {
+              "description": "Overall length for linear or rectangular fixtures.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "overall_width": {
+              "description": "Overall width for rectangular or non-round fixtures.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "overall_height": {
+              "description": "Overall height for pole-top, bollard, pendant, or wall-mount fixtures. For recessed fixtures, use recess_depth instead.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "luminaire_mass": {
+              "description": "Mass of the luminaire as published on the cutsheet. For Pattern D linear fixtures where mass scales with length, populate linear_mass_per_foot instead or in addition.",
+              "$ref": "#/$defs/DualUnitMass"
+            },
+            "linear_mass_per_foot": {
+              "description": "Per-foot mass rate for linear fixtures where mass scales with length (typical of Pattern D products). Pairs with photometry.per_length_normalized.lumens_per_foot.",
+              "$ref": "#/$defs/DualUnitMass"
+            },
+            "lens_width": {
+              "description": "Width of the light-emitting lens or optical opening, when distinct from the overall luminaire width.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "ceiling_aperture": {
+              "description": "For recessed fixtures, the diameter (or effective diameter) of the ceiling cut-out the fixture requires.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "recess_depth": {
+              "description": "For recessed fixtures, the depth above the ceiling plane that the fixture housing occupies.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "accommodated_ceiling_thickness_range": {
+              "description": "For recessed fixtures, the minimum and maximum ceiling thickness the standard mounting hardware accommodates.",
+              "type": "object",
+              "properties": {
+                "min": { "$ref": "#/$defs/DualUnitLength" },
+                "max": { "$ref": "#/$defs/DualUnitLength" }
+              }
+            },
+            "connection_cable_length": {
+              "description": "Length of an attached connection cable (pre-installed pigtail or tether) if the cutsheet publishes it.",
+              "$ref": "#/$defs/DualUnitLength"
+            },
+            "driver_dimensions": {
+              "description": "Overall dimensions of a remote or integral driver housing when the cutsheet publishes them.",
+              "type": "object",
+              "properties": {
+                "length": { "$ref": "#/$defs/DualUnitLength" },
+                "width": { "$ref": "#/$defs/DualUnitLength" },
+                "height": { "$ref": "#/$defs/DualUnitLength" }
+              }
+            },
+            "epa_ft2": {
+              "description": "Effective Projected Area in square feet, used for pole-mounted outdoor fixtures under AASHTO 2013 wind-loading analysis. Companion to epa_m2 under the dual-unit policy; epa_m2 is authoritative for SI consumers.",
+              "type": "number",
+              "minimum": 0
+            },
+            "epa_m2": {
+              "description": "Effective Projected Area in square meters. SI-authoritative companion to epa_ft2.",
+              "type": "number",
+              "minimum": 0
             }
           }
         },
@@ -493,7 +573,7 @@
                 "tier_meaning": { "type": "string" }
               }
             },
-            "cri_tier": { "type": "string", "examples": ["cri_80", "cri_90", "cri_95"] },
+            "cri_tier": { "$ref": "taxonomy.schema.json#/$defs/CriTier" },
             "color_tunability": { "$ref": "taxonomy.schema.json#/$defs/ColorTunabilityCapability" }
           }
         },
@@ -635,6 +715,18 @@
         "power_factor": { "$ref": "#/$defs/ProvenancedNumber" },
         "thd_percent": { "$ref": "#/$defs/ProvenancedNumber" },
         "driver_protocol": { "$ref": "taxonomy.schema.json#/$defs/DimmingProtocol" },
+        "dimming_method": {
+          "description": "Underlying electrical dimming method (CCR, PWM, or hybrid). Independent of `driver_protocol`, which is the signaling layer. Authors populate this when the cutsheet publishes the method; absent if the method is not declared.",
+          "$ref": "taxonomy.schema.json#/$defs/DimmingMethod"
+        },
+        "dimming_range_percent": {
+          "description": "Minimum and maximum dim levels as percentages of full output. For example a 3%-100% dim range captures the common architectural driver range. `min` is the lowest stable output the fixture can sustain before turning off; `max` is full output. Both values are manufacturer-declared at this level; actual on-site dim behavior also depends on the dimmer or controller.",
+          "type": "object",
+          "properties": {
+            "min": { "type": "number", "minimum": 0, "maximum": 100 },
+            "max": { "type": "number", "minimum": 0, "maximum": 100 }
+          }
+        },
         "control_gear_type": { "$ref": "taxonomy.schema.json#/$defs/ControlGearType" },
         "led_module_power_w": {
           "description": "Optional LED-module-only input power (typically smaller than luminaire input due to driver losses). Useful when the cutsheet distinguishes module from luminaire.",
@@ -658,6 +750,10 @@
         "center_beam_intensity_cd": { "$ref": "#/$defs/ProvenancedNumber" },
         "beam_angle_deg": { "$ref": "#/$defs/ProvenancedNumber" },
         "field_angle_deg": { "$ref": "#/$defs/ProvenancedNumber" },
+        "cutoff_angle_from_horizontal_deg": {
+          "description": "The angle above horizontal beyond which no direct light escapes the fixture. An architectural glare-control specification typical of downlights and indirect architectural fixtures. Distinct from the deprecated IES cutoff classification (which is an outdoor four-class scheme). A value of 40 means no direct light is emitted above 40 degrees from horizontal.",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
         "beam_family": { "$ref": "taxonomy.schema.json#/$defs/BeamFamily" },
         "distribution_type": { "$ref": "taxonomy.schema.json#/$defs/DistributionType" },
         "symmetry_type": { "$ref": "taxonomy.schema.json#/$defs/SymmetryType" },
@@ -668,6 +764,10 @@
         "ugr_4h_8h": {
           "description": "Unified Glare Rating for the CIE 4H/8H reference room geometry. Published by manufacturers of interior architectural fixtures for European glare assessments.",
           "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "ugr_4h_8h_bound_operator": {
+          "description": "When present, indicates the UGR value is a declared bound rather than a specific measured value. Pairs with `ugr_4h_8h`. Use `lte` for manufacturer claims of the form 'UGR as low as X' where X is the best achievable value across the fixture's supported optics or dimming configurations. Absence means the UGR value is a specific point estimate at the tested scenario.",
+          "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
         },
         "zonal_lumens": {
           "description": "Luminous flux summed over zonal angle bands (for example 0-30, 0-40, 0-60, 0-90, 90-180 degrees).",
@@ -703,6 +803,20 @@
               "efficacy_lm_per_w": { "$ref": "#/$defs/ProvenancedNumber" }
             },
             "required": ["cct"]
+          }
+        },
+        "declared_by_length": {
+          "description": "Manufacturer-declared photometric values at fixture lengths other than the tested baseline, derived via linear per-foot (or per-meter) scaling. See applicability.covered_axes.length for the derivation context. Used by Pattern D linear products (for example Vode Nexa linear pendants with published lm/ft and W/ft rates). Each entry declares a specific length via DualUnitLength and the length-scaled quantities at that length. Pairs with per_length_normalized, which carries the per-unit-length rates themselves.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "length": { "$ref": "#/$defs/DualUnitLength" },
+              "lumens": { "$ref": "#/$defs/ProvenancedNumber" },
+              "input_power_w": { "$ref": "#/$defs/ProvenancedNumber" },
+              "efficacy_lm_per_w": { "$ref": "#/$defs/ProvenancedNumber" }
+            },
+            "required": ["length"]
           }
         }
       }
@@ -1112,7 +1226,16 @@
           "type": "boolean",
           "default": false
         },
-        "accessorized_record_ref": { "type": "string" }
+        "accessorized_record_ref": { "type": "string" },
+        "is_compatible_with_this_sku": {
+          "description": "Whether the accessory is compatible with the specific SKU configuration this record represents. Default true. Set to false when the cutsheet explicitly excludes the accessory from the record's SKU (for example when a junction box does not fit the shortest length variant of a linear fixture). Consumers filtering accessory compatibility should respect this flag before presenting the accessory as orderable alongside this SKU.",
+          "type": "boolean",
+          "default": true
+        },
+        "incompatibility_reason": {
+          "description": "Optional free-text explanation of why is_compatible_with_this_sku is false. Populated only when is_compatible_with_this_sku is false.",
+          "type": "string"
+        }
       },
       "required": ["accessory_catalog_number"]
     },
