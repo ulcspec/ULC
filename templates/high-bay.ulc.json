@@ -23,7 +23,7 @@
       "attestation_id": "todo-dlc-premium-attestation",
       "program": "dlc_premium",
       "status": "claimed",
-      "value_type": "measured",
+      "value_type": "rated",
       "verification": {
         "type": "unconditional"
       }

@@ -196,11 +196,13 @@ def emit_ulc(session: Session):
                 json.dump(record, f)
                 tmp_path = f.name
             subprocess.run(["ulc", "build-index", tmp_path], check=True)
-            validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True)
+            # Capture stdout; the CLI writes its findings report there and
+            # reserves stderr for parse-failure diagnostics.
+            validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True, text=True)
             if validation.returncode == 0:
                 publish(tmp_path)
             else:
-                log_failure(product, scenario, validation.stderr)
+                log_failure(product, scenario, validation.stdout or validation.stderr)
 ```
 
 ## See also

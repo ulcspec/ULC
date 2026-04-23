@@ -155,9 +155,12 @@ def emit_ulc_from_salsify(product, scenario):
         json.dump(record, f)
         tmp_path = f.name
     subprocess.run(["ulc", "build-index", tmp_path], check=True)
-    validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True)
+    # The CLI writes findings (OK / errors / warnings / infos) to stdout and
+    # reserves stderr for parse-failure diagnostics. Capture stdout so the
+    # actual report is preserved on failure.
+    validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True, text=True)
     if validation.returncode != 0:
-        alert(product.sku, validation.stderr)
+        alert(product.sku, validation.stdout or validation.stderr)
         return None
     return tmp_path
 ```

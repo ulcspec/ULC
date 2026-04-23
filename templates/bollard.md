@@ -57,7 +57,7 @@ Bollards typically carry:
 
 - **`outdoor_classification`** with TM-15 BUG rating.
 - **`thermal_derating`** — LM-82 curve matters for bollards in full sun or snowbank-adjacent installations.
-- **`corrosion_protection`** — finish attestation for coastal/salt environments (ASTM B117 salt spray hours).
+- **Coastal / salt-environment finish attestations** (ASTM B117 salt spray hours) — no first-class schema slot yet; park in `extensions.manufacturer_specific.<slug>` with the test hours, apparatus, and finish system. A future revision may promote this into a native attestation pattern.
 
 ## See also
 

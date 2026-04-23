@@ -21,7 +21,7 @@ Each template pairs a `.ulc.json` skeleton with a sibling `.md` guide walking th
 
 1. **Pick the category closest to your product** and copy both the `.ulc.json` template and the sibling `.md` guide.
 2. **Rename the `.ulc.json`** to `<manufacturer-slug>-<catalog-slug>-<scenario-slug>.ulc.json`. Slugs are lowercase ASCII with hyphens replacing spaces and separators. For example: `selux-elx-48-3500k-90cri.ulc.json`.
-3. **Update `record_id` to match the new filename stem.** Every template ships with `record_id: "todo-manufacturer-catalog-scenario"` as a placeholder; replace it with the same slug you used when renaming the file. The two must match for the record to be valid.
+3. **Update `record_id` to match the new filename stem.** Every template ships with `record_id: "todo-manufacturer-catalog-scenario"` as a placeholder; replace it with the same slug you used when renaming the file. The validator does not enforce the filename-stem match (it is a repository naming convention, not a schema rule), but every canonical reference record in `examples/` follows it and downstream tooling assumes it.
 4. **Fill in every `TODO` and every `0` placeholder** using data from the cutsheet PDF, IES file, and lab attestation reports. The sibling guide explains what each field means for your category.
 5. **Compute SHA-256 of each source file** with `shasum -a 256 <file>` and paste the 64-char hex string into the matching `reference.sha256` entries (including `product_family.cutsheet.sha256`).
 6. **Regenerate the index** with `ulc build-index <file>`. Do not hand-edit the `index` block.

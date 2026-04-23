@@ -25,7 +25,7 @@
       "program": "c_ul_listed",
       "standard_revision": "UL 1598 wet location",
       "status": "claimed",
-      "value_type": "measured",
+      "value_type": "rated",
       "verification": {
         "type": "unconditional"
       }
