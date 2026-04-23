@@ -186,6 +186,88 @@ func TestVerifyHashesRefusesTraversal(t *testing.T) {
 	}
 }
 
+// TestVerifyHashesRefusesSymlinkEscape confirms the verifier refuses a
+// lexically-clean filename (no `..`) that points at a symlink whose real
+// target lives outside the record's directory. The lexical check cannot
+// see this; only symlink resolution does.
+func TestVerifyHashesRefusesSymlinkEscape(t *testing.T) {
+	outer := t.TempDir()
+	recordDir := filepath.Join(outer, "records")
+	if err := os.MkdirAll(recordDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	// File outside the record directory, simulating /etc/passwd or similar.
+	targetPath := filepath.Join(outer, "target.txt")
+	writeFile(t, targetPath, []byte("sensitive"))
+	// Symlink inside recordDir that points outside. The declared path is
+	// lexically innocent; only symlink resolution reveals the escape.
+	linkPath := filepath.Join(recordDir, "looks-innocent.pdf")
+	if err := os.Symlink(targetPath, linkPath); err != nil {
+		t.Skipf("symlink not supported on this platform: %v", err)
+	}
+
+	record := map[string]any{
+		"source_files": []any{
+			map[string]any{
+				"file_type": "datasheet_pdf",
+				"reference": map[string]any{
+					"filename": "looks-innocent.pdf",
+					"sha256":   strings.Repeat("0", 64),
+				},
+			},
+		},
+	}
+	report := findings.NewReport()
+	VerifyHashes(recordDir, record, report)
+
+	if len(report.Findings) != 1 {
+		t.Fatalf("expected exactly 1 finding, got %d (%v)", len(report.Findings), report.Findings)
+	}
+	got := report.Findings[0]
+	if got.Level != findings.LevelInfo {
+		t.Errorf("level = %s, want %s (symlink escapes are not ERRORs; they are silent skips)",
+			got.Level, findings.LevelInfo)
+	}
+	// Message must mention symlink resolution so operators can see why the
+	// file was skipped rather than hashed.
+	if !strings.Contains(got.Message, "symlink") {
+		t.Errorf("expected message to mention 'symlink', got %q", got.Message)
+	}
+}
+
+// TestVerifyHashesAllowsSymlinkInside confirms that symlinks whose real
+// target is still under the record's directory are verified normally —
+// the guard is targeted at escape attempts, not at symlinks in general.
+func TestVerifyHashesAllowsSymlinkInside(t *testing.T) {
+	recordDir := t.TempDir()
+	realPath := filepath.Join(recordDir, "real.pdf")
+	content := []byte("real content")
+	writeFile(t, realPath, content)
+	linkPath := filepath.Join(recordDir, "alias.pdf")
+	if err := os.Symlink(realPath, linkPath); err != nil {
+		t.Skipf("symlink not supported on this platform: %v", err)
+	}
+
+	record := map[string]any{
+		"source_files": []any{
+			map[string]any{
+				"file_type": "datasheet_pdf",
+				"reference": map[string]any{
+					"filename": "alias.pdf",
+					"sha256":   sha256Hex(content),
+				},
+			},
+		},
+	}
+	report := findings.NewReport()
+	VerifyHashes(recordDir, record, report)
+
+	if len(report.Findings) != 0 {
+		t.Fatalf("expected 0 findings for in-scope symlink, got %d (%v)",
+			len(report.Findings), report.Findings)
+	}
+}
+
 // TestVerifyHashesAllowsNestedPath confirms relative paths to subdirectories
 // under the record's directory still work normally.
 func TestVerifyHashesAllowsNestedPath(t *testing.T) {

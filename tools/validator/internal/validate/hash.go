@@ -78,13 +78,46 @@ func verifyOne(recordDir string, ref map[string]any, path string, report *findin
 			fmt.Sprintf("could not resolve filename %q: %v", filename, err))
 		return
 	}
+	// First pass: lexical containment. Catches `../` escapes that are visible
+	// in the declared path without touching the filesystem.
 	rel, err := filepath.Rel(recordDirAbs, resolved)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		report.AddInfo(findings.CodeSourceFileNotFound, path,
 			fmt.Sprintf("filename %q resolves outside the record directory; hash verification skipped", filename))
 		return
 	}
-	f, err := os.Open(resolved)
+	// Second pass: symlink resolution. A lexically-clean path like
+	// "plausible.pdf" can still be a symlink that points at /etc/passwd;
+	// walking just the declared path would miss that. Resolve both sides
+	// (the record directory and the target) so the containment check
+	// reflects what os.Open will actually reach.
+	resolvedReal, err := filepath.EvalSymlinks(resolved)
+	if err != nil {
+		if os.IsNotExist(err) {
+			report.AddInfo(findings.CodeSourceFileNotFound, path,
+				fmt.Sprintf("source file %s is not present locally; SHA-256 cannot be verified here", filename))
+			return
+		}
+		report.AddWarning(findings.CodeSourceFileUnreadable, path,
+			fmt.Sprintf("could not resolve symlinks for %s: %v", filename, err))
+		return
+	}
+	recordDirReal, err := filepath.EvalSymlinks(recordDirAbs)
+	if err != nil {
+		report.AddWarning(findings.CodeSourceFileUnreadable, path,
+			fmt.Sprintf("could not resolve symlinks for record directory %q: %v", recordDir, err))
+		return
+	}
+	relReal, err := filepath.Rel(recordDirReal, resolvedReal)
+	if err != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
+		report.AddInfo(findings.CodeSourceFileNotFound, path,
+			fmt.Sprintf("filename %q resolves outside the record directory after symlink resolution; hash verification skipped", filename))
+		return
+	}
+	// Open the real (symlink-resolved) path so the hash covers what the
+	// containment check approved, not whatever the declared path might
+	// transit through.
+	f, err := os.Open(resolvedReal)
 	if err != nil {
 		if os.IsNotExist(err) {
 			report.AddInfo(findings.CodeSourceFileNotFound, path,
