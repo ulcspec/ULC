@@ -34,8 +34,8 @@ Starter for an exterior ground-mounted pathway luminaire. Category defaults in `
 
 Bollards should populate the `outdoor_classification` block (added after core validates):
 
-- **`outdoor_distribution_type: "type_vs"`** — IESNA Type V Short, typical for symmetric bollards. Other values are `type_i` through `type_v` (see `taxonomy.schema.json#/$defs/OutdoorDistributionType`).
-- **`longitudinal_distribution_range`** — `short`, `medium`, or `long`, matching how far the optic throws along the pathway axis.
+- **`outdoor_distribution_type`** — `type_v` for symmetric bollards with a circular footprint; `type_vs` for symmetric bollards with a square footprint. (These are footprint variants, not throw-length classifications.) Other values `type_i` through `type_iv` and their four-way variants apply to asymmetric optics. See `taxonomy.schema.json#/$defs/OutdoorDistributionType`.
+- **`longitudinal_distribution_range`** — `short`, `medium`, or `long`, a separate dimension describing how far the optic throws along the pathway axis. Typical pathway bollards are `short` or `medium`.
 - **`bug_rating`** — low values (for example `{b: 0, u: 0, g: 0}` or `{b: 1, u: 0, g: 1}`) for spec-grade path bollards designed to minimize light pollution. The index will project this as a short string like `"B1-U0-G1"`.
 
 ### `electrical`

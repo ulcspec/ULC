@@ -44,7 +44,7 @@ The index will automatically project `bug_rating` as a short string (for example
 Exterior wall packs typically carry more program attestations than indoor fixtures:
 
 - **`c_ul_listed`** with `standard_revision: "UL 1598 wet location"` (template stubs this).
-- **`iec_60598`** with `standard_revision: "IEC 60598-2-3 road and street lighting"` for non-US markets.
+- **`iec_60598`** with `standard_revision: "IEC 60598-2-1 fixed general purpose luminaires"` for non-US markets (this is the correct part for building-perimeter wall packs; the road/street-lighting part `60598-2-3` applies only to roadway-class fixtures).
 - **`dlc_standard`** or **`dlc_premium`** for DLC-qualified utility-rebate products.
 - **IP and IK ratings** are carried on `product_family.shared_mechanical.ip_rating` and `shared_mechanical.ik_rating` directly, not as entries in the `attestations[]` array. First-class `AttestationProgram` values for these are a Tier 3 schema gap (see `docs/authoring-patterns.md`).
 

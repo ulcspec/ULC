@@ -85,10 +85,13 @@ The mapping table lives in the integration code, version-controlled, and reviewe
 ULC's `index` block is a denormalized projection of values from the deep blocks. It must NOT be hand-authored — the reference `ulc build-index` CLI produces it deterministically. The PIM emitter pipeline looks like:
 
 ```
-PIM data → transform to deep blocks → write .ulc.json → run `ulc build-index --stdout` → merge index → run `ulc validate` → publish
+PIM data → transform to deep blocks → write record to a temp .ulc.json file
+         → run `ulc build-index <tmpfile>` (writes the computed index in place)
+         → run `ulc validate <tmpfile>` (exits 1 on ERROR findings)
+         → on success, publish the file
 ```
 
-This is easier than it looks. The transform emits the deep blocks; the CLI handles the index + validation. Shell out to the Go `ulc` binary from the emitter (Python, Java, Node, whatever) and pipe JSON through it.
+Both `ulc build-index` and `ulc validate` are file-path CLIs — they read from and write to files on disk, they do not read from stdin. `ulc build-index --stdout` emits only the computed index object (not a full merged record), so most emitters use the default in-place mode and then call `ulc validate` on the same file. The transform code emits the deep blocks; the CLI handles the index plus validation. Shell out to the Go `ulc` binary from the emitter (Python, Java, Node, whatever).
 
 ## Out of scope
 

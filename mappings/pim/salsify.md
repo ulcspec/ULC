@@ -19,10 +19,13 @@ The ULC emitter is typically implemented as a Salsify channel recipe plus an ext
 
 | Salsify | ULC path |
 |---|---|
-| Product external ID (SKU) | `product_family.catalog_model`, `configuration.catalog_number` |
+| Parent product identifier / catalog model property | `product_family.catalog_model` |
+| Variant external ID (SKU) | `configuration.catalog_number` |
 | Internal brand property | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | Product line / series property | `product_family.catalog_line` |
 | Derived slug from SKU + CCT + distribution | `record_id`, `configuration.photometric_scenario_id` |
+
+A product family in Salsify is typically modeled as a parent product with child variants (one per orderable SKU). The parent carries cutsheet-level shared data and maps to `product_family.*`; each child variant maps to its own `configuration.catalog_number` and a distinct ULC record. See the multi-CCT handling note under "Gotchas" below for the common parent-variant pattern.
 
 ### Category and mounting
 
@@ -121,10 +124,10 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
    - Pull optical properties from the scenario's property group
    - Stream assets, compute SHA-256
    - Walk accessory references, populate compatible_accessories
-   - Assemble JSON record
-   - Shell out: echo JSON | ulc build-index --stdout → merge index
-   - Shell out: ulc validate record.ulc.json
-   - On success: publish
+   - Assemble JSON record and write to a temp file (the CLI is file-based, not stdin-based)
+   - Shell out: `ulc build-index <tmpfile>` — writes the computed index back into the file
+   - Shell out: `ulc validate <tmpfile>` — exits 1 on ERROR findings
+   - On success: publish the file to its destination
    - On validation failure: log, skip, alert integration owner
 ```
 
@@ -145,15 +148,17 @@ def emit_ulc_from_salsify(product, scenario):
         "colorimetry": map_colorimetry(scenario),
         "source_files": build_source_files_with_hashes(product.assets),
     }
-    json_blob = json.dumps(record)
-    indexed = subprocess.run(["ulc", "build-index", "--stdout", "-"],
-                              input=json_blob, capture_output=True).stdout
-    validation = subprocess.run(["ulc", "validate", "-"],
-                                 input=indexed, capture_output=True)
+    # Both CLIs are file-based; write a temp file, run build-index in place,
+    # then run validate against the same path.
+    with tempfile.NamedTemporaryFile("w", suffix=".ulc.json", delete=False) as f:
+        json.dump(record, f)
+        tmp_path = f.name
+    subprocess.run(["ulc", "build-index", tmp_path], check=True)
+    validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True)
     if validation.returncode != 0:
         alert(product.sku, validation.stderr)
         return None
-    return indexed
+    return tmp_path
 ```
 
 ## See also

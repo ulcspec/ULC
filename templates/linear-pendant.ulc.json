@@ -2,6 +2,24 @@
   "applicability": {
     "applicable_catalog_pattern": "TODO-CATALOG-NUMBER",
     "applicable_sku_count_estimate": 1,
+    "covered_axes": {
+      "length": {
+        "derivation": {
+          "baseline_axis_value": "TODO-baseline-length-code",
+          "linear_rate": {
+            "unit": "lumens_per_foot",
+            "value": 0
+          },
+          "method": "per_foot_linear_scaling",
+          "reference": "TODO-cutsheet-per-foot-table-location"
+        },
+        "rationale": "Photometry scales linearly with fixture length per the per-foot rate measured on the tested baseline; non-photometric features (finish, power-location, canopy, sensors) do not vary per length.",
+        "values": [
+          "TODO-length-code-1",
+          "TODO-length-code-2"
+        ]
+      }
+    },
     "fixed_axes": {
       "catalog_number": "TODO-CATALOG-NUMBER",
       "cct": "3500",
@@ -198,6 +216,15 @@
       "pendant"
     ],
     "physical_dimensions": {
+      "linear_mass_per_foot": {
+        "kg_per_m": 0,
+        "lb_per_ft": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
       "luminaire_mass": {
         "kg": 0,
         "lb": 0,
