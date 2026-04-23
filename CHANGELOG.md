@@ -18,7 +18,7 @@ When a version is ready to release:
 4. Push the tag: `git push origin v0.1.0`.
 5. Optionally create a GitHub Release pointing at the tag, copying the version's changelog entry into the release notes.
 
-## 0.4.0 (2026-04-22)
+## 0.4.0 (2026-04-23)
 
 Reference CLI validator and index builder. No normative schema or taxonomy changes: enum values, required fields, and validation rules are unchanged. Two `$defs/Index` description strings in `schema/ulc.schema.json` were edited to reference the new `ulc build-index` CLI instead of the retired `tools/build-index.py`, but the structural surface of the schema is identical to v0.3.0 and all four canonical reference records pass the new validator end-to-end unchanged.
 
