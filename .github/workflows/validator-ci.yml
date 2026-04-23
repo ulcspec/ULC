@@ -34,7 +34,9 @@ jobs:
         run: go test -race ./...
 
       - name: go build
-        run: go build -o bin/ulc ./tools/validator/cmd/ulc
+        run: |
+          mkdir -p bin
+          go build -o bin/ulc ./tools/validator/cmd/ulc
 
       - name: Validate example and template records end-to-end
         run: |

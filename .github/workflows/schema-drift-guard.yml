@@ -29,7 +29,9 @@ jobs:
           cache-dependency-path: 'go.sum'
 
       - name: Build ulc CLI
-        run: go build -o bin/ulc ./tools/validator/cmd/ulc
+        run: |
+          mkdir -p bin
+          go build -o bin/ulc ./tools/validator/cmd/ulc
 
       - name: Verify generated index on example and template records
         run: |

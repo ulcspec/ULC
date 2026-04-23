@@ -60,29 +60,41 @@ if [ -n "$schema_staged" ]; then
 fi
 
 # Guard 3: record-index parity via the Go `ulc` CLI.
-# Locate the binary: prefer an installed `ulc` on PATH, fall back to a
-# local build at tools/validator/bin/ulc. Build it if missing so the hook
-# works after a fresh clone without the contributor having to do setup.
+# Binary resolution prefers the in-repo build (tools/validator/bin/ulc) over
+# a globally-installed `ulc`, so a contributor with a stale / newer global
+# version does not get local parity results that diverge from CI. When Go is
+# available, we rebuild from source on every invocation to guarantee the
+# hook runs the same builder logic as the current checkout.
 record_files=$(echo "$staged" | grep -E "\.ulc(\.json)?$" || true)
 if [ -n "$record_files" ]; then
   ulc_bin=""
-  if command -v ulc >/dev/null 2>&1; then
-    ulc_bin="ulc"
-  elif [ -x "tools/validator/bin/ulc" ]; then
-    ulc_bin="tools/validator/bin/ulc"
-  else
-    if ! command -v go >/dev/null 2>&1; then
+  if command -v go >/dev/null 2>&1; then
+    # Fast incremental build: Go caches unchanged packages, so this typically
+    # runs in well under a second after the first build.
+    mkdir -p tools/validator/bin
+    if ! go build -o tools/validator/bin/ulc ./tools/validator/cmd/ulc; then
       echo ""
-      echo "COMMIT ABORTED: the record-index parity check needs the 'ulc' CLI."
-      echo "Install one of the following and re-stage:"
-      echo "  * a released binary from https://github.com/ulcspec/ULC/releases"
-      echo "  * or Go 1.22+ (the hook will auto-build from tools/validator)"
+      echo "COMMIT ABORTED: failed to build tools/validator/bin/ulc."
       echo ""
       exit 1
     fi
-    echo "Building tools/validator/bin/ulc (first run)..."
-    (cd tools/validator && go build -o bin/ulc ./cmd/ulc)
     ulc_bin="tools/validator/bin/ulc"
+  elif [ -x "tools/validator/bin/ulc" ]; then
+    echo "Warning: Go not installed; using existing tools/validator/bin/ulc."
+    echo "         This may not reflect staged changes to validator source."
+    ulc_bin="tools/validator/bin/ulc"
+  elif command -v ulc >/dev/null 2>&1; then
+    echo "Warning: using globally-installed ulc; version may differ from"
+    echo "         this checkout and produce results that disagree with CI."
+    ulc_bin="ulc"
+  else
+    echo ""
+    echo "COMMIT ABORTED: the record-index parity check needs the 'ulc' CLI."
+    echo "Install one of the following and re-stage:"
+    echo "  * Go 1.22+ (the hook will auto-build from tools/validator)"
+    echo "  * a released binary from https://github.com/ulcspec/ULC/releases"
+    echo ""
+    exit 1
   fi
 
   echo "ULC record(s) staged -- running record-index parity check..."

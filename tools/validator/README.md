@@ -31,6 +31,7 @@ Go 1.22+. Selected after an independent language re-evaluation on 2026-04-22 tha
 The Go module lives at the repo root (`go.mod` is `github.com/ulcspec/ULC`); the validator is a subpackage. Build from the repo root:
 
 ```bash
+mkdir -p tools/validator/bin
 go build -o tools/validator/bin/ulc ./tools/validator/cmd/ulc
 ./tools/validator/bin/ulc version
 ```
