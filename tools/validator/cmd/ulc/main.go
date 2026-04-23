@@ -13,14 +13,13 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/santhosh-tekuri/jsonschema/v6"
 
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
@@ -109,9 +108,11 @@ USAGE
 		fmt.Fprintf(os.Stderr, "ulc validate: read %s: %v\n", recordPath, err)
 		return 1
 	}
-	// Parse with UseNumber so schema validation (which relies on numeric
-	// comparison semantics) sees unmodified JSON numbers.
-	rawTree, err := jsonschema.UnmarshalJSON(bytes.NewReader(data))
+	// Strict single-value parse: UseNumber preserves JSON numbers for the
+	// schema validator, and the EOF check rejects files that sneak
+	// concatenated or trailing content past the default single-value semantics
+	// of json.Decoder.
+	rawTree, err := decodeStrict(data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ulc validate: parse %s: %v\n", recordPath, err)
 		return 1
@@ -334,10 +335,8 @@ func readRecord(path string) (index.Record, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.UseNumber()
-	var raw any
-	if err := dec.Decode(&raw); err != nil {
+	raw, err := decodeStrict(data)
+	if err != nil {
 		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
 	record, err := normalizeNumbers(raw)
@@ -349,6 +348,32 @@ func readRecord(path string) (index.Record, error) {
 		return nil, fmt.Errorf("%s: top-level JSON value is not an object", path)
 	}
 	return m, nil
+}
+
+// decodeStrict parses exactly one JSON value from data. Returns an error when
+// there is trailing non-whitespace content after the first value (a second
+// JSON value, garbage, or an unclosed stream), so files like
+// `{"valid": "json"}GARBAGE` are rejected instead of silently ignoring the
+// tail the way json.Decoder's default single-value behavior would.
+//
+// UseNumber preserves JSON numbers as json.Number, matching what the schema
+// validator expects and what normalizeNumbers consumes downstream.
+func decodeStrict(data []byte) (any, error) {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	var raw any
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+	var trailing any
+	err := dec.Decode(&trailing)
+	if err == nil {
+		return nil, errors.New("trailing content after JSON value")
+	}
+	if !errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("trailing content after JSON value: %w", err)
+	}
+	return raw, nil
 }
 
 // normalizeNumbers walks a parsed JSON tree and converts json.Number values

@@ -3,8 +3,12 @@ version: 2
 project_name: ulc
 
 before:
+  # Stage the repo-root LICENSE next to the validator so goreleaser's archive
+  # step can bundle it with a simple relative path. The copy is gitignored;
+  # the canonical LICENSE stays at the repo root.
   hooks:
     - go mod tidy
+    - cp ../../LICENSE LICENSE
 
 builds:
   - id: ulc
@@ -34,14 +38,14 @@ archives:
       - goos: windows
         formats:
           - zip
-    # The `ulc` binary ships with the ULC schemas embedded via go:embed, so
-    # the archive only needs the binary plus the validator README. The
-    # repo-root LICENSE is omitted here to avoid a second LICENSE copy in
-    # the module; users who want the license text should consult the GitHub
-    # release page or the repository.
+    # The `ulc` binary ships with the ULC schemas embedded via go:embed.
+    # The archive carries the binary, the validator README, and the MIT
+    # LICENSE text so binary distributions include the required attribution.
     files:
       - src: README.md
         dst: README.md
+      - src: LICENSE
+        dst: LICENSE
 
 checksum:
   name_template: "ulc_{{ .Version }}_checksums.txt"

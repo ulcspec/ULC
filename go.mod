@@ -1,4 +1,4 @@
-module github.com/ulcspec/ULC/tools/validator
+module github.com/ulcspec/ULC
 
 go 1.22
 

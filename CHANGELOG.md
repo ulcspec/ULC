@@ -25,6 +25,7 @@ Reference CLI validator and index builder. No normative schema or taxonomy chang
 ### `ulc` command-line tool (new)
 
 - **Language:** Go 1.22+, using `santhosh-tekuri/jsonschema/v6` for JSON Schema Draft 2020-12 validation with cross-file `$ref` resolution. Selected on 2026-04-22 after an independent re-evaluation that pivoted from an earlier tentative TypeScript + AJV choice — Go's stronger Draft 2020-12 compliance pedigree, static-binary distribution story, and manufacturer-CI fit made it the better language for the reference validator.
+- **Module layout:** `go.mod` lives at the repo root (module `github.com/ulcspec/ULC`). The canonical `schema/` directory holds a small `embed.go` that bakes the JSON files into the binary via `//go:embed`, so the schemas have exactly one location in the tree and the shipped CLI always carries the matching spec version.
 - **Location:** `tools/validator/`
 - **Subcommands:**
   - `ulc validate <record.ulc>` runs JSON Schema Draft 2020-12 structural validation, builder parity (stored index matches the deterministic projection), source-file SHA-256 hash verification for files reachable on the local filesystem, and a conformance-grading stub. Emits `ERROR` / `WARNING` / `INFO` findings through a structured report.
@@ -38,7 +39,7 @@ Reference CLI validator and index builder. No normative schema or taxonomy chang
 
 - `tools/build-index.py` — retired. The Go CLI is the single source of truth for index projection logic. Users and CI invoke `ulc build-index` instead.
 - `tools/builder-parity-guard.py` — retired. Parity is guaranteed by construction inside the Go binary.
-- `tools/schema-drift-guard.py` — kept; still Python, still internal-only. Extended with an additional check that the embedded-schema mirrors under `tools/validator/schema/` stay byte-identical with the canonical `schema/` files.
+- `tools/schema-drift-guard.py` — kept; still Python, still internal-only. Continues to verify every `$ref` pointer resolves across `taxonomy.schema.json` and `ulc.schema.json`.
 
 ### CI and automation updates
 

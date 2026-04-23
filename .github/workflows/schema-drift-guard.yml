@@ -24,13 +24,12 @@ jobs:
 
       - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
-          go-version-file: 'tools/validator/go.mod'
+          go-version-file: 'go.mod'
           cache: true
-          cache-dependency-path: tools/validator/go.sum
+          cache-dependency-path: 'go.sum'
 
       - name: Build ulc CLI
-        working-directory: tools/validator
-        run: go build -o bin/ulc ./cmd/ulc
+        run: go build -o bin/ulc ./tools/validator/cmd/ulc
 
       - name: Verify generated index on example and template records
         run: |
@@ -43,7 +42,7 @@ jobs:
           fail=0
           for f in "${records[@]}"; do
             echo "Checking $f"
-            if ! ./tools/validator/bin/ulc build-index --check "$f"; then
+            if ! ./bin/ulc build-index --check "$f"; then
               fail=1
             fi
           done

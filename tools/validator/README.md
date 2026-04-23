@@ -28,16 +28,16 @@ Go 1.22+. Selected after an independent language re-evaluation on 2026-04-22 tha
 
 ## Build
 
+The Go module lives at the repo root (`go.mod` is `github.com/ulcspec/ULC`); the validator is a subpackage. Build from the repo root:
+
 ```bash
-cd tools/validator
-go build -o bin/ulc ./cmd/ulc
-./bin/ulc version
+go build -o tools/validator/bin/ulc ./tools/validator/cmd/ulc
+./tools/validator/bin/ulc version
 ```
 
 ## Test
 
 ```bash
-cd tools/validator
 go test -race ./...
 ```
 
@@ -48,6 +48,10 @@ The load-bearing tests are:
 - `internal/validate.TestValidatorAcceptsExampleRecords` / `TestValidatorRejectsBrokenRecord` — schema validation accept + reject cases.
 - `internal/validate.TestVerifyHashesAllOutcomes` — hash verification on valid, mismatching, and missing-local files against the real schema-shaped `source_files[].reference` wrapper.
 
+## Relationship to the canonical schemas
+
+The schemas have exactly one canonical location: `schema/ulc.schema.json` and `schema/taxonomy.schema.json` at the repo root. The `ulc` binary embeds those same files via `//go:embed` from `schema/embed.go`, so the shipped binary carries the matching spec version without any file copies anywhere else in the tree. Editing `schema/*.json` is all you need to do when revving the spec.
+
 ## Relationship to the Python tooling
 
 The former Python builder and builder-parity guard retired in v0.4.0 when the Go CLI became authoritative:
@@ -56,7 +60,7 @@ The former Python builder and builder-parity guard retired in v0.4.0 when the Go
 |---|---|---|
 | `tools/build-index.py` | Retired in v0.4.0 | Replaced by `ulc build-index`. |
 | `tools/builder-parity-guard.py` | Retired in v0.4.0 | Replaced by `TestBuilderSchemaParity`. |
-| `tools/schema-drift-guard.py` | Kept indefinitely | Internal `$ref` walker plus embedded-mirror drift guard. Not shipped externally. |
+| `tools/schema-drift-guard.py` | Kept indefinitely | Internal `$ref` resolution walker. Not shipped externally. |
 | `tools/validator/` (this dir) | Authoritative | The reference tool. |
 
 End state: one shipped Go binary (`ulc`), one internal Python guard (`schema-drift-guard.py`), zero drift surfaces.

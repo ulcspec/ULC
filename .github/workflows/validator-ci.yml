@@ -13,9 +13,6 @@ jobs:
   test:
     name: go test + goreleaser check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: tools/validator
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -23,9 +20,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
-          go-version-file: 'tools/validator/go.mod'
+          go-version-file: 'go.mod'
           cache: true
-          cache-dependency-path: tools/validator/go.sum
+          cache-dependency-path: 'go.sum'
 
       - name: go mod download
         run: go mod download
@@ -37,15 +34,22 @@ jobs:
         run: go test -race ./...
 
       - name: go build
-        run: go build -o bin/ulc ./cmd/ulc
+        run: go build -o bin/ulc ./tools/validator/cmd/ulc
 
-      - name: Validate example records end-to-end
-        working-directory: ${{ github.workspace }}
+      - name: Validate example and template records end-to-end
         run: |
           set -euo pipefail
-          for f in examples/*.ulc; do
-            ./tools/validator/bin/ulc validate "$f"
+          shopt -s globstar nullglob
+          records=(examples/**/*.ulc examples/**/*.ulc.json templates/**/*.ulc templates/**/*.ulc.json)
+          if [ "${#records[@]}" -eq 0 ]; then
+            echo "No example or template ULC records found; skipping validation."
+            exit 0
+          fi
+          for f in "${records[@]}"; do
+            echo "Validating $f"
+            ./bin/ulc validate "$f"
           done
+        shell: bash
 
       - name: goreleaser check
         uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
