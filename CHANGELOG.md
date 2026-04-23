@@ -18,7 +18,7 @@ When a version is ready to release:
 4. Push the tag: `git push origin v0.1.0`.
 5. Optionally create a GitHub Release pointing at the tag, copying the version's changelog entry into the release notes.
 
-## 0.5.0 (unreleased)
+## 0.5.0 (2026-04-23)
 
 Author-facing documentation: per-category `.ulc.json` authoring templates and PIM platform mapping guides. No normative schema, taxonomy, or validator changes — all four canonical reference records and the new templates pass `ulc validate` unchanged at the v0.3.0 schema level.
 
