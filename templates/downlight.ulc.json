@@ -1,0 +1,280 @@
+{
+  "applicability": {
+    "applicable_catalog_pattern": "TODO-CATALOG-NUMBER",
+    "applicable_sku_count_estimate": 1,
+    "fixed_axes": {
+      "catalog_number": "TODO-CATALOG-NUMBER",
+      "cct": "3000",
+      "distribution": "TODO distribution slug",
+      "finish": "TODO finish slug",
+      "voltage": "120v"
+    }
+  },
+  "attestations": [
+    {
+      "attestation_id": "todo-lm-79-08-attestation",
+      "program": "lm_79_08",
+      "status": "claimed",
+      "value_type": "measured",
+      "verification": {
+        "type": "unconditional"
+      }
+    }
+  ],
+  "colorimetry": {
+    "cri_ra": {
+      "provenance": {
+        "method": "extracted",
+        "source": "ies"
+      },
+      "unit": "ratio",
+      "value": 0,
+      "value_type": "measured"
+    },
+    "nominal_cct_k": "3000"
+  },
+  "configuration": {
+    "catalog_number": "TODO-CATALOG-NUMBER",
+    "photometric_scenario_id": "todo-scenario-slug",
+    "scenario_label": "TODO Human-readable scenario label (CCT, distribution, finish, voltage)",
+    "source_ies_ref": "TODO-ies-filename.ies",
+    "tested_axes": {
+      "color_tunability": "static_white",
+      "cri_tier": "cri_80",
+      "distribution_code": {
+        "distribution_type": "direct",
+        "manufacturer_label": "TODO distribution label"
+      }
+    },
+    "tested_conditions": {
+      "input_voltage_at_test": "120v",
+      "mounting_at_test": "recessed_ceiling",
+      "nominal_cct_at_test": "3000"
+    }
+  },
+  "conformance_level": "core",
+  "electrical": {
+    "dimming_method": "ccr",
+    "dimming_range_percent": {
+      "max": 100,
+      "min": 1
+    },
+    "driver_protocol": "0-10v",
+    "input_power_w": {
+      "provenance": {
+        "method": "extracted",
+        "source": "ies"
+      },
+      "unit": "W",
+      "value": 0,
+      "value_type": "measured"
+    },
+    "input_voltage_class": "120v",
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    }
+  },
+  "index": {
+    "attestation_programs": [
+      "lm_79_08"
+    ],
+    "beam_family": "medium_flood",
+    "builder_version": "0.2.0",
+    "catalog_model": "TODO Model name",
+    "catalog_number": "TODO-CATALOG-NUMBER",
+    "color_tunability": "static_white",
+    "dimming_protocols": [
+      "0-10v"
+    ],
+    "display_name": "TODO Human-readable scenario label (CCT, distribution, finish, voltage)",
+    "environment_rating": "dry",
+    "indoor_outdoor": "indoor",
+    "manufacturer_slug": "todo-manufacturer",
+    "mounting_types": [
+      "recessed_ceiling"
+    ],
+    "nominal_cct_k": "3000",
+    "nominal_cri_ra": 0,
+    "nominal_efficacy_lm_per_w": 0,
+    "nominal_input_power_w": 0,
+    "nominal_total_lumens": 0,
+    "primary_category": "downlight",
+    "primary_distribution": "direct",
+    "search_keywords": [
+      "TODO Human-readable scenario label (CCT, distribution, finish, voltage)",
+      "TODO Line name",
+      "TODO Product family display name"
+    ],
+    "secondary_function": [
+      "direct"
+    ],
+    "source_file_types_present": [
+      "datasheet_pdf",
+      "ies"
+    ],
+    "x-ulc-generated": true
+  },
+  "operating_point": {
+    "input_frequency_hz": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "Hz",
+      "value": 60,
+      "value_type": "rated"
+    },
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    }
+  },
+  "photometry": {
+    "beam_angle_deg": {
+      "provenance": {
+        "method": "extracted",
+        "source": "ies"
+      },
+      "unit": "deg",
+      "value": 0,
+      "value_type": "measured"
+    },
+    "beam_family": "medium_flood",
+    "distribution_type": "direct",
+    "emission_face": "bottom",
+    "luminaire_efficacy_lm_per_w": {
+      "provenance": {
+        "method": "computed",
+        "source": "ies"
+      },
+      "unit": "lm/W",
+      "value": 0,
+      "value_type": "measured"
+    },
+    "luminous_opening_shape": "circular",
+    "maximum_intensity_cd": {
+      "provenance": {
+        "method": "extracted",
+        "source": "ies"
+      },
+      "unit": "cd",
+      "value": 0,
+      "value_type": "measured"
+    },
+    "photometric_coordinate_system": "ies_c",
+    "symmetry_type": "symm_full",
+    "total_luminous_flux_lm": {
+      "provenance": {
+        "method": "extracted",
+        "source": "ies"
+      },
+      "unit": "lm",
+      "value": 0,
+      "value_type": "measured"
+    }
+  },
+  "product_family": {
+    "catalog_line": "TODO Line name",
+    "catalog_model": "TODO Model name",
+    "cutsheet": {
+      "filename": "TODO-cutsheet-filename.pdf",
+      "revision_date": "2026-01-01",
+      "revision_label": "TODO revision label",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "environment_rating": "dry",
+    "family_description": "TODO One sentence describing this downlight family and the authoring pattern (A: one SKU / one IES, B: one SKU / multiple IES per CCT, C: many SKUs / one IES with derivation rules, D: length-scaled).",
+    "family_display_name": "TODO Product family display name",
+    "family_id": "todo-manufacturer-catalog-family",
+    "indoor_outdoor": "indoor",
+    "manufacturer": {
+      "display_name": "TODO Manufacturer Legal Name",
+      "slug": "todo-manufacturer"
+    },
+    "mounting_types": [
+      "recessed_ceiling"
+    ],
+    "physical_dimensions": {
+      "ceiling_aperture": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "luminaire_mass": {
+        "kg": 0,
+        "lb": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_diameter": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "recess_depth": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      }
+    },
+    "primary_category": "downlight",
+    "secondary_function": [
+      "direct"
+    ],
+    "shape": "round",
+    "shared_mechanical": {
+      "finish_color_options": [
+        "TODO finish option"
+      ],
+      "housing_material": "cast_aluminum",
+      "lens_material": "cone_only"
+    },
+    "technical_region": "120v_60hz_north_america"
+  },
+  "record_id": "todo-manufacturer-catalog-scenario",
+  "record_status": "active",
+  "record_status_as_of": "2026-04-23",
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "TODO-cutsheet-filename.pdf",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "file_type": "ies",
+      "reference": {
+        "filename": "TODO-ies-filename.ies",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ],
+  "ulc_version": "0.3.0"
+}
