@@ -4,7 +4,7 @@ Starter for an interior wall-mounted decorative or architectural luminaire. Cate
 
 ## Workflow
 
-1. Copy `wall-sconce.ulc.json` into `examples/` (or your own directory), rename to `<manufacturer-slug>-<catalog-slug>-<scenario-slug>.ulc.json`.
+1. Copy `wall-sconce.ulc.json` into your working directory (any location outside `examples/`, which is reserved for curated canonical reference records), rename to `<manufacturer-slug>-<catalog-slug>-<scenario-slug>.ulc.json`.
 2. Replace every `TODO` and every `0` placeholder with real values from the cutsheet, IES, and lab reports.
 3. Compute SHA-256 of each source file and paste into every `reference.sha256` field — both the `source_files[].reference.sha256` entries and the family-level `product_family.cutsheet.sha256`.
 4. Run `ulc build-index <file>` to regenerate the index, then `ulc validate <file>`.

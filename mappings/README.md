@@ -14,7 +14,7 @@ How ULC relates to the other systems it has to live alongside. Two categories of
 How ULC relates to each:
 
 - **GLDF** is the primary interchange container for the DIALux and RELUX planning ecosystems. GLDF and ULC address different problems: GLDF is an XML-based container optimized for photometric planning software, while ULC is a lightweight JSON specification optimized for structured datasheet data and AI consumption.
-- **ETIM** provides a widely adopted classification vocabulary for product attributes in electrotechnical wholesale. ULC fields reference ETIM feature identifiers where applicable, supporting downstream compatibility with distributor data systems.
+- **ETIM** provides a widely adopted classification vocabulary for product attributes in electrotechnical wholesale. Individual ULC schema fields cite the corresponding ETIM feature identifiers inline in their descriptions (for example `EF001596` on `HousingMaterial`) where a direct correspondence exists, so downstream consumers can discover the link by reading the schema. The separate compiled `mappings/etim-crosswalk.md` doc that would enumerate the full set of correspondences in one place is still planned and has not yet landed.
 - **IES LM-63** and **EULUMDAT (LDT)** are the established photometric data formats. Their content feeds into ULC records; the files themselves are referenced, not replaced.
 
 ULC does not redistribute the text of any paid or restricted standards. It references them by identifier.

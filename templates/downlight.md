@@ -4,7 +4,7 @@ Walks through each block in `downlight.ulc.json` for a recessed downlight produc
 
 ## Workflow
 
-1. Copy `downlight.ulc.json` into `examples/` (or your own directory), rename to `<manufacturer-slug>-<catalog-slug>-<scenario-slug>.ulc.json`.
+1. Copy `downlight.ulc.json` into your working directory (any location outside `examples/`, which is reserved for curated canonical reference records), rename to `<manufacturer-slug>-<catalog-slug>-<scenario-slug>.ulc.json`.
 2. Replace every `TODO` and every `0` placeholder with real values from your cutsheet, IES file, and lab reports.
 3. Compute the SHA-256 of each source file (`shasum -a 256 file.pdf`) and paste it into the matching `source_files[].reference.sha256` and `product_family.cutsheet.sha256`.
 4. Run `ulc build-index --stdout <file>` to preview the projected index, then `ulc build-index <file>` to write it in place.
