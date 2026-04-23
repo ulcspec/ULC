@@ -1,0 +1,62 @@
+name: Validator CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: go test + goreleaser check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: 'go.sum'
+
+      - name: go mod download
+        run: go mod download
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test -race ./...
+
+      - name: go build
+        run: |
+          mkdir -p bin
+          go build -o bin/ulc ./tools/validator/cmd/ulc
+
+      - name: Validate example and template records end-to-end
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          records=(examples/**/*.ulc examples/**/*.ulc.json templates/**/*.ulc templates/**/*.ulc.json)
+          if [ "${#records[@]}" -eq 0 ]; then
+            echo "No example or template ULC records found; skipping validation."
+            exit 0
+          fi
+          for f in "${records[@]}"; do
+            echo "Validating $f"
+            ./bin/ulc validate "$f"
+          done
+        shell: bash
+
+      - name: goreleaser check
+        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: check
+          workdir: tools/validator

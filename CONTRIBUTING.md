@@ -28,7 +28,7 @@ You do not need to be a developer to contribute. Valuable contributions include:
 3. Update related documentation, examples, and mappings when you change the schema.
 4. Ensure that examples still validate against the schema. The CI workflow will check this automatically.
 5. Avoid unrelated edits, formatting-only changes mixed with substantive changes, or large refactors without prior discussion.
-6. The `index` block on every ULC record is **generated, not hand-authored**. Do not edit index values directly. If a deep-block field changes, re-run `python3 tools/build-index.py <record>.ulc` to regenerate the index before committing. CI rejects records whose index does not match the builder output. The same check is available as an optional local pre-commit hook shipped at `tools/hooks/pre-commit`; install it with `cp tools/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` if you want the feedback before push.
+6. The `index` block on every ULC record is **generated, not hand-authored**. Do not edit index values directly. If a deep-block field changes, re-run `ulc build-index <record>.ulc` (the Go reference CLI at `tools/validator/`) to regenerate the index before committing. CI rejects records whose index does not match the builder output. The same check is available as an optional local pre-commit hook shipped at `tools/hooks/pre-commit`; install it with `cp tools/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` if you want the feedback before push — the hook auto-builds the CLI on first run when Go is available.
 
 ## What belongs in ULC
 

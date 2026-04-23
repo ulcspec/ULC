@@ -1,0 +1,37 @@
+name: Release ulc CLI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    name: Build and publish binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout at tag
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          # Full history lets goreleaser compute accurate build metadata.
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: 'go.sum'
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
+          workdir: tools/validator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -11,7 +11,7 @@
 # Optional: contributors who skip installation still get CI enforcement on
 # pull requests.
 #
-# Four guards run in sequence:
+# Three guards run in sequence:
 #
 #   1. Research-folder guard. Anything staged under research/ aborts the
 #      commit even if added with git add -f. Keeps private ingestion notes
@@ -22,15 +22,13 @@
 #      across taxonomy.schema.json and ulc.schema.json. Aborts the commit
 #      on any dangling reference.
 #
-#   3. Builder-schema parity guard. When schema/ulc.schema.json or
-#      tools/build-index.py is staged, runs tools/builder-parity-guard.py
-#      to confirm the builder's emitted keys match the schema's Index
-#      definition and that every required Index field is produced.
-#
-#   4. Record-index parity guard. When any *.ulc or *.ulc.json record is
-#      staged, runs tools/build-index.py --check against each to confirm
-#      its `index` block matches what the builder would produce. Enforces
-#      the generate-only rule for the denormalized scan surface.
+#   3. Record-index parity guard. When any *.ulc or *.ulc.json record is
+#      staged, runs `ulc build-index --check` against each to confirm its
+#      `index` block matches what the builder would produce. Uses the Go
+#      reference CLI at tools/validator/bin/ulc (built from source when
+#      missing). Enforces the generate-only rule for the index block.
+
+set -eu
 
 staged=$(git diff --cached --name-only --diff-filter=ACMR)
 
@@ -61,27 +59,49 @@ if [ -n "$schema_staged" ]; then
   fi
 fi
 
-# Guard 3: builder-schema parity
-parity_triggers=$(echo "$staged" | grep -E "^(schema/ulc\.schema\.json|tools/build-index\.py|tools/builder-parity-guard\.py)$" || true)
-if [ -n "$parity_triggers" ]; then
-  echo "Schema or builder staged -- running builder-schema parity guard..."
-  if ! python3 tools/builder-parity-guard.py; then
+# Guard 3: record-index parity via the Go `ulc` CLI.
+# Binary resolution prefers the in-repo build (tools/validator/bin/ulc) over
+# a globally-installed `ulc`, so a contributor with a stale / newer global
+# version does not get local parity results that diverge from CI. When Go is
+# available, we rebuild from source on every invocation to guarantee the
+# hook runs the same builder logic as the current checkout.
+record_files=$(echo "$staged" | grep -E "\.ulc(\.json)?$" || true)
+if [ -n "$record_files" ]; then
+  ulc_bin=""
+  if command -v go >/dev/null 2>&1; then
+    # Fast incremental build: Go caches unchanged packages, so this typically
+    # runs in well under a second after the first build.
+    mkdir -p tools/validator/bin
+    if ! go build -o tools/validator/bin/ulc ./tools/validator/cmd/ulc; then
+      echo ""
+      echo "COMMIT ABORTED: failed to build tools/validator/bin/ulc."
+      echo ""
+      exit 1
+    fi
+    ulc_bin="tools/validator/bin/ulc"
+  elif [ -x "tools/validator/bin/ulc" ]; then
+    echo "Warning: Go not installed; using existing tools/validator/bin/ulc."
+    echo "         This may not reflect staged changes to validator source."
+    ulc_bin="tools/validator/bin/ulc"
+  elif command -v ulc >/dev/null 2>&1; then
+    echo "Warning: using globally-installed ulc; version may differ from"
+    echo "         this checkout and produce results that disagree with CI."
+    ulc_bin="ulc"
+  else
     echo ""
-    echo "COMMIT ABORTED: builder-schema parity failure. See output above."
+    echo "COMMIT ABORTED: the record-index parity check needs the 'ulc' CLI."
+    echo "Install one of the following and re-stage:"
+    echo "  * Go 1.22+ (the hook will auto-build from tools/validator)"
+    echo "  * a released binary from https://github.com/ulcspec/ULC/releases"
     echo ""
     exit 1
   fi
-fi
 
-# Guard 4: record-index parity (runs on staged ULC records).
-# Iterate line-by-line with `read -r` so filenames containing spaces survive.
-record_files=$(echo "$staged" | grep -E "\.ulc(\.json)?$" || true)
-if [ -n "$record_files" ]; then
   echo "ULC record(s) staged -- running record-index parity check..."
   fail=0
   while IFS= read -r f; do
     [ -z "$f" ] && continue
-    if [ -f "$f" ] && ! python3 tools/build-index.py --check "$f"; then
+    if [ -f "$f" ] && ! "$ulc_bin" build-index --check "$f"; then
       fail=1
     fi
   done <<EOF
@@ -90,7 +110,7 @@ EOF
   if [ "$fail" -ne 0 ]; then
     echo ""
     echo "COMMIT ABORTED: one or more records have a stale index."
-    echo "Run 'python3 tools/build-index.py <record>' to regenerate, then re-stage."
+    echo "Run '$ulc_bin build-index <record>' to regenerate, then re-stage."
     echo ""
     exit 1
   fi
