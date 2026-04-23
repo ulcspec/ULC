@@ -41,7 +41,7 @@ Bollards should populate the `outdoor_classification` block (added after core va
 ### `electrical`
 
 - **`driver_protocol: "0-10v"`** — default. Change to `non_dimming` for commodity bollards that are switched but not dimmed.
-- **`input_voltage_class`** — `120v` is the template default; `120-277v` for multi-volt commercial. Very few bollards run on 347V.
+- **`input_voltage_class`** — `120v` is the template default; `universal_120_277` for multi-volt commercial. Very few bollards run on 347V.
 - **`dimming_range_percent`** — `{min: 10, max: 100}` if dimmed; set both to 100 or omit the block if non-dimming.
 
 ### `attestations`

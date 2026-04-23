@@ -23,7 +23,7 @@ Starter for an interior wall-mounted decorative or architectural luminaire. Cate
 ### `physical_dimensions`
 
 - Populate `overall_length`, `overall_width`, `overall_height`, and `luminaire_mass`.
-- For ADA compliance, `overall_height` from the wall matters (must be under 4 inches / 100 mm of projection). If the cutsheet publishes an ADA-specific projection value distinct from `overall_height`, park it in the top-level `extensions.manufacturer_specific.<slug>` block — `extensions` is only a top-level field, not a sub-field of `product_family`.
+- ADA projection-from-wall (must be under 4 inches / 100 mm to meet the protrusion limit) has no native ULC field today. `overall_height` describes the fixture's overall height, not its wall projection, so don't reuse it for protrusion. Park the projection value in the top-level `extensions.manufacturer_specific.<slug>` block (note: `extensions` is a top-level field, not a sub-field of `product_family`) until a dedicated schema slot lands.
 
 ### `photometry`
 
@@ -37,7 +37,7 @@ Starter for an interior wall-mounted decorative or architectural luminaire. Cate
 
 - **`driver_protocol: "phase_forward"`** — typical for residential and residential-adjacent sconces (TRIAC/forward-phase dimmer compatibility). Change to `0-10v` for commercial spec; `phase_reverse` for ELV/reverse-phase dimmers; `dali` for European architectural.
 - **`dimming_range_percent: {min: 5, max: 100}`** — typical for phase-cut. Commercial 0-10V drivers go to `{min: 1, max: 100}`.
-- **`input_voltage_class: "120v"`** — typical residential. `120-277v` for commercial multi-volt.
+- **`input_voltage_class: "120v"`** — typical residential. `universal_120_277` for commercial multi-volt.
 
 ### `attestations`
 

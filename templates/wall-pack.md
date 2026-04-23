@@ -50,7 +50,7 @@ Exterior wall packs typically carry more program attestations than indoor fixtur
 
 ### `electrical`
 
-- **`input_voltage_class`** — `120-277v` multi-volt is common for wall packs; change the rated value and class accordingly.
+- **`input_voltage_class`** — `universal_120_277` multi-volt is common for wall packs; change the rated value and class accordingly.
 - **`driver_protocol`** — `0-10v` is typical; `non_dimming` for commodity wall packs.
 
 ### Common later additions
