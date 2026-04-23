@@ -13,10 +13,10 @@ Starter for an exterior wall-mounted area luminaire. Category defaults in `wall-
 
 ### `product_family`
 
-- **`primary_category: "bulkhead_wall_pack"`** — the canonical category for all exterior wall-mount luminaires including full-cutoff wall packs, traditional bulkheads, and decorative outdoor sconces.
+- **`primary_category: "bulkhead_wall_pack"`** — the canonical category for all exterior wall-mount luminaires including full-cutoff wall packs, traditional bulkheads, and decorative outdoor sconces. Interior wall-mount uses `sconce` instead (see `wall-sconce.md`).
 - **`secondary_function: ["asymmetric", "flood"]`** — wall packs typically project light away from the wall asymmetrically. Add `wall_wash` if the optic is designed to graze downward along the wall.
 - **`shape`** — `rectangular` is most common; `round` for drum-style bulkheads; `square` for cube fixtures.
-- **`environment_rating: "wet"`** — non-negotiable for exterior wall mount. If the fixture is only damp-rated, the product is probably not a wall pack but an exterior sconce; use `primary_category: "sconce"` instead.
+- **`environment_rating`** — `wet` is the typical default. A damp-only exterior bulkhead (covered entry porch, protected soffit) still belongs to `bulkhead_wall_pack`; downgrade `environment_rating` to `damp` rather than re-categorizing.
 - **`shared_mechanical.ip_rating`** — `IP65` is typical; `IP66` for high-pressure washdown or coastal; `IP67` for occasional submersion (rare for wall packs).
 - **`shared_mechanical.ik_rating`** — `IK08` or `IK09` is typical vandal-resistance for building-perimeter fixtures.
 - **`shared_mechanical.lens_material: "tempered_glass"`** — most common for wet-location wall packs. `polycarbonate` on vandal-resistant variants.
@@ -32,8 +32,10 @@ Starter for an exterior wall-mounted area luminaire. Category defaults in `wall-
 
 Outdoor wall packs should populate the `outdoor_classification` block (added to the record after the core validates) with:
 
-- **`luminaire_classification_system`** — IESNA Type I through V per TM-15.
-- **`bug_rating`** — BackLightUpLightGlare rating as `{b, u, g}` ints 0-5.
+- **`outdoor_distribution_type`** — IESNA Type I through V per TM-15 (`type_i`, `type_ii`, `type_iii`, `type_iv`, `type_v`, `type_vs`, and the four-way variants). See `taxonomy.schema.json#/$defs/OutdoorDistributionType`.
+- **`longitudinal_distribution_range`** — `short`, `medium`, or `long`.
+- **`bug_rating`** — BackLight, UpLight, Glare ratings as `{b, u, g}` integers 0-5.
+- Optional **`legacy_cutoff`** — legacy cutoff classification (`full_cutoff`, `cutoff`, `semi_cutoff`, `non_cutoff`) when the cutsheet still publishes one.
 
 The index will automatically project `bug_rating` as a short string (for example `"B1-U0-G2"`).
 
@@ -44,7 +46,7 @@ Exterior wall packs typically carry more program attestations than indoor fixtur
 - **`c_ul_listed`** with `standard_revision: "UL 1598 wet location"` (template stubs this).
 - **`iec_60598`** with `standard_revision: "IEC 60598-2-3 road and street lighting"` for non-US markets.
 - **`dlc_standard`** or **`dlc_premium`** for DLC-qualified utility-rebate products.
-- **IP rating attestation** — treated as a separate entry with `program: "ip_rating_<value>"` per the Tier 3 gap noted in `docs/authoring-patterns.md`.
+- **IP and IK ratings** are carried on `product_family.shared_mechanical.ip_rating` and `shared_mechanical.ik_rating` directly, not as entries in the `attestations[]` array. First-class `AttestationProgram` values for these are a Tier 3 schema gap (see `docs/authoring-patterns.md`).
 
 ### `electrical`
 

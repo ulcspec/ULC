@@ -14,7 +14,7 @@ Starter for an industrial or commercial high-ceiling luminaire. Category default
 ### `product_family`
 
 - **`primary_category: "high_bay"`** — for ceiling mounts above approximately 20 ft (6 m). For lower ceilings, use `low_bay` instead.
-- **`secondary_function: ["wide", "direct"]`** — high-bays flood wide to cover floor area from height. Add `narrow` for aisle-specific optics.
+- **`secondary_function: ["wide", "direct"]`** — high-bays flood wide to cover floor area from height. Change to `["spot", "direct"]` for aisle-specific narrow-beam optics. See `taxonomy.schema.json#/$defs/SecondaryFunction` for the full enum.
 - **`mounting_types: ["pendant", "surface_ceiling"]`** — most high-bays ship with pendant/hook mount, some with ceiling-flush. Add `track` only if the product actually supports track mounting (rare).
 - **`shape`** — `round` for UFO-style; `rectangular` for panel-style; `square` for troffer-style high-bay hybrids.
 - **`environment_rating: "damp"`** — high-bays are typically damp-rated for covered but humid indoor environments (warehouses, parking garages). Change to `wet` for open-structure garage applications or food-processing washdown environments.
@@ -48,8 +48,8 @@ High-bays often carry:
 
 - **`lumen_maintenance_package`** and **`lumen_maintenance_luminaire`** with L80 claim (L70 is rarely specified for high-bays; most spec at L80 or L90 at 50k-100k hours).
 - **`thermal_derating`** — LM-82 curve matters for warehouses with ambient variation.
-- **`occupancy_sensing`** and **`daylight_harvesting`** fields if integrated sensors are included.
+- **Integrated sensor metadata** — currently parked in `extensions.manufacturer_specific` pending first-class schema slots for occupancy and daylight-harvesting sensor capabilities.
 
 ## See also
 
-- `docs/authoring-patterns.md` — typically Pattern A (one SKU / one IES per wattage tier) or Pattern C (wattage-tier scaling with `derivation_rule`).
+- `docs/authoring-patterns.md` — typically Pattern A (one record per SKU, one IES per wattage tier) or Pattern B (one record covers a range of wattage tiers via `applicability.covered_axes.wattage_tier.derivation` with a `method: "wattage_tier_scaling"` rule).

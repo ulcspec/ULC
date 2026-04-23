@@ -13,7 +13,7 @@ Starter for an exterior ground-mounted pathway luminaire. Category defaults in `
 
 ### `product_family`
 
-- **`primary_category: "bollard"`** — the canonical category for short ground-mounted pathway luminaires. For taller pole-mounted fixtures, use `flood_area_site` with `mounting: pole_top`.
+- **`primary_category: "bollard"`** — the canonical category for short ground-mounted pathway luminaires. For taller pole-mounted fixtures, use `flood_area_site` with `mounting_types: ["pole_top"]`.
 - **`mounting_types: ["surface_floor"]`** — typical for anchor-mounted bollards. Change to `["in_ground"]` for direct-burial or concrete-anchor variants; some products support both.
 - **`shape`** — `round` is most common; `square` for cube-style bollards; `custom` for sculpted decorative variants.
 - **`environment_rating: "wet"`** — non-negotiable. Bollards sit in rain, snow, sprinkler spray, and puddles.
@@ -34,8 +34,9 @@ Starter for an exterior ground-mounted pathway luminaire. Category defaults in `
 
 Bollards should populate the `outdoor_classification` block (added after core validates):
 
-- **`luminaire_classification_system: "type_v_short"`** — typical for symmetric bollards.
-- **`bug_rating`** — low values (for example `B0-U0-G0` or `B1-U0-G1`) for spec-grade path bollards designed to minimize light pollution.
+- **`outdoor_distribution_type: "type_vs"`** — IESNA Type V Short, typical for symmetric bollards. Other values are `type_i` through `type_v` (see `taxonomy.schema.json#/$defs/OutdoorDistributionType`).
+- **`longitudinal_distribution_range`** — `short`, `medium`, or `long`, matching how far the optic throws along the pathway axis.
+- **`bug_rating`** — low values (for example `{b: 0, u: 0, g: 0}` or `{b: 1, u: 0, g: 1}`) for spec-grade path bollards designed to minimize light pollution. The index will project this as a short string like `"B1-U0-G1"`.
 
 ### `electrical`
 

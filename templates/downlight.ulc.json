@@ -24,12 +24,12 @@
   "colorimetry": {
     "cri_ra": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "ratio",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "nominal_cct_k": "3000"
   },
@@ -62,12 +62,12 @@
     "driver_protocol": "0-10v",
     "input_power_w": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "W",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "input_voltage_class": "120v",
     "input_voltage_v": {
@@ -143,45 +143,45 @@
   "photometry": {
     "beam_angle_deg": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "deg",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "beam_family": "medium_flood",
     "distribution_type": "direct",
     "emission_face": "bottom",
     "luminaire_efficacy_lm_per_w": {
       "provenance": {
-        "method": "computed",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "lm/W",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "luminous_opening_shape": "circular",
     "maximum_intensity_cd": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "cd",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "photometric_coordinate_system": "ies_c",
     "symmetry_type": "symm_full",
     "total_luminous_flux_lm": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "lm",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     }
   },
   "product_family": {
@@ -194,7 +194,7 @@
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     "environment_rating": "dry",
-    "family_description": "TODO One sentence describing this downlight family and the authoring pattern (A: one SKU / one IES, B: one SKU / multiple IES per CCT, C: many SKUs / one IES with derivation rules, D: length-scaled).",
+    "family_description": "TODO One sentence describing this downlight family and the authoring pattern (A: one record per SKU, B: one record per photometric scenario covers many SKUs via multiplier tables, C: one record per IES preserves 1:1 file correspondence with provenance classes, D: per-foot linear scaling across fixture lengths).",
     "family_display_name": "TODO Product family display name",
     "family_id": "todo-manufacturer-catalog-family",
     "indoor_outdoor": "indoor",

@@ -43,7 +43,7 @@ Grep for any of these to find unfilled placeholders in your in-progress record:
 
 ## See also
 
-- `docs/authoring-patterns.md` — the four manufacturer authoring patterns (A: one SKU / one IES; B: one SKU / multiple IES; C: many SKUs / one IES with derivation rules; D: length-scaled) and how to pick the one that matches your cutsheet.
+- `docs/authoring-patterns.md` — the four manufacturer authoring patterns (A: one record per SKU; B: one record per photometric scenario covers many SKUs via multiplier tables; C: one record per IES preserves 1:1 file correspondence with provenance classes; D: per-foot linear scaling across fixture lengths) and how to pick the one that matches your cutsheet.
 - `schema/ulc.schema.json` — the formal schema each template conforms to.
 - `mappings/` — how to emit ULC from Salsify, Akeneo, SAP, and in-house PIMs at scale.
 - `examples/` — four real-world reference records, one per authoring pattern.

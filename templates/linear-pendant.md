@@ -13,9 +13,9 @@ Starter for a suspended linear luminaire (cove-adjacent, office pendant, library
 
 ### Authoring pattern
 
-Linear pendants most commonly follow **Pattern D: length-scaled photometry.** The cutsheet publishes one IES measured at a single length (often 4 ft) and scales lumens and power per foot across other lengths. See `docs/authoring-patterns.md` for how to express length scaling via `applicability.varying_axes[].derivation_rule: "linear_rate"`.
+Linear pendants most commonly follow **Pattern D: length-scaled photometry.** The cutsheet publishes one IES measured at a single length (often 4 ft) and scales lumens and power per foot across other lengths. See `docs/authoring-patterns.md` for how to express length scaling via `applicability.covered_axes.length.derivation` with `method: "per_foot_linear_scaling"` and a `linear_rate` entry.
 
-If your product publishes a separate IES per length instead, use Pattern A or B, and delete the `linear_rate` derivation rules from `applicability`.
+If your product publishes a separate IES per length instead, use Pattern A or B, and drop the length `covered_axes` entry entirely (each length becomes its own record).
 
 ### `product_family`
 
@@ -47,4 +47,4 @@ If your product publishes a separate IES per length instead, use Pattern A or B,
 ## See also
 
 - `examples/vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc` — a real-world linear pendant (Pattern D, length-scaled).
-- `docs/authoring-patterns.md` — how to express length-scaling in `applicability.varying_axes`.
+- `docs/authoring-patterns.md` — how to express length-scaling in `applicability.covered_axes` with a `CoveredAxis.derivation` rule.

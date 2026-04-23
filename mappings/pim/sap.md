@@ -110,7 +110,7 @@ Listings, certifications, and test-method conformance typically live as characte
 SAP's configurable materials (class-type 300) describe a material with variant characteristics (voltage, CCT, finish). Each variant configuration (`VBAP` → variant) produces one ULC scenario record. The `applicability` block carries the variant axes:
 
 - `applicability.fixed_axes` — per-scenario fixed characteristic values.
-- `applicability.varying_axes[]` — axes where a single scenario's photometry applies across multiple variants.
+- `applicability.covered_axes.<axis_name>` — axes where a single scenario's photometry applies across multiple variants. Each `CoveredAxis` carries a `values[]` list, a `rationale` string, and optionally a `derivation` rule (multiplier table, per-foot linear scaling, voltage-independence rationale) that describes how non-baseline values are computed from the tested baseline.
 
 ## Gotchas
 

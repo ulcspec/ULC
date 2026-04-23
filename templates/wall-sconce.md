@@ -23,7 +23,7 @@ Starter for an interior wall-mounted decorative or architectural luminaire. Cate
 ### `physical_dimensions`
 
 - Populate `overall_length`, `overall_width`, `overall_height`, and `luminaire_mass`.
-- For ADA compliance, `overall_height` from the wall matters (must be under 4 inches / 100 mm of projection). Note it in `product_family.extensions.manufacturer_specific` if relevant to the customer.
+- For ADA compliance, `overall_height` from the wall matters (must be under 4 inches / 100 mm of projection). If the cutsheet publishes an ADA-specific projection value distinct from `overall_height`, park it in the top-level `extensions.manufacturer_specific.<slug>` block — `extensions` is only a top-level field, not a sub-field of `product_family`.
 
 ### `photometry`
 
@@ -51,8 +51,8 @@ Sconces typically carry:
 
 - **`compatible_accessories`** — junction box covers, decorative trims, lamp shades (for residential styles).
 - **`lumen_maintenance_package`** and **`lumen_maintenance_luminaire`** — L70 at 25k-50k hours is typical for residential sconces; commercial spec at L80 at 50k+.
-- **`color_tunability_extensions`** — for dim-to-warm sconces (1800K-3000K warm-dim curves), populate the dim-to-warm block.
+- **Dim-to-warm sconces (1800K-3000K warm-dim curves)** — a first-class schema slot is pending; for now, describe the warm-dim behavior in the top-level `extensions.manufacturer_specific.<slug>` block with the tuning curve and CCT-at-dim-level pairs.
 
 ## See also
 
-- `docs/authoring-patterns.md` — typically Pattern A (one SKU / one IES) for sconces since lamping and finish variations rarely change photometry meaningfully.
+- `docs/authoring-patterns.md` — typically Pattern A (one record per SKU) for sconces since lamping and finish variations rarely change photometry meaningfully.

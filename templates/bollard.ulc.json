@@ -25,7 +25,7 @@
       "program": "c_ul_listed",
       "standard_revision": "UL 1598 wet location",
       "status": "claimed",
-      "value_type": "rated",
+      "value_type": "measured",
       "verification": {
         "type": "unconditional"
       }
@@ -34,12 +34,12 @@
   "colorimetry": {
     "cri_ra": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "ratio",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "nominal_cct_k": "3000"
   },
@@ -72,12 +72,12 @@
     "driver_protocol": "0-10v",
     "input_power_w": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "W",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "input_voltage_class": "120v",
     "input_voltage_v": {
@@ -159,33 +159,33 @@
     "emission_face": "c0",
     "luminaire_efficacy_lm_per_w": {
       "provenance": {
-        "method": "computed",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "lm/W",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "luminous_opening_shape": "vertical_cylinder",
     "maximum_intensity_cd": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "cd",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     },
     "photometric_coordinate_system": "ies_c",
     "symmetry_type": "symm_bi_0",
     "total_luminous_flux_lm": {
       "provenance": {
-        "method": "extracted",
-        "source": "ies"
+        "method": "transcribed",
+        "source": "manufacturer_direct"
       },
       "unit": "lm",
       "value": 0,
-      "value_type": "measured"
+      "value_type": "rated"
     }
   },
   "product_family": {
