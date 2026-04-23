@@ -28,6 +28,8 @@ The ULC emitter is typically implemented as an external service that pulls from 
 | Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
 | Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
 
+The "Product `identifier` → `configuration.catalog_number`" mapping is the Pattern A default (one record per SKU). If a product-model family publishes one ULC record that covers many variant SKUs via a multiplier table (Pattern B) or per-foot linear scaling (Pattern D), `configuration.catalog_number` carries only the tested-baseline SKU, and the covered SKU range is declared in `applicability.covered_axes.<axis>` with a per-axis derivation rule. See `docs/authoring-patterns.md` for worked examples.
+
 ### Family to primary category
 
 Akeneo's family codes map to ULC primary categories one-to-one in a well-designed taxonomy:
@@ -127,7 +129,7 @@ The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own com
 
 ```php
 // Illustrative pseudocode, not a working implementation.
-function emitUlcFromAkeneo(Product $product, Variant $variant): ?array {
+function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
     $family = $product->getFamily()->getCode();
     $primaryCategory = FAMILY_TO_ULC_CATEGORY[$family] ?? null;
     if ($primaryCategory === null) {

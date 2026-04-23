@@ -28,6 +28,8 @@ The ULC emitter is typically implemented as a Salsify channel recipe plus an ext
 
 A product family in Salsify is typically modeled as a parent product with child variants (one per orderable SKU). The parent carries cutsheet-level shared data and maps to `product_family.*`; each child variant maps to its own `configuration.catalog_number` and a distinct ULC record. See the multi-CCT handling note under "Gotchas" below for the common parent-variant pattern.
 
+The "variant SKU → `configuration.catalog_number`" mapping above is the Pattern A default (one record per SKU). If the manufacturer publishes one ULC record that covers multiple order codes via a multiplier table (Pattern B) or per-foot linear scaling (Pattern D), `configuration.catalog_number` should carry only the tested-baseline SKU, and the full range of covered order codes is declared in `applicability.covered_axes.<axis>` with a per-axis derivation rule. See `docs/authoring-patterns.md` for worked examples of all four patterns.
+
 ### Category and mounting
 
 Salsify's category taxonomy is typically a hierarchical property (for example `luminaire/indoor/recessed/downlight`). The emitter maps the leaf (or a leaf+parent combination) into ULC enums:

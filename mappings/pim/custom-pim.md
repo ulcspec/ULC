@@ -35,10 +35,15 @@ WHERE p.status = 'active'
 | SQL / ORM column | ULC path |
 |---|---|
 | `manufacturer` | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
-| `model` | `product_family.catalog_model`, `configuration.catalog_number` |
+| Family / model-code column | `product_family.catalog_model` |
+| SKU / order-code column | `configuration.catalog_number` |
 | `series` | `product_family.catalog_line` |
 | Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
 | Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
+
+In-house schemas vary. If the products table has one row per SKU, the SKU / order-code column maps to `configuration.catalog_number` and the family model code lives on a join (variant → parent) or on the SKU row as a duplicated attribute. If the products table has one row per family with variants on a separate table, the family row supplies `product_family.*` and each variant row supplies `configuration.catalog_number`.
+
+The "SKU → `configuration.catalog_number`" mapping is the Pattern A default (one record per SKU). For Pattern B records (one record covers many SKUs via multiplier tables) and Pattern D records (per-foot linear scaling), `configuration.catalog_number` carries only the tested-baseline SKU and the covered SKU range goes to `applicability.covered_axes`. See `docs/authoring-patterns.md` for worked examples.
 
 ### Category
 

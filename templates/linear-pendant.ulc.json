@@ -1,7 +1,7 @@
 {
   "applicability": {
-    "applicable_catalog_pattern": "TODO-CATALOG-NUMBER",
-    "applicable_sku_count_estimate": 1,
+    "applicable_catalog_pattern": "TODO-FAMILY-PREFIX-{LENGTH}-TODO-SUFFIX",
+    "applicable_sku_count_estimate": 5,
     "covered_axes": {
       "length": {
         "derivation": {
@@ -21,7 +21,6 @@
       }
     },
     "fixed_axes": {
-      "catalog_number": "TODO-CATALOG-NUMBER",
       "cct": "3500",
       "cri": "90",
       "distribution": "TODO distribution slug",

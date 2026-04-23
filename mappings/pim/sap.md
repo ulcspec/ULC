@@ -29,6 +29,8 @@ Older SAP ECC landscapes use **IDocs** (XML-ish envelopes) for integration. Mode
 | Derived full slug `<manufacturer>-<matnr>-<scenario>` | `record_id` |
 | Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
 
+The "variant configuration MATNR → `configuration.catalog_number`" mapping is the Pattern A default (one record per variant). If a configurable material publishes one ULC record covering many variant configurations via a multiplier table (Pattern B) or per-foot linear scaling (Pattern D), `configuration.catalog_number` carries only the tested-baseline variant's MATNR, and the covered variant range is declared in `applicability.covered_axes.<axis>` with a per-axis derivation rule. See `docs/authoring-patterns.md` for worked examples.
+
 ### Category (classification system)
 
 SAP's classification system holds luminaire attributes as **characteristics** (CABN) on **classes** (KLAH). The mapping from a manufacturer's SAP class hierarchy to ULC's `primary_category` enum is manufacturer-specific and lives in the integration configuration:
@@ -66,7 +68,7 @@ SAP stores units of measure as codes in the T006 unit table. ULC expects canonic
 | SAP T006 code | ULC unit |
 |---|---|
 | `MM` | millimeter, emit as `mm` |
-| `M` | meter, convert to mm (or keep m for large dimensions) |
+| `M` | meter, convert to mm (ULC's `DualUnitLength` is `mm` + `in` only; there is no `m` slot, so always normalize) |
 | `CM` | centimeter, convert to mm |
 | `KG` | kilogram, emit as `kg` |
 | `G` | gram, convert to kg |
