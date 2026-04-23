@@ -1,15 +1,15 @@
 # `ulc` — reference validator for ULC
 
-The `ulc` command-line tool is the reference implementation of the ULC specification's validation and index-building logic. It is the authoritative check that a `.ulc` file is well-formed, conforms to the schema, and has a correctly-computed `index` block.
+The `ulc` command-line tool is the reference implementation of the ULC specification's validation and index-building logic. It is the authoritative check that a ULC record (files with a `.ulc` or `.ulc.json` extension — both are accepted by all subcommands) is well-formed, conforms to the schema, and has a correctly-computed `index` block.
 
 ## Shipped features
 
 As of v0.4.0:
 
-- [x] `ulc build-index <record.ulc>` — deterministic index projection
-- [x] `ulc build-index <record.ulc> --check` — verify stored index matches the builder; exit 1 on drift
-- [x] `ulc build-index <record.ulc> --stdout` — print computed index without modifying the record
-- [x] `ulc validate <record.ulc>` — JSON Schema Draft 2020-12 structural validation via [`santhosh-tekuri/jsonschema/v6`](https://github.com/santhosh-tekuri/jsonschema) with cross-file `$ref` resolution
+- [x] `ulc build-index <record>` — deterministic index projection (`<record>` is any `.ulc` or `.ulc.json` file)
+- [x] `ulc build-index <record> --check` — verify stored index matches the builder; exit 1 on drift
+- [x] `ulc build-index <record> --stdout` — print computed index without modifying the record
+- [x] `ulc validate <record>` — JSON Schema Draft 2020-12 structural validation via [`santhosh-tekuri/jsonschema/v6`](https://github.com/santhosh-tekuri/jsonschema) with cross-file `$ref` resolution
 - [x] Builder parity is included in `ulc validate` (stored `index` vs. computed)
 - [x] Source-file SHA-256 hash verification when referenced files are reachable on the local filesystem
 - [x] Structured `ERROR` / `WARNING` / `INFO` findings, each with a JSON Pointer into the record

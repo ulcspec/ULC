@@ -1,0 +1,270 @@
+{
+  "applicability": {
+    "applicable_catalog_pattern": "TODO-CATALOG-NUMBER",
+    "applicable_sku_count_estimate": 1,
+    "fixed_axes": {
+      "catalog_number": "TODO-CATALOG-NUMBER",
+      "cct": "2700",
+      "finish": "TODO finish slug",
+      "voltage": "120v"
+    }
+  },
+  "attestations": [
+    {
+      "attestation_id": "todo-lm-79-08-attestation",
+      "program": "lm_79_08",
+      "status": "claimed",
+      "value_type": "measured",
+      "verification": {
+        "type": "unconditional"
+      }
+    }
+  ],
+  "colorimetry": {
+    "cri_ra": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "ratio",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "nominal_cct_k": "2700"
+  },
+  "configuration": {
+    "catalog_number": "TODO-CATALOG-NUMBER",
+    "photometric_scenario_id": "todo-scenario-slug",
+    "scenario_label": "TODO Human-readable scenario label (CCT, distribution, finish, voltage)",
+    "source_ies_ref": "TODO-ies-filename.ies",
+    "tested_axes": {
+      "color_tunability": "static_white",
+      "cri_tier": "cri_90",
+      "distribution_code": {
+        "distribution_type": "direct_indirect",
+        "manufacturer_label": "TODO distribution label"
+      }
+    },
+    "tested_conditions": {
+      "input_voltage_at_test": "120v",
+      "mounting_at_test": "surface_wall",
+      "nominal_cct_at_test": "2700"
+    }
+  },
+  "conformance_level": "core",
+  "electrical": {
+    "dimming_method": "ccr",
+    "dimming_range_percent": {
+      "max": 100,
+      "min": 5
+    },
+    "driver_protocol": "phase_forward",
+    "input_power_w": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "W",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "input_voltage_class": "120v",
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    }
+  },
+  "index": {
+    "attestation_programs": [
+      "lm_79_08"
+    ],
+    "beam_family": "medium_flood",
+    "builder_version": "0.2.0",
+    "catalog_model": "TODO Model name",
+    "catalog_number": "TODO-CATALOG-NUMBER",
+    "color_tunability": "static_white",
+    "dimming_protocols": [
+      "phase_forward"
+    ],
+    "display_name": "TODO Human-readable scenario label (CCT, distribution, finish, voltage)",
+    "environment_rating": "dry",
+    "indoor_outdoor": "indoor",
+    "manufacturer_slug": "todo-manufacturer",
+    "mounting_types": [
+      "surface_wall"
+    ],
+    "nominal_cct_k": "2700",
+    "nominal_cri_ra": 0,
+    "nominal_efficacy_lm_per_w": 0,
+    "nominal_input_power_w": 0,
+    "nominal_total_lumens": 0,
+    "primary_category": "sconce",
+    "primary_distribution": "direct_indirect",
+    "search_keywords": [
+      "TODO Human-readable scenario label (CCT, distribution, finish, voltage)",
+      "TODO Line name",
+      "TODO Product family display name"
+    ],
+    "secondary_function": [
+      "direct_indirect"
+    ],
+    "source_file_types_present": [
+      "datasheet_pdf",
+      "ies"
+    ],
+    "x-ulc-generated": true
+  },
+  "operating_point": {
+    "input_frequency_hz": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "Hz",
+      "value": 60,
+      "value_type": "rated"
+    },
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    }
+  },
+  "photometry": {
+    "beam_family": "medium_flood",
+    "distribution_type": "direct_indirect",
+    "emission_face": "bottom",
+    "luminaire_efficacy_lm_per_w": {
+      "provenance": {
+        "method": "computed",
+        "source": "ies"
+      },
+      "unit": "lm/W",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "luminous_opening_shape": "rectangular",
+    "maximum_intensity_cd": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "cd",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "photometric_coordinate_system": "ies_c",
+    "symmetry_type": "symm_bi_0",
+    "total_luminous_flux_lm": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "lm",
+      "value": 0,
+      "value_type": "rated"
+    }
+  },
+  "product_family": {
+    "catalog_line": "TODO Line name",
+    "catalog_model": "TODO Model name",
+    "cutsheet": {
+      "filename": "TODO-cutsheet-filename.pdf",
+      "revision_date": "1970-01-01",
+      "revision_label": "TODO revision label",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "environment_rating": "dry",
+    "family_description": "TODO One sentence describing this wall-sconce family. Interior wall-mounted decorative or architectural luminaire; common patterns are direct downlight, indirect uplight, and direct_indirect.",
+    "family_display_name": "TODO Product family display name",
+    "family_id": "todo-manufacturer-catalog-family",
+    "indoor_outdoor": "indoor",
+    "manufacturer": {
+      "display_name": "TODO Manufacturer Legal Name",
+      "slug": "todo-manufacturer"
+    },
+    "mounting_types": [
+      "surface_wall"
+    ],
+    "physical_dimensions": {
+      "luminaire_mass": {
+        "kg": 0,
+        "lb": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_height": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_length": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_width": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      }
+    },
+    "primary_category": "sconce",
+    "secondary_function": [
+      "direct_indirect"
+    ],
+    "shape": "rectangular",
+    "shared_mechanical": {
+      "finish_color_options": [
+        "TODO finish option"
+      ],
+      "housing_material": "die_cast_aluminum",
+      "lens_material": "acrylic"
+    },
+    "technical_region": "120v_60hz_north_america"
+  },
+  "record_id": "todo-manufacturer-catalog-scenario",
+  "record_status": "active",
+  "record_status_as_of": "1970-01-01",
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "TODO-cutsheet-filename.pdf",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "file_type": "ies",
+      "reference": {
+        "filename": "TODO-ies-filename.ies",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ],
+  "ulc_version": "0.3.0"
+}

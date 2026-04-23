@@ -1,0 +1,58 @@
+# Authoring guide: wall sconce
+
+Starter for an interior wall-mounted decorative or architectural luminaire. Category defaults in `wall-sconce.ulc.json`: `primary_category: "sconce"`, `mounting_types: ["surface_wall"]`, `shape: "rectangular"`, `indoor_outdoor: "indoor"`, `environment_rating: "dry"`, tested at 2700K (warm residential default).
+
+## Workflow
+
+1. Copy `wall-sconce.ulc.json` into your working directory (any location outside `examples/`, which is reserved for curated canonical reference records), rename to `<manufacturer-slug>-<catalog-slug>-<scenario-slug>.ulc.json`.
+2. Replace every `TODO` and every `0` placeholder with real values from the cutsheet, IES, and lab reports.
+3. Compute SHA-256 of each source file and paste into every `reference.sha256` field — both the `source_files[].reference.sha256` entries and the family-level `product_family.cutsheet.sha256`.
+4. Run `ulc build-index <file>` to regenerate the index, then `ulc validate <file>`.
+
+## Category-specific notes
+
+### `product_family`
+
+- **`primary_category: "sconce"`** — use this for sconce-form fixtures: decorative or architectural wall luminaires, including ADA-compliant direct/indirect sconces, drum sconces, and outdoor-rated sconces that retain the decorative sconce form. This is a **form** category, not an environment split. An outdoor-rated decorative sconce stays `primary_category: "sconce"`; adjust `indoor_outdoor` to `outdoor` and `environment_rating` to `damp` or `wet` instead of re-categorizing. A utility bulkhead or full-cutoff wall pack belongs under `bulkhead_wall_pack` (see `wall-pack.md`) regardless of environment. A bathroom vanity light stays `sconce` with `environment_rating: "damp"`.
+- **`secondary_function: ["direct_indirect"]`** — common for architectural ADA sconces that emit both up and down. Change to `["direct"]` for pure-downlight or `["indirect"]` for pure-uplight variants.
+- **`shape`** — `rectangular` is typical architectural; `square` for cube sconces; `round` for drum-style; `custom` for decorative or sculptural.
+- **`environment_rating`** — `dry` for typical interior living spaces. `damp` for bathroom vanity, kitchen, or unconditioned interior (stairwells in humid climates).
+- **`shared_mechanical.housing_material: "die_cast_aluminum"`** — typical for architectural lines. `steel` for traditional; `brass` or `copper` for decorative luxury.
+- **`shared_mechanical.lens_material: "acrylic"`** — typical. `glass` for traditional or decorative; `diffuser_polymer` for softer light quality.
+
+### `physical_dimensions`
+
+- Populate `overall_length`, `overall_width`, `overall_height`, and `luminaire_mass`.
+- ADA projection-from-wall (must be under 4 inches / 100 mm to meet the protrusion limit) has no native ULC field today. `overall_height` describes the fixture's overall height, not its wall projection, so don't reuse it for protrusion. Park the projection value in the top-level `extensions.manufacturer_specific.<slug>` block (note: `extensions` is a top-level field, not a sub-field of `product_family`) until a dedicated schema slot lands.
+
+### `photometry`
+
+- **`distribution_type: "direct_indirect"`** — matches the default secondary function. Change to `direct` for downlight-only sconces.
+- **`symmetry_type: "symm_bi_0"`** — bilateral about the C0-C180 plane (wall-facing and room-facing halves). Correct for most sconces.
+- **`beam_family: "medium_flood"`** — typical. `flood` or `wide_flood` for wash sconces; `narrow_flood` for downward-accent.
+- **`luminous_opening_shape: "rectangular"`** — for rectangular sconces. `circular` for round; `vertical_cylinder` for drum-style.
+- **`emission_face: "bottom"`** — approximates a direct sconce. For direct-indirect, the single-value `emission_face` is a simplification; the TM-33 emission-areas model (future schema extension) carries the richer per-face description authoritatively.
+
+### `electrical`
+
+- **`driver_protocol: "phase_forward"`** — typical for residential and residential-adjacent sconces (TRIAC/forward-phase dimmer compatibility). Change to `0-10v` for commercial spec; `phase_reverse` for ELV/reverse-phase dimmers; `dali` for European architectural.
+- **`dimming_range_percent: {min: 5, max: 100}`** — typical for phase-cut. Commercial 0-10V drivers go to `{min: 1, max: 100}`.
+- **`input_voltage_class: "120v"`** — typical residential. `universal_120_277` for commercial multi-volt.
+
+### `attestations`
+
+Sconces typically carry:
+
+- **`lm_79_08`** — mandatory for LED.
+- **`c_ul_listed`** with `standard_revision: "UL 1598"` (dry location) or `"UL 1598 damp location"` for bathroom.
+- **`energy_star`** for residential ENERGY STAR qualification (template does not stub this; add if applicable).
+
+### Common later additions
+
+- **`compatible_accessories`** — junction box covers, decorative trims, lamp shades (for residential styles).
+- **`lumen_maintenance_package`** and **`lumen_maintenance_luminaire`** — L70 at 25k-50k hours is typical for residential sconces; commercial spec at L80 at 50k+.
+- **Dim-to-warm sconces (1800K-3000K warm-dim curves)** — a first-class schema slot is pending; for now, describe the warm-dim behavior in the top-level `extensions.manufacturer_specific.<slug>` block with the tuning curve and CCT-at-dim-level pairs.
+
+## See also
+
+- `docs/authoring-patterns.md` — typically Pattern A (one record per SKU) for sconces since lamping and finish variations rarely change photometry meaningfully.

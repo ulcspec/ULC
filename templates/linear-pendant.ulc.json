@@ -1,0 +1,358 @@
+{
+  "applicability": {
+    "applicable_catalog_pattern": "TODO-FAMILY-PREFIX-{LENGTH}-TODO-SUFFIX",
+    "applicable_sku_count_estimate": 48,
+    "covered_axes": {
+      "length": {
+        "derivation": {
+          "baseline_axis_value": "TODO-baseline-length-code",
+          "linear_rate": {
+            "unit": "lm/ft",
+            "value": 0
+          },
+          "method": "per_foot_linear_scaling",
+          "reference": "TODO-cutsheet-per-foot-table-location"
+        },
+        "rationale": "Photometry scales linearly with fixture length per the per-foot rate measured on the tested baseline; non-photometric features (finish, power-location, canopy, sensors) do not vary per length.",
+        "values": [
+          "TODO-length-code-1",
+          "TODO-length-code-2"
+        ]
+      }
+    },
+    "fixed_axes": {
+      "color_temperature": "3500",
+      "cri_tier": "cri_90",
+      "distribution": "TODO distribution slug",
+      "family_prefix": "TODO-FAMILY-PREFIX",
+      "finish": "TODO finish slug",
+      "output_tier": "TODO output tier (for example SO, HO, MO)",
+      "voltage": "120v"
+    }
+  },
+  "attestations": [
+    {
+      "attestation_id": "todo-lm-79-08-attestation",
+      "program": "lm_79_08",
+      "status": "claimed",
+      "value_type": "measured",
+      "verification": {
+        "type": "unconditional"
+      }
+    }
+  ],
+  "colorimetry": {
+    "cri_ra": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "ratio",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "nominal_cct_k": "3500"
+  },
+  "configuration": {
+    "photometric_scenario_id": "todo-scenario-slug",
+    "scenario_label": "TODO Human-readable scenario label (CCT, CRI, distribution, length, voltage)",
+    "source_ies_ref": "TODO-ies-filename.ies",
+    "tested_axes": {
+      "color_tunability": "static_white",
+      "cri_tier": "cri_90",
+      "distribution_code": {
+        "distribution_type": "direct",
+        "manufacturer_label": "TODO distribution label"
+      }
+    },
+    "tested_conditions": {
+      "input_voltage_at_test": "120v",
+      "mounting_at_test": "pendant",
+      "nominal_cct_at_test": "3500"
+    }
+  },
+  "conformance_level": "core",
+  "electrical": {
+    "dimming_method": "ccr",
+    "dimming_range_percent": {
+      "max": 100,
+      "min": 1
+    },
+    "driver_protocol": "0-10v",
+    "input_power_w": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "W",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "input_voltage_class": "120v",
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    }
+  },
+  "index": {
+    "attestation_programs": [
+      "lm_79_08"
+    ],
+    "beam_family": "flood",
+    "builder_version": "0.2.0",
+    "catalog_model": "TODO Model name",
+    "catalog_number": "todo-manufacturer-catalog-scenario",
+    "color_tunability": "static_white",
+    "dimming_protocols": [
+      "0-10v"
+    ],
+    "display_name": "TODO Human-readable scenario label (CCT, CRI, distribution, length, voltage)",
+    "environment_rating": "dry",
+    "indoor_outdoor": "indoor",
+    "manufacturer_slug": "todo-manufacturer",
+    "mounting_types": [
+      "pendant"
+    ],
+    "nominal_cct_k": "3500",
+    "nominal_cri_ra": 0,
+    "nominal_efficacy_lm_per_w": 0,
+    "nominal_input_power_w": 0,
+    "nominal_total_lumens": 0,
+    "primary_category": "linear",
+    "primary_distribution": "direct",
+    "search_keywords": [
+      "TODO Human-readable scenario label (CCT, CRI, distribution, length, voltage)",
+      "TODO Line name",
+      "TODO Product family display name"
+    ],
+    "secondary_function": [
+      "direct"
+    ],
+    "source_file_types_present": [
+      "datasheet_pdf",
+      "ies"
+    ],
+    "x-ulc-generated": true
+  },
+  "operating_point": {
+    "input_frequency_hz": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "Hz",
+      "value": 60,
+      "value_type": "rated"
+    },
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    }
+  },
+  "photometry": {
+    "beam_family": "flood",
+    "declared_by_length": [
+      {
+        "efficacy_lm_per_w": {
+          "provenance": {
+            "method": "computed",
+            "source": "manufacturer_direct"
+          },
+          "unit": "lm/W",
+          "value": 0,
+          "value_type": "rated"
+        },
+        "input_power_w": {
+          "provenance": {
+            "method": "computed",
+            "source": "manufacturer_direct"
+          },
+          "unit": "W",
+          "value": 0,
+          "value_type": "rated"
+        },
+        "length": {
+          "in": 0,
+          "mm": 0
+        },
+        "lumens": {
+          "provenance": {
+            "method": "computed",
+            "source": "manufacturer_direct"
+          },
+          "unit": "lm",
+          "value": 0,
+          "value_type": "rated"
+        }
+      }
+    ],
+    "distribution_type": "direct",
+    "emission_face": "bottom",
+    "luminaire_efficacy_lm_per_w": {
+      "provenance": {
+        "method": "computed",
+        "source": "ies"
+      },
+      "unit": "lm/W",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "luminous_opening_shape": "rectangular",
+    "maximum_intensity_cd": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "cd",
+      "value": 0,
+      "value_type": "rated"
+    },
+    "per_length_normalized": {
+      "lumens_per_foot": {
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "unit": "lm/ft",
+        "value": 0,
+        "value_type": "rated"
+      },
+      "reference_length": {
+        "in": 0,
+        "mm": 0
+      },
+      "watts_per_foot": {
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "unit": "W/ft",
+        "value": 0,
+        "value_type": "rated"
+      }
+    },
+    "photometric_coordinate_system": "ies_c",
+    "symmetry_type": "symm_bi_0",
+    "total_luminous_flux_lm": {
+      "provenance": {
+        "method": "transcribed",
+        "source": "manufacturer_direct"
+      },
+      "unit": "lm",
+      "value": 0,
+      "value_type": "rated"
+    }
+  },
+  "product_family": {
+    "catalog_line": "TODO Line name",
+    "catalog_model": "TODO Model name",
+    "cutsheet": {
+      "filename": "TODO-cutsheet-filename.pdf",
+      "revision_date": "1970-01-01",
+      "revision_label": "TODO revision label",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "environment_rating": "dry",
+    "family_description": "TODO One sentence describing this linear pendant family and the authoring pattern (commonly Pattern D: length-scaled photometry with linear_mass_per_foot and per-length normalized lumens).",
+    "family_display_name": "TODO Product family display name",
+    "family_id": "todo-manufacturer-catalog-family",
+    "indoor_outdoor": "indoor",
+    "manufacturer": {
+      "display_name": "TODO Manufacturer Legal Name",
+      "slug": "todo-manufacturer"
+    },
+    "mounting_types": [
+      "pendant"
+    ],
+    "physical_dimensions": {
+      "linear_mass_per_foot": {
+        "kg_per_m": 0,
+        "lb_per_ft": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "luminaire_mass": {
+        "kg": 0,
+        "lb": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_height": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_length": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_width": {
+        "in": 0,
+        "mm": 0,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      }
+    },
+    "primary_category": "linear",
+    "secondary_function": [
+      "direct"
+    ],
+    "shape": "linear",
+    "shared_mechanical": {
+      "finish_color_options": [
+        "TODO finish option"
+      ],
+      "housing_material": "extruded_aluminum",
+      "lens_material": "acrylic"
+    },
+    "technical_region": "120v_60hz_north_america"
+  },
+  "record_id": "todo-manufacturer-catalog-scenario",
+  "record_status": "active",
+  "record_status_as_of": "1970-01-01",
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "TODO-cutsheet-filename.pdf",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "file_type": "ies",
+      "reference": {
+        "filename": "TODO-ies-filename.ies",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ],
+  "ulc_version": "0.3.0"
+}

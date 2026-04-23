@@ -18,6 +18,42 @@ When a version is ready to release:
 4. Push the tag: `git push origin v0.1.0`.
 5. Optionally create a GitHub Release pointing at the tag, copying the version's changelog entry into the release notes.
 
+## 0.5.0 (unreleased)
+
+Author-facing documentation: per-category `.ulc.json` authoring templates and PIM platform mapping guides. No normative schema, taxonomy, or validator changes — all four canonical reference records and the new templates pass `ulc validate` unchanged at the v0.3.0 schema level.
+
+### Templates (new)
+
+Six per-category starter templates under `templates/`, each a structurally valid ULC record with category-typical defaults pre-filled and obvious placeholders (`"TODO ..."` strings, sentinel `0` numerics, 64-zero SHA-256 sentinel hashes) for author-supplied values. Each `.ulc.json` pairs with a sibling `.md` authoring guide that walks through the category-specific field conventions.
+
+- `templates/downlight.ulc.json` + `downlight.md` — recessed or surface-mount ceiling downlight.
+- `templates/linear-pendant.ulc.json` + `linear-pendant.md` — suspended linear luminaire.
+- `templates/wall-pack.ulc.json` + `wall-pack.md` — exterior wall-mount bulkhead.
+- `templates/high-bay.ulc.json` + `high-bay.md` — industrial high-ceiling luminaire.
+- `templates/bollard.ulc.json` + `bollard.md` — exterior ground-mount pathway bollard.
+- `templates/wall-sconce.ulc.json` + `wall-sconce.md` — interior wall-mount sconce.
+
+Templates declare `conformance_level: "core"` and bootstrap a first record; authors upgrade to `standard` or `full` as data is populated. Not a production authoring surface for catalog-scale manufacturers — that use case is served by PIM emit, documented below.
+
+`templates/README.md` is rewritten from a stub (that referenced a non-existent `ulc.template.json`) into a category index and workflow guide covering placeholder conventions, slug naming, and the copy → fill → build-index → validate flow.
+
+### PIM mapping guides (new)
+
+Four platform-specific guides for emitting ULC records at catalog scale from a Product Information Management (PIM) system:
+
+- `mappings/pim/salsify.md` — cloud PIM popular with consumer-facing and mid-market lighting brands.
+- `mappings/pim/akeneo.md` — open-source PIM popular with European PHP-stack manufacturers.
+- `mappings/pim/sap.md` — SAP MM, PLM, MDG, and Classification System integration for large-enterprise manufacturers.
+- `mappings/pim/custom-pim.md` — architectural patterns for manufacturers running an in-house product-master database.
+
+`mappings/pim/README.md` consolidates the six shared translation concerns (record-per-scenario model, dual-unit handling, provenance defaults, source-file hashing, category enum mapping, index generation) that every PIM emitter must address, so per-platform guides can focus on platform specifics.
+
+`mappings/README.md` is updated to cover both categories of mapping: adjacent data standards (GLDF, ETIM, IES LM-63, EULUMDAT — still planned) and PIM platforms (shipped in this release).
+
+### Scope note
+
+Batch 5 is documentation-only. The schema and validator surfaces are unchanged from v0.4.0. Template skeletons and PIM guides are authoring aids, not normative artifacts — they do not alter what "conforms to ULC" means. The reference records in `examples/` remain the authoritative per-pattern references; templates are on-ramps for a manufacturer's first hand-authored record.
+
 ## 0.4.0 (2026-04-23)
 
 Reference CLI validator and index builder. No normative schema or taxonomy changes: enum values, required fields, and validation rules are unchanged. Two `$defs/Index` description strings in `schema/ulc.schema.json` were edited to reference the new `ulc build-index` CLI instead of the retired `tools/build-index.py`, but the structural surface of the schema is identical to v0.3.0 and all four canonical reference records pass the new validator end-to-end unchanged.
