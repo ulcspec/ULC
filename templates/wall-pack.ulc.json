@@ -194,7 +194,7 @@
     "catalog_model": "TODO Model name",
     "cutsheet": {
       "filename": "TODO-cutsheet-filename.pdf",
-      "revision_date": "2026-01-01",
+      "revision_date": "1970-01-01",
       "revision_label": "TODO revision label",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
@@ -267,7 +267,7 @@
   },
   "record_id": "todo-manufacturer-catalog-scenario",
   "record_status": "active",
-  "record_status_as_of": "2026-04-23",
+  "record_status_as_of": "1970-01-01",
   "source_files": [
     {
       "file_type": "datasheet_pdf",

@@ -80,16 +80,16 @@ The current working state ships the schema, taxonomy, drift-guard tooling, the a
 - To see those patterns in real data, read the four records in `examples/`. Each one exercises a distinct pattern against a real manufacturer spec sheet.
 - To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
 - To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
-- To validate a record end-to-end (schema, index-builder parity, source-file hashes), run `ulc validate <record>.ulc` using the reference CLI. Download a release binary from the GitHub Releases page, or build from source with `cd tools/validator && go build -o bin/ulc ./cmd/ulc`.
-- To regenerate a record's `index` block, run `ulc build-index <record>.ulc`. The index is always generated, never hand-authored.
+- To validate a record end-to-end (schema, index-builder parity, source-file hashes), run `ulc validate <record>` using the reference CLI. `<record>` is the path to any `.ulc` or `.ulc.json` file; both extensions are accepted. Download a release binary from the GitHub Releases page, or build from source with `cd tools/validator && go build -o bin/ulc ./cmd/ulc`.
+- To regenerate a record's `index` block, run `ulc build-index <record>`. The index is always generated, never hand-authored.
 
 ## Relationship to adjacent standards
 
 ULC is designed to cooperate with, not replace, existing work in the lighting data ecosystem:
 
-- **GLDF** (Global Lighting Data Format) is the primary interchange container for the DIALux and RELUX planning ecosystems. ULC and GLDF address different problems: GLDF is a rich XML-based container optimized for photometric planning software, while ULC is a lightweight JSON specification optimized for structured datasheet data and AI consumption. This repository provides a field-level mapping between ULC and GLDF in `mappings/gldf-crosswalk.md`. Future tooling could generate GLDF output from ULC records, and vice versa, although neither direction is implemented as part of this repository at v0.1.
-- **ETIM** (ElectroTechnical Information Model) provides a widely adopted classification vocabulary for product attributes in electrotechnical wholesale. Where ETIM codes apply to luminaire fields, ULC documents the corresponding ETIM feature identifiers in `mappings/etim-crosswalk.md`.
-- **IES LM-63** and **EULUMDAT** remain the photometric data formats that feed ULC. ULC does not duplicate or replace their content. Guidance for extracting ULC field values from IES and LDT files is documented in `mappings/photometric-source-parsing.md`.
+- **GLDF** (Global Lighting Data Format) is the primary interchange container for the DIALux and RELUX planning ecosystems. ULC and GLDF address different problems: GLDF is a rich XML-based container optimized for photometric planning software, while ULC is a lightweight JSON specification optimized for structured datasheet data and AI consumption. A field-level mapping between ULC and GLDF is planned at `mappings/gldf-crosswalk.md` and has not yet landed. Future tooling could generate GLDF output from ULC records, and vice versa, although neither direction is implemented as part of this repository today.
+- **ETIM** (ElectroTechnical Information Model) provides a widely adopted classification vocabulary for product attributes in electrotechnical wholesale. A crosswalk documenting the corresponding ETIM feature identifiers for ULC luminaire fields is planned at `mappings/etim-crosswalk.md` and has not yet landed.
+- **IES LM-63** and **EULUMDAT** remain the photometric data formats that feed ULC. ULC does not duplicate or replace their content. A guide for extracting ULC field values from IES and LDT files is planned at `mappings/photometric-source-parsing.md` and has not yet landed.
 
 ULC does not redistribute the text of any paid or restricted standards. It references them by identifier.
 

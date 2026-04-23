@@ -77,7 +77,7 @@
       "value": 0,
       "value_type": "rated"
     },
-    "input_voltage_class": "277v",
+    "input_voltage_class": "universal_120_277",
     "input_voltage_v": {
       "provenance": {
         "method": "extracted",
@@ -192,7 +192,7 @@
     "catalog_model": "TODO Model name",
     "cutsheet": {
       "filename": "TODO-cutsheet-filename.pdf",
-      "revision_date": "2026-01-01",
+      "revision_date": "1970-01-01",
       "revision_label": "TODO revision label",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
@@ -252,11 +252,11 @@
       "ip_rating": "IP65",
       "lens_material": "prismatic_polymer"
     },
-    "technical_region": "120v_60hz_north_america"
+    "technical_region": "universal"
   },
   "record_id": "todo-manufacturer-catalog-scenario",
   "record_status": "active",
-  "record_status_as_of": "2026-04-23",
+  "record_status_as_of": "1970-01-01",
   "source_files": [
     {
       "file_type": "datasheet_pdf",

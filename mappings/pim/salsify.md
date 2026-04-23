@@ -23,7 +23,8 @@ The ULC emitter is typically implemented as a Salsify channel recipe plus an ext
 | Variant external ID (SKU) | `configuration.catalog_number` |
 | Internal brand property | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | Product line / series property | `product_family.catalog_line` |
-| Derived slug from SKU + CCT + distribution | `record_id`, `configuration.photometric_scenario_id` |
+| Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
+| Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
 
 A product family in Salsify is typically modeled as a parent product with child variants (one per orderable SKU). The parent carries cutsheet-level shared data and maps to `product_family.*`; each child variant maps to its own `configuration.catalog_number` and a distinct ULC record. See the multi-CCT handling note under "Gotchas" below for the common parent-variant pattern.
 

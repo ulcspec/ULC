@@ -38,8 +38,12 @@ Grep for any of these to find unfilled placeholders in your in-progress record:
 
 - `TODO` — string placeholders that must be replaced
 - `0000000000000000000000000000000000000000000000000000000000000000` — sentinel SHA-256; every occurrence must be replaced with a real hash
-- `"2026-01-01"` — sentinel date; replace with actual cutsheet revision date
+- `"1970-01-01"` — sentinel date used in both `record_status_as_of` and `product_family.cutsheet.revision_date`. Replace `record_status_as_of` with today's date (the date the author last verified the product's commercial status) and replace `cutsheet.revision_date` with the cutsheet's actual revision date.
 - Numeric fields with `0` — replace with real rated or measured values
+
+## Filename extension
+
+Templates use `.ulc.json`; canonical example records use `.ulc`. Both extensions are accepted by `ulc validate` and `ulc build-index` (file-path CLIs, extension-agnostic) and both are covered by the validator CI globs. The two conventions exist only to make it visually obvious at a glance whether a file is an authoring scaffold (`.ulc.json`) or a real record (`.ulc`). `record_id` matches the filename stem in both cases.
 
 ## See also
 

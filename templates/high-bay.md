@@ -1,6 +1,6 @@
 # Authoring guide: high-bay
 
-Starter for an industrial or commercial high-ceiling luminaire. Category defaults in `high-bay.ulc.json`: `primary_category: "high_bay"`, `mounting_types: ["pendant", "surface_ceiling"]`, `shape: "round"`, `environment_rating: "damp"`, `ip_rating: "IP65"`, `tested at 5000K`.
+Starter for an industrial or commercial high-ceiling luminaire. Category defaults in `high-bay.ulc.json`: `primary_category: "high_bay"`, `mounting_types: ["pendant", "surface_ceiling"]`, `shape: "round"`, `environment_rating: "damp"`, `ip_rating: "IP65"`, `technical_region: "universal"`, `input_voltage_class: "universal_120_277"`, tested at 5000K at the 277V point.
 
 ## Workflow
 
@@ -31,7 +31,7 @@ Starter for an industrial or commercial high-ceiling luminaire. Category default
 
 ### `electrical`
 
-- **`input_voltage_class`** — `120-277v` multi-volt is extremely common for high-bays; change rated value and class accordingly. Change to `347v` for Canadian 347V-only markets.
+- **`input_voltage_class`** — `universal_120_277` (the template default) is extremely common for high-bays. Change to `120v` or `277v` for single-voltage SKUs, or `347v` for Canadian 347V-only markets. Change `product_family.technical_region` from `universal` to `120v_60hz_north_america` if you constrain the template to a single-voltage North American variant.
 - **`driver_protocol: "0-10v"`** — the default for DLC-qualified high-bays. `dali` is rare in North America but common in Europe.
 - **`dimming_range_percent: {min: 10, max: 100}`** — commodity high-bay default. Spec-grade go down to `{min: 1, max: 100}`.
 

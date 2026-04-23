@@ -37,7 +37,8 @@ WHERE p.status = 'active'
 | `manufacturer` | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | `model` | `product_family.catalog_model`, `configuration.catalog_number` |
 | `series` | `product_family.catalog_line` |
-| Derived slug | `record_id`, `configuration.photometric_scenario_id` |
+| Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
+| Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
 
 ### Category
 
@@ -189,12 +190,17 @@ def emit_ulc(session: Session):
                 "colorimetry": build_colorimetry(scenario),
                 "source_files": build_source_files(scenario.files + [product.cutsheet]),
             }
-            indexed = shell_out_cli("build-index", record)
-            validation = shell_out_cli("validate", indexed)
-            if validation.ok:
-                publish(indexed)
+            # Both CLIs are file-based; write a temp file, run build-index
+            # in place, then run validate against the same path.
+            with tempfile.NamedTemporaryFile("w", suffix=".ulc.json", delete=False) as f:
+                json.dump(record, f)
+                tmp_path = f.name
+            subprocess.run(["ulc", "build-index", tmp_path], check=True)
+            validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True)
+            if validation.returncode == 0:
+                publish(tmp_path)
             else:
-                log_failure(product, scenario, validation)
+                log_failure(product, scenario, validation.stderr)
 ```
 
 ## See also

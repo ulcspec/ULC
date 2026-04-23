@@ -25,7 +25,8 @@ The ULC emitter is typically implemented as an external service that pulls from 
 | Product model code (parent) | `product_family.family_id`, `product_family.catalog_model` |
 | Brand attribute | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | Product line / series | `product_family.catalog_line` |
-| Derived slug | `record_id`, `configuration.photometric_scenario_id` |
+| Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
+| Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
 
 ### Family to primary category
 
@@ -144,7 +145,14 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?array {
         'colorimetry' => mapColorimetry($variant),
         'source_files' => buildSourceFiles($product->getAssets()),
     ];
-    return shellOutUlcCli($record);
+    // Write $record to a temp .ulc.json file, run `ulc build-index <path>`
+    // (writes the computed index back in place), then `ulc validate <path>`.
+    // Both CLIs take a file path; neither reads stdin.
+    $tmpPath = writeTempUlcRecord($record);
+    exec("ulc build-index " . escapeshellarg($tmpPath), $out, $rc);
+    if ($rc !== 0) { return null; }
+    exec("ulc validate " . escapeshellarg($tmpPath), $out, $rc);
+    return $rc === 0 ? $tmpPath : null;
 }
 ```
 

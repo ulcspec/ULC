@@ -20,11 +20,14 @@ Older SAP ECC landscapes use **IDocs** (XML-ish envelopes) for integration. Mode
 
 | SAP field (OData) | ULC path |
 |---|---|
-| `Material` (MARA-MATNR) | `configuration.catalog_number` |
+| Parent configurable material MATNR (or PLM product-model identifier) | `product_family.catalog_model`, `product_family.family_id` (slugified) |
+| Variant configuration MATNR | `configuration.catalog_number` |
 | `MaterialDescription` (MAKT-MAKTX for chosen language) | `configuration.scenario_label` |
 | `Brand` (manufacturer-specific Z-field) | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | `ProductHierarchy` | `product_family.catalog_line` |
 | Material group (MARA-MATKL) | Used as input to category mapping, not a direct ULC field |
+| Derived full slug `<manufacturer>-<matnr>-<scenario>` | `record_id` |
+| Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
 
 ### Category (classification system)
 
@@ -161,7 +164,14 @@ def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
         "colorimetry": map_colorimetry(characteristics),
         "source_files": build_source_files_from_dms(dms_docs),
     }
-    return shell_out_ulc_cli(record)
+    # Both CLIs are file-based. Write the record to a temp file, run
+    # build-index in place, then validate against the same path.
+    with tempfile.NamedTemporaryFile("w", suffix=".ulc.json", delete=False) as f:
+        json.dump(record, f)
+        tmp_path = f.name
+    subprocess.run(["ulc", "build-index", tmp_path], check=True)
+    validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True)
+    return tmp_path if validation.returncode == 0 else None
 ```
 
 ## See also
