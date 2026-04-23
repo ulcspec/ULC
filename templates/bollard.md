@@ -24,17 +24,19 @@ Starter for an exterior ground-mounted pathway luminaire. Category defaults in `
 
 ### `photometry`
 
-- **`distribution_type: "asymmetric"`** — bollards typically project sideways and downward (pedestrian pathway pattern), not symmetrically.
-- **`symmetry_type: "symm_bi_0"`** — bilateral about C0-C180 for pathway-optic bollards. Change to `symm_full` for symmetric full-cutoff bollards.
-- **`beam_family: "asymmetric"`** — correct for pathway-optic. Use `wide_flood` or `flood` only for symmetric distributions.
-- **`luminous_opening_shape: "vertical_cylinder"`** — typical for round bollards (cylinder sides emit). `horizontal_cylinder_perpendicular_to_photometric_horizontal` for rectangular bollards. For top-only emission, use `circular`.
-- **`emission_face: "c0"`** — for pathway bollards projecting out the C0 direction (front). For top-emission, use `top`.
+The template defaults describe the most common bollard type: a symmetric full-cutoff bollard that emits downward from the top of the cylinder. For pathway-optic bollards (asymmetric side-emission along the C0-C180 plane), switch the five fields below to the pathway values in parentheses.
+
+- **`distribution_type: "symmetric"`** (pathway-optic: `"asymmetric"`) — symmetric full-cutoff is the template default; pathway bollards project sideways through the C0-C180 plane.
+- **`symmetry_type: "symm_full"`** (pathway-optic: `"symm_bi_0"`) — full rotational symmetry for top-emission bollards; bilateral about C0-C180 for pathway optics.
+- **`beam_family: "wide_flood"`** (pathway-optic: `"asymmetric"`) — wide flood is typical for top-emission ground coverage; use `asymmetric` only when the optic is actually asymmetric.
+- **`luminous_opening_shape: "circular"`** (pathway-optic: `"vertical_cylinder"` for round bodies, `"horizontal_cylinder_perpendicular_to_photometric_horizontal"` for rectangular bodies) — circular top opening is the default; the cylinder shapes describe side-emission cases.
+- **`emission_face: "top"`** (pathway-optic: `"c0"`) — light exits the top face by default; pathway optics emit through a C-plane.
 
 ### `outdoor_classification`
 
 Bollards should populate the `outdoor_classification` block (added after core validates):
 
-- **`outdoor_distribution_type`** — `type_v` for symmetric bollards with a circular footprint; `type_vs` for symmetric bollards with a square footprint. (These are footprint variants, not throw-length classifications.) Other values `type_i` through `type_iv` and their four-way variants apply to asymmetric optics. See `taxonomy.schema.json#/$defs/OutdoorDistributionType`.
+- **`outdoor_distribution_type`** — `type_v` for symmetric bollards with a circular footprint; `type_vs` for symmetric bollards with a square footprint. (These are footprint variants, not throw-length classifications.) Other values `type_i` through `type_iv` apply to asymmetric optics, with `type_i_four_way` and `type_ii_four_way` available for the four-lobed variants of Types I and II (four-way variants exist only for those two). See `taxonomy.schema.json#/$defs/OutdoorDistributionType`.
 - **`longitudinal_distribution_range`** — `short`, `medium`, or `long`, a separate dimension describing how far the optic throws along the pathway axis. Typical pathway bollards are `short` or `medium`.
 - **`bug_rating`** — low values (for example `{b: 0, u: 0, g: 0}` or `{b: 1, u: 0, g: 1}`) for spec-grade path bollards designed to minimize light pollution. The index will project this as a short string like `"B1-U0-G1"`.
 
@@ -50,7 +52,7 @@ Bollards typically carry:
 
 - **`lm_79_08`** — mandatory.
 - **`c_ul_listed`** with `standard_revision: "UL 1598 wet location"` (template stubs this).
-- **IP and IK ratings** — pending separate attestation-program slots (Tier 3 schema gap noted in `docs/authoring-patterns.md`).
+- **IP and IK ratings** — pending separate `AttestationProgram` slots, listed under "Open items deferred to future schema work" in `docs/authoring-patterns.md`. IP and IK values are currently carried on `shared_mechanical.ip_rating` / `ik_rating`.
 - **`dlc_standard`** for outdoor-DLC-qualified products.
 
 ### Common later additions

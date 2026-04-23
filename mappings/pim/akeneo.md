@@ -90,6 +90,8 @@ In Community Edition (no Asset Manager), cutsheet files typically live as plain 
 
 Asset version maps to `reference.revision_label`; `updated_at` to `reference.revision_date`.
 
+The cutsheet asset populates **both** `source_files[]` (as the entry with `file_type: "datasheet_pdf"`) **and** `product_family.cutsheet` (which `ProductFamily.required` makes mandatory). Stream and hash once, write the same `FileReference` fields in both places; an emitter that only populates `source_files[]` produces schema-invalid records.
+
 ### Locales and channels
 
 Akeneo's localized attributes deliver per-language values. ULC is locale-neutral at the schema level. The emitter chooses the canonical locale (typically `en_US` for North American markets, `en_GB` for Europe, or the manufacturer's primary locale).

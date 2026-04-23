@@ -130,6 +130,8 @@ def build_source_file_entry(file_record):
 
 If files live on S3 or a remote store, stream via the storage SDK rather than downloading into memory for large files. Cache the (storage-key, version) → hash mapping; the hash is stable as long as the bytes don't change.
 
+**The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `ProductFamily.required` in the schema includes `cutsheet`, so an emitter that writes only the `source_files[]` entry will produce schema-invalid records. In the `build_source_file_entry` pipeline above, the cutsheet's computed `{filename, sha256, revision_date}` should additionally be written into `product_family.cutsheet`. The same bytes live in one place; the record references them twice with different consumer semantics (family identity vs. integrity-tracked source-file list).
+
 ### Attestations
 
 If the in-house schema tracks test reports as first-class rows, map each to a ULC `attestations[]` entry:

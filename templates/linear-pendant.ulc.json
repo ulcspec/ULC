@@ -1,13 +1,13 @@
 {
   "applicability": {
     "applicable_catalog_pattern": "TODO-FAMILY-PREFIX-{LENGTH}-TODO-SUFFIX",
-    "applicable_sku_count_estimate": 5,
+    "applicable_sku_count_estimate": 48,
     "covered_axes": {
       "length": {
         "derivation": {
           "baseline_axis_value": "TODO-baseline-length-code",
           "linear_rate": {
-            "unit": "lumens_per_foot",
+            "unit": "lm/ft",
             "value": 0
           },
           "method": "per_foot_linear_scaling",
@@ -21,10 +21,12 @@
       }
     },
     "fixed_axes": {
-      "cct": "3500",
-      "cri": "90",
+      "color_temperature": "3500",
+      "cri_tier": "cri_90",
       "distribution": "TODO distribution slug",
+      "family_prefix": "TODO-FAMILY-PREFIX",
       "finish": "TODO finish slug",
+      "output_tier": "TODO output tier (for example SO, HO, MO)",
       "voltage": "120v"
     }
   },
@@ -52,7 +54,6 @@
     "nominal_cct_k": "3500"
   },
   "configuration": {
-    "catalog_number": "TODO-CATALOG-NUMBER",
     "photometric_scenario_id": "todo-scenario-slug",
     "scenario_label": "TODO Human-readable scenario label (CCT, CRI, distribution, length, voltage)",
     "source_ies_ref": "TODO-ies-filename.ies",
@@ -105,7 +106,7 @@
     "beam_family": "flood",
     "builder_version": "0.2.0",
     "catalog_model": "TODO Model name",
-    "catalog_number": "TODO-CATALOG-NUMBER",
+    "catalog_number": "todo-manufacturer-catalog-scenario",
     "color_tunability": "static_white",
     "dimming_protocols": [
       "0-10v"
@@ -160,6 +161,41 @@
   },
   "photometry": {
     "beam_family": "flood",
+    "declared_by_length": [
+      {
+        "efficacy_lm_per_w": {
+          "provenance": {
+            "method": "computed",
+            "source": "manufacturer_direct"
+          },
+          "unit": "lm/W",
+          "value": 0,
+          "value_type": "rated"
+        },
+        "input_power_w": {
+          "provenance": {
+            "method": "computed",
+            "source": "manufacturer_direct"
+          },
+          "unit": "W",
+          "value": 0,
+          "value_type": "rated"
+        },
+        "length": {
+          "in": 0,
+          "mm": 0
+        },
+        "lumens": {
+          "provenance": {
+            "method": "computed",
+            "source": "manufacturer_direct"
+          },
+          "unit": "lm",
+          "value": 0,
+          "value_type": "rated"
+        }
+      }
+    ],
     "distribution_type": "direct",
     "emission_face": "bottom",
     "luminaire_efficacy_lm_per_w": {
@@ -180,6 +216,30 @@
       "unit": "cd",
       "value": 0,
       "value_type": "rated"
+    },
+    "per_length_normalized": {
+      "lumens_per_foot": {
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "unit": "lm/ft",
+        "value": 0,
+        "value_type": "rated"
+      },
+      "reference_length": {
+        "in": 0,
+        "mm": 0
+      },
+      "watts_per_foot": {
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "unit": "W/ft",
+        "value": 0,
+        "value_type": "rated"
+      }
     },
     "photometric_coordinate_system": "ies_c",
     "symmetry_type": "symm_bi_0",

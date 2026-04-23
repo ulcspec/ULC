@@ -30,6 +30,15 @@ ULC separates **product family** (a cutsheet, shared across all SKUs in a family
 
 The `applicability` block expresses which PIM SKUs each scenario record applies to. See `docs/authoring-patterns.md` for the four patterns (A/B/C/D) this maps into.
 
+**Pattern-specific handling of `configuration.catalog_number`** (important — an emitter built without this distinction produces structurally wrong records for Pattern B and D):
+
+- **Pattern A** (one record per SKU, Erco model): `configuration.catalog_number` equals the variant SKU. `applicability.fixed_axes.catalog_number` equals the same value, and `applicable_sku_count_estimate: 1`. This is the default shape the per-platform identity mapping tables describe.
+- **Pattern B** (one record per photometric scenario covering many SKUs via multiplier table, Selux model): `configuration.catalog_number` carries only the tested-baseline SKU. The covered range of order codes lives in `applicability.covered_axes.<axis>` with a `derivation` rule containing a `multiplier_table`.
+- **Pattern C** (one record per IES with provenance classes, Lumenpulse model): each IES file is its own record; PIM-emit is essentially Pattern A with per-record `provenance.method` variation between `extracted` (for measured IES), `optical_simulation` (for simulated IES), and `extended_photometry` / `scaled` (for derived IES), with `base_attestation_ref` pointing at the root measured test.
+- **Pattern D** (per-foot linear scaling, Vode model): `configuration.catalog_number` is typically omitted; `applicable_catalog_pattern` uses a `{LENGTH}` placeholder; `covered_axes.length.derivation.method: "per_foot_linear_scaling"` carries the `linear_rate`; `photometry.per_length_normalized` and `photometry.declared_by_length[]` carry the per-length values.
+
+Pick the pattern up front per product family, not per record. Building a Pattern-A-only emitter and retrofitting it later is substantially more rework than selecting the right pattern from the start.
+
 ### 2. Dual-unit fields
 
 ULC requires SI-authoritative values with a derived Imperial companion for every length, mass, temperature, area, and mass-per-length field. PIMs typically store one unit. Emitters must:
@@ -64,6 +73,8 @@ ULC's `source_files[]` array requires a SHA-256 hash for every source file (cuts
 - **Pin the revision.** If the PIM has asset versioning, emit the specific version's hash, not whatever the "latest" pointer resolves to.
 
 If the manufacturer serves cutsheet PDFs from a CDN, the `reference.url` field can point to the stable URL; `sha256` still anchors integrity even if the URL rots.
+
+**The cutsheet file lives in two places in a ULC record.** The schema requires `product_family.cutsheet` as its own `FileReference` (the family-level cutsheet pointer) in addition to the `source_files[]` entry with `file_type: "datasheet_pdf"`. An emitter that populates only `source_files[]` will produce schema-invalid records because `ProductFamily.required` includes `cutsheet`. Populate both places with the same filename, sha256, revision label, and revision date from the single computed hash; the two blocks carry different consumer semantics (family identity vs. integrity-tracked source-file list) but refer to the same byte-identical file.
 
 ### 5. Category and enum mapping
 

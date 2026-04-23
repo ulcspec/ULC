@@ -52,7 +52,7 @@
       "color_tunability": "static_white",
       "cri_tier": "cri_80",
       "distribution_code": {
-        "distribution_type": "asymmetric",
+        "distribution_type": "symmetric",
         "manufacturer_label": "TODO distribution label"
       }
     },
@@ -95,7 +95,7 @@
       "c_ul_listed",
       "lm_79_08"
     ],
-    "beam_family": "asymmetric",
+    "beam_family": "wide_flood",
     "builder_version": "0.2.0",
     "catalog_model": "TODO Model name",
     "catalog_number": "TODO-CATALOG-NUMBER",
@@ -118,14 +118,14 @@
     "nominal_input_power_w": 0,
     "nominal_total_lumens": 0,
     "primary_category": "bollard",
-    "primary_distribution": "asymmetric",
+    "primary_distribution": "symmetric",
     "search_keywords": [
       "TODO Human-readable scenario label (CCT, distribution, finish, voltage)",
       "TODO Line name",
       "TODO Product family display name"
     ],
     "secondary_function": [
-      "asymmetric"
+      "flood"
     ],
     "source_file_types_present": [
       "datasheet_pdf",
@@ -154,9 +154,9 @@
     }
   },
   "photometry": {
-    "beam_family": "asymmetric",
-    "distribution_type": "asymmetric",
-    "emission_face": "c0",
+    "beam_family": "wide_flood",
+    "distribution_type": "symmetric",
+    "emission_face": "top",
     "luminaire_efficacy_lm_per_w": {
       "provenance": {
         "method": "computed",
@@ -166,7 +166,7 @@
       "value": 0,
       "value_type": "rated"
     },
-    "luminous_opening_shape": "vertical_cylinder",
+    "luminous_opening_shape": "circular",
     "maximum_intensity_cd": {
       "provenance": {
         "method": "transcribed",
@@ -177,7 +177,7 @@
       "value_type": "rated"
     },
     "photometric_coordinate_system": "ies_c",
-    "symmetry_type": "symm_bi_0",
+    "symmetry_type": "symm_full",
     "total_luminous_flux_lm": {
       "provenance": {
         "method": "transcribed",
@@ -240,7 +240,7 @@
     },
     "primary_category": "bollard",
     "secondary_function": [
-      "asymmetric"
+      "flood"
     ],
     "shape": "round",
     "shared_mechanical": {

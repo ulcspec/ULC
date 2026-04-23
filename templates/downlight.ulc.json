@@ -194,7 +194,7 @@
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     "environment_rating": "dry",
-    "family_description": "TODO One sentence describing this downlight family and the authoring pattern (A: one record per SKU, B: one record per photometric scenario covers many SKUs via multiplier tables, C: one record per IES preserves 1:1 file correspondence with provenance classes, D: per-foot linear scaling across fixture lengths).",
+    "family_description": "TODO One sentence describing this downlight family. This template is scaffolded for Pattern A (one record per SKU). If your product publishes a CCT multiplier table (Pattern B) or per-length scaling (Pattern D), restructure the `applicability` block per `docs/authoring-patterns.md` rather than keeping the Pattern A scaffold.",
     "family_display_name": "TODO Product family display name",
     "family_id": "todo-manufacturer-catalog-family",
     "indoor_outdoor": "indoor",

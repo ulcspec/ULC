@@ -90,7 +90,7 @@ Cutsheet PDFs, IES, LDT, and lab-test reports live as DMS records. The emitter q
 | `INSTALL_PDF` | `installation_instructions_pdf` |
 | `LAB_REPORT` | (metadata only, referenced via `attestations[].source_document_ref`) |
 
-The emitter streams each DMS original, computes SHA-256, and fills `source_files[].reference`.
+The emitter streams each DMS original, computes SHA-256, and fills `source_files[].reference`. The `CUTSHEET` DMS record additionally populates `product_family.cutsheet` (which `ProductFamily.required` makes mandatory). Stream and hash the DMS original once, then write the same `{filename, sha256, revision_label, revision_date}` into both `product_family.cutsheet` and the `source_files[]` entry for `datasheet_pdf`. An emitter that only populates `source_files[]` produces schema-invalid records.
 
 ### Attestations
 
@@ -172,7 +172,9 @@ def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
         json.dump(record, f)
         tmp_path = f.name
     subprocess.run(["ulc", "build-index", tmp_path], check=True)
-    validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True)
+    # Capture stdout; the CLI writes its findings report there and reserves
+    # stderr for parse-failure diagnostics.
+    validation = subprocess.run(["ulc", "validate", tmp_path], capture_output=True, text=True)
     return tmp_path if validation.returncode == 0 else None
 ```
 

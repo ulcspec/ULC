@@ -84,6 +84,8 @@ Salsify's asset model maps cleanly to ULC's `source_files[]`:
 
 The emitter streams each asset by its Salsify asset ID, computes SHA-256, and populates `source_files[].reference.{filename, sha256, url, revision_label, revision_date}`. `revision_label` comes from Salsify's asset version number; `revision_date` from the asset's `updated_at` timestamp.
 
+**The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `ProductFamily.required` in the schema includes `cutsheet`, so an emitter that writes only the `source_files[]` entry will produce schema-invalid records. When the Salsify `cutsheet_pdf` asset is streamed and hashed, copy the computed `{filename, sha256, url, revision_label, revision_date}` into `product_family.cutsheet` as well. The same bytes live in one place on disk; the record references them twice with different consumer semantics.
+
 ### Relationships to accessories
 
 Salsify models compatible accessories as typed product references:

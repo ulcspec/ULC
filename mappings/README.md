@@ -21,4 +21,4 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 
 ## PIM platforms
 
-See [`pim/`](pim/) for platform-specific emit patterns: [Salsify](pim/salsify.md), [Akeneo](pim/akeneo.md), [SAP](pim/sap.md), and [custom / in-house](pim/custom-pim.md). Start with [`pim/README.md`](pim/README.md) for the shared translation concerns (dual-unit handling, provenance defaults, source-file hashing, category enum mapping, index generation).
+See [`pim/`](pim/) for platform-specific emit patterns: [Salsify](pim/salsify.md), [Akeneo](pim/akeneo.md), [SAP](pim/sap.md), and [custom / in-house](pim/custom-pim.md). Start with [`pim/README.md`](pim/README.md) for the six shared translation concerns (record-per-scenario model, dual-unit handling, provenance defaults, source-file hashing, category enum mapping, index generation).
