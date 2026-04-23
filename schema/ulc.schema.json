@@ -14,7 +14,7 @@
     },
 
     "record_id": {
-      "description": "Stable identifier for this record. Convention: `<manufacturer-slug>-<catalog-slug>-<scenario-slug>` with lowercase ASCII and hyphens. Matches the filename (minus .ulc.json extension). Must be unique within a manufacturer's namespace.",
+      "description": "Stable identifier for this record. Convention: `<manufacturer-slug>-<catalog-slug>-<scenario-slug>` with lowercase ASCII and hyphens. By repository convention matches the filename stem, regardless of whether the file is `.ulc` (canonical records) or `.ulc.json` (authoring templates). Must be unique within a manufacturer's namespace.",
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
       "minLength": 3,

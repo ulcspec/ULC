@@ -13,7 +13,7 @@ Starter for an exterior wall-mounted area luminaire. Category defaults in `wall-
 
 ### `product_family`
 
-- **`primary_category: "bulkhead_wall_pack"`** — the canonical category for all exterior wall-mount luminaires including full-cutoff wall packs, traditional bulkheads, and decorative outdoor sconces. Interior wall-mount uses `sconce` instead (see `wall-sconce.md`).
+- **`primary_category: "bulkhead_wall_pack"`** — use this for bulkhead-form and wall-pack-form fixtures: full-cutoff perimeter packs, round/drum bulkheads, and utility-style building-mounted area lights. This is a **form** category, not an environment split: a decorative sconce that happens to be rated for outdoor use stays under `sconce` (see `wall-sconce.md`), and a bulkhead used indoors (rare but possible, for example in covered parking) stays under `bulkhead_wall_pack`. Indoor/outdoor exposure is carried separately by `indoor_outdoor` and `environment_rating`.
 - **`secondary_function: ["asymmetric", "flood"]`** — wall packs typically project light away from the wall asymmetrically. Add `wall_wash` if the optic is designed to graze downward along the wall.
 - **`shape`** — `rectangular` is most common; `round` for drum-style bulkheads; `square` for cube fixtures.
 - **`environment_rating`** — `wet` is the typical default. A damp-only exterior bulkhead (covered entry porch, protected soffit) still belongs to `bulkhead_wall_pack`; downgrade `environment_rating` to `damp` rather than re-categorizing.

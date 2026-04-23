@@ -121,8 +121,8 @@ SAP's configurable materials (class-type 300) describe a material with variant c
 
 1. **IDoc vs OData.** Legacy ECC landscapes without S/4HANA expose data via IDocs (MATMAS, CLFMAS, DOCMAS). The mapping is conceptually identical to OData; the integration engineer just handles XML instead of JSON. Modern landscapes should prefer OData.
 2. **Language keys.** SAP descriptions are per-language (SPRAS). The emitter chooses a canonical language key (typically `EN` or the manufacturer's primary market language). Record this choice in the integration config.
-3. **Change-document tracking.** Materials with active change documents (ECR/ECO in progress) should be skipped or emitted at `conformance_level: "core"` — the data is not authoritative yet.
-4. **Classification sparseness.** Not every luminaire in the material master will have every expected characteristic populated. The emitter decides per-field whether absence is fatal (skip record) or graceful (emit at `core`, mark missing in provenance).
+3. **Change-document tracking.** Materials with active change documents (ECR/ECO in progress) should be skipped from the ULC export until the change closes and the data becomes authoritative. Do not paper over draft state by lowering `conformance_level` — that field describes the record's completeness target, not its authoritativeness.
+4. **Classification sparseness.** Not every luminaire in the material master will have every expected characteristic populated. Skip or fail the export when a characteristic required for the target `conformance_level` is missing, so the absence shows up as a gap to close in the material master rather than silently shipping as an under-populated record.
 5. **Unit rounding errors.** SAP often stores dimensions at coarse precision (integers of mm). When converting mm → in, preserve decimal precision in the computed Imperial value.
 6. **Localized currency and format**. SAP stores numbers with locale formatting rules (decimal comma vs period). The OData / IDoc layer typically normalizes, but the emitter should defensively parse.
 

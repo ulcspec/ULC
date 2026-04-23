@@ -164,8 +164,8 @@
     "emission_face": "bottom",
     "luminaire_efficacy_lm_per_w": {
       "provenance": {
-        "method": "transcribed",
-        "source": "manufacturer_direct"
+        "method": "computed",
+        "source": "ies"
       },
       "unit": "lm/W",
       "value": 0,

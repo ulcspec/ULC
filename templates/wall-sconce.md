@@ -13,7 +13,7 @@ Starter for an interior wall-mounted decorative or architectural luminaire. Cate
 
 ### `product_family`
 
-- **`primary_category: "sconce"`** — for interior wall-mount. For exterior wall-mount, use `bulkhead_wall_pack` instead. For a vanity light over a bathroom mirror, `sconce` is still the right category; adjust `environment_rating` to `damp`.
+- **`primary_category: "sconce"`** — use this for sconce-form fixtures: decorative or architectural wall luminaires, including ADA-compliant direct/indirect sconces, drum sconces, and outdoor-rated sconces that retain the decorative sconce form. This is a **form** category, not an environment split. An outdoor-rated decorative sconce stays `primary_category: "sconce"`; adjust `indoor_outdoor` to `outdoor` and `environment_rating` to `damp` or `wet` instead of re-categorizing. A utility bulkhead or full-cutoff wall pack belongs under `bulkhead_wall_pack` (see `wall-pack.md`) regardless of environment. A bathroom vanity light stays `sconce` with `environment_rating: "damp"`.
 - **`secondary_function: ["direct_indirect"]`** — common for architectural ADA sconces that emit both up and down. Change to `["direct"]` for pure-downlight or `["indirect"]` for pure-uplight variants.
 - **`shape`** — `rectangular` is typical architectural; `square` for cube sconces; `round` for drum-style; `custom` for decorative or sculptural.
 - **`environment_rating`** — `dry` for typical interior living spaces. `damp` for bathroom vanity, kitchen, or unconditioned interior (stairwells in humid climates).
@@ -31,7 +31,7 @@ Starter for an interior wall-mounted decorative or architectural luminaire. Cate
 - **`symmetry_type: "symm_bi_0"`** — bilateral about the C0-C180 plane (wall-facing and room-facing halves). Correct for most sconces.
 - **`beam_family: "medium_flood"`** — typical. `flood` or `wide_flood` for wash sconces; `narrow_flood` for downward-accent.
 - **`luminous_opening_shape: "rectangular"`** — for rectangular sconces. `circular` for round; `vertical_cylinder` for drum-style.
-- **`emission_face: "bottom"`** — approximates a direct sconce. For direct-indirect, the TM-33 emission-areas model is more accurate; the single-face model is a simplification that the `face` field carries forward pending richer photometry.
+- **`emission_face: "bottom"`** — approximates a direct sconce. For direct-indirect, the single-value `emission_face` is a simplification; the TM-33 emission-areas model (future schema extension) carries the richer per-face description authoritatively.
 
 ### `electrical`
 
