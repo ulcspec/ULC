@@ -74,7 +74,7 @@ This repository defines the standard. It does not ship an application.
 
 ## Getting started
 
-The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, four canonical reference records covering the four manufacturer authoring patterns, and the reference command-line validator (`ulc`) at `tools/validator/` with schema validation, builder parity, and source-file hash verification. Deep narrative guides are part of later batches.
+The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, four canonical reference records covering the four manufacturer authoring patterns, the reference command-line validator (`ulc`) at `tools/validator/` with schema validation, builder parity, and source-file hash verification, per-category authoring templates under `templates/`, and PIM platform mapping guides under `mappings/pim/`. The ulcspec.org narrative docs site is a later batch.
 
 - To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
 - To see those patterns in real data, read the four records in `examples/`. Each one exercises a distinct pattern against a real manufacturer spec sheet.

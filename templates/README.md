@@ -21,10 +21,11 @@ Each template pairs a `.ulc.json` skeleton with a sibling `.md` guide walking th
 
 1. **Pick the category closest to your product** and copy both the `.ulc.json` template and the sibling `.md` guide.
 2. **Rename the `.ulc.json`** to `<manufacturer-slug>-<catalog-slug>-<scenario-slug>.ulc.json`. Slugs are lowercase ASCII with hyphens replacing spaces and separators. For example: `selux-elx-48-3500k-90cri.ulc.json`.
-3. **Fill in every `TODO` and every `0` placeholder** using data from the cutsheet PDF, IES file, and lab attestation reports. The sibling guide explains what each field means for your category.
-4. **Compute SHA-256 of each source file** with `shasum -a 256 <file>` and paste the 64-char hex string into the matching `reference.sha256` entries (including `product_family.cutsheet.sha256`).
-5. **Regenerate the index** with `ulc build-index <file>`. Do not hand-edit the `index` block.
-6. **Validate** with `ulc validate <file>` and resolve any errors or warnings before committing.
+3. **Update `record_id` to match the new filename stem.** Every template ships with `record_id: "todo-manufacturer-catalog-scenario"` as a placeholder; replace it with the same slug you used when renaming the file. The two must match for the record to be valid.
+4. **Fill in every `TODO` and every `0` placeholder** using data from the cutsheet PDF, IES file, and lab attestation reports. The sibling guide explains what each field means for your category.
+5. **Compute SHA-256 of each source file** with `shasum -a 256 <file>` and paste the 64-char hex string into the matching `reference.sha256` entries (including `product_family.cutsheet.sha256`).
+6. **Regenerate the index** with `ulc build-index <file>`. Do not hand-edit the `index` block.
+7. **Validate** with `ulc validate <file>` and resolve any errors or warnings before committing.
 
 ## Conformance level
 
@@ -37,6 +38,7 @@ The reference validator currently emits a single `INFO` marker per record for th
 Grep for any of these to find unfilled placeholders in your in-progress record:
 
 - `TODO` — string placeholders that must be replaced
+- `todo-manufacturer-catalog-scenario` — placeholder `record_id` that must be replaced with the product's real slug, matching the renamed filename stem
 - `0000000000000000000000000000000000000000000000000000000000000000` — sentinel SHA-256; every occurrence must be replaced with a real hash
 - `"1970-01-01"` — sentinel date used in both `record_status_as_of` and `product_family.cutsheet.revision_date`. Replace `record_status_as_of` with today's date (the date the author last verified the product's commercial status) and replace `cutsheet.revision_date` with the cutsheet's actual revision date.
 - Numeric fields with `0` — replace with real rated or measured values

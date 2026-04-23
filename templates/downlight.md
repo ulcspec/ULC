@@ -15,7 +15,7 @@ Walks through each block in `downlight.ulc.json` for a recessed downlight produc
 ### Top level
 
 - **`ulc_version`** — the ULC spec version the record conforms to. Bump only when a new schema revision ships.
-- **`record_id`** — lowercase ASCII with hyphens; must match the filename stem minus `.ulc.json`.
+- **`record_id`** — lowercase ASCII with hyphens; must match the filename stem minus `.ulc.json`. The template ships with the placeholder `todo-manufacturer-catalog-scenario`; replace it with the real slug when you rename the file (step 3 of the workflow in `templates/README.md`).
 - **`record_status`** — `active` for shipping products, `preliminary` during pre-release review, `superseded` after a replacement record exists, `withdrawn` when the product is discontinued.
 - **`conformance_level`** — start at `core` while data is incomplete; upgrade to `standard` once measured values are in, and `full` once accessories, sustainability, and thermal derating are populated.
 
