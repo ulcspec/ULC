@@ -24,18 +24,15 @@ jobs:
       group: release
       cancel-in-progress: false
     steps:
-      - name: Checkout (merge commit on PR path, main on dispatch path)
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-        with:
-          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
-          fetch-depth: 0
-
-      - id: ver
-        name: Resolve version
+      - id: resolve
+        name: Resolve version, tag, and target ref
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_VERSION: ${{ inputs.version }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          DISPATCH_REF: ${{ github.ref }}
+          REPO: ${{ github.repository }}
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             VERSION="$INPUT_VERSION"
@@ -46,42 +43,58 @@ jobs:
             echo "::error::Resolved version '$VERSION' does not match X.Y.Z"
             exit 1
           fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${VERSION}"    >> "$GITHUB_OUTPUT"
-
-      - id: idemp
-        name: Idempotency check
-        run: |
-          if git rev-parse "${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag ${{ steps.ver.outputs.tag }} already exists; skipping create, will retry release publish"
-            echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+          TAG="v${VERSION}"
+          if git ls-remote --exit-code --tags "https://github.com/${REPO}.git" "refs/tags/${TAG}" > /dev/null 2>&1; then
+            TAG_EXISTS=true
+            TARGET_REF="refs/tags/${TAG}"
+            echo "Tag ${TAG} already exists on origin; will checkout the existing tag and retry release publish"
           else
-            echo "tag_exists=false" >> "$GITHUB_OUTPUT"
+            TAG_EXISTS=false
+            if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+              TARGET_REF="$DISPATCH_REF"
+            else
+              TARGET_REF="$MERGE_SHA"
+            fi
           fi
+          echo "version=${VERSION}"       >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}"               >> "$GITHUB_OUTPUT"
+          echo "tag_exists=${TAG_EXISTS}" >> "$GITHUB_OUTPUT"
+          echo "target_ref=${TARGET_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout target ref
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          ref: ${{ steps.resolve.outputs.target_ref }}
+          fetch-depth: 0
 
       - name: Extract release notes from CHANGELOG
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+          TAG: ${{ steps.resolve.outputs.tag }}
         run: |
-          awk -v ver="${{ steps.ver.outputs.version }}" '
+          awk -v ver="$VERSION" '
             $0 ~ "^## " ver " \\(" { found=1; next }
             found && /^## [0-9]+\.[0-9]+\.[0-9]+ \(/ { exit }
             found { print }
           ' CHANGELOG.md > .release-notes.md
           if [ ! -s .release-notes.md ]; then
-            echo "::error::Empty release notes for ${{ steps.ver.outputs.tag }}. CHANGELOG.md must have a dated section for ${{ steps.ver.outputs.version }}."
+            echo "::error::Empty release notes for ${TAG}. CHANGELOG.md must have a dated section for ${VERSION}."
             exit 1
           fi
 
       - name: Configure git identity
-        if: steps.idemp.outputs.tag_exists == 'false'
+        if: steps.resolve.outputs.tag_exists == 'false'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Create and push annotated tag
-        if: steps.idemp.outputs.tag_exists == 'false'
+        if: steps.resolve.outputs.tag_exists == 'false'
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
         run: |
-          git tag -a "${{ steps.ver.outputs.tag }}" -m "ULC ${{ steps.ver.outputs.tag }}"
-          git push origin "${{ steps.ver.outputs.tag }}"
+          git tag -a "$TAG" -m "ULC $TAG"
+          git push origin "$TAG"
 
       - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
