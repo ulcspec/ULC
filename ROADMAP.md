@@ -14,9 +14,9 @@ declared in its `ulc_version` field.
 - **Minor**: backward-compatible additions and clarifications.
 - **Patch**: corrections and non-structural edits.
 
-v1.0.0 marks the first backward-compatibility commitment for the schema
-surface. Until then, minor versions may include breaking changes if the
-underlying decision is sound and the migration cost is low.
+v1.0.0 marks the first formal backward-compatibility commitment for the
+schema surface. Pre-1.0 minor and patch versions follow the same rules
+above and have been kept additive in practice.
 
 ## Active version: v0.5.x
 
