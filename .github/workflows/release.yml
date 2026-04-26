@@ -1,37 +1,96 @@
-name: Release ulc CLI
+name: Release on merge
 
 on:
-  push:
-    tags:
-      - 'v*'
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.5.1, no v prefix)'
+        required: true
 
 permissions:
   contents: write
 
 jobs:
-  goreleaser:
-    name: Build and publish binaries
+  release:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'release/v'))
     runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: false
     steps:
-      - name: Checkout at tag
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Checkout (merge commit on PR path, main on dispatch path)
+        uses: actions/checkout@v4
         with:
-          # Full history lets goreleaser compute accurate build metadata.
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+      - id: ver
+        name: Resolve version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            BRANCH="${{ github.event.pull_request.head.ref }}"
+            VERSION="${BRANCH#release/v}"
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Resolved version '$VERSION' does not match X.Y.Z"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}"    >> "$GITHUB_OUTPUT"
+
+      - id: idemp
+        name: Idempotency check
+        run: |
+          if git rev-parse "${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.ver.outputs.tag }} already exists; skipping create, will retry release publish"
+            echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          awk -v ver="${{ steps.ver.outputs.version }}" '
+            $0 ~ "^## " ver " \\(" { found=1; next }
+            found && /^## [0-9]+\.[0-9]+\.[0-9]+ \(/ { exit }
+            found { print }
+          ' CHANGELOG.md > .release-notes.md
+          if [ ! -s .release-notes.md ]; then
+            echo "::error::Empty release notes for ${{ steps.ver.outputs.tag }}. CHANGELOG.md must have a dated section for ${{ steps.ver.outputs.version }}."
+            exit 1
+          fi
+
+      - name: Configure git identity
+        if: steps.idemp.outputs.tag_exists == 'false'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push annotated tag
+        if: steps.idemp.outputs.tag_exists == 'false'
+        run: |
+          git tag -a "${{ steps.ver.outputs.tag }}" -m "ULC ${{ steps.ver.outputs.tag }}"
+          git push origin "${{ steps.ver.outputs.tag }}"
+
+      - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
           cache: true
           cache-dependency-path: 'go.sum'
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
+      - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          args: release --clean --release-notes ../../.release-notes.md
           workdir: tools/validator
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

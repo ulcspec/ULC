@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/ulcspec/ULC/discussions
+    about: For questions, ideas, or open-ended discussion that aren't bugs or specific proposals.
+  - name: Security advisory
+    url: https://github.com/ulcspec/ULC/security/advisories/new
+    about: For security issues, use Private Vulnerability Reporting (do not file a public issue).
+  - name: ULC website
+    url: https://ulcspec.org
+    about: Specification site (canonical reference for the schema and docs).

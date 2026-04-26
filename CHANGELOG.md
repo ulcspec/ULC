@@ -10,13 +10,15 @@ Each ULC record declares the specification version it conforms to via the `ulc_v
 
 A version is **unreleased** until it is tagged in git. Being visible on `main` is not the same as being released; consumers who want a stable version pin to a git tag.
 
-When a version is ready to release:
+Releases are automated. To ship a release:
 
-1. Replace the `(unreleased)` marker next to the version heading below with the release date in ISO 8601 format, e.g. `## 0.1.0 (2026-06-15)`.
-2. Commit that change to `main`.
-3. Create an annotated git tag matching the version: `git tag -a v0.1.0 -m "ULC v0.1.0"`.
-4. Push the tag: `git push origin v0.1.0`.
-5. Optionally create a GitHub Release pointing at the tag, copying the version's changelog entry into the release notes.
+1. Cut a branch named `release/vX.Y.Z` (e.g., `release/v0.6.0`).
+2. Update CHANGELOG.md: add a dated section header at the top of the release entries below, e.g., `## 0.6.0 (2026-06-15)`. Fill in the section.
+3. Open a pull request against `main`. The `Release notes check` workflow validates that the branch name, the CHANGELOG section, and the date are present and consistent.
+4. Merge the PR after review.
+5. The `Release on merge` workflow runs automatically. It tags the merge commit with `vX.Y.Z` (annotated), extracts the CHANGELOG section as release notes, runs goreleaser to build cross-platform binaries, and publishes the GitHub Release with the binaries and notes attached.
+
+For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
 ## 0.5.0 (2026-04-23)
 
