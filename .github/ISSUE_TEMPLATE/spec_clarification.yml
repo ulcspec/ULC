@@ -1,0 +1,34 @@
+name: Spec clarification
+description: Report ambiguous, unclear, or contradictory language in the specification
+labels: ["spec-clarification"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: ULC version
+      description: The version of the spec where you found the ambiguity.
+      placeholder: "0.5.0"
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Where in the spec?
+      description: File path and section, or a permalink.
+      placeholder: "schema/ulc.schema.json $defs/Photometry, or docs/authoring-patterns.md §3"
+    validations:
+      required: true
+  - type: textarea
+    id: ambiguity
+    attributes:
+      label: What is unclear?
+      description: Quote or describe the ambiguous language. What are the possible interpretations?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Why does this matter?
+      description: What real-world record or implementation are you trying to produce that the ambiguity blocks?
+    validations:
+      required: true

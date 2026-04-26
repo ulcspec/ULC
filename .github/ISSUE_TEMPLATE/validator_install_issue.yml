@@ -1,0 +1,50 @@
+name: Validator install issue
+description: Report a problem installing or running the `ulc` binary
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: ULC validator version
+      description: From the release page, or `ulc version` if you got it to run at all.
+      placeholder: "v0.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system and architecture
+      options:
+        - Linux (amd64)
+        - Linux (arm64)
+        - macOS (amd64 / Intel)
+        - macOS (arm64 / Apple Silicon)
+        - Windows (amd64)
+        - Windows (arm64)
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Install method
+      options:
+        - Downloaded binary from GitHub Releases
+        - "go install"
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: Error message, stack trace, or describe the unexpected behavior.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true

@@ -1,37 +1,116 @@
-name: Release ulc CLI
+name: Release on merge
 
 on:
-  push:
-    tags:
-      - 'v*'
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.5.1, no v prefix)'
+        required: true
 
 permissions:
   contents: write
 
 jobs:
-  goreleaser:
-    name: Build and publish binaries
+  release:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'release/v'))
     runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: false
     steps:
-      - name: Checkout at tag
+      - id: resolve
+        name: Resolve version, tag, and target ref
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          DISPATCH_REF: ${{ github.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="${HEAD_REF#release/v}"
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Resolved version '$VERSION' does not match X.Y.Z"
+            exit 1
+          fi
+          TAG="v${VERSION}"
+          if git ls-remote --exit-code --tags "https://github.com/${REPO}.git" "refs/tags/${TAG}" > /dev/null 2>&1; then
+            TAG_EXISTS=true
+            TARGET_REF="refs/tags/${TAG}"
+            echo "Tag ${TAG} already exists on origin; will checkout the existing tag and retry release publish"
+          else
+            TAG_EXISTS=false
+            if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+              TARGET_REF="$DISPATCH_REF"
+            else
+              TARGET_REF="$MERGE_SHA"
+            fi
+          fi
+          echo "version=${VERSION}"       >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}"               >> "$GITHUB_OUTPUT"
+          echo "tag_exists=${TAG_EXISTS}" >> "$GITHUB_OUTPUT"
+          echo "target_ref=${TARGET_REF}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout target ref
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
-          # Full history lets goreleaser compute accurate build metadata.
+          ref: ${{ steps.resolve.outputs.target_ref }}
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+      - name: Extract release notes from CHANGELOG
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          if ! grep -qE "^## ${VERSION} \([0-9]{4}-[0-9]{2}-[0-9]{2}\)" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md must have a dated section '## ${VERSION} (YYYY-MM-DD)' before releasing."
+            exit 1
+          fi
+          awk -v ver="$VERSION" '
+            $0 ~ "^## " ver " \\(" { found=1; next }
+            found && /^## [0-9]+\.[0-9]+\.[0-9]+ \(/ { exit }
+            found { print }
+          ' CHANGELOG.md > .release-notes.md
+          if [ ! -s .release-notes.md ]; then
+            echo "::error::Empty release notes for ${TAG}. CHANGELOG.md must have a dated section for ${VERSION}."
+            exit 1
+          fi
+
+      - name: Configure git identity
+        if: steps.resolve.outputs.tag_exists == 'false'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push annotated tag
+        if: steps.resolve.outputs.tag_exists == 'false'
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          git tag -a "$TAG" -m "ULC $TAG"
+          git push origin "$TAG"
+
+      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
           go-version-file: 'go.mod'
           cache: true
           cache-dependency-path: 'go.sum'
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
+      - uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          args: release --clean --release-notes ../../.release-notes.md
           workdir: tools/validator
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

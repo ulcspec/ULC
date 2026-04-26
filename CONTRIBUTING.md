@@ -30,6 +30,44 @@ You do not need to be a developer to contribute. Valuable contributions include:
 5. Avoid unrelated edits, formatting-only changes mixed with substantive changes, or large refactors without prior discussion.
 6. The `index` block on every ULC record is **generated, not hand-authored**. Do not edit index values directly. If a deep-block field changes, re-run `ulc build-index <record>.ulc` (the Go reference CLI at `tools/validator/`) to regenerate the index before committing. CI rejects records whose index does not match the builder output. The same check is available as an optional local pre-commit hook shipped at `tools/hooks/pre-commit`; install it with `cp tools/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` if you want the feedback before push — the hook auto-builds the CLI on first run when Go is available.
 
+## PR conventions
+
+### Commit messages
+
+ULC uses Conventional Commit prefixes. The most common prefixes:
+
+- `feat:` for new fields, schema additions, new tooling features
+- `fix:` for corrections to schema, validator, mappings, or examples
+- `docs:` for documentation-only changes
+- `chore:` for repository housekeeping, governance files, dependency updates
+- `test:` for test additions or corrections
+- `ci:` for CI workflow changes
+- `refactor:` for code or schema reorganization without behavior change
+- `release:` for release-cutting commits (rare, usually handled by automation)
+- `security:` for security fixes
+
+Subject lines are short, imperative, lowercase after the colon, no trailing period. For example:
+
+```
+feat: add chromaticity_shift_projection field
+fix: validator accepts trailing whitespace in record_id
+docs: clarify dual-unit handling in PIM mapping guide
+```
+
+Bodies are optional and kept brief. The CHANGELOG entry, not the commit body, carries the release-facing description.
+
+### Branch naming
+
+- `release/vX.Y.Z` for release-cutting branches (auto-tagged on merge)
+- `feat/<short-description>` for new features
+- `fix/<short-description>` for bug fixes
+- `docs/<short-description>` for documentation changes
+- `chore/<short-description>` for housekeeping
+
+### Linking issues
+
+Use `Closes #N` (or `Fixes #N`) in the PR body to auto-close the linked issue when the PR merges. Plain `#N` references are fine for context but do not auto-close.
+
 ## What belongs in ULC
 
 ULC is a fixture metadata specification. Every field in the schema describes the luminaire itself, not the road, site, building, or lighting design project where the luminaire is installed. Before proposing a new field, please confirm that it falls into at least one of these five categories:

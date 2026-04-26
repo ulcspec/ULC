@@ -1,0 +1,47 @@
+name: Schema change proposal
+description: Propose a change to the schema, taxonomy, or normative spec content
+labels: ["schema-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Schema changes have downstream effects on every ULC implementer. Read
+        the "What belongs in ULC" section of `CONTRIBUTING.md` and the v1.0
+        criteria in `ROADMAP.md` before opening this proposal.
+  - type: textarea
+    id: change
+    attributes:
+      label: What is the change?
+      description: Field added/renamed/removed, enum value added/removed, type change, etc.
+    validations:
+      required: true
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Compatibility
+      options:
+        - Additive (backward-compatible)
+        - Breaking (requires major version bump)
+        - Clarification only (no schema change, doc only)
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Reference real products, real standards, or real workflows that motivate this change. Field proposals must pass the "What belongs in ULC" rubric.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+  - type: textarea
+    id: affected_files
+    attributes:
+      label: What files would change?
+      description: schema/, mappings/, templates/, examples/, validator code, docs.
+    validations:
+      required: true

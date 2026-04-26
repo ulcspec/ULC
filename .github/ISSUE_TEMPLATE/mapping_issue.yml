@@ -1,0 +1,42 @@
+name: Mapping issue
+description: Report a problem with a mapping (IES, LDT, GLDF, ETIM, PIM platforms)
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: mapping
+    attributes:
+      label: Which mapping?
+      options:
+        - IES (LM-63)
+        - LDT (EULUMDAT)
+        - GLDF
+        - ETIM
+        - PIM, Salsify
+        - PIM, Akeneo
+        - PIM, SAP
+        - PIM, Custom PIM
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Where in the mapping docs?
+      description: File path and section.
+      placeholder: "mappings/pim/akeneo.md §Dual-unit handling"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is the issue?
+      description: Wrong field name, missing case, ambiguous translation rule, contradiction with another mapping, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Concrete example
+      description: A real source record (or anonymized excerpt) showing the problem.
+    validations:
+      required: false

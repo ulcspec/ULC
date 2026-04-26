@@ -1,0 +1,27 @@
+name: Feature request
+description: Propose a non-schema enhancement (validator, CI, tooling, docs)
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For schema or taxonomy changes, use the "Schema change proposal" template instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is the problem this would solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

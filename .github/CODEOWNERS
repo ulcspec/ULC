@@ -1,0 +1,11 @@
+# Default owners for everything in the repo.
+* @ulcspec/maintainers
+
+# Path-narrowed ownership. Currently the same team owns every path; the
+# narrowing is in place so future delegation (e.g., a Go specialist owning
+# tools/) is a one-line change.
+schema/      @ulcspec/maintainers
+tools/       @ulcspec/maintainers
+mappings/    @ulcspec/maintainers
+templates/   @ulcspec/maintainers
+.github/     @ulcspec/maintainers
