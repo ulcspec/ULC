@@ -1,0 +1,53 @@
+{
+  "includeBranches": ["main"],
+  "triggerOnUpdates": true,
+  "triggerOnDrafts": false,
+
+  "strictness": 2,
+  "commentTypes": ["syntax", "logic", "style"],
+
+  "excludeAuthors": ["dependabot[bot]", "renovate[bot]", "pre-commit-ci[bot]"],
+
+  "ignorePatterns": "examples/**\nassets/**\nresearch/**\ndocs/_generated/**\n**/*.lock\ngo.sum\n.DS_Store\n**/.DS_Store",
+
+  "fixWithAI": true,
+  "statusCheck": false,
+  "statusCommentsEnabled": true,
+  "updateExistingSummaryComment": true,
+
+  "summarySection":         { "included": true,  "collapsible": true,  "defaultOpen": true  },
+  "issuesTableSection":     { "included": true,  "collapsible": true,  "defaultOpen": true  },
+  "confidenceScoreSection": { "included": true,  "collapsible": true,  "defaultOpen": false },
+  "sequenceDiagramSection": { "included": false, "collapsible": true,  "defaultOpen": false },
+
+  "instructions": "ULC defines an open JSON Schema standard for lighting datasheets. Focus on cross-file consistency and standard correctness, not line-level nits. Prioritize: (1) JSON Schema correctness in schema/** — required vs optional, enums/patterns, $ref, additionalProperties, breaking vs additive; (2) Go validator semantics in tools/** — error handling, nil-safety, version pinning, exit codes, parity with what schema/** documents; (3) consistency across schema/**, mappings/**, templates/**, docs/** — a field rename should propagate everywhere; (4) versioning — SemVer impact, CHANGELOG accuracy; (5) provenance, dual-unit SI-authoritative values, metadata-only constraint per CONTRIBUTING.md and GOVERNANCE.md. Skip examples/** — real-cutsheet fixtures. Avoid Markdown style or typo comments.",
+
+  "customContext": {
+    "rules": [
+      { "id": "schema-breaking-change-flag",          "scope": ["schema/**/*.json"], "severity": "high",
+        "rule": "Flag breaking JSON Schema changes: removed field, tightened type, narrowed enum, removed enum value, changed required[], added required field, changed $id/$ref. Breaking changes need a major bump per SemVer." },
+      { "id": "schema-mappings-consistency",          "scope": ["schema/**", "mappings/**", "templates/**"], "severity": "high",
+        "rule": "Field added/renamed/removed in schema/** must propagate to mappings/** and templates/**. Inconsistency is a defect." },
+      { "id": "validator-matches-schema",             "scope": ["tools/**/*.go"], "severity": "high",
+        "rule": "tools/** is the reference implementation. Flag where validator behavior diverges from schema/**." },
+      { "id": "go-error-handling",                    "scope": ["tools/**/*.go"], "severity": "medium",
+        "rule": "Wrap errors with %w; no panics in library paths; non-zero exit on validation failure. Flag swallowed errors and bare panics." },
+      { "id": "dual-unit-si-authoritative",           "scope": ["schema/**", "templates/**", "examples/**"], "severity": "medium",
+        "rule": "Unit-bearing fields use the dual-unit SI-authoritative shape. Flag single-unit additions or swapped authority." },
+      { "id": "no-fictional-example-data",            "scope": ["examples/**", "docs/**", "templates/**"], "severity": "medium",
+        "rule": "Example/template values must come from real cutsheets. Flag fabricated photometric, electrical, or regulatory values." },
+      { "id": "changelog-required-for-schema-change", "scope": ["schema/**"], "severity": "medium",
+        "rule": "Any schema/** change should have a CHANGELOG.md entry under the active version, with breaking changes called out." },
+      { "id": "metadata-only-regulatory",             "scope": ["schema/**", "mappings/**"], "severity": "high",
+        "rule": "ULC stores regulatory data as metadata only (links, ids, dates). Flag fields that copy normative third-party standard text." }
+    ],
+    "files": [
+      { "path": "README.md",                   "description": "Project overview." },
+      { "path": "CONTRIBUTING.md",             "description": "Contribution rules; metadata-only and example-sourcing constraints." },
+      { "path": "GOVERNANCE.md",               "description": "Decision-making and breaking-change policy." },
+      { "path": "CHANGELOG.md",                "description": "Versioned history; check schema-affecting PRs have an entry." },
+      { "path": "schema/ulc.schema.json",      "description": "Canonical JSON Schema for a ULC record. Source of truth." },
+      { "path": "schema/taxonomy.schema.json", "description": "Taxonomy schema referenced by ulc.schema.json." }
+    ]
+  }
+}
