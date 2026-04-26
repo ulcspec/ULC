@@ -4,28 +4,33 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   check:
     if: startsWith(github.head_ref, 'release/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - id: ver
         name: Parse version from branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          BRANCH="${{ github.head_ref }}"
-          if [[ ! "$BRANCH" =~ ^release/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "::error::Release branch must match release/vX.Y.Z exactly (got '$BRANCH')"
+          if [[ ! "$HEAD_REF" =~ ^release/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "::error::Release branch must match release/vX.Y.Z exactly (got '$HEAD_REF')"
             exit 1
           fi
           echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
 
       - name: Verify CHANGELOG entry exists and is dated
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          VERSION="${{ steps.ver.outputs.version }}"
           if ! grep -qE "^## ${VERSION} \([0-9]{4}-[0-9]{2}-[0-9]{2}\)" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md must have a dated section '## ${VERSION} (YYYY-MM-DD)' for the release branch ${BRANCH}."
+            echo "::error::CHANGELOG.md must have a dated section '## ${VERSION} (YYYY-MM-DD)' for release branch release/v${VERSION}."
             exit 1
           fi
           SECTION=$(awk -v ver="${VERSION}" '
@@ -39,8 +44,10 @@ jobs:
           fi
 
       - name: Verify tag does not already exist
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          TAG="v${{ steps.ver.outputs.version }}"
+          TAG="v${VERSION}"
           if git ls-remote --exit-code --tags origin "$TAG" >/dev/null 2>&1; then
             echo "::error::Tag $TAG already exists on origin. Choose a new version."
             exit 1

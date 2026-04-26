@@ -25,19 +25,22 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Checkout (merge commit on PR path, main on dispatch path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
           fetch-depth: 0
 
       - id: ver
         name: Resolve version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
           else
-            BRANCH="${{ github.event.pull_request.head.ref }}"
-            VERSION="${BRANCH#release/v}"
+            VERSION="${HEAD_REF#release/v}"
           fi
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Resolved version '$VERSION' does not match X.Y.Z"
@@ -80,13 +83,13 @@ jobs:
           git tag -a "${{ steps.ver.outputs.tag }}" -m "ULC ${{ steps.ver.outputs.tag }}"
           git push origin "${{ steps.ver.outputs.tag }}"
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
           go-version-file: 'go.mod'
           cache: true
           cache-dependency-path: 'go.sum'
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
         with:
           distribution: goreleaser
           version: '~> v2'
