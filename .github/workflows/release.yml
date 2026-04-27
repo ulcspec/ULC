@@ -81,8 +81,8 @@ jobs:
             $0 ~ "^## " ver " \\(" { found=1; next }
             found && /^## [0-9]+\.[0-9]+\.[0-9]+ \(/ { exit }
             found { print }
-          ' CHANGELOG.md > .release-notes.md
-          if [ ! -s .release-notes.md ]; then
+          ' CHANGELOG.md > /tmp/release-notes.md
+          if [ ! -s /tmp/release-notes.md ]; then
             echo "::error::Empty release notes for ${TAG}. CHANGELOG.md must have a dated section for ${VERSION}."
             exit 1
           fi
@@ -111,7 +111,7 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --release-notes ../../.release-notes.md
+          args: release --clean --release-notes /tmp/release-notes.md
           workdir: tools/validator
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
