@@ -67,7 +67,7 @@ jobs:
           ref: ${{ steps.resolve.outputs.target_ref }}
           fetch-depth: 0
 
-      - name: Extract release notes from CHANGELOG
+      - name: Compose release body from CHANGELOG
         env:
           VERSION: ${{ steps.resolve.outputs.version }}
           TAG: ${{ steps.resolve.outputs.tag }}
@@ -77,13 +77,20 @@ jobs:
             echo "::error::CHANGELOG.md must have a dated section '## ${VERSION} (YYYY-MM-DD)' before releasing."
             exit 1
           fi
-          awk -v ver="$VERSION_RE" '
-            $0 ~ "^## " ver " \\(" { found=1; next }
-            found && /^## [0-9]+\.[0-9]+\.[0-9]+ \(/ { exit }
-            found { print }
-          ' CHANGELOG.md > /tmp/release-notes.md
-          if [ ! -s /tmp/release-notes.md ]; then
-            echo "::error::Empty release notes for ${TAG}. CHANGELOG.md must have a dated section for ${VERSION}."
+          {
+            echo "## \`ulc\` CLI ${TAG}"
+            echo ""
+            echo "Download a single-file binary for your platform below. See \`CHANGELOG.md\`"
+            echo "at the tag for what landed in this release."
+            echo ""
+            awk -v ver="$VERSION_RE" '
+              $0 ~ "^## " ver " \\(" { found=1; next }
+              found && /^## [0-9]+\.[0-9]+\.[0-9]+ \(/ { exit }
+              found { print }
+            ' CHANGELOG.md
+          } > /tmp/release-body.md
+          if [ "$(wc -l < /tmp/release-body.md)" -lt 7 ]; then
+            echo "::error::Composed release body for ${TAG} is suspiciously short — CHANGELOG section may be empty."
             exit 1
           fi
 
@@ -111,7 +118,15 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --release-notes /tmp/release-notes.md
+          args: release --clean
           workdir: tools/validator
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set GitHub Release body to composed content
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "$TAG" --repo "$REPO" --notes-file /tmp/release-body.md
