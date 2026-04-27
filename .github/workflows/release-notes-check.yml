@@ -29,7 +29,7 @@ jobs:
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          VERSION_RE="${VERSION//./\\.}"
+          VERSION_RE="${VERSION//./[.]}"
           if ! grep -qE "^## ${VERSION_RE} \([0-9]{4}-[0-9]{2}-[0-9]{2}\)" CHANGELOG.md; then
             echo "::error::CHANGELOG.md must have a dated section '## ${VERSION} (YYYY-MM-DD)' for release branch release/v${VERSION}."
             exit 1
