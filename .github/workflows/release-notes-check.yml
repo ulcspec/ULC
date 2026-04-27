@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  validate-release-notes:
     if: startsWith(github.head_ref, 'release/v')
     runs-on: ubuntu-latest
     steps:
