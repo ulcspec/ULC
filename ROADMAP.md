@@ -15,8 +15,9 @@ declared in its `ulc_version` field.
 - **Patch**: corrections and non-structural edits.
 
 v1.0.0 marks the first formal backward-compatibility commitment for the
-schema surface. Pre-1.0 minor and patch versions follow the same rules
-above and have been kept additive in practice.
+schema surface. Pre-1.0 releases generally aim for additive changes;
+compatibility-tightening changes may occur when documented in the changelog
+(as with the v0.3.0 `cri_tier` enum tightening).
 
 ## Active version: v0.5.x
 
