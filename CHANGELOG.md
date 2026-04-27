@@ -20,6 +20,50 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 0.5.1 (2026-04-27)
+
+Repository infrastructure release. No normative schema, taxonomy, validator, or mapping changes — all v0.5.0 reference records and templates pass `ulc validate` unchanged at the v0.3.0 schema level.
+
+### Open-source governance baseline (new)
+
+A complete set of community-facing files brings the repository up to a typical open-source pattern:
+
+- `SECURITY.md` documenting reporting scope and the GitHub Private Vulnerability Reporting flow.
+- `ROADMAP.md` with the versioning model, v1.0.0 criteria, and an explicit out-of-scope list.
+- `.github/CODEOWNERS` routing review requests to the new `ulcspec/maintainers` org team.
+- `.github/PULL_REQUEST_TEMPLATE.md` with Summary / Test plan / Callouts sections.
+- Seven issue templates covering bug report, spec clarification, schema change proposal, mapping issue, feature request, validator install issue, plus a config that routes general questions to Discussions.
+- `.github/dependabot.yml` for `gomod` and `github-actions` weekly updates with automatic `dependencies` labeling.
+- `.github/FUNDING.yml` placeholder; founding partners not yet identified.
+- `CONTRIBUTING.md` PR conventions section: Conventional Commit prefixes, branch-naming convention, and `Closes #N` issue linking.
+
+### Code review tooling (new)
+
+- `greptile.json` configuring the Greptile reviewer with eight ULC-specific rules covering schema breaking-change detection, schema-to-mappings-to-templates cross-file consistency, validator-matches-schema parity, dual-unit SI authority, real-cutsheet-only example data, CHANGELOG discipline, and the metadata-only regulatory constraint.
+
+### Release automation (rewritten)
+
+The release pipeline shifts from manual tag-and-push to CHANGELOG-driven auto-tag-on-merge:
+
+- `.github/workflows/release.yml` triggers on PR closed when the head ref matches `release/v*`. Resolves the target ref before checkout (so retries via `workflow_dispatch` check out the existing tag), tags the merge commit with an annotated tag, extracts the matching CHANGELOG section as release notes, and runs goreleaser to build cross-platform binaries. Includes idempotent retry, concurrency serialization, an emergency `workflow_dispatch` fallback, env-passed user-controlled inputs to defend against shell injection, and SHA-pinned action references.
+- `.github/workflows/release-notes-check.yml` (new CI gate) validates that every `release/v*` PR has a dated CHANGELOG section, a well-formed branch name, and no pre-existing tag on origin.
+- Both workflows escape version dots before regex matching, so a malformed CHANGELOG heading like `0x6x0` cannot satisfy a `0.6.0` release.
+
+### Documentation
+
+- `CHANGELOG.md` Release process section rewritten to describe the automated flow and the `release/vX.Y.Z` branch convention.
+- `ROADMAP.md` versioning narrative softened to acknowledge that pre-1.0 releases may include compatibility-tightening changes when documented in the changelog (matching the v0.3.0 `cri_tier` precedent).
+
+### Dependency updates
+
+- `actions/github-script` v7.1.0 → v9.0.0
+- `openai/codex-action` v1.4 → v1.7
+- `tj-actions/changed-files` v44.0.0 → v47.0.6
+
+### Scope note
+
+This release is repository-infrastructure-only. It introduces no normative schema, taxonomy, validator, or mapping changes. Records, templates, and mapping guides shipped in v0.5.0 are unaffected.
+
 ## 0.5.0 (2026-04-23)
 
 Author-facing documentation: per-category `.ulc.json` authoring templates and PIM platform mapping guides. No normative schema, taxonomy, or validator changes — all four canonical reference records and the new templates pass `ulc validate` unchanged at the v0.3.0 schema level.
