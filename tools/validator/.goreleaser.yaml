@@ -53,7 +53,9 @@ checksum:
 snapshot:
   version_template: "{{ .Version }}-next"
 
-# Release-note body is managed in CHANGELOG.md and GitHub Releases, not here.
+# Release-note body is composed in `.github/workflows/release.yml` and applied
+# via `gh release edit` after goreleaser publishes. We disable goreleaser's
+# auto-changelog so its body output is empty until the workflow overrides it.
 changelog:
   disable: true
 
@@ -64,8 +66,3 @@ release:
   draft: false
   prerelease: auto
   name_template: "ULC {{ .Tag }}"
-  header: |
-    ## `ulc` CLI {{ .Tag }}
-
-    Download a single-file binary for your platform below. See `CHANGELOG.md`
-    at the tag for what landed in this release.
