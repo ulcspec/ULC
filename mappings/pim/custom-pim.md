@@ -189,7 +189,6 @@ def emit_ulc(session: Session):
                 "ulc_version": "0.3.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
-                "conformance_level": "core",
                 "product_family": family,
                 "configuration": build_configuration(scenario),
                 "electrical": build_electrical(scenario),

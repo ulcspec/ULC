@@ -16,7 +16,7 @@ Walks through each block in `downlight.ulc.json` for a recessed downlight produc
 - **`ulc_version`** — the ULC spec version the record conforms to. Bump only when a new schema revision ships.
 - **`record_id`** — lowercase ASCII with hyphens, enforced by the schema's record_id pattern. By repository convention the slug matches the filename stem minus `.ulc.json` (the validator does not check this cross-reference today), so renaming the file and updating `record_id` happen together. The template ships with `todo-manufacturer-catalog-scenario`; replace it with the real slug per step 3 of the workflow in `templates/README.md`.
 - **`record_status`** — valid values per `taxonomy.schema.json#/$defs/RecordStatus` are `active` (shipping products), `limited_availability`, `announced` (pre-release announcement), `prototype` (engineering sample), `superseded` (replaced by a newer SKU but still referenceable), and `discontinued` (no longer sold). The template default is `active`.
-- **`conformance_level`** — start at `core` while data is incomplete; upgrade to `standard` once measured values are in, and `full` once accessories, sustainability, and thermal derating are populated.
+- **`index.conformance_level`** — generated, not hand-set. `ulc build-index` computes it from the fields you populate and stamps it into the index. A skeleton grades `core`; it climbs to `standard` once measured values, provenance, and an LM-79 attestation are in, and to `full` once operating-point qualifiers and the rest of the comprehensive dataset are populated. Do not type it yourself; a hand-edited value fails the builder-parity check.
 
 ### `product_family`
 

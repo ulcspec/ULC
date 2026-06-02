@@ -10,7 +10,7 @@ Akeneo is an open-source PIM popular with European manufacturers, PHP-stack shop
 - **Variants and variant groups** model SKU-level variation within a family. A parent product-model holds shared attributes; variants carry the per-SKU differences (CCT, distribution, finish).
 - **Categories** are a separate hierarchy from families — used for marketing navigation and channel filtering.
 - **Channels** define per-channel localization and completeness rules. A ULC emit channel can enforce that only records with complete photometric data ship.
-- **Assets** (PIM Enterprise Edition) or **reference entities** (Community Edition) hold cutsheet PDFs, IES files, and LDT files.
+- **Assets** and **reference entities** (both PIM Enterprise Edition) hold cutsheet PDFs, IES files, and LDT files. Community Edition has neither; it uses plain file or image attributes on the product instead.
 - **API** — REST with OAuth2 for both reads and writes.
 
 The ULC emitter is typically implemented as an external service that pulls from Akeneo's REST API on a scheduled export or webhook trigger.
@@ -96,7 +96,7 @@ The cutsheet asset populates **both** `source_files[]` (as the entry with `file_
 
 Akeneo's localized attributes deliver per-language values. ULC is locale-neutral at the schema level. The emitter chooses the canonical locale (typically `en_US` for North American markets, `en_GB` for Europe, or the manufacturer's primary locale).
 
-The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own completeness rule: a product is not ULC-exportable until all required attributes for the target `conformance_level` are populated.
+The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own completeness rule: a product is not ULC-exportable until the attributes a record should carry are populated. There is no level to set on the record; `ulc build-index` computes the achieved completeness level from whatever you populate, so the channel rule exists to gate the export and keep thin records out of the feed, not to manage a declared level.
 
 ## Gotchas
 
@@ -141,7 +141,6 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         'ulc_version' => '0.3.0',
         'record_id' => slug("{$product->getBrand()}-{$product->getIdentifier()}-{$variant->getScenarioSlug()}"),
         'record_status' => 'active',
-        'conformance_level' => 'core',
         'product_family' => buildFamily($product, $primaryCategory),
         'configuration' => buildConfiguration($variant),
         'electrical' => mapElectrical($variant),

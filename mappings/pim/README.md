@@ -32,10 +32,10 @@ The `applicability` block expresses which PIM SKUs each scenario record applies 
 
 **Pattern-specific handling of `configuration.catalog_number`** (important — an emitter built without this distinction produces structurally wrong records for Pattern B and D):
 
-- **Pattern A** (one record per SKU, Erco model): `configuration.catalog_number` equals the variant SKU. `applicability.fixed_axes.catalog_number` equals the same value, and `applicable_sku_count_estimate: 1`. This is the default shape the per-platform identity mapping tables describe.
-- **Pattern B** (one record per photometric scenario covering many SKUs via multiplier table, Selux model): `configuration.catalog_number` carries only the tested-baseline SKU. The covered range of order codes lives in `applicability.covered_axes.<axis>` with a `derivation` rule containing a `multiplier_table`.
-- **Pattern C** (one record per IES with provenance classes, Lumenpulse model): each IES file is its own record; PIM-emit is essentially Pattern A with per-record `provenance.method` variation between `extracted` (for measured IES), `optical_simulation` (for simulated IES), and `extended_photometry` / `scaled` (for derived IES), with `base_attestation_ref` pointing at the root measured test.
-- **Pattern D** (per-foot linear scaling, Vode model): `configuration.catalog_number` is typically omitted; `applicable_catalog_pattern` uses a `{LENGTH}` placeholder; `covered_axes.length.derivation.method: "per_foot_linear_scaling"` carries the `linear_rate`; `photometry.per_length_normalized` and `photometry.declared_by_length[]` carry the per-length values.
+- **Pattern A** (one record per SKU): `configuration.catalog_number` equals the variant SKU. `applicability.fixed_axes.catalog_number` equals the same value, and `applicable_sku_count_estimate: 1`. This is the default shape the per-platform identity mapping tables describe.
+- **Pattern B** (one record per photometric scenario covering many SKUs via multiplier table): `configuration.catalog_number` carries only the tested-baseline SKU. The covered range of order codes lives in `applicability.covered_axes.<axis>` with a `derivation` rule containing a `multiplier_table`.
+- **Pattern C** (one record per IES with provenance classes): each IES file is its own record; PIM-emit is essentially Pattern A with per-record `provenance.method` variation between `extracted` (for measured IES), `optical_simulation` (for simulated IES), and `extended_photometry` / `scaled` (for derived IES), with `base_attestation_ref` pointing at the root measured test.
+- **Pattern D** (per-foot linear scaling): `configuration.catalog_number` is typically omitted; `applicable_catalog_pattern` uses a `{LENGTH}` placeholder; `covered_axes.length.derivation.method: "per_foot_linear_scaling"` carries the `linear_rate`; `photometry.per_length_normalized` and `photometry.declared_by_length[]` carry the per-length values.
 
 Pick the pattern up front per product family, not per record. Building a Pattern-A-only emitter and retrofitting it later is substantially more rework than selecting the right pattern from the start.
 
@@ -103,6 +103,8 @@ PIM data → transform to deep blocks → write record to a temp .ulc.json file
 ```
 
 Both `ulc build-index` and `ulc validate` are file-path CLIs — they read from and write to files on disk, they do not read from stdin. `ulc build-index --stdout` emits only the computed index object (not a full merged record), so most emitters use the default in-place mode and then call `ulc validate` on the same file. The transform code emits the deep blocks; the CLI handles the index plus validation. Shell out to the Go `ulc` binary from the emitter (Python, Java, Node, whatever).
+
+`ulc build-index` also computes and stamps `index.conformance_level` (the achieved completeness level) from the populated fields, so PIMs get the level for free and never set it: a record reaches whatever level its data supports, and the value is parity-guarded like every other index value.
 
 ## Out of scope
 

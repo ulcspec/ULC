@@ -6,11 +6,10 @@
 // Severity semantics:
 //
 //	Error   a hard violation of the spec. The record is not ULC-conformant.
-//	Warning a soft concern graded against the record's declared conformance
-//	        level (e.g., "full"-level record missing alpha-opic metrics).
-//	Info    an observation the user might want but which is not a defect
-//	        (e.g., source file not on the local filesystem so hash cannot
-//	        be verified here).
+//	Warning a soft concern about a recoverable defect (e.g., a source file not
+//	        reachable locally so its hash cannot be verified here).
+//	Info    an observation the user might want but which is not a defect (e.g.,
+//	        the computed conformance level and guidance toward the next level).
 package findings
 
 import (
@@ -46,8 +45,19 @@ const (
 	CodeSourceFileNotFound     Code = "source-file/not-found-locally"
 	CodeSourceFileUnreadable   Code = "source-file/unreadable"
 
-	// Conformance grading (deferred; currently emits a single info).
-	CodeConformanceGradingDeferred Code = "conformance/grading-deferred"
+	// Conformance grading. The conformance level a record achieves is computed by
+	// the builder and stored in index.conformance_level (guarded by the build-
+	// parity check). Conformance grading therefore produces only INFO findings: a
+	// human-facing report of what was computed, never a defect.
+	//
+	// CodeConformanceLevel is the INFO summary naming the achieved level.
+	CodeConformanceLevel Code = "conformance/level"
+	// CodeConformanceGap is the INFO guidance listing the hard fields a record
+	// must add to reach the next level up (conditional predicates applied).
+	CodeConformanceGap Code = "conformance/gap"
+	// CodeConformanceObservation is an INFO: depth a full record commonly carries
+	// but the rubric does not gate on, or a provenance-quality note.
+	CodeConformanceObservation Code = "conformance/observation"
 )
 
 // Finding is a single diagnostic.

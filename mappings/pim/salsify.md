@@ -115,7 +115,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 2. **Localization**. Salsify properties support per-locale values. ULC is locale-neutral at the schema level but accepts display-name fields that look best in the manufacturer's primary locale. The emitter chooses a canonical locale (typically en-US or the manufacturer's home market).
 3. **Property type mismatches.** Salsify's "number" type is a double. ULC distinguishes `integer` in some fields (minItems counts, step counts). Coerce at emit time — do not emit `1.0` where the schema expects an integer.
 4. **Asset digest caching.** Computing SHA-256 on every asset for every record on every run is expensive. Cache by Salsify asset ID + version and invalidate on `updated_at` change.
-5. **Missing required values.** If a Salsify property needed for the target `conformance_level` is blank for a given SKU, skip or fail the export for that SKU rather than downgrading `conformance_level` to paper over gaps. `conformance_level` is a completeness **target**, not a draft flag, and publishing an underpopulated record makes incomplete data indistinguishable from complete data downstream. Workflow state (draft, pending-review, waiting-for-lab) belongs in the Salsify channel's completeness rules, not in the ULC record.
+5. **Missing required values.** If a Salsify property a record should carry is blank for a given SKU, skip or fail the export for that SKU rather than shipping a thin record as if it were complete. There is no level to downgrade: `ulc build-index` computes the achieved completeness level from whatever you populate, so an under-populated record simply grades lower on its own. The point is to gate the export on completeness **in the PIM** so you don't publish thin records that look indistinguishable from complete ones downstream. Workflow state (draft, pending-review, waiting-for-lab) belongs in the Salsify channel's completeness rules, not in the ULC record.
 
 ## Emit flow
 
@@ -145,7 +145,6 @@ def emit_ulc_from_salsify(product, scenario):
         "ulc_version": "0.3.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
-        "conformance_level": "core",
         "product_family": build_family_from_salsify(product),
         "configuration": build_configuration_from_scenario(scenario),
         "electrical": map_electrical(scenario),

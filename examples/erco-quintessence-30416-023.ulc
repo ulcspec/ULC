@@ -3,7 +3,6 @@
   "record_id": "erco-quintessence-30416-023",
   "record_status": "active",
   "record_status_as_of": "2026-04-21",
-  "conformance_level": "full",
   "product_family": {
     "family_id": "erco-quintessence-downlight",
     "family_display_name": "Quintessence Downlight",
@@ -790,7 +789,8 @@
   },
   "index": {
     "x-ulc-generated": true,
-    "builder_version": "0.2.0",
+    "builder_version": "0.3.0",
+    "conformance_level": "full",
     "manufacturer_slug": "erco",
     "catalog_model": "Quintessence Downlight 30416",
     "primary_category": "downlight",
@@ -806,7 +806,7 @@
     "environment_rating": "dry",
     "nominal_cct_k": "4000",
     "nominal_total_lumens": 1301,
-    "nominal_input_power_w": 17.0,
+    "nominal_input_power_w": 17,
     "nominal_cri_ra": 92,
     "nominal_efficacy_lm_per_w": 77,
     "primary_distribution": "direct",

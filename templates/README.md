@@ -37,9 +37,9 @@ Each template pairs a `.ulc.json` skeleton with a sibling `.md` guide walking th
 
 ## Conformance level
 
-Templates declare `conformance_level: "core"`. Upgrade to `"standard"` once measured values and provenance are in; upgrade to `"full"` once accessories, sustainability declarations, thermal derating, and lumen-maintenance projections are populated.
+You do not set a conformance level. It is computed: `ulc build-index` grades the record from its populated fields and stamps the result into the generated index as `index.conformance_level`. The skeleton templates grade `core`; the level climbs to `standard` as measured values and provenance fill in, and to `full` once operating-point qualifiers, BUG (for outdoor products), and the rest of the comprehensive dataset are present.
 
-The reference validator currently emits a single `INFO` marker per record for the declared `conformance_level`. Structural, parity, and hash checks always run; content-completeness grading at `standard` and `full` will land in a later validator release.
+The reference validator reports the computed level as an `INFO` finding, plus `INFO` guidance naming the specific fields needed to reach the next level. Structural, parity, and hash checks always run; the stored `index.conformance_level` is guarded by the parity check like every other index value.
 
 ## Placeholder conventions
 

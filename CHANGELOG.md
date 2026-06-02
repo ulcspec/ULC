@@ -20,6 +20,22 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## Unreleased
+
+Conformance level becomes a computed, builder-stamped value rather than a hand-declared field.
+
+### Schema (BREAKING, pre-1.0)
+
+- The top-level `conformance_level` field is removed from `required[]` and from `properties` in `schema/ulc.schema.json`. The conformance level is no longer declared by the author; the reference builder computes it from the record's populated fields (`grade.AchievedLevel`) and stamps it into the generated index as `index.conformance_level` (`core` / `standard` / `full`). Downstream consumers that read the top-level field must read `index.conformance_level` instead.
+
+### Builder
+
+- `BuilderVersion` bumped `0.2.0` → `0.3.0` to signal that `conformance_level` is now a generated index field. Records' stored indices re-stamp to `0.3.0` on the next `ulc build-index` run.
+
+### Validator
+
+- `ulc validate` now grades the record against the conformance rubric and reports the achieved level plus the gap to the next level up as `INFO` findings. No `WARNING` is emitted: there is no declared level for the record to fall short of, so a record simply is whatever level its populated data achieves.
+
 ## 0.5.1 (2026-04-27)
 
 Repository infrastructure release. No normative schema, taxonomy, validator, or mapping changes — all v0.5.0 reference records and templates pass `ulc validate` unchanged at the v0.3.0 schema level.
@@ -79,7 +95,7 @@ Six per-category starter templates under `templates/`, each a structurally valid
 - `templates/bollard.ulc.json` + `bollard.md` — exterior ground-mount pathway bollard.
 - `templates/wall-sconce.ulc.json` + `wall-sconce.md` — interior wall-mount sconce.
 
-Templates declare `conformance_level: "core"` and bootstrap a first record; authors upgrade to `standard` or `full` as data is populated. Not a production authoring surface for catalog-scale manufacturers — that use case is served by PIM emit, documented below.
+Templates bootstrap a first record. The conformance level is not declared by the author: the builder computes it from the populated fields and stamps `index.conformance_level`, so the level rises from `core` toward `standard` and `full` as data is added and the builder regrades. Not a production authoring surface for catalog-scale manufacturers; that use case is served by PIM emit, documented below.
 
 `templates/README.md` is rewritten from a stub (that referenced a non-existent `ulc.template.json`) into a category index and workflow guide covering placeholder conventions, slug naming, and the copy → fill → build-index → validate flow.
 

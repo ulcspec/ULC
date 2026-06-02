@@ -71,7 +71,6 @@
       "nominal_cct_at_test": "3500"
     }
   },
-  "conformance_level": "core",
   "electrical": {
     "dimming_method": "ccr",
     "dimming_range_percent": {
@@ -104,10 +103,11 @@
       "lm_79_08"
     ],
     "beam_family": "flood",
-    "builder_version": "0.2.0",
+    "builder_version": "0.3.0",
     "catalog_model": "TODO Model name",
     "catalog_number": "todo-manufacturer-catalog-scenario",
     "color_tunability": "static_white",
+    "conformance_level": "core",
     "dimming_protocols": [
       "0-10v"
     ],

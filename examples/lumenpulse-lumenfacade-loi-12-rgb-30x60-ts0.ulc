@@ -3,7 +3,6 @@
   "record_id": "lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0",
   "record_status": "active",
   "record_status_as_of": "2026-01-15",
-  "conformance_level": "standard",
   "product_family": {
     "family_id": "lumenpulse-lumenfacade-inground-color-changing-loi",
     "family_display_name": "Lumenfacade Inground LOI Color Changing",
@@ -543,7 +542,8 @@
   },
   "index": {
     "x-ulc-generated": true,
-    "builder_version": "0.2.0",
+    "builder_version": "0.3.0",
+    "conformance_level": "core",
     "manufacturer_slug": "lumenpulse",
     "catalog_model": "Lumenfacade Inground LOI Color Changing",
     "primary_category": "in_ground_uplight",

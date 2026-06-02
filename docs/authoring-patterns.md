@@ -1,113 +1,115 @@
-# ULC Authoring Patterns
-
 ## Purpose
 
-This document describes how to map real manufacturer documentation into ULC records. It exists because manufacturers publish their products in wildly different shapes. One manufacturer ships one cutsheet per orderable SKU; another ships one cutsheet that covers tens of thousands of SKUs through a configurator. A single ULC record definition has to handle both ends of that range without duplication or data loss.
+Manufacturers publish their products in wildly different shapes. One ships a separate cutsheet for every orderable SKU; another ships a single cutsheet that covers tens of thousands of SKUs through a configurator. A ULC record has to represent both ends of that range without duplicating data or losing it. This document describes the patterns for mapping real manufacturer documentation into ULC records.
 
-This document informs the shape of `ulc.schema.json` and the reference validator. It is not itself normative: it describes patterns, not requirements. The schema is the normative artifact.
+It is not normative. It describes patterns, not requirements, and it informs the shape of `ulc.schema.json` and the reference validator rather than constraining them. The schema is the normative artifact.
 
-## The core question: what IS a ULC record?
+## What a ULC record is
 
-A ULC record represents **one attested photometric scenario** for a fixture. That phrase does three things:
+A ULC record represents **one attested photometric scenario** for a fixture. That definition does three things:
 
-1. It pins each record to measurement evidence (an LM-79 test, or a declared derivative of one).
+1. It pins each record to measurement evidence: an LM-79 test, or a declared derivative of one.
 2. It decouples records from orderable SKUs, so the thousands of SKUs a manufacturer produces do not force thousands of ULC files.
-3. It decouples records from IES files, so when a manufacturer ships many IES files derived from a smaller base-test set, each IES does not necessarily require its own ULC record.
+3. It decouples records from IES files, so a manufacturer that ships many IES files derived from a smaller base-test set does not need a separate record for each one.
 
-The link between a ULC record and the orderable SKUs it describes is expressed by a structured `applicability` block inside the record. The link between a ULC record and its measurement evidence is expressed by provenance metadata on each value.
+Two links carry the weight. A structured `applicability` block inside the record connects it to the orderable SKUs it describes. Provenance metadata on each value connects that value to the measurement evidence behind it.
 
-## The four authoring patterns from real cutsheets
+## The four authoring patterns
 
-Four distinct patterns were observed across four manufacturers during the schema evaluation phase.
+Four distinct patterns emerged across four manufacturers during the schema evaluation phase. Each is grounded in a real cutsheet.
 
-### Pattern A: Single SKU per cutsheet (Erco model)
+### Pattern A: one SKU per cutsheet
 
 **Example:** Erco Quintessence Downlight 30416.023. One cutsheet, one order code, one IES file, one LDT, one ULD, no configurator.
 
-Each orderable SKU gets its own cutsheet PDF and its own accompanying files. No combinatorial expansion exists inside a single part number. Accessories are separately-numbered SKUs that the cutsheet cross-references.
+Each orderable SKU gets its own cutsheet PDF and its own accompanying files. Nothing expands combinatorially inside a part number. Accessories are separately numbered SKUs that the cutsheet cross-references.
 
-**ULC mapping:** one ULC record per SKU. The `applicability` block is narrow, covering only the single orderable configuration. Accessories are listed in `compatible_accessories[]` with catalog numbers and references, without each accessory getting its own photometric ULC record.
+**ULC mapping:** one record per SKU. The `applicability` block is narrow, covering the single orderable configuration. Accessories are listed in `compatible_accessories[]` with catalog numbers and references; none gets its own photometric record.
 
-**Record count per cutsheet:** 1.
+**Records per cutsheet:** 1.
 
-### Pattern B: Per-photometric-scenario with applicability (Selux model)
+### Pattern B: one record per photometric scenario
 
-**Example:** Selux AYA Pole. One cutsheet covers roughly 54,000 theoretical SKUs across optics, mounting, output tier, CCT, finish, voltage, power cord length, and option combinations. The cutsheet's page 10 declares 21 photometric scenarios: 3 distributions × 3 outputs for the white light engine, plus 12 BioRed scenarios. CCT variance is declared via a multiplier table (2200K=0.86, 2700K=0.93, 3000K=1.00, 3500K=1.00, 4000K=1.07, 5000K=1.07) applied to a single tested 3000K baseline per optic × output combination.
+**Example:** Selux AYA Pole. A single cutsheet covers roughly 54,000 theoretical SKUs across optics, mounting, output tier, CCT, finish, voltage, power-cord length, and option combinations. Page 10 declares 21 photometric scenarios: three distributions × three outputs for the white light engine, plus 12 BioRed scenarios. CCT variance is declared through a multiplier table (2200K=0.86, 2700K=0.93, 3000K=1.00, 3500K=1.00, 4000K=1.07, 5000K=1.07) applied to a single tested 3000K baseline per optic × output combination.
 
-**ULC mapping:** one ULC record per tested photometric scenario. The `applicability` block is wide, declaring which SKU axes the record covers and how derived values are computed for each axis. For example, a single Selux record covers all six white CCTs via the multiplier table, all six voltage variants via the regulated-driver rationale, all six finish options because finish does not affect photometry, and so on.
+**ULC mapping:** one record per tested photometric scenario. The `applicability` block is wide: it declares which SKU axes the record covers and how derived values are computed for each. A single Selux record covers all six white CCTs through the multiplier table, all six voltage variants through the regulated-driver rationale, all finish options because finish does not affect photometry, and so on.
 
-**Record count per cutsheet:** 21 (Selux AYA), not 54,000.
+**Records per cutsheet:** 21 (Selux AYA), not 54,000.
 
-### Pattern C: Per-IES with provenance classes (Lumenpulse model)
+### Pattern C: one record per IES, with provenance classes
 
-**Example:** Lumenpulse Lumenfacade Inground Color Changing (LOI). One cutsheet publishes 1,728 IES files covering 4 lengths × 4 color modes × 14 optics × 2 tilts × 2 optical-option states. Inspection of IES headers reveals that the 1,728 files derive from a much smaller base-test set (distinct test IDs are visible, at least 5 in a random sample of 5 files), combined through optical simulation (Synopsys LightTools) and mathematical scaling. Every single file carries the header note `This file was scaled by Lumenpulse to reflect a different fixture configuration`.
+**Example:** Lumenpulse Lumenfacade Inground Color Changing (LOI). One cutsheet publishes 1,728 IES files covering 4 lengths × 4 color modes × 14 optics × 2 tilts × 2 optical-option states. The IES headers reveal that those 1,728 files derive from a much smaller base-test set (distinct test IDs are visible, at least five in a random sample of five files), combined through optical simulation (Synopsys LightTools) and mathematical scaling. Every file carries the header note `This file was scaled by Lumenpulse to reflect a different fixture configuration`.
 
-The manufacturer chose to materialize the full extended-photometry matrix as discrete IES files. Specifiers pick by configuration and get an IES that matches their exact order code.
+The manufacturer chose to materialize the full extended-photometry matrix as discrete IES files, so specifiers pick by configuration and get an IES that matches their exact order code.
 
-**ULC mapping:** one ULC record per IES file, preserving the 1:1 mapping specifiers expect. But each record declares its photometric provenance class explicitly. Values attested by a physical LM-79 carry `provenance.method: extracted` with `value_type: measured`. Values generated by a simulation tool carry `provenance.method: optical_simulation` with `value_type: rated` and a reference to the calibrating attestation. Values produced by scaling a base test carry `provenance.method: extended_photometry` (or the more general `scaled`) with `value_type: rated` and a reference to the base attestation's test ID.
+**ULC mapping:** one record per IES file, preserving the 1:1 mapping specifiers expect. Each record declares its photometric provenance class explicitly:
 
-Consumers can filter to measured-only records when attestation fidelity matters (DLC applications, spec audits); consumers who just need a photometric file for design work use whatever matches their configuration.
+- Values attested by a physical LM-79 carry `provenance.method: extracted` with `value_type: measured`.
+- Values generated by a simulation tool carry `provenance.method: optical_simulation` with `value_type: rated` and a reference to the calibrating attestation.
+- Values produced by scaling a base test carry `provenance.method: extended_photometry` (or the more general `scaled`) with `value_type: rated` and a reference to the base attestation's test ID.
 
-**Record count per cutsheet:** 1,728 (matching the IES count). Approximately 5 to 20 of those carry measured provenance; the rest carry simulation or extended-photometry provenance.
+Consumers who need attestation fidelity (DLC applications, spec audits) filter to measured-only records; consumers who just need a photometric file for design work use whatever matches their configuration.
 
-### Pattern D: Per-foot linear scaling (Vode model)
+**Records per cutsheet:** 1,728, matching the IES count. Roughly 5 to 20 carry measured provenance; the rest carry simulation or extended-photometry provenance.
 
-**Example:** Vode Nexa Suspended 807. Performance tables on pages 8-9 declare 48 photometric scenarios (2 optics × 3 outputs × 2 CRI tiers × 4 CCTs). Measurements are expressed per foot (lumens per foot, watts per foot, efficacy). Fixture lengths from 48 inches to 96 inches multiply the per-foot values linearly. A single IES file at a reference length accompanies the bundle; the per-foot values are the scaling anchor.
+### Pattern D: per-foot linear scaling
 
-The ordering configurator has 18 positions, most of which are non-photometric (mounting type, canopy style, power-location cable length, sensor presence, finish, options). These multiply SKU count massively without changing photometric output.
+**Example:** Vode Nexa Suspended 807. Performance tables on pages 8 and 9 declare 48 photometric scenarios (2 optics × 3 outputs × 2 CRI tiers × 4 CCTs). Measurements are expressed per foot (lumens per foot, watts per foot, efficacy). Fixture lengths from 48 to 96 inches multiply the per-foot values linearly, and a single IES file at a reference length anchors the scaling.
 
-**ULC mapping:** one ULC record per tested photometric scenario (same principle as Pattern B). Photometric values are carried as both baseline-measured-at-length and per-foot normalized. Length becomes an `applicability` axis with explicit linear-scaling rules. Non-photometric axes (mounting, canopy, finish, sensor, power location) live inside the `applicability.covered_axes` block with rationale that each is photometrically transparent.
+The ordering configurator has 18 positions, most of them non-photometric (mounting type, canopy style, power-location cable length, sensor presence, finish, options). These multiply the SKU count without changing photometric output.
+
+**ULC mapping:** one record per tested photometric scenario, the same principle as Pattern B. Photometric values are carried both as baseline-measured-at-length and as per-foot normalized. Length becomes an `applicability` axis with explicit linear-scaling rules. The non-photometric axes (mounting, canopy, finish, sensor, power location) live in `applicability.covered_axes` with a rationale that each is photometrically transparent.
 
 Two Vode-specific attestation patterns also appear:
-- **Option-conditional attestations** — Chicago Plenum compliance requires the `CPP` order code option AND Remote Power, so it is an attestation with `applicability.required_order_code_options: ["CPP"]` plus a compatibility constraint.
-- **Case-by-case attestations** — BAA and BABA compliance depend on per-project manufacturer verification, so they are attestations with `value_type: nominal` and `verification: requires_manufacturer_confirmation` plus a `contact_reference`.
 
-**Record count per cutsheet:** 48 (Vode Nexa), with per-foot scaling covering all length variants inside each record.
+- **Option-conditional attestations:** Chicago Plenum compliance requires the `CPP` order-code option and Remote Power, so it is an attestation with `applicability.required_order_code_options: ["CPP"]` plus a compatibility constraint.
+- **Case-by-case attestations:** BAA and BABA compliance depend on per-project manufacturer verification, so they are attestations with `value_type: nominal` and `verification: requires_manufacturer_confirmation` plus a `contact_reference`.
 
-## Architectural primitives that support all four
+**Records per cutsheet:** 48 (Vode Nexa), with per-foot scaling covering every length variant inside each record.
 
-### `product_family` block
+## The primitives that support all four
 
-A top-level block on every ULC record carrying data that is true for every SKU in the cutsheet. Populated once by the PIM, replicated into each record emitted from the family.
+### `product_family`
 
-Typical contents: `family_id`, `family_display_name`, `manufacturer`, `catalog_line`, `catalog_model`, `cutsheet` (filename + URL + sha256 + revision), `primary_category`, `shared_mechanical`, `shared_warranty`, `shared_attestations` (attestations that apply to every SKU without qualification, for example UL Listing and Declare Red List status).
+A top-level block carrying the data that is true for every SKU in the cutsheet. The PIM populates it once and replicates it into each record emitted from the family.
 
-Grouping key: consumers group records by `family_id` to reconstruct cutsheet-level views without forcing cutsheet-level JSON bundles.
+Typical contents: `family_id`, `family_display_name`, `manufacturer`, `catalog_line`, `catalog_model`, `cutsheet` (filename, URL, sha256, revision), `primary_category`, `shared_mechanical`, `shared_warranty`, and `shared_attestations` (claims that apply to every SKU without qualification, such as UL Listing and Declare Red List status).
 
-### `configuration` block
+Consumers group records by `family_id` to reconstruct cutsheet-level views without forcing cutsheet-level JSON bundles.
 
-A top-level block identifying the specific photometric scenario this record represents. Fields describe the tested configuration, not the applicability range.
+### `configuration`
 
-Typical contents: `photometric_scenario_id`, `catalog_number` (when the scenario represents one specific SKU), `scenario_label`, `tested_axes` (distribution code, light-engine variant, output tier, CRI tier), `tested_conditions` (tested CCT, tested voltage, tested mounting, ambient temperature), `source_ies_ref` (string reference that points to the corresponding entry in the top-level `source_files[]` array).
+A top-level block identifying the specific photometric scenario the record represents. Its fields describe the tested configuration, not the applicability range.
 
-### `applicability` block
+Typical contents: `photometric_scenario_id`, `catalog_number` (when the scenario is one specific SKU), `scenario_label`, `tested_axes` (distribution code, light-engine variant, output tier, CRI tier), `tested_conditions` (tested CCT, tested voltage, tested mounting, ambient temperature), and `source_ies_ref` (a string reference to the matching entry in the top-level `source_files[]` array).
 
-A top-level block declaring the scope of orderable SKUs this record's measurements apply to. This is what keeps one ULC record from having to be rewritten for every SKU variant.
+### `applicability`
 
-Key sub-blocks:
-- `applicable_catalog_pattern` — the order-code skeleton with fixed vs variable axes
-- `fixed_axes` — order-code segments that must match (for example `Optics=SR`, `Output=HO`)
-- `covered_axes` — segments where multiple values share this record's photometry, each with a rationale and optional derivation rule (CCT multiplier table, per-foot linear scaling, regulated-driver voltage-independence, and so on)
-- `excluded_combinations` — constraint combinations that are orderable for other records but not this one (for example "Max Output not available with 2200K, 2700K, 3500K, 5000K")
-- `applicable_sku_count_estimate` — informational
+A top-level block declaring the range of orderable SKUs the record's measurements apply to. This is what keeps one record from being rewritten for every SKU variant.
 
-### Provenance classes for photometric records
+- `applicable_catalog_pattern`: the order-code skeleton, with fixed and variable axes
+- `fixed_axes`: order-code segments that must match (for example `Optics=SR`, `Output=HO`)
+- `covered_axes`: segments where several values share this record's photometry, each with a rationale and an optional derivation rule (CCT multiplier table, per-foot linear scaling, regulated-driver voltage independence, and so on)
+- `excluded_combinations`: combinations that are orderable for other records but not this one (for example "Max Output not available with 2200K, 2700K, 3500K, 5000K")
+- `applicable_sku_count_estimate`: informational
 
-Every photometric value declares its provenance method from an enumerated set. The relevant values added for cutsheet evaluation:
+### Provenance classes
 
-- `extracted` — value pulled directly from a source file (existing)
-- `validated` — value checked against a second source (existing)
-- `optical_simulation` — generated by an optical design tool calibrated against a base LM-79. Carries `provenance.simulation_tool` and `provenance.base_attestation_ref` (the base LM-79 the simulation was calibrated against). Pairs with `value_type: rated`
-- `extended_photometry` — derived from a base LM-79 attestation by manufacturer-applied scaling rules. Carries `provenance.base_attestation_ref` and `provenance.extension_method`. Pairs with `value_type: rated`
-- `scaled` — general closed-form mathematical scaling (CCT multiplier, per-foot scaling, wattage-tier scaling). Pairs with `value_type: rated`
+Every photometric value declares a provenance method from a closed set. The values that matter for cutsheet authoring:
 
-Consumers can filter records by these classes to prioritize direct attestations when needed.
+- `extracted`: pulled directly from a source file
+- `validated`: checked against a second source
+- `optical_simulation`: generated by an optical design tool calibrated against a base LM-79. Carries `provenance.simulation_tool` and `provenance.base_attestation_ref`, and pairs with `value_type: rated`.
+- `extended_photometry`: derived from a base LM-79 attestation by manufacturer-applied scaling rules. Carries `provenance.base_attestation_ref` and `provenance.extension_method`, and pairs with `value_type: rated`.
+- `scaled`: general closed-form mathematical scaling (CCT multiplier, per-foot scaling, wattage-tier scaling). Pairs with `value_type: rated`.
+
+Consumers filter records by these classes to prioritize direct attestations when they need to.
 
 ### Conditional attestations
 
-Two new patterns surfaced from the Vode cutsheet that do not fit the existing absolute-attestation shape.
+Two patterns from the Vode cutsheet do not fit the absolute-attestation shape.
 
-**Option-conditional attestation:** the claim is true when a specific order-code option is selected, and false otherwise. Encoded in the attestation record as:
+An **option-conditional attestation** is true when a specific order-code option is selected and false otherwise:
 
 ```json
 {
@@ -120,7 +122,7 @@ Two new patterns surfaced from the Vode cutsheet that do not fit the existing ab
 }
 ```
 
-**Case-by-case attestation:** the manufacturer supports the claim but requires per-project verification before the consumer can represent the SKU as compliant. Encoded as:
+A **case-by-case attestation** is one the manufacturer supports but requires per-project verification before a consumer may represent the SKU as compliant:
 
 ```json
 {
@@ -128,44 +130,44 @@ Two new patterns surfaced from the Vode cutsheet that do not fit the existing ab
   "value_type": "nominal",
   "verification": {
     "type": "requires_manufacturer_confirmation",
-    "contact_reference": "vodecares@vode.com"
+    "contact_reference": "compliance@manufacturer.example"
   }
 }
 ```
 
-Validators should refuse to propagate a case-by-case attestation downstream as if it were a measured or rated claim. The `verification.type` field is the signal.
+A validator must not propagate a case-by-case attestation downstream as if it were a measured or rated claim. The `verification.type` field is the signal.
 
-### Sustainability declaration (Declare and similar)
+### Sustainability declaration
 
-Declare (International Living Future Institute) carries structured data beyond a simple "the product has a Declare label" boolean. ULC models this as a dedicated `sustainability_declaration` block to preserve the ingredient list, expiration date, LBC Red List tier, and document identifier.
+A Declare label (International Living Future Institute) carries structured data well beyond a "has a Declare label" boolean. ULC models it as a dedicated `sustainability_declaration` block that preserves the ingredient list, expiration date, LBC Red List tier, and document identifier.
 
-Typical contents: `declaration_type` (for example `ilfi_declare`), `document_id`, `expiration_date`, `original_issue_date`, `final_assembly_location`, `life_expectancy_years`, `end_of_life_options`, `recyclable_percent`, `ingredient_list[]` (each with `material_name` and `lbc_red_list_status`), `lbc_criteria_compliance` (boolean for overall Living Building Challenge criteria compliance), `voc_content`, `interior_performance`, `responsible_sourcing`. The Red List tier claim itself lives on the top-level `declaration_type` field (one of `red_list_free`, `red_list_approved`, `red_list_declared`) when the declaration is specifically a Red List statement rather than a full Declare label.
+Typical contents: `declaration_type` (for example `ilfi_declare`), `document_id`, `expiration_date`, `original_issue_date`, `final_assembly_location`, `life_expectancy_years`, `end_of_life_options`, `recyclable_percent`, `ingredient_list[]` (each with `material_name` and `lbc_red_list_status`), `lbc_criteria_compliance` (a boolean for overall Living Building Challenge compliance), `voc_content`, `interior_performance`, and `responsible_sourcing`. When the declaration is specifically a Red List statement rather than a full Declare label, the tier claim lives on the top-level `declaration_type` field (one of `red_list_free`, `red_list_approved`, `red_list_declared`).
 
-### Generated `index` block (denormalized scan surface)
+### Generated `index`
 
-Every ULC record carries a top-level `index` block: a flat, denormalized summary of the record's most commonly queried values (manufacturer, catalog, primary category, nominal CCT, total lumens, input power, BUG, attestation programs, search keywords). The index exists to make AI scan, search indexing, and filter UIs cheap. Consumers can read the index without walking the deep blocks below.
+Every record carries a top-level `index` block: a flat, denormalized summary of the most commonly queried values (manufacturer, catalog, primary category, nominal CCT, total lumens, input power, BUG, attestation programs, search keywords). It exists to make AI scanning, search indexing, and filter UIs cheap, so a consumer can read the index without walking the deep blocks beneath it.
 
-The index is **generated, not hand-authored**. The spec forbids manufacturers from typing index values. The canonical builder is the `ulc build-index` subcommand of the Go reference CLI at `tools/validator/`, which reads the deep blocks (`product_family`, `configuration`, `electrical`, `photometry`, `colorimetry`, `outdoor_classification`, `attestations`, `sustainability_declaration`) and writes the index deterministically. Manufacturer PIMs and authoring tools are expected to call the builder as the final step before emitting a ULC record.
+The index is **generated, never hand-authored**. The spec forbids manufacturers from typing index values. The canonical builder is the `ulc build-index` subcommand of the Go reference CLI at `tools/validator/`. It reads the deep blocks (`product_family`, `configuration`, `electrical`, `photometry`, `colorimetry`, `outdoor_classification`, `attestations`, `sustainability_declaration`) and writes the index deterministically. A manufacturer's PIM or authoring tool runs the builder as the final step before emitting a record.
 
-Two markers make the provenance of the index self-describing:
+Two markers make the index self-describing:
 
-- `x-ulc-generated: true` — asserts the builder produced the block
-- `builder_version` — semver of the builder version that produced it
+- `x-ulc-generated: true`: the builder produced the block
+- `builder_version`: the semver of the builder that produced it
 
-Consumers reading `x-ulc-generated: true` can treat the index as trustworthy. Absence or a stale builder version is the signal to re-run the builder.
+A consumer that reads `x-ulc-generated: true` can treat the index as trustworthy. A missing marker or a stale builder version is the signal to rebuild.
 
-Drift is prevented by construction: the index is a pure function of the deep blocks. The builder encodes the selection policies (which CCT counts as nominal, how SI-authoritative scalars are extracted from dual-unit fields, which variant of a multi-CCT record provides the baseline value) in one place. SI is always authoritative in v0.1; the dual-unit policy is fixed, not per-record. CI runs `ulc build-index --check` against every committed record as a belt-and-suspenders second line of defense. An optional local pre-commit hook with the same check ships at `tools/hooks/pre-commit` (see `CONTRIBUTING.md` for installation).
+Drift is prevented by construction, because the index is a pure function of the deep blocks. The builder holds the selection policies in one place: which CCT counts as nominal, how SI-authoritative scalars are extracted from dual-unit fields, which variant of a multi-CCT record supplies the baseline value. SI is always authoritative, and the dual-unit policy is fixed, not per-record. CI runs `ulc build-index --check` against every committed record as a second line of defense, and an optional local pre-commit hook with the same check ships at `tools/hooks/pre-commit` (see `CONTRIBUTING.md` for installation).
 
-This pattern matches precedent across the industry: DLC QPL, ETIM MC catalogs, and GLDF-authoring tools all emit their scan surfaces from tooling rather than having manufacturers hand-author them.
+This mirrors precedent across the industry: DLC QPL, ETIM MC catalogs, and GLDF-authoring tools typically generate their scan surfaces from tooling rather than having manufacturers hand-author them.
 
-### Measured baseline plus declared-by-axis scaling
+### Measured baseline with declared-by-axis scaling
 
-Measurements with manufacturer-declared scaling (Selux CCT multipliers, Vode per-foot rates) are modeled by pairing the measured baseline value with a sibling array of declared values across the covered axis.
+Measurements that a manufacturer scales by a declared rule (Selux CCT multipliers, Vode per-foot rates) are modeled by pairing the measured baseline with a sibling array of declared values across the covered axis.
 
-- The baseline field (for example `photometry.total_luminous_flux_lm`) is a single `ProvenancedNumber` holding the tested value. `value_type: measured`, with `provenance.attestation_ref` pointing at the LM-79 that produced it.
-- A sibling `declared_by_cct[]` (or `declared_by_length[]`, per the relevant axis) array carries one rated entry per covered axis value, each with its derivation method. `value_type: rated`.
+- The baseline field (for example `photometry.total_luminous_flux_lm`) is a single `ProvenancedNumber` holding the tested value, with `value_type: measured` and `provenance.attestation_ref` pointing at the LM-79 that produced it.
+- A sibling array (`declared_by_cct[]`, or `declared_by_length[]` for the length axis) carries one rated entry per covered value, each with its derivation method and `value_type: rated`.
 
-Example for a Selux record:
+A Selux record, for example:
 
 ```json
 "photometry": {
@@ -187,60 +189,29 @@ Example for a Selux record:
 }
 ```
 
-## How to pick a pattern
+## Choosing a pattern
 
-Manufacturers do not pick a pattern per se. They pick an authoring surface and the pattern falls out of their own data model.
+Manufacturers do not choose a pattern in the abstract. They choose an authoring surface, and the pattern follows from their own data model.
 
-- If a manufacturer tests each SKU individually and publishes per-SKU cutsheets: Pattern A.
-- If a manufacturer publishes one cutsheet covering a SKU configurator with manufacturer-declared scaling tables inside the cutsheet: Pattern B.
-- If a manufacturer publishes a dense pre-computed IES bundle with each file mapping to a configurator output: Pattern C.
-- If a manufacturer normalizes per-unit-length measurements in the cutsheet for a linear product family: Pattern D.
+- Tests each SKU individually and publishes per-SKU cutsheets: Pattern A.
+- Publishes one cutsheet covering a configurator, with declared scaling tables inside the cutsheet: Pattern B.
+- Publishes a dense pre-computed IES bundle, each file mapping to a configurator output: Pattern C.
+- Normalizes per-unit-length measurements for a linear product family: Pattern D.
 
-A single manufacturer may use different patterns for different product families. A single product family must commit to one pattern to avoid ambiguity.
+A single manufacturer may use different patterns for different product families. A single product family commits to one pattern, to avoid ambiguity.
 
 ## How records reference each other
 
-Three forms of cross-record reference:
-
-- **Family grouping** — every record in the same cutsheet shares a `product_family.family_id`. Consumers group records by this key when reconstructing cutsheet-level views.
-- **Attestation inheritance** — derived records (Pattern C simulations and extended-photometry records) carry `provenance.base_attestation_ref` pointing at the measured base record's test ID. Consumers following the chain can trace any rated value back to the measurement evidence it rests on.
-- **Accessory references** — mechanical accessories listed in `compatible_accessories[]` are identified by their own catalog numbers. Accessories do not need their own photometric ULC records unless they change fixture photometry.
+- **Family grouping:** every record in a cutsheet shares a `product_family.family_id`. Consumers group on this key to reconstruct cutsheet-level views.
+- **Attestation inheritance:** derived records (Pattern C simulations and extended-photometry records) carry `provenance.base_attestation_ref` pointing at the measured base record's test ID, so a consumer can trace any rated value back to the measurement it rests on.
+- **Accessory references:** mechanical accessories listed in `compatible_accessories[]` are identified by their own catalog numbers. An accessory needs its own photometric record only when it changes fixture photometry.
 
 ## Validation implications
 
 The reference validator uses the patterns and primitives above as follows:
 
-- **Conformance grading** uses the existing `core` / `standard` / `full` levels. The `applicability` block is required at `standard` and above; at `core`, a simplified single-SKU applicability is accepted.
-- **Provenance integrity** requires every `value_type: measured` field to carry an `attestation_ref`. Fields with `value_type: rated` and a `method` other than `extracted` or `normalized` must carry either an `attestation_ref` or a `base_attestation_ref` pointing at a measured record in the same family.
-- **Cross-record consistency** checks that `family_id` is stable within a cutsheet bundle and that referenced `base_attestation_ref` test IDs resolve to records actually present in the bundle or cited with manufacturer URLs.
-- **Conditional attestation handling** treats `verification.type: requires_manufacturer_confirmation` attestations as nominal and emits a WARNING if a downstream record attempts to inherit them as validated.
+- **Conformance level is computed, not declared.** The builder grades each record against the rubric and writes the level it achieves into the generated index as `index.conformance_level`, so the level a record carries is the level its data actually reaches (a hand-edited value fails the build-parity check, like any other index field). `core` is the minimum identifying and photometric dataset; `standard` covers what a typical LM-79 test report produces; `full` adds the comprehensive set (TM-30 hue bins, lumen-maintenance projections, BUG for outdoor products, measurement uncertainty, operating-point qualifiers, and instrumentation metadata) where applicable to the product. `ulc validate` reports the achieved level and, below `full`, the specific fields that would raise it. The level is never a pass/fail gate.
+- **Provenance integrity** requires every `value_type: measured` field to carry an `attestation_ref`. A `value_type: rated` field whose `method` is anything other than `extracted` or `normalized` must carry an `attestation_ref` or a `base_attestation_ref` pointing at a measured record in the same family.
+- **Cross-record consistency** checks that `family_id` is stable within a cutsheet bundle and that every referenced `base_attestation_ref` test ID resolves to a record present in the bundle or cited with a manufacturer URL.
+- **Conditional attestation handling** treats `verification.type: requires_manufacturer_confirmation` attestations as nominal and emits a WARNING if a downstream record tries to inherit one as validated.
 - **Sustainability expiration** emits a WARNING when a `sustainability_declaration.expiration_date` is in the past relative to the record's `record_status_as_of` date.
-
-## Schema primitives added in v0.3
-
-The v0.3 refinement added native schema support for patterns previously expressed via extension fields. Authors should use these native fields in new records; the four reference records in `examples/` have been migrated to use them.
-
-- `Photometry.declared_by_length[]` — the native home for Pattern D length-scaled photometric values, mirroring the existing `declared_by_cct[]` shape. Each entry carries a specific length (DualUnitLength) plus the length-scaled lumens, input power, and efficacy. Pairs with `photometry.per_length_normalized` which carries the per-foot or per-meter rates themselves.
-- `Photometry.cutoff_angle_from_horizontal_deg` — architectural cutoff angle for glare control (distinct from the deprecated IES cutoff classification, which was an outdoor four-class scheme).
-- `Photometry.ugr_4h_8h_bound_operator` — sibling to `ugr_4h_8h`. Carry `lte` when a manufacturer declares "UGR as low as X" rather than a specific measured value. Same pattern as the flicker metric bound operator.
-- `Electrical.dimming_range_percent: {min, max}` and `Electrical.dimming_method` (CCR / PWM / hybrid) — structured dimming-depth and driver-method fields. Independent of `driver_protocol`, which signals the dim-level command.
-- `ProductFamily.technical_region` — market-variant declaration at the family level. Captures the voltage-and-frequency family the fixture's driver targets (North American 120 V / 60 Hz, European 230 V / 50 Hz, Japanese 100 V / 50-60 Hz, or universal multi-voltage).
-- `ProductFamily.physical_dimensions` — block with slots for overall length / width / height / diameter, luminaire mass, linear mass per foot, lens width, ceiling aperture, recess depth, ceiling-thickness accommodation range, connection-cable length, driver dimensions, and EPA (pole-top outdoor). Uses the dual-unit SI-authoritative pattern throughout: DualUnitLength for dimensions, DualUnitMass for absolute mass, DualUnitMassPerLength for per-length mass rates, and DualUnitArea for EPA. Both SI and Imperial representations are required in every dual-unit value.
-- `ProductFamily.shared_mechanical.reflector_material` — free-string slot for internal reflector material descriptions (typical of darklight-reflector architectural downlights).
-- `CompatibleAccessory.is_compatible_with_this_sku` and `incompatibility_reason` — lets a record declare that an accessory listed in the product family is not compatible with the specific SKU the record represents (for example, a junction box that does not fit a shorter rail variant).
-- Index change: `nominal_cct_k` is no longer required. Color-changing fixtures (RGB, RGBW, RGBA, multichannel) legitimately have no nominal CCT and now produce a valid index without one. Builder version bumped to 0.2.0 to signal this.
-
-Taxonomy additions in v0.3: `AttestationProgram.lm_79_08` (Erco and other 2008-era LM-79 citations move off the generic family label); `TestedProductType.led_package` (canonical DUT for LM-80 lumen-maintenance data); `DimmingProtocol.lumentalk`; `HousingMaterial.aluminum_unspecified`; `LensMaterial.cone_only`; `SourceFileType.supplementary_pdf` and `ProvenanceSource.supplementary_pdf` (certifications cheatsheets, end-of-life guidelines, IES road reports, and similar ancillary PDFs); `SustainabilityDeclarationType.manufacturer_recycle_program` (Lumencycle-style programs); plus three new enum definitions: `DimmingMethod`, `TechnicalRegion`, `CriTier`.
-
-## Open items deferred to future schema work
-
-- Accessory photometric records: when a mechanical accessory genuinely changes photometry (louver, snoot, distribution-altering lens), the accessorized record may need to link to the base-fixture record via a new `accessorized_from` relationship. Deferred pending more examples.
-- Lutron Hi-lume and similar manufacturer-specific control protocols remain extension-parked unless a second independent consumer need arises; `lumentalk` was promoted to the core `DimmingProtocol` enum in v0.3 because it is used across multiple fixture manufacturers under license, not solely by its originator.
-- `manufacturer_rated_claim` is single-claim; real products publish multiple thresholds simultaneously (L70 at X hours plus L95 at Y hours). Defer to a later breaking revision so the block becomes an array or takes a claims-sub-list.
-- `attestation_ref` is a single string; a value like CRI Ra has two legitimate references (LM-79 data + CIE 13 method). Defer to a later breaking revision for a plural `attestation_refs` or a split data-collection vs method reference.
-- `declaration_framework` inside lumen_maintenance_luminaire is single-valued although the description says multiple frameworks may coexist. Defer to a later revision for array support.
-- `dimming_range_percent` is currently a single pair; real products publish distinct dim depths per control protocol (DALIT8 0.1% vs 0-10V 1% on the same fixture). A future revision may add `dimming_range_percent_by_protocol`.
-- Separate storage, startup, and operating temperature ranges. `shared_mechanical.ambient_operating_range` captures operating only.
-- Multi-variant dimensional and EPA data for product families that ship in several physical variants on the same cutsheet (pole-top vs pendant Selux AYA with different masses and EPAs). Current schema carries one set of dimensions per record and relies on the record being per-SKU.
-- `attestations_not_in_taxonomy` patterns remaining after v0.3: UNION MADE USA, AASHTO 2013 LTS-6 pole wind compliance, ASTM/PCI powder-coat finish certifications, IP-rating and IK-rating as first-class AttestationProgram values (currently carried on `shared_mechanical.ip_rating` / `ik_rating` only). Each is a candidate for future taxonomy growth once a second independent record surfaces the same pattern.
-- Orphaned taxonomy enums that are defined but not yet wired into record fields (for example some TM-30 design-intent vocabulary and alternate PhotometryFormat values) are retained in `taxonomy.schema.json` as staged vocabulary. These will either get wired into field blocks when the corresponding cutsheets appear in example records, or pruned in a later revision.

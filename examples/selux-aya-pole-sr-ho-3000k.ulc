@@ -3,7 +3,6 @@
   "record_id": "selux-aya-pole-sr-ho-3000k",
   "record_status": "active",
   "record_status_as_of": "2026-01-15",
-  "conformance_level": "full",
   "product_family": {
     "family_id": "selux-aya-pole-pendant",
     "family_display_name": "Aya Pole or Pendant",
@@ -1010,7 +1009,8 @@
   },
   "index": {
     "x-ulc-generated": true,
-    "builder_version": "0.2.0",
+    "builder_version": "0.3.0",
+    "conformance_level": "full",
     "manufacturer_slug": "selux",
     "catalog_model": "Aya Pole or Pendant (AYAP)",
     "primary_category": "flood_area_site",

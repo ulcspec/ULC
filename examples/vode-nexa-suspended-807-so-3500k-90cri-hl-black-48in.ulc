@@ -3,7 +3,6 @@
   "record_id": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
   "record_status": "active",
   "record_status_as_of": "2026-01-15",
-  "conformance_level": "full",
   "product_family": {
     "family_id": "vode-nexa-suspended-807",
     "family_display_name": "Nexa Suspended | 807",
@@ -930,7 +929,8 @@
   },
   "index": {
     "x-ulc-generated": true,
-    "builder_version": "0.2.0",
+    "builder_version": "0.3.0",
+    "conformance_level": "full",
     "manufacturer_slug": "vode",
     "catalog_model": "Nexa Suspended 807",
     "primary_category": "linear",
