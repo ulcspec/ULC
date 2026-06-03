@@ -5,6 +5,7 @@
 //
 //	ulc validate <record.ulc>        Validate a record against the ULC schema.
 //	ulc build-index <record.ulc>     Regenerate the record's index block.
+//	ulc from-sheet <bundle-dir>      Convert a CSV workbook bundle into records.
 //	ulc version                      Print the CLI version.
 //
 // For per-subcommand flags and semantics, run `ulc <subcommand> -h`.
@@ -24,6 +25,7 @@ import (
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	"github.com/ulcspec/ULC/tools/validator/internal/grade"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
+	"github.com/ulcspec/ULC/tools/validator/internal/sheet"
 	"github.com/ulcspec/ULC/tools/validator/internal/validate"
 )
 
@@ -44,6 +46,8 @@ func main() {
 		os.Exit(runValidate(args))
 	case "build-index":
 		os.Exit(runBuildIndex(args))
+	case "from-sheet":
+		os.Exit(runFromSheet(args))
 	case "version", "-v", "--version":
 		fmt.Printf("ulc %s (builder %s)\n", CLIVersion, index.BuilderVersion)
 	case "help", "-h", "--help":
@@ -64,6 +68,7 @@ USAGE
 SUBCOMMANDS
     validate      Validate a ULC record against the ULC schema.
     build-index   Regenerate the record's index block from its deep blocks.
+    from-sheet    Convert a CSV workbook bundle into validated ULC records.
     version       Print the CLI version.
     help          Print this help message.
 
@@ -288,6 +293,143 @@ USAGE
 	}
 }
 
+// --- from-sheet ---
+
+// runFromSheet converts a CSV workbook bundle into validated ULC records. For
+// each assembled record it builds the index (which stamps conformance_level),
+// checks the required index keys, writes <out>/<record_id>.ulc.json, runs the
+// schema validator plus the conformance report, and prints a one-line summary.
+// It exits non-zero if any record fails schema validation.
+func runFromSheet(args []string) int {
+	fs := flag.NewFlagSet("from-sheet", flag.ExitOnError)
+	var outDir, assetsDir string
+	var allowMissing bool
+	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>.ulc.json files into.")
+	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, IES, attestation docs) resolve against. Defaults to the bundle directory.")
+	fs.BoolVar(&allowMissing, "allow-missing-files", false, "Stamp the 64-zero sentinel SHA-256 and warn (instead of erroring) when a referenced file is absent on disk.")
+	fs.Usage = func() {
+		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a CSV workbook bundle into validated ULC records.
+
+Reads a directory of <sheet>.csv files (records.csv plus the related sheets),
+assembles each record's deep blocks, computes dual-unit companions, SHA-256
+hashes, and default provenance, then builds the index (stamping the conformance
+level) and validates each record against the ULC schema.
+
+Increment 1 supports Pattern A (single-SKU) end to end. Patterns B, C, and D are
+detected and rejected with an explicit not-yet-implemented error.
+
+Exit codes:
+  0   every record assembled, built, and passed schema validation
+  1   a conversion, build, or schema-validation error occurred
+  2   usage error
+
+USAGE
+    ulc from-sheet <bundle-dir> [--out DIR] [--assets DIR] [--allow-missing-files]
+`)
+	}
+	_ = fs.Parse(reorderFlagsFirst(args))
+	if fs.NArg() != 1 {
+		fs.Usage()
+		return 2
+	}
+	bundleDir := fs.Arg(0)
+
+	results, err := sheet.Convert(bundleDir, sheet.Options{
+		AssetsRoot:        assetsDir,
+		AllowMissingFiles: allowMissing,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
+		return 1
+	}
+
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: create out dir %s: %v\n", outDir, err)
+		return 1
+	}
+
+	// Build the validator once and reuse it across records. Prefer an in-repo
+	// schema directory; fall back to the embedded schemas for released binaries.
+	var v *validate.Validator
+	if dir, ferr := validate.FindSchemaDir("", bundleDir); ferr == nil {
+		v, err = validate.NewValidator(dir)
+	} else {
+		v, err = validate.NewValidatorEmbedded()
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
+		return 1
+	}
+
+	failed := false
+	for _, res := range results {
+		for _, w := range res.Warnings {
+			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", res.RecordID, w)
+		}
+
+		built := index.Build(res.Record)
+		if missing := index.MissingRequiredKeys(built); len(missing) > 0 {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: %s: builder cannot derive required index keys:\n", res.RecordID)
+			for _, key := range missing {
+				src := index.RequiredKeySources[key]
+				if src == "" {
+					src = "(always-present marker)"
+				}
+				fmt.Fprintf(os.Stderr, "  - %s  (populate %s)\n", key, src)
+			}
+			failed = true
+			continue
+		}
+		res.Record["index"] = built
+
+		outPath := filepath.Join(outDir, res.RecordID+".ulc.json")
+		if err := writeRecord(outPath, res.Record); err != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
+			failed = true
+			continue
+		}
+
+		// Validate the assembled record. The validator wants the json.Number-typed
+		// tree, but the in-memory record carries Go-native numbers; re-read the
+		// file we just wrote through the strict decoder so the schema check sees
+		// the same shape the validate subcommand does.
+		report := findings.NewReport()
+		data, rerr := os.ReadFile(outPath)
+		if rerr != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: re-read %s: %v\n", outPath, rerr)
+			failed = true
+			continue
+		}
+		rawTree, derr := decodeStrict(data)
+		if derr != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", outPath, derr)
+			failed = true
+			continue
+		}
+		v.Validate(rawTree, report)
+		validate.VerifyHashes(outDir, res.Record, report)
+		grade.Report(res.Record, report)
+		report.Finalize()
+
+		level, _ := built["conformance_level"].(string)
+		if level == "" {
+			level = "none"
+		}
+		fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+		if report.HasErrors() {
+			if err := report.WriteText(os.Stderr, outPath); err != nil {
+				fmt.Fprintf(os.Stderr, "ulc from-sheet: write report: %v\n", err)
+			}
+			failed = true
+		}
+	}
+
+	if failed {
+		return 1
+	}
+	return 0
+}
+
 func printIndex(idx index.Index) int {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
@@ -303,10 +445,20 @@ func printIndex(idx index.Index) int {
 	return 0
 }
 
+// valueFlags are the flag names across all subcommands that take a
+// space-separated value, so reorderFlagsFirst keeps the value riding with its
+// flag when partitioning. Boolean flags are absent from this set.
+var valueFlags = map[string]bool{
+	"-schema-dir": true, "--schema-dir": true,
+	"-out": true, "--out": true,
+	"-assets": true, "--assets": true,
+}
+
 // reorderFlagsFirst lets users write either `ulc sub <file> --check` or
 // `ulc sub --check <file>`. Go's stdlib flag.Parse stops at the first
-// non-flag arg, which would otherwise force flag-first ordering. All our
-// flags are boolean (no space-separated values), so a simple partition works.
+// non-flag arg, which would otherwise force flag-first ordering. Most of our
+// flags are boolean; the value-taking ones are tracked in valueFlags so their
+// following value rides with them through the partition.
 func reorderFlagsFirst(args []string) []string {
 	flags := []string{}
 	positional := []string{}
@@ -319,9 +471,9 @@ func reorderFlagsFirst(args []string) []string {
 		}
 		if strings.HasPrefix(a, "-") {
 			flags = append(flags, a)
-			// --schema-dir takes a value; if it was passed without an `=`,
-			// the following arg is the value and must ride with it.
-			if a == "-schema-dir" || a == "--schema-dir" {
+			// A value-taking flag passed without an `=` consumes the next arg as
+			// its value, which must ride with it.
+			if valueFlags[a] {
 				skip = true
 			}
 			continue

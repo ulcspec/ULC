@@ -1,0 +1,9 @@
+IESNA:LM-63-2002
+[TEST] fake-fixture
+[MANUFAC] Acme Lighting Co
+TILT=NONE
+1 1240 1 2 1 1 2 -0.0 0.0 0.0
+1.0 1.0 15.5
+0.0 90.0
+0.0
+1380.0 0.0
