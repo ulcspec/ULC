@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## Unreleased
+## 0.6.0 (2026-06-03)
 
 Conformance level becomes a computed, builder-stamped value rather than a hand-declared field.
 
@@ -39,7 +39,7 @@ Conformance level becomes a computed, builder-stamped value rather than a hand-d
 
 ### Reference records and templates
 
-- All four reference records (`examples/*.ulc`) and all six templates (`templates/*.ulc.json`) were migrated to the computed-conformance shape: the hand-declared top-level `conformance_level` was removed and the builder-computed `index.conformance_level` now carries the level. Stored indices re-stamp `builder_version` `0.2.0` → `0.3.0`. The lumenpulse RGB record now grades `core` (it previously self-declared `standard`); the other three grade `full`. Records keep `ulc_version` `0.3.0` until the next tagged release bumps it.
+- All four reference records (`examples/*.ulc`) and all six templates (`templates/*.ulc.json`) were migrated to the computed-conformance shape: the hand-declared top-level `conformance_level` was removed and the builder-computed `index.conformance_level` now carries the level. Stored indices re-stamp `builder_version` `0.2.0` → `0.3.0`. The lumenpulse RGB record now grades `core` (it previously self-declared `standard`); the other three grade `full`. Their `ulc_version` is bumped from `0.3.0` to `0.6.0`, reflecting the breaking removal of the top-level `conformance_level` field.
 
 ### Documentation and taxonomy descriptions
 
