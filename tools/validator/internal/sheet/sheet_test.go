@@ -353,6 +353,165 @@ func TestConvertPatternDAuthoredLengthSheet(t *testing.T) {
 	}
 }
 
+// TestConvertFullLevelSheets exercises the optional comprehensive long sheets on
+// the bundle-b fixture (an outdoor area light that already grades full): the
+// alpha_opic, flicker_metrics, lumen_maintenance_package, zonal_lumens,
+// lcs_zonal_lumens, ingredient_list, and cie97_lmf / cie97_llmf sheets each
+// assemble into their ULC block, and convertOne re-validates the enriched record
+// against the live schema with zero ERROR findings. These blocks are INFO-level
+// enrichment, so the achieved grade stays full.
+func TestConvertFullLevelSheets(t *testing.T) {
+	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, grade.LevelFull)
+
+	// alpha_opic_metrics: block scalars + a single melanopic per_channel efficacy,
+	// both rated ProvenancedNumbers (no attestation link).
+	if v, _ := getPath(record, "alpha_opic_metrics.reference_illuminant"); v != "d65" {
+		t.Fatalf("alpha_opic_metrics.reference_illuminant = %v, want d65", v)
+	}
+	if v, ok := getPath(record, "alpha_opic_metrics.melanopic_der.value"); !ok || asFloat(t, v) != 0.54 {
+		t.Fatalf("alpha_opic_metrics.melanopic_der.value = %v, want 0.54", v)
+	}
+	if arr := arrayAt(t, record, "alpha_opic_metrics.per_channel"); len(arr) != 1 {
+		t.Fatalf("alpha_opic_metrics.per_channel len = %d, want 1", len(arr))
+	} else if ch, _ := arr[0].(map[string]any); ch["channel"] != "melanopic" {
+		t.Fatalf("alpha_opic per_channel[0].channel = %v, want melanopic", ch["channel"])
+	}
+
+	// flicker_measurements.metrics: two rated metrics with bound operators.
+	if arr := arrayAt(t, record, "flicker_measurements.metrics"); len(arr) != 2 {
+		t.Fatalf("flicker_measurements.metrics len = %d, want 2", len(arr))
+	}
+
+	// lumen_maintenance_package: a TOP-LEVEL array with a transcribed TM-21
+	// projection (the method-backed projection, not a bare claim).
+	pkg, _ := record["lumen_maintenance_package"].([]any)
+	if len(pkg) != 1 {
+		t.Fatalf("lumen_maintenance_package len = %d, want 1", len(pkg))
+	}
+	pkg0, _ := pkg[0].(map[string]any)
+	tm21, _ := pkg0["tm_21_projection_hours"].(map[string]any)
+	if asInt64(t, tm21["value"]) != 60000 {
+		t.Fatalf("lumen_maintenance_package[0].tm_21_projection_hours.value = %v, want 60000", tm21["value"])
+	}
+
+	// photometry.zonal_lumens: measured, auto-linked to the single LM-79 anchor.
+	zonal := arrayAt(t, record, "photometry.zonal_lumens")
+	if len(zonal) != 4 {
+		t.Fatalf("photometry.zonal_lumens len = %d, want 4", len(zonal))
+	}
+	assertMeasuredLumens(t, zonal[0], "lm79_lumos_skyline_sr_ho")
+
+	// outdoor_classification.lcs_zonal_lumens: the 10 TM-15 LCS zones, measured.
+	lcs := arrayAt(t, record, "outdoor_classification.lcs_zonal_lumens")
+	if len(lcs) != 10 {
+		t.Fatalf("outdoor_classification.lcs_zonal_lumens len = %d, want 10", len(lcs))
+	}
+	assertMeasuredLumens(t, lcs[0], "lm79_lumos_skyline_sr_ho")
+
+	// sustainability_declaration: ingredient roster from the long sheet plus the
+	// block scalars from the records columns (bool + int coercion).
+	if arr := arrayAt(t, record, "sustainability_declaration.ingredient_list"); len(arr) != 4 {
+		t.Fatalf("sustainability_declaration.ingredient_list len = %d, want 4", len(arr))
+	}
+	if v, _ := getPath(record, "sustainability_declaration.declaration_type"); v != "red_list_approved" {
+		t.Fatalf("sustainability_declaration.declaration_type = %v, want red_list_approved", v)
+	}
+	if v, _ := getPath(record, "sustainability_declaration.lbc_criteria_compliance"); v != true {
+		t.Fatalf("sustainability_declaration.lbc_criteria_compliance = %v (%T), want bool true", v, v)
+	}
+	if v, _ := getPath(record, "sustainability_declaration.recyclable_percent"); asInt64(t, v) != 88 {
+		t.Fatalf("sustainability_declaration.recyclable_percent = %v, want 88", v)
+	}
+
+	// cie_97_lmf_table: 12 LMF rows + 4 LLMF rows; the lmf/llmf leaves are BARE
+	// numbers (not ProvenancedNumber), and cleaning_interval_years is an integer.
+	lmf := arrayAt(t, record, "lumen_maintenance_luminaire.cie_97_lmf_table.lmf_by_cleanliness_and_interval")
+	if len(lmf) != 12 {
+		t.Fatalf("cie_97_lmf_table.lmf_by_cleanliness_and_interval len = %d, want 12", len(lmf))
+	}
+	lmf0, _ := lmf[0].(map[string]any)
+	if asInt64(t, lmf0["cleaning_interval_years"]) != 1 || lmf0["ambient_cleanliness"] != "pure" || asFloat(t, lmf0["lmf"]) != 0.96 {
+		t.Fatalf("cie_97 lmf[0] = %v, want {1, pure, 0.96}", lmf0)
+	}
+	if _, isMap := lmf0["lmf"].(map[string]any); isMap {
+		t.Fatalf("cie_97 lmf must be a bare number, not a ProvenancedNumber object")
+	}
+	if llmf := arrayAt(t, record, "lumen_maintenance_luminaire.cie_97_lmf_table.llmf_by_hours"); len(llmf) != 4 {
+		t.Fatalf("cie_97_lmf_table.llmf_by_hours len = %d, want 4", len(llmf))
+	}
+}
+
+// arrayAt returns the []any at a dotted path, failing the test if absent or not
+// an array.
+func arrayAt(t *testing.T, record map[string]any, path string) []any {
+	t.Helper()
+	v, ok := getPath(record, path)
+	if !ok {
+		t.Fatalf("%s missing", path)
+	}
+	arr, ok := v.([]any)
+	if !ok {
+		t.Fatalf("%s is %T, want []any", path, v)
+	}
+	return arr
+}
+
+// assertMeasuredLumens asserts a zonal entry carries a measured lumens
+// ProvenancedNumber whose provenance auto-linked to the expected LM-79 id.
+func assertMeasuredLumens(t *testing.T, entry any, wantRef string) {
+	t.Helper()
+	m, _ := entry.(map[string]any)
+	lum, _ := m["lumens"].(map[string]any)
+	if vt, _ := lum["value_type"].(string); vt != "measured" {
+		t.Fatalf("zonal lumens value_type = %q, want measured", vt)
+	}
+	prov, _ := lum["provenance"].(map[string]any)
+	if ref, _ := prov["attestation_ref"].(string); ref != wantRef {
+		t.Fatalf("zonal lumens attestation_ref = %q, want %q", ref, wantRef)
+	}
+}
+
+// asFloat coerces a JSON-decoded numeric (int64 or float64) to float64.
+func asFloat(t *testing.T, v any) float64 {
+	t.Helper()
+	switch n := v.(type) {
+	case float64:
+		return n
+	case int64:
+		return float64(n)
+	case int:
+		return float64(n)
+	default:
+		t.Fatalf("value %v (%T) is not numeric", v, v)
+		return 0
+	}
+}
+
+// TestParseIntCell guards the integral-float tolerance: a spreadsheet exporter
+// may serialize an integer cell as "1.0" or "1e1", which must parse to the same
+// int64 as "1"; a genuine non-integer must still be rejected.
+func TestParseIntCell(t *testing.T) {
+	cases := []struct {
+		in   string
+		want int64
+		ok   bool
+	}{
+		{"3", 3, true}, {"1", 1, true}, {"60000", 60000, true},
+		{"1.0", 1, true}, {"2.0", 2, true}, {"1e1", 10, true},
+		{"1.5", 0, false}, {"abc", 0, false}, {"", 0, false},
+	}
+	for _, c := range cases {
+		got, err := parseIntCell(c.in)
+		if c.ok {
+			if err != nil || got != c.want {
+				t.Errorf("parseIntCell(%q) = (%d, %v), want (%d, nil)", c.in, got, err, c.want)
+			}
+		} else if err == nil {
+			t.Errorf("parseIntCell(%q) = (%d, nil), want error", c.in, got)
+		}
+	}
+}
+
 // declaredByCCTValue returns the lumens.value of the declared_by_cct entry for
 // the given cct, as an int64.
 func declaredByCCTValue(t *testing.T, declared any, cct string) int64 {

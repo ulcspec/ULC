@@ -3,6 +3,8 @@ package sheet
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,11 +37,35 @@ type Result struct {
 	Warnings []string
 }
 
-// Convert reads a CSV bundle from bundleDir, classifies and assembles each
-// records-sheet row into a ULC deep-block record, and returns one Result per
-// record. It performs dual-unit expansion, SHA-256 hashing (with the cutsheet
-// dual-write), default provenance resolution, and the source_files /
-// attestations / shared_attestations sheet joins. It does NOT build the index or
+// readWorkbook reads the converter input into a Workbook, dispatching on the
+// input shape: a directory is a CSV bundle (a dir of <sheet>.csv files); a file
+// with a .xlsx extension is a native workbook (the same Workbook model, so the
+// downstream assembler is identical). It returns the Workbook plus the default
+// assets root (where referenced files resolve when Options.AssetsRoot is unset):
+// the bundle directory itself for a CSV bundle, or the .xlsx file's parent
+// directory for an .xlsx input.
+func readWorkbook(input string) (Workbook, string, error) {
+	info, err := os.Stat(input)
+	if err != nil {
+		return nil, "", fmt.Errorf("read input %s: %w", input, err)
+	}
+	if info.IsDir() {
+		wb, err := ReadCSVBundle(input)
+		return wb, input, err
+	}
+	if strings.EqualFold(filepath.Ext(input), ".xlsx") {
+		wb, err := ReadXLSX(input)
+		return wb, filepath.Dir(input), err
+	}
+	return nil, "", fmt.Errorf("unsupported input %q: expected a CSV bundle directory or an .xlsx file", input)
+}
+
+// Convert reads a CSV bundle directory or an .xlsx workbook from input,
+// classifies and assembles each records-sheet row into a ULC deep-block record,
+// and returns one Result per record. It performs dual-unit expansion, SHA-256
+// hashing (with the cutsheet dual-write), default provenance resolution, the
+// source_files / attestations / shared_attestations sheet joins, and the
+// optional full-level long-sheet blocks. It does NOT build the index or
 // validate: the caller does that, so assembly stays unit-testable in isolation.
 //
 // All four authoring patterns are handled. A and C share the fixed-axes pin
@@ -47,22 +73,22 @@ type Result struct {
 // override columns already support). B and D add the covered-axes assembler:
 // the applicability block, the CCT multiplier or per-foot derivation, and the
 // generated declared_by_cct / declared_by_length tables.
-func Convert(bundleDir string, opts Options) ([]Result, error) {
-	wb, err := ReadCSVBundle(bundleDir)
+func Convert(input string, opts Options) ([]Result, error) {
+	wb, assetsDefault, err := readWorkbook(input)
 	if err != nil {
 		return nil, err
 	}
 	records, ok := wb.Sheet("records")
 	if !ok {
-		return nil, errors.New("bundle has no records.csv sheet")
+		return nil, errors.New("input has no records sheet (records.csv or a 'records' worksheet tab)")
 	}
 	if len(records) == 0 {
-		return nil, errors.New("records.csv has no data rows")
+		return nil, errors.New("the records sheet has no data rows")
 	}
 
 	assetsRoot := opts.AssetsRoot
 	if assetsRoot == "" {
-		assetsRoot = bundleDir
+		assetsRoot = assetsDefault
 	}
 
 	results := make([]Result, 0, len(records))
@@ -170,6 +196,14 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 		if err := assembleCoveredAxisRecord(wb, id, master, rec, lm79ID, hasher); err != nil {
 			return nil, err
 		}
+	}
+
+	// Optional comprehensive full-level blocks (alpha-opic, flicker, lumen
+	// maintenance package, zonal lumens, LCS zonal lumens, ingredient list, the
+	// CIE-97 LMF table), authored on dedicated long sheets and shared by every
+	// pattern. provCtx supplies the LM-79 anchor for the measured zonal lumens.
+	if err := assembleFullLevelBlocks(wb, id, rec, provCtx); err != nil {
+		return nil, err
 	}
 
 	return rec, nil

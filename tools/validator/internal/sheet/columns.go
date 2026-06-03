@@ -192,10 +192,29 @@ var recordColumns = []Column{
 
 	// --- lumen_maintenance_luminaire (bare manufacturer claim; standard gate) ---
 	// The standard rubric requires any lumen-maintenance framework. The simplest
-	// inline form is a bare manufacturer_rated_claim authored on the records sheet;
-	// richer LM-80 / TM-21 / CIE-97 data moves to dedicated long sheets in
-	// increment 3.
+	// inline form is a bare manufacturer_rated_claim authored on the records sheet.
+	// Richer LM-80 / TM-21 data rides on the lumen_maintenance_package long sheet,
+	// and the CIE-97 LMF table on the cie97_lmf / cie97_llmf long sheets; both
+	// coexist with these scalars under the same parent (see fulllevel.go).
 	{Header: "lm_declaration_framework", Path: "lumen_maintenance_luminaire.declaration_framework", Kind: KindEnum},
 	{Header: "lm_claim_type", Path: "lumen_maintenance_luminaire.manufacturer_rated_claim.claim_type", Kind: KindEnum},
 	{Header: "lm_claimed_hours", Path: "lumen_maintenance_luminaire.manufacturer_rated_claim.claimed_hours", Kind: KindProvNumber, Unit: "h", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"},
+
+	// --- sustainability_declaration (full-level enrichment; block-level scalars) ---
+	// The Declare / Living Building Challenge roster (ingredient_list) rides on its
+	// own long sheet; these one-per-record scalars frame it. declaration_type is an
+	// enum the schema validates; the *_content / *_performance / *_sourcing fields
+	// are free strings ("not_applicable" is common on a Declare label).
+	{Header: "sustainability_declaration_type", Path: "sustainability_declaration.declaration_type", Kind: KindEnum},
+	{Header: "sustainability_document_id", Path: "sustainability_declaration.document_id", Kind: KindString},
+	{Header: "sustainability_issue_date", Path: "sustainability_declaration.original_issue_date", Kind: KindDate},
+	{Header: "sustainability_expiration_date", Path: "sustainability_declaration.expiration_date", Kind: KindDate},
+	{Header: "final_assembly_location", Path: "sustainability_declaration.final_assembly_location", Kind: KindString},
+	{Header: "life_expectancy_years", Path: "sustainability_declaration.life_expectancy_years", Kind: KindNumber},
+	{Header: "recyclable_percent", Path: "sustainability_declaration.recyclable_percent", Kind: KindNumber},
+	{Header: "end_of_life_options", Path: "sustainability_declaration.end_of_life_options", Kind: KindList},
+	{Header: "lbc_criteria_compliance", Path: "sustainability_declaration.lbc_criteria_compliance", Kind: KindBool},
+	{Header: "voc_content", Path: "sustainability_declaration.voc_content", Kind: KindString},
+	{Header: "interior_performance", Path: "sustainability_declaration.interior_performance", Kind: KindString},
+	{Header: "responsible_sourcing", Path: "sustainability_declaration.responsible_sourcing", Kind: KindString},
 }

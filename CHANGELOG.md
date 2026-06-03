@@ -20,6 +20,12 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## Unreleased
+
+### Tools
+
+- New `ulc from-sheet` subcommand: a deterministic, offline converter that turns a manufacturer-authored workbook into validated ULC records, no LLM involved. It accepts either a CSV bundle (a directory of `<sheet>.csv` files) or a native `.xlsx` workbook (one tab per sheet, read with the standard library only), classifies each record into one of the four authoring patterns by sheet and column presence, and assembles the deep blocks: dual-unit companions, SHA-256 hashes (with the cutsheet dual-write), and default provenance are computed, then the index is built (stamping `conformance_level`) and each record is validated against the schema. Pattern B generates `photometry.declared_by_cct` from a CCT multiplier table; Pattern D generates or echoes `photometry.declared_by_length` from per-foot rates. Optional comprehensive sheets (`alpha_opic`, `flicker_metrics`, `lumen_maintenance_package`, `zonal_lumens`, `lcs_zonal_lumens`, `ingredient_list`, `cie97_lmf` / `cie97_llmf`) add full-level depth when present. A fill-in workbook template ships at `templates/workbook/`.
+
 ## 0.6.0 (2026-06-03)
 
 Conformance level becomes a computed, builder-stamped value rather than a hand-declared field.

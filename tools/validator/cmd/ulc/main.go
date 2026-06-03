@@ -5,7 +5,7 @@
 //
 //	ulc validate <record.ulc>        Validate a record against the ULC schema.
 //	ulc build-index <record.ulc>     Regenerate the record's index block.
-//	ulc from-sheet <bundle-dir>      Convert a CSV workbook bundle into records.
+//	ulc from-sheet <input>           Convert a workbook (CSV bundle or .xlsx) into records.
 //	ulc version                      Print the CLI version.
 //
 // For per-subcommand flags and semantics, run `ulc <subcommand> -h`.
@@ -68,7 +68,7 @@ USAGE
 SUBCOMMANDS
     validate      Validate a ULC record against the ULC schema.
     build-index   Regenerate the record's index block from its deep blocks.
-    from-sheet    Convert a CSV workbook bundle into validated ULC records.
+    from-sheet    Convert a workbook (CSV bundle or .xlsx) into validated ULC records.
     version       Print the CLI version.
     help          Print this help message.
 
@@ -308,17 +308,20 @@ func runFromSheet(args []string) int {
 	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, IES, attestation docs) resolve against. Defaults to the bundle directory.")
 	fs.BoolVar(&allowMissing, "allow-missing-files", false, "Stamp the 64-zero sentinel SHA-256 and warn (instead of erroring) when a referenced file is absent on disk.")
 	fs.Usage = func() {
-		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a CSV workbook bundle into validated ULC records.
+		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a manufacturer workbook into validated ULC records.
 
-Reads a directory of <sheet>.csv files (records.csv plus the related sheets),
-assembles each record's deep blocks, computes dual-unit companions, SHA-256
-hashes, and default provenance, then builds the index (stamping the conformance
-level) and validates each record against the ULC schema.
+Accepts either a CSV bundle (a directory of <sheet>.csv files: records.csv plus
+the related sheets) or a native .xlsx workbook (one tab per sheet, named the same
+way). Assembles each record's deep blocks, computes dual-unit companions,
+SHA-256 hashes, and default provenance, then builds the index (stamping the
+conformance level) and validates each record against the ULC schema.
 
 All four authoring patterns are supported end to end: A (single-SKU) and C
 (per-IES with derived provenance) as fixed-axes pins, B (CCT multiplier table)
 and D (per-foot linear scaling) with generated declared_by_cct / declared_by_length
-photometry tables.
+photometry tables. Optional comprehensive sheets (alpha_opic, flicker_metrics,
+lumen_maintenance_package, zonal_lumens, lcs_zonal_lumens, ingredient_list,
+cie97_lmf / cie97_llmf) add full-level depth when present.
 
 Exit codes:
   0   every record assembled, built, and passed schema validation
@@ -326,7 +329,7 @@ Exit codes:
   2   usage error
 
 USAGE
-    ulc from-sheet <bundle-dir> [--out DIR] [--assets DIR] [--allow-missing-files]
+    ulc from-sheet <bundle-dir|workbook.xlsx> [--out DIR] [--assets DIR] [--allow-missing-files]
 `)
 	}
 	_ = fs.Parse(reorderFlagsFirst(args))
@@ -334,9 +337,9 @@ USAGE
 		fs.Usage()
 		return 2
 	}
-	bundleDir := fs.Arg(0)
+	input := fs.Arg(0)
 
-	results, err := sheet.Convert(bundleDir, sheet.Options{
+	results, err := sheet.Convert(input, sheet.Options{
 		AssetsRoot:        assetsDir,
 		AllowMissingFiles: allowMissing,
 	})
@@ -353,7 +356,7 @@ USAGE
 	// Build the validator once and reuse it across records. Prefer an in-repo
 	// schema directory; fall back to the embedded schemas for released binaries.
 	var v *validate.Validator
-	if dir, ferr := validate.FindSchemaDir("", bundleDir); ferr == nil {
+	if dir, ferr := validate.FindSchemaDir("", input); ferr == nil {
 		v, err = validate.NewValidator(dir)
 	} else {
 		v, err = validate.NewValidatorEmbedded()

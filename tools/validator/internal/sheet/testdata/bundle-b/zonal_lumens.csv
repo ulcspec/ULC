@@ -1,0 +1,5 @@
+record_id,zone_label,lumens,conflict_notes
+lumos-skyline-sr-ho-3000k,0-30,1850,
+lumos-skyline-sr-ho-3000k,0-60,5200,
+lumos-skyline-sr-ho-3000k,0-90,6800,Total downward flux; matches total luminous flux since uplight is zero.
+lumos-skyline-sr-ho-3000k,90-180,0,Zero uplight per the BUG U0 rating.

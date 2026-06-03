@@ -87,10 +87,18 @@ func roundTo(v float64, n int) float64 {
 	return math.Round(v*p) / p
 }
 
+// maxInt64AsFloat is 2^63, the first float64 strictly above math.MaxInt64.
+// math.MaxInt64 (2^63-1) is not representable in float64 and rounds up to this
+// value, so the integer-range guard must be a strict `< maxInt64AsFloat`: a
+// `<= math.MaxInt64` test would admit v == 2^63 and int64(2^63) wraps to
+// math.MinInt64. math.MinInt64 (-2^63) IS exactly representable, so the lower
+// bound stays inclusive.
+const maxInt64AsFloat = 9223372036854775808.0
+
 // numberLeaf preserves integer-ness so an authored "113" emits 113, not 113.0,
 // matching how the index builder and Python json.dumps render whole numbers.
 func numberLeaf(v float64) any {
-	if v == math.Trunc(v) && !math.IsInf(v, 0) && v >= math.MinInt64 && v <= math.MaxInt64 {
+	if v == math.Trunc(v) && !math.IsInf(v, 0) && v >= math.MinInt64 && v < maxInt64AsFloat {
 		return int64(v)
 	}
 	return v

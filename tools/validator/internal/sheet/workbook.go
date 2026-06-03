@@ -10,14 +10,16 @@
 // for the full sheet list, the column-to-path contract, and the resolved
 // implementer decisions.
 //
-// All four authoring patterns are handled over the CSV-bundle input format.
-// Patterns A and C share the fixed-axes pin path (C differs only in per-column
-// provenance, supplied through the provenance override columns). Patterns B and D
-// add the covered-axes assembler: the applicability block plus the
-// derivation-generated photometry.declared_by_cct (CCT multiplier table) and
-// photometry.declared_by_length (per-foot linear scaling) tables. The full
-// long-sheet set beyond these (cie97, alpha_opic, flicker, package) remains an
-// optional future input.
+// All four authoring patterns are handled over either input format (a CSV bundle
+// directory or a native .xlsx workbook; see csv.go and xlsx.go, both reducing to
+// this same Workbook model). Patterns A and C share the fixed-axes pin path (C
+// differs only in per-column provenance, supplied through the provenance override
+// columns). Patterns B and D add the covered-axes assembler: the applicability
+// block plus the derivation-generated photometry.declared_by_cct (CCT multiplier
+// table) and photometry.declared_by_length (per-foot linear scaling) tables. The
+// comprehensive full-level long sheets (alpha_opic, flicker_metrics,
+// lumen_maintenance_package, zonal_lumens, lcs_zonal_lumens, ingredient_list,
+// cie97_lmf / cie97_llmf) are optional enrichment, assembled in fulllevel.go.
 package sheet
 
 // Row is one spreadsheet row as a header->cell map. A blank or whitespace-only

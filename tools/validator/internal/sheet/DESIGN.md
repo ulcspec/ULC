@@ -149,11 +149,23 @@ hard-errors if there are zero or more-than-one (the manufacturer then disambigua
 
 - Subcommand `ulc from-sheet <input>` in the existing binary; calls `index.Build` + the validator
   internally (same binary, no subprocess).
-- v1 input format: a CSV bundle (a directory of `<sheet>.csv` files), stdlib-only and offline. A
-  native `.xlsx` reader (one-file UX) is a fast-follow once a workbook library is vendored.
+- Input formats (both shipped, both stdlib-only and offline): a CSV bundle (a directory of
+  `<sheet>.csv` files) OR a native `.xlsx` workbook (one tab per sheet, named the same). The
+  `.xlsx` reader (`xlsx.go`) is written on `archive/zip` + `encoding/xml` with no third-party
+  dependency vendored; it produces the same format-agnostic `Workbook` model the CSV reader does,
+  so an `.xlsx` and an equivalent CSV bundle convert identically (locked by a parity test).
+  `Convert` dispatches on the input shape (a directory is a bundle; a `.xlsx` file is a workbook).
 - Level scope: all four patterns at ALL THREE conformance levels. The converter never targets a
   level. It ingests every authored field (core, standard, AND full), assembles the record, and
   the index builder grades the achieved `conformance_level` from what is present. The full-level
-  related sheets (cie97, alpha_opic, flicker, package) are simply optional inputs: a manufacturer
-  who has that data adds those sheets and the record grades higher; one who does not grades
+  related sheets are implemented (`fulllevel.go`): `alpha_opic` -> alpha_opic_metrics,
+  `flicker_metrics` -> flicker_measurements, `lumen_maintenance_package` (top-level array),
+  `zonal_lumens` -> photometry.zonal_lumens, `lcs_zonal_lumens` -> outdoor_classification, the
+  Declare roster `ingredient_list` -> sustainability_declaration (whose block scalars ride on the
+  records sheet), and `cie97_lmf` / `cie97_llmf` -> lumen_maintenance_luminaire.cie_97_lmf_table.
+  Each attaches only when its sheet carries rows; none gates the level (the rubric reads
+  operating_point + the conditional bug_rating), so they are pure enrichment. A manufacturer who
+  has the data adds those sheets and the record carries more depth; one who does not grades
   core/standard. Nothing the manufacturer supplies is dropped or capped.
+- A published, fill-in workbook template ships at `templates/workbook/` (header-only CSVs for
+  every sheet plus a README): the manufacturer-facing starting point.

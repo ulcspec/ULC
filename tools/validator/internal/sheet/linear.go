@@ -128,7 +128,10 @@ func generateDeclaredByLength(p declaredByLengthParams, id string) ([]any, error
 			// length and cannot be scaled; skip it.
 			continue
 		}
-		lengthMM := lengthIn * inchToMM
+		// Round the computed SI leaf to kill the binary-float artifact (96 in *
+		// 25.4 evaluates to 2438.3999999999996, not 2438.4); 4 dp is finer than any
+		// real fixture length, so this only removes the trailing-noise digits.
+		lengthMM := roundTo(lengthIn*inchToMM, 4)
 		lengthFt := lengthIn * ftPerInch
 
 		entry := map[string]any{
