@@ -298,6 +298,9 @@ func measuredLumens(row Row, field string, ctx provenanceContext) (map[string]an
 		method = m
 	}
 	prov := map[string]any{"source": source, "method": method}
+	if em := row[field+"__extension_method"]; em != "" {
+		prov["extension_method"] = em
+	}
 	if ref := row[field+"__attestation_ref"]; ref != "" {
 		prov["attestation_ref"] = ref
 	} else if valueType == "measured" {

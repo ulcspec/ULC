@@ -111,7 +111,7 @@ Both `ulc build-index` and `ulc validate` are file-path CLIs — they read from 
 These guides describe the PIM-to-ULC transformation. They do not cover:
 
 - **No PIM?** These guides assume a PIM or other structured master. If your product data lives in spreadsheets instead, use the `ulc from-sheet` converter (`tools/validator/`, with the workbook template in `templates/workbook/`): it turns a workbook into validated records directly, with no mapping integration to build.
-- **Reading data out of PDFs or photometric files.** ULC never parses a cutsheet PDF, IES, or LDT for data; those are referenced as source files by SHA-256, not read. Capturing data that exists only in unstructured documents into structured form (a spreadsheet or the PIM) is a one-time task upstream of both these guides and the converter.
+- **Reading data out of PDFs or photometric files.** ULC never parses a cutsheet PDF, IES, or LDT for its data; those are referenced as source files by SHA-256 (the bytes are read only to compute and verify that hash, never parsed for content). Capturing data that exists only in unstructured documents into structured form (a spreadsheet or the PIM) is a one-time task upstream of both these guides and the converter.
 - **Schema validation.** The `ulc validate` CLI handles that; the emitter calls it as a post-step.
 
 ## See also

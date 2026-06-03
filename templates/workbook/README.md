@@ -62,8 +62,10 @@ explicitly. Leave companion columns blank to take the default.
 
 ## The smallest valid workbook
 
-`records` (one row) plus `source_files` (one IES row). Even the smallest record
-needs a few required `records` columns: the identity set `family_id`,
+`records` (one row), plus a `source_files` IES row for the default measured
+photometry path (a rated-only record relies on the cutsheet `datasheet_pdf`
+source the converter auto-injects, and needs no IES row). Even the smallest
+record needs a few required `records` columns: the identity set `family_id`,
 `manufacturer_slug`, `manufacturer_display_name`, `catalog_model`, and
 `cutsheet_file` (the cutsheet is hashed and dual-written into `source_files`),
 plus the core-grade trio `total_luminous_flux_lm`, `input_power_w`, and
@@ -80,7 +82,7 @@ field you supply and the grade follows the data.
 | Sheet | What it carries | When you need it |
 |---|---|---|
 | `records` | One row per record: identity, taxonomy, mechanical, electrical, photometry, colorimetry, the applicability header, and the sustainability scalars. | Always |
-| `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. | Always (>= 1 IES) |
+| `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
 | `attestations` | Per-record program attestations. The LM-79 row is the measurement anchor. | Standard and up |
 | `shared_attestations` | Family-wide listings (UL, IEC, RoHS). | As applicable |
 | `covered_axes` | One row per (axis, covered value) with rationale and derivation. | Patterns B and D |

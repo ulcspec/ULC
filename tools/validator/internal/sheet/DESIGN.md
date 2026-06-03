@@ -61,9 +61,11 @@ implementation contract; see the per-sheet tables maintained alongside the conve
 
 ### `records` minimum (core-level Pattern A, smallest happy path)
 
-The smallest valid workbook is `records` (1 row) + `source_files` (>=1 IES row). Core grading
-needs only `total_luminous_flux_lm.value`, `input_power_w.value`, and `primary_category`; schema
-structure adds the identity/cutsheet/scenario fields:
+The smallest valid workbook is `records` (1 row), plus a `source_files` IES row for the default
+measured photometry path (a rated-only record relies on the auto-injected cutsheet `datasheet_pdf`
+source and needs no IES row). Core grading needs only `total_luminous_flux_lm.value`,
+`input_power_w.value`, and `primary_category`; schema structure adds the identity/cutsheet/scenario
+fields:
 
 ```
 record_id, ulc_version(=0.6.0 default), record_status(=active),
@@ -76,7 +78,7 @@ input_power_w        (CORE grade gate),
 total_luminous_flux_lm (CORE grade gate)
 ```
 
-Plus a `source_files` row `{record_id, file_type=ies, filename}`. The converter supplies the
+Plus, for measured photometry, a `source_files` row `{record_id, file_type=ies, filename}`. The converter supplies the
 `ulc_version` default, dual-unit companions, both `sha256` values, the cutsheet dual-write,
 default provenance, and the whole `index`. Because the two photometric anchors default to
 `value_type=measured`, the schema then wants an `attestation_ref`, satisfied by one `attestations`

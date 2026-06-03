@@ -92,7 +92,7 @@ func TestParseJSONObjectCellRejectsTrailing(t *testing.T) {
 // to a derived method must resolve a base_attestation_ref (auto-linked to the
 // single LM-79, hard-erroring on 0-or-many).
 func TestMeasuredLumensDerivedRequiresBase(t *testing.T) {
-	row := Row{"lumens": "1200", "lumens__value_type": "rated", "lumens__prov_method": "scaled"}
+	row := Row{"lumens": "1200", "lumens__value_type": "rated", "lumens__prov_method": "scaled", "lumens__extension_method": "cct_multiplier"}
 
 	if _, err := measuredLumens(row, "lumens", provenanceContext{lm79Count: 0}); err == nil {
 		t.Error("expected error: derived zonal lumen with no base attestation and no lm_79 anchor")
@@ -105,6 +105,9 @@ func TestMeasuredLumensDerivedRequiresBase(t *testing.T) {
 	prov, _ := pn["provenance"].(map[string]any)
 	if prov["base_attestation_ref"] != "L1" {
 		t.Fatalf("base_attestation_ref = %v, want L1", prov["base_attestation_ref"])
+	}
+	if prov["extension_method"] != "cct_multiplier" {
+		t.Fatalf("extension_method = %v, want cct_multiplier (the override column must pass through)", prov["extension_method"])
 	}
 }
 
