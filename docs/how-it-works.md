@@ -20,7 +20,7 @@ ULC does not embed source files. It identifies them. Each referenced source file
 
 ULC files work with tools people already use, in two tiers that read the same underlying substrate.
 
-Generic large language models parse a `.ulc.json` natively as JSON. Drag a record from [examples/](../examples/) into ChatGPT, Claude, or Gemini and ask "what is this product?" or "compare this to this other record." The model produces a spec-sheet rendering, a cross-product comparison, or an attribute lookup. No setup is required.
+Generic large language models parse a ULC record (`.ulc`) natively as JSON. Drag a record from [examples/](../examples/) into ChatGPT, Claude, or Gemini and ask "what is this product?" or "compare this to this other record." The model produces a spec-sheet rendering, a cross-product comparison, or an attribute lookup. No setup is required.
 
 Lighting-domain specialty tools add depth on top of the same record. They fetch the linked IES or LDT photometric files on demand and resolve industry shorthand (terms like L90, TM-21, CCR, melanopic DER, and CIE 97 maintenance-factor tables) without the reader having to know what they mean. One such tool is under development in the ecosystem.
 
@@ -42,7 +42,7 @@ As part of that pass, the validator computes the record's conformance level from
 
 Two paths, both available right now:
 
-- **Read a record with an LLM.** Drag any `.ulc.json` from [examples/](../examples/) into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. The four example records each exercise a distinct manufacturer authoring pattern.
+- **Read a record with an LLM.** Drag any `.ulc` record from [examples/](../examples/) into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. The four example records each exercise a distinct manufacturer authoring pattern.
 - **Validate a record with the CLI.** Run `ulc validate <record>` to check structure, builder parity, and source-file hashes and to see the computed conformance level. Download a release binary from the GitHub Releases page, or build from source with `cd tools/validator && go build -o bin/ulc ./cmd/ulc`. To regenerate a record's `index` block, run `ulc build-index <record>`; the index is always generated, never hand-authored.
 
 For the design rationale behind the schema, see [methodology.md](methodology.md). For the detailed authoring patterns and architectural primitives, see [authoring-patterns.md](authoring-patterns.md).

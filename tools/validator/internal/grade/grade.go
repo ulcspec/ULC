@@ -218,12 +218,16 @@ func standardRequirements(record map[string]any) []requirement {
 		{LevelStandard, "/attestations", hasLM79Attestation(record)},
 		// Either a luminaire or a package lumen-maintenance framework (any
 		// framework, including a bare manufacturer_rated_claim, satisfies this).
-		{LevelStandard, "/lumen_maintenance_luminaire", hasLumenMaintenance(record)},
+		// The label names both accepted paths so gap guidance does not imply only
+		// the luminaire block works.
+		{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", hasLumenMaintenance(record)},
 	}
 
 	// Input voltage: either input_voltage_v or input_voltage_class satisfies.
+	// The label names both accepted paths so gap guidance does not imply only
+	// input_voltage_v works.
 	voltageMet := hasValue(record, "electrical", "input_voltage_v") || getString(record, "electrical", "input_voltage_class") != ""
-	reqs = append(reqs, requirement{LevelStandard, "/electrical/input_voltage_v", voltageMet})
+	reqs = append(reqs, requirement{LevelStandard, "/electrical/input_voltage_v (or /electrical/input_voltage_class)", voltageMet})
 
 	// CONDITIONAL: beam_angle_deg only when the product is directional.
 	if isDirectional(record) {

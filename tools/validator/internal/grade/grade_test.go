@@ -224,7 +224,7 @@ func standardBase() map[string]any {
 			"input_voltage_v":   map[string]any{"value": float64(120)},
 		},
 		"colorimetry": map[string]any{
-			"nominal_cct_k": map[string]any{"value": float64(3000)},
+			"nominal_cct_k": "3000",
 			"cri_ra":        map[string]any{"value": float64(90)},
 		},
 		"test_conditions": map[string]any{

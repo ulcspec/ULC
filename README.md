@@ -68,7 +68,7 @@ Additional source types and fields may be supported in future versions.
 
 ULC files work with the tools designers already use, today, without waiting for ecosystem maturity:
 
-- **Generic LLMs (ChatGPT, Claude, Gemini)** parse a ULC file natively. Drag a `.ulc.json` from `examples/` into the chat and ask "what is this product?" or "compare this to [another ULC file]." The LLM produces a useful spec-sheet rendering, cross-product comparison, and attribute lookup. No setup required.
+- **Generic LLMs (ChatGPT, Claude, Gemini)** parse a ULC file natively. Drag a `.ulc` record from `examples/` into the chat and ask "what is this product?" or "compare this to [another ULC file]." The LLM produces a useful spec-sheet rendering, cross-product comparison, and attribute lookup. No setup required.
 - **Lighting-domain specialty consumption tools** like LightingAgent.AI (under development today) add on-demand fetching of the linked IES / LDT photometric files and built-in resolution for industry-shorthand glossary (L90, TM-21, CCR, SVM, melanopic DER, IES-C, CIE 97 maintenance-factor tables).
 
 Both tiers work. The difference is depth of lighting-domain support, not whether ULC is consumable. ULC is the substrate that both read.
@@ -93,7 +93,7 @@ The current working state ships the schema, taxonomy, drift-guard tooling, the a
 
 - To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
 - To see those patterns in real data, read the four records in `examples/`. Each one exercises a distinct pattern against a real manufacturer spec sheet.
-- **To try ULC right now**, drag any `.ulc.json` from `examples/` into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. No setup required.
+- **To try ULC right now**, drag any `.ulc` record from `examples/` into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. No setup required.
 - To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
 - To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
 - To validate a record end-to-end (schema, index-builder parity, source-file hashes), run `ulc validate <record>` using the reference CLI. `<record>` is the path to any `.ulc` or `.ulc.json` file; both extensions are accepted. Download a release binary from the GitHub Releases page, or build from source with `cd tools/validator && go build -o bin/ulc ./cmd/ulc`.

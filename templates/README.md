@@ -37,7 +37,7 @@ Each template pairs a `.ulc.json` skeleton with a sibling `.md` guide walking th
 
 ## Conformance level
 
-You do not set a conformance level. It is computed: `ulc build-index` grades the record from its populated fields and stamps the result into the generated index as `index.conformance_level`. The skeleton templates grade `core`; the level climbs to `standard` as measured values and provenance fill in, and to `full` once operating-point qualifiers, BUG (for outdoor products), and the rest of the comprehensive dataset are present.
+You do not set a conformance level. It is computed: `ulc build-index` grades the record from its populated fields and stamps the result into the generated index as `index.conformance_level`. The skeleton templates grade `core`; the level climbs to `standard` as measured values and provenance fill in, and to `full` once operating-point qualifiers (and BUG for outdoor products) are present. Records at full commonly carry deeper comprehensive data (TM-30 hue bins, method-backed lumen-maintenance projections, measurement uncertainty, and instrumentation metadata), which the validator reports as INFO observations rather than hard requirements.
 
 The reference validator reports the computed level as an `INFO` finding, plus `INFO` guidance naming the specific fields needed to reach the next level. Structural, parity, and hash checks always run; the stored `index.conformance_level` is guarded by the parity check like every other index value.
 
