@@ -307,6 +307,21 @@ func measuredLumens(row Row, field string, ctx provenanceContext) (map[string]an
 		}
 		prov["attestation_ref"] = ref
 	}
+	// A zonal lumen overridden to a derived method (scaled / optical_simulation /
+	// extended_photometry) must name its base attestation, same as every other
+	// derived value: explicit override wins, else auto-link to the single LM-79.
+	if ref := row[field+"__base_attestation_ref"]; ref != "" {
+		prov["base_attestation_ref"] = ref
+	}
+	if derivedBaseMethods[method] {
+		if base, _ := prov["base_attestation_ref"].(string); base == "" {
+			ref, err := ctx.baseAttestationRef(field, method)
+			if err != nil {
+				return nil, err
+			}
+			prov["base_attestation_ref"] = ref
+		}
+	}
 	if cn := row["conflict_notes"]; cn != "" {
 		prov["conflict_notes"] = cn
 	}

@@ -48,11 +48,11 @@ The workbook carries **only authored values**. Three things are NEVER columns: t
 | `cct_multipliers` | the Pattern B CCT lumen-multiplier table | `(record_id,axis_value)` | B |
 | `declared_by_length` | verbatim per-length table (else generated) | `(record_id,length_mm)` | D |
 | `excluded_combinations` | SKUs orderable elsewhere but not covered here | `(record_id,row#)` | B D |
-| `compatible_accessories` | separately-ordered accessories | `(record_id,accessory)` | A B C |
+| `compatible_accessories` | separately-ordered accessories (planned; declared here but not yet consumed by the converter) | `(record_id,accessory)` | A B C |
 | `ingredient_list` | Declare / LBC material roster | `(record_id,material)` | B D |
 | `cie97_lmf` / `cie97_llmf` | CIE-97 LMF grid + LLMF-by-hours | `(record_id,...)` | A (full) |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed rows | `(record_id,pkg)` | full |
-| `alpha_opic_per_channel` | per-photoreceptor efficacy | `(record_id,channel)` | full |
+| `alpha_opic` | per-photoreceptor efficacy (assembled into `alpha_opic_metrics`) | `(record_id,channel)` | full |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM) | `(record_id,metric)` | full |
 | `zonal_lumens` / `lcs_zonal_lumens` | angle-band + TM-15 LCS zones | `(record_id,zone)` | B / outdoor |
 
@@ -137,11 +137,11 @@ hard-errors if there are zero or more-than-one (the manufacturer then disambigua
 1. **KV-map cells** (`fixed_axes`, attestation `required_constraints`, `excluded.axes`): JSON-in-cell, converter-validated.
 2. **`covered_axes` rationale**: axis-level; error on two non-identical non-blank rationales for one `(record_id, axis_key)`.
 3. **`declared_by_length` author-vs-generate**: authored sheet wins; WARN when a row diverges from `rate*length` by > 2%.
-4. **`attestation_ref` with multiple LM-79 rows**: require the explicit `*__attestation_ref` column; hard-error rather than guess.
-5. **Pattern C provenance**: support BOTH companion columns AND an optional `provenance_overrides` long sheet keyed by `(record_id, ulc_field_path)`; the sheet overrides the companion column.
-6. **Enum validation**: load enum domains from the live `ulc.schema.json` at runtime; reject unknown tokens with the offending cell coordinate. Programs with no `AttestationProgram` enum (IP/IK/etc.) route to `extensions_json`, not `attestations`.
+4. **`attestation_ref` with multiple LM-79 rows**: require the explicit `*__attestation_ref` column; hard-error rather than guess. Attestations are emitted as unconditional (the default), case-by-case (`verification_type=requires_manufacturer_confirmation`, which the converter forbids from also being `value_type=measured`), or family-wide (shared). Option-conditional attestation applicability (`applicability.required_order_code_options` / `required_constraints`) is NOT implemented in v1.
+5. **Pattern C provenance**: supported via the per-column companion columns (`*__value_type`, `*__prov_source`, `*__prov_method`, `*__extension_method`, `*__base_attestation_ref`, `*__attestation_ref`). A `provenance_overrides` long sheet keyed by `(record_id, ulc_field_path)` was considered but is NOT implemented in v1.
+6. **Enum validation**: enum cell values pass through as authored, and the schema validator (run after assembly) rejects unknown tokens. A converter-side enum-domain preload from `ulc.schema.json` with offending cell coordinates was considered but is NOT implemented in v1. Programs with no `AttestationProgram` enum (IP/IK/etc.) route to `extensions_json`, not `attestations`.
 7. **List delimiter**: inline `;`-joined for short scalar lists; `finish_color_options` is authoritative for `shared_mechanical`; the B `finish` covered-axis is authored independently and not cross-populated.
-8. **`luminaire_efficacy`**: if blank, compute `flux/power` and stamp `method=computed`; if authored, trust but WARN when it diverges from `flux/power` by > 1 lm/W.
+8. **`luminaire_efficacy`**: authored via the `luminaire_efficacy_lm_per_w` column; the Pattern D per-foot path computes efficacy for generated length rows (`method=computed`). Blank-fill from `flux/power` and a >1 lm/W divergence WARN were considered but are NOT implemented in v1.
 9. **IES autofill**: NOT in v1; measured/zonal values are authored. Phase-2 IES-autofill fills blanks only, never overrides authored cells.
 10. **Pattern D `catalog_number` collision**: derivation/length/multiplier signals take precedence over the `catalog_number` signal (see section 2).
 

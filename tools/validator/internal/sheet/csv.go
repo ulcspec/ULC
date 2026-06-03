@@ -17,8 +17,8 @@ import (
 // "empty" is never confused with the literal value 0.
 //
 // Only the standard library encoding/csv is used, so the reader is offline and
-// dependency-free. A native .xlsx reader is a planned fast-follow that produces
-// the same Workbook model.
+// dependency-free. The native .xlsx reader in xlsx.go produces the same
+// Workbook model from a single-file workbook.
 func ReadCSVBundle(dir string) (Workbook, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {

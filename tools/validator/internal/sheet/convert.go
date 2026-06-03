@@ -85,6 +85,9 @@ func Convert(input string, opts Options) ([]Result, error) {
 	if len(records) == 0 {
 		return nil, errors.New("the records sheet has no data rows")
 	}
+	if err := checkRelatedSheetIDs(wb, records); err != nil {
+		return nil, err
+	}
 
 	assetsRoot := opts.AssetsRoot
 	if assetsRoot == "" {
@@ -118,6 +121,51 @@ func Convert(input string, opts Options) ([]Result, error) {
 		})
 	}
 	return results, nil
+}
+
+// consumedRelatedSheets are the non-records sheets the converter joins to a
+// record by record_id. The preflight validates these (and only these, so extra
+// workbook tabs like instructions or a changelog are ignored).
+var consumedRelatedSheets = map[string]bool{
+	"source_files": true, "attestations": true, "shared_attestations": true,
+	"covered_axes": true, "cct_multipliers": true, "declared_by_length": true,
+	"excluded_combinations": true, "ingredient_list": true,
+	"cie97_lmf": true, "cie97_llmf": true, "alpha_opic": true,
+	"flicker_metrics": true, "lumen_maintenance_package": true,
+	"zonal_lumens": true, "lcs_zonal_lumens": true,
+}
+
+// checkRelatedSheetIDs is a preflight over the related sheets the converter
+// consumes: every row must carry a record_id that exists in the records sheet.
+// Without this, a row with a blank or typoed record_id is silently skipped by
+// RowsFor, dropping source files, attestations, multiplier rows, or full-level
+// data while still producing a plausible-looking record.
+func checkRelatedSheetIDs(wb Workbook, records []Row) error {
+	ids := make(map[string]struct{}, len(records))
+	for _, r := range records {
+		if id := r["record_id"]; id != "" {
+			ids[id] = struct{}{}
+		}
+	}
+	names := make([]string, 0, len(wb))
+	for name := range wb {
+		if name != "records" && consumedRelatedSheets[name] {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		for i, r := range wb[name] {
+			id := r["record_id"]
+			if id == "" {
+				return fmt.Errorf("sheet %q row %d: missing record_id (rows here are joined to the records sheet by record_id and would otherwise be silently dropped)", name, i+1)
+			}
+			if _, ok := ids[id]; !ok {
+				return fmt.Errorf("sheet %q row %d: record_id %q matches no row in the records sheet (typo? it would be silently dropped)", name, i+1, id)
+			}
+		}
+	}
+	return nil
 }
 
 // assembleRecord builds one record's deep blocks from the master row and the
@@ -186,7 +234,11 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	if len(attestations) > 0 {
 		rec["attestations"] = attestations
 	}
-	if shared := assembleSharedAttestations(wb, id); len(shared) > 0 {
+	shared, err := assembleSharedAttestations(wb, id)
+	if err != nil {
+		return nil, err
+	}
+	if len(shared) > 0 {
 		if err := setPath(rec, "product_family.shared_attestations", shared); err != nil {
 			return nil, err
 		}
@@ -495,12 +547,30 @@ func assembleAttestations(wb Workbook, id string, hasher *fileHasher) ([]any, er
 // assembleSharedAttestations builds product_family.shared_attestations[] from
 // the shared_attestations sheet. These are family-wide listings with no
 // source-document hashing.
-func assembleSharedAttestations(wb Workbook, id string) []any {
+func assembleSharedAttestations(wb Workbook, id string) ([]any, error) {
 	out := []any{}
 	for _, row := range wb.RowsFor("shared_attestations", id) {
-		out = append(out, buildSharedAttestation(row))
+		att, err := buildSharedAttestation(row)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, att)
 	}
-	return out
+	return out, nil
+}
+
+// rejectCaseByCaseMeasured enforces the attestation policy that a case-by-case
+// claim (verification_type=requires_manufacturer_confirmation) must not be
+// promoted to a measured value: consumers must not propagate such a claim
+// without per-project confirmation, so it cannot stand as a measured quantity.
+func rejectCaseByCaseMeasured(vtype string, att map[string]any) error {
+	if vtype != "requires_manufacturer_confirmation" {
+		return nil
+	}
+	if vt, _ := att["value_type"].(string); vt == "measured" {
+		return fmt.Errorf("attestation %v: verification_type=requires_manufacturer_confirmation cannot carry value_type=measured (a case-by-case claim must not be promoted to a measured value; use rated or claimed)", att["program"])
+	}
+	return nil
 }
 
 // buildAttestation maps an attestations-sheet row onto an Attestation object.
@@ -525,6 +595,9 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 		vtype = "unconditional"
 	}
 	att["verification"] = map[string]any{"type": vtype}
+	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
+		return nil, err
+	}
 
 	if doc := row["source_document_file"]; doc != "" {
 		ref, err := buildFileReference(doc, row, "source_document_file", hasher)
@@ -545,7 +618,7 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 // buildSharedAttestation maps a shared_attestations-sheet row onto an Attestation
 // object. Family-wide listings carry a verification block (defaulting to
 // unconditional) and no source document.
-func buildSharedAttestation(row Row) map[string]any {
+func buildSharedAttestation(row Row) (map[string]any, error) {
 	att := map[string]any{}
 	copyIf(att, row, "attestation_id", "attestation_id")
 	copyIf(att, row, "program", "program")
@@ -557,7 +630,10 @@ func buildSharedAttestation(row Row) map[string]any {
 		vtype = "unconditional"
 	}
 	att["verification"] = map[string]any{"type": vtype}
-	return att
+	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
+		return nil, err
+	}
+	return att, nil
 }
 
 // copyIf copies row[src] to dst[key] when the cell is present.

@@ -1,1 +1,1 @@
-record_id,zone,lumens,conflict_notes,lumens__value_type,lumens__prov_source,lumens__prov_method,lumens__attestation_ref
+record_id,zone,lumens,conflict_notes,lumens__value_type,lumens__prov_source,lumens__prov_method,lumens__extension_method,lumens__base_attestation_ref,lumens__attestation_ref

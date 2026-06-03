@@ -86,3 +86,55 @@ func TestParseJSONObjectCellRejectsTrailing(t *testing.T) {
 		t.Fatalf("obj[\"a\"] = %v, want b", obj["a"])
 	}
 }
+
+// TestMeasuredLumensDerivedRequiresBase locks that a zonal/LCS lumen overridden
+// to a derived method must resolve a base_attestation_ref (auto-linked to the
+// single LM-79, hard-erroring on 0-or-many).
+func TestMeasuredLumensDerivedRequiresBase(t *testing.T) {
+	row := Row{"lumens": "1200", "lumens__value_type": "rated", "lumens__prov_method": "scaled"}
+
+	if _, err := measuredLumens(row, "lumens", provenanceContext{lm79Count: 0}); err == nil {
+		t.Error("expected error: derived zonal lumen with no base attestation and no lm_79 anchor")
+	}
+
+	pn, err := measuredLumens(row, "lumens", provenanceContext{lm79AttestationID: "L1", lm79Count: 1})
+	if err != nil {
+		t.Fatalf("unexpected error with single lm_79 anchor: %v", err)
+	}
+	prov, _ := pn["provenance"].(map[string]any)
+	if prov["base_attestation_ref"] != "L1" {
+		t.Fatalf("base_attestation_ref = %v, want L1", prov["base_attestation_ref"])
+	}
+}
+
+// TestRejectCaseByCaseMeasuredAttestation locks that a case-by-case attestation
+// (requires_manufacturer_confirmation) cannot be promoted to value_type=measured.
+func TestRejectCaseByCaseMeasuredAttestation(t *testing.T) {
+	h := &fileHasher{}
+	if _, err := buildAttestation(Row{"program": "baa_compliance", "value_type": "measured", "verification_type": "requires_manufacturer_confirmation"}, h); err == nil {
+		t.Error("expected error: case-by-case attestation cannot be value_type=measured")
+	}
+	if _, err := buildAttestation(Row{"program": "baa_compliance", "value_type": "rated", "verification_type": "requires_manufacturer_confirmation"}, h); err != nil {
+		t.Errorf("case-by-case + rated should be allowed: %v", err)
+	}
+	if _, err := buildSharedAttestation(Row{"program": "baa_compliance", "value_type": "measured", "verification_type": "requires_manufacturer_confirmation"}); err == nil {
+		t.Error("expected error: shared case-by-case attestation cannot be value_type=measured")
+	}
+}
+
+// TestCheckRelatedSheetIDs locks the preflight: consumed related-sheet rows must
+// carry a record_id that exists in the records sheet; unrelated extra tabs are
+// ignored.
+func TestCheckRelatedSheetIDs(t *testing.T) {
+	records := []Row{{"record_id": "r1"}}
+
+	if err := checkRelatedSheetIDs(Workbook{"records": records, "source_files": {{"record_id": "r2", "filename": "x.ies"}}}, records); err == nil {
+		t.Error("expected error: source_files record_id r2 not in records")
+	}
+	if err := checkRelatedSheetIDs(Workbook{"records": records, "attestations": {{"program": "lm_79"}}}, records); err == nil {
+		t.Error("expected error: attestations row missing record_id")
+	}
+	if err := checkRelatedSheetIDs(Workbook{"records": records, "instructions": {{"note": "fill this in"}}, "source_files": {{"record_id": "r1", "filename": "x.ies"}}}, records); err != nil {
+		t.Errorf("valid workbook with an ignored extra tab should pass: %v", err)
+	}
+}

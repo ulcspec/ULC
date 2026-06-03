@@ -30,9 +30,9 @@ type Row map[string]string
 
 // Workbook is a format-agnostic model of a manufacturer workbook: a map from
 // sheet name (for example "records", "source_files") to that sheet's rows in
-// file order. Any reader (CSV bundle today, native .xlsx as a fast-follow)
-// produces this same model, so the assembler is decoupled from the input
-// format.
+// file order. Both readers (the CSV bundle in csv.go and the native .xlsx
+// reader in xlsx.go) produce this same model, so the assembler is decoupled
+// from the input format.
 type Workbook map[string][]Row
 
 // Sheet returns the rows for the named sheet and whether the sheet exists.

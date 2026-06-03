@@ -295,9 +295,10 @@ USAGE
 
 // --- from-sheet ---
 
-// runFromSheet converts a CSV workbook bundle into validated ULC records. For
-// each assembled record it builds the index (which stamps conformance_level),
-// checks the required index keys, writes <out>/<record_id>.ulc.json, runs the
+// runFromSheet converts a CSV bundle directory or a native .xlsx workbook into
+// validated ULC records. For each assembled record it builds the index (which
+// stamps conformance_level), checks the required index keys, writes
+// <out>/<record_id>.ulc.json only after schema validation passes, runs the
 // schema validator plus the conformance report, and prints a one-line summary.
 // It exits non-zero if any record fails schema validation.
 func runFromSheet(args []string) int {
@@ -367,9 +368,13 @@ USAGE
 	}
 
 	failed := false
+	sawSentinel := false
 	for _, res := range results {
 		for _, w := range res.Warnings {
 			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", res.RecordID, w)
+			if strings.Contains(w, "zero-sentinel") {
+				sawSentinel = true
+			}
 		}
 
 		built := index.Build(res.Record)
@@ -388,36 +393,27 @@ USAGE
 		res.Record["index"] = built
 
 		outPath := filepath.Join(outDir, res.RecordID+".ulc.json")
-		if err := writeRecord(outPath, res.Record); err != nil {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
-			failed = true
-			continue
-		}
 
-		// Validate the assembled record. The validator wants the json.Number-typed
-		// tree, but the in-memory record carries Go-native numbers; re-read the
-		// file we just wrote through the strict decoder so the schema check sees
-		// the same shape the validate subcommand does.
-		report := findings.NewReport()
-		data, rerr := os.ReadFile(outPath)
-		if rerr != nil {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: re-read %s: %v\n", outPath, rerr)
+		// Marshal once and validate the bytes BEFORE writing, so a record that
+		// fails schema validation never lands in --out. The validator wants the
+		// json.Number-typed tree; decodeStrict reproduces the shape the validate
+		// subcommand sees. (sheet.Convert already computed each source file's
+		// SHA-256 against the resolved assets root, so no hash re-verification is
+		// needed here.)
+		recordBytes, merr := marshalRecord(res.Record)
+		if merr != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", merr)
 			failed = true
 			continue
 		}
-		rawTree, derr := decodeStrict(data)
+		report := findings.NewReport()
+		rawTree, derr := decodeStrict(recordBytes)
 		if derr != nil {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", outPath, derr)
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", res.RecordID, derr)
 			failed = true
 			continue
 		}
 		v.Validate(rawTree, report)
-		// sheet.Convert already computed each source file's SHA-256 from the
-		// resolved assets root and embedded it (hard-erroring on a missing file
-		// unless --allow-missing-files), so a separate hash re-verification here is
-		// redundant. Running it against outDir, which holds only the written
-		// records and not the assets, would only emit misleading "not present
-		// locally" INFO findings.
 		grade.Report(res.Record, report)
 		report.Finalize()
 
@@ -425,15 +421,26 @@ USAGE
 		if level == "" {
 			level = "none"
 		}
-		fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
 		if report.HasErrors() {
+			fmt.Printf("%s -> %s (%d findings, not written)\n", res.RecordID, level, len(report.Findings))
 			if err := report.WriteText(os.Stderr, outPath); err != nil {
 				fmt.Fprintf(os.Stderr, "ulc from-sheet: write report: %v\n", err)
 			}
 			failed = true
+			continue
 		}
+		if err := os.WriteFile(outPath, recordBytes, 0o644); err != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: write %s: %v\n", outPath, err)
+			failed = true
+			continue
+		}
+		fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
 	}
 
+	if sawSentinel {
+		fmt.Fprintln(os.Stderr, "ulc from-sheet: one or more records reference files that were not hashed (--allow-missing-files stamped the zero-sentinel SHA-256). These are DRAFTS, not validated records; re-run without --allow-missing-files once the files are present.")
+		return 1
+	}
 	if failed {
 		return 1
 	}
@@ -593,15 +600,25 @@ func numberFromJSON(n json.Number) (any, error) {
 	return f, nil
 }
 
-func writeRecord(path string, record index.Record) error {
+func marshalRecord(record index.Record) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	enc.SetIndent("", "  ")
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(record); err != nil {
-		return fmt.Errorf("encode %s: %w", path, err)
+		return nil, fmt.Errorf("encode record: %w", err)
 	}
-	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+	return buf.Bytes(), nil
+}
+
+// writeRecord marshals the record and writes it to path (used by build-index's
+// in-place write; from-sheet marshals then validates before writing).
+func writeRecord(path string, record index.Record) error {
+	data, err := marshalRecord(record)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil
