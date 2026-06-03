@@ -42,8 +42,11 @@ type Result struct {
 // attestations / shared_attestations sheet joins. It does NOT build the index or
 // validate: the caller does that, so assembly stays unit-testable in isolation.
 //
-// Increment 1 fully handles Pattern A. Patterns B, C, and D are detected and
-// rejected with an explicit "not yet implemented" error so the scope is honest.
+// All four authoring patterns are handled. A and C share the fixed-axes pin
+// assembler (C differs only in per-column provenance, which the provenance
+// override columns already support). B and D add the covered-axes assembler:
+// the applicability block, the CCT multiplier or per-foot derivation, and the
+// generated declared_by_cct / declared_by_length tables.
 func Convert(bundleDir string, opts Options) ([]Result, error) {
 	wb, err := ReadCSVBundle(bundleDir)
 	if err != nil {
@@ -76,11 +79,8 @@ func Convert(bundleDir string, opts Options) ([]Result, error) {
 
 		hasher := &fileHasher{assetsRoot: assetsRoot, allowMissing: opts.AllowMissingFiles}
 		pattern := detectPattern(wb, id, master)
-		if pattern != PatternA {
-			return nil, fmt.Errorf("record %q classified as Pattern %s: not yet implemented in increment 1 (only Pattern A is supported)", id, pattern)
-		}
 
-		rec, err := assembleRecord(wb, id, master, hasher)
+		rec, err := assembleRecord(wb, id, master, pattern, hasher)
 		if err != nil {
 			return nil, fmt.Errorf("record %q: %w", id, err)
 		}
@@ -98,7 +98,13 @@ func Convert(bundleDir string, opts Options) ([]Result, error) {
 // joined related sheets. The order matters: attestations are assembled first so
 // the measured -> attestation_ref auto-link can resolve the single LM-79 id, and
 // the cutsheet dual-write feeds source_files.
-func assembleRecord(wb Workbook, id string, master Row, hasher *fileHasher) (map[string]any, error) {
+//
+// Patterns A and C share the fixed-axes pin path: the master columns carry the
+// headline photometry directly, and C's derived provenance arrives through the
+// provenance override columns (prov_method, base_attestation_ref). Patterns B and
+// D additionally assemble the applicability block and the derivation-generated
+// declared_by_cct / declared_by_length tables.
+func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher *fileHasher) (map[string]any, error) {
 	rec := map[string]any{
 		"record_id": id,
 	}
@@ -118,6 +124,13 @@ func assembleRecord(wb Workbook, id string, master Row, hasher *fileHasher) (map
 	// Master-row scalar columns (identity, taxonomy, mechanical, electrical,
 	// photometry, colorimetry) via the data-driven column spec.
 	if err := applyColumns(rec, master, provCtx); err != nil {
+		return nil, err
+	}
+
+	// extensions_json: optional per-record vendor-data overflow that lands at
+	// extensions.manufacturer_specific.<slug>. Supports the Pattern C (and any)
+	// vendor data that has no schema slot.
+	if err := applyExtensions(rec, master); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +164,99 @@ func assembleRecord(wb Workbook, id string, master Row, hasher *fileHasher) (map
 		}
 	}
 
+	// Patterns B and D: the applicability block and the derivation-generated
+	// photometry tables. A and C are fixed-axes pins and need neither.
+	if pattern == PatternB || pattern == PatternD {
+		if err := assembleCoveredAxisRecord(wb, id, master, rec, lm79ID, hasher); err != nil {
+			return nil, err
+		}
+	}
+
 	return rec, nil
+}
+
+// assembleCoveredAxisRecord adds the multi-value-applicability deep blocks shared
+// by patterns B and D: the applicability block (applicable_catalog_pattern,
+// fixed_axes, covered_axes, excluded_combinations), and the derivation-generated
+// photometry table. Pattern B generates photometry.declared_by_cct from the CCT
+// multiplier table applied to the measured baseline flux; Pattern D generates (or
+// echoes) photometry.declared_by_length from the per-foot rates.
+func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[string]any, lm79ID string, hasher *fileHasher) error {
+	app, err := assembleApplicability(wb, id, master)
+	if err != nil {
+		return err
+	}
+	if len(app) > 0 {
+		rec["applicability"] = app
+	}
+
+	multipliers, multOrder, err := readMultiplierTable(wb, id)
+	if err != nil {
+		return err
+	}
+
+	// Pattern B: generate photometry.declared_by_cct from the multiplier table.
+	if len(multipliers) > 0 {
+		baseline, ok := baselineFlux(rec)
+		if !ok {
+			return fmt.Errorf("record %q: a cct_multipliers table is present but photometry.total_luminous_flux_lm.value (the multiplier baseline) is missing", id)
+		}
+		baselineCCT := coveredAxisBaseline(app, "cct")
+		base := lm79ID
+		if ref := master["total_luminous_flux_lm__attestation_ref"]; ref != "" {
+			base = ref
+		}
+		declared := generateDeclaredByCCT(multipliers, multOrder, baseline, baselineCCT, base)
+		if err := setPath(rec, "photometry.declared_by_cct", declared); err != nil {
+			return err
+		}
+	}
+
+	// Pattern D: generate or echo photometry.declared_by_length from the per-foot
+	// rates and the covered length axis values.
+	if isLengthScaled(wb, id, app) {
+		params := declaredByLengthParams{
+			rates:        ratesFromRecord(rec),
+			lengthValues: coveredAxisValues(app, "length"),
+			baseLM79:     lengthBaseAttestation(master, lm79ID),
+			baselineIn:   coveredAxisBaseline(app, "length"),
+		}
+		declared, err := assembleDeclaredByLength(wb, id, params, &hasher.warnings)
+		if err != nil {
+			return err
+		}
+		if len(declared) > 0 {
+			if err := setPath(rec, "photometry.declared_by_length", declared); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// applyExtensions writes the optional extensions_json cell into
+// extensions.manufacturer_specific.<slug>, where <slug> is the
+// extensions_slug column (falling back to manufacturer_slug). The cell is a JSON
+// object of vendor data that has no schema slot (the Pattern C vendor-data
+// overflow, though any pattern may use it). A blank cell is a no-op.
+func applyExtensions(rec map[string]any, master Row) error {
+	raw, ok := master["extensions_json"]
+	if !ok {
+		return nil
+	}
+	obj, err := parseJSONObjectCell("extensions_json", raw)
+	if err != nil {
+		return err
+	}
+	slug := master["extensions_slug"]
+	if slug == "" {
+		slug = master["manufacturer_slug"]
+	}
+	if slug == "" {
+		return errors.New("extensions_json is set but neither extensions_slug nor manufacturer_slug is present to key extensions.manufacturer_specific")
+	}
+	return setPath(rec, "extensions.manufacturer_specific."+slug, obj)
 }
 
 // applyColumns dispatches each records-sheet column onto the record per its Kind,

@@ -7,6 +7,12 @@ import (
 	"testing"
 )
 
+// contains reports whether sub occurs in s; a small readability wrapper used in
+// warning-message assertions.
+func contains(s, sub string) bool {
+	return strings.Contains(s, sub)
+}
+
 // readFixture returns the bytes of a file under testdata/bundle as a string.
 func readFixture(t *testing.T, name string) string {
 	t.Helper()
@@ -29,10 +35,16 @@ func writeFile(t *testing.T, path, content string) {
 // IES files) into dir so a test can mutate one sheet in isolation.
 func writeFixtureCopy(t *testing.T, dir string) {
 	t.Helper()
-	src := filepath.Join("testdata", "bundle")
+	copyBundle(t, filepath.Join("testdata", "bundle"), dir)
+}
+
+// copyBundle copies every file in the src bundle directory into dst so a test can
+// mutate one sheet in isolation while keeping the referenced asset files present.
+func copyBundle(t *testing.T, src, dst string) {
+	t.Helper()
 	entries, err := os.ReadDir(src)
 	if err != nil {
-		t.Fatalf("read fixture dir: %v", err)
+		t.Fatalf("read bundle dir %s: %v", src, err)
 	}
 	for _, e := range entries {
 		if e.IsDir() {
@@ -40,12 +52,8 @@ func writeFixtureCopy(t *testing.T, dir string) {
 		}
 		data, err := os.ReadFile(filepath.Join(src, e.Name()))
 		if err != nil {
-			t.Fatalf("read fixture %s: %v", e.Name(), err)
+			t.Fatalf("read bundle file %s: %v", e.Name(), err)
 		}
-		writeFile(t, filepath.Join(dir, e.Name()), string(data))
+		writeFile(t, filepath.Join(dst, e.Name()), string(data))
 	}
-}
-
-func contains(s, sub string) bool {
-	return strings.Contains(s, sub)
 }

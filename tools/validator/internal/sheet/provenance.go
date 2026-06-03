@@ -51,8 +51,8 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 
 	// extension_method / base_attestation_ref companion overrides: these are the
 	// extension points the C and D patterns lean on (extended_photometry,
-	// optical_simulation, scaled). They are plumbed here so the provenance layer
-	// is pattern-complete; the assembler restricts to Pattern A in increment 1.
+	// optical_simulation, scaled). Pattern C supplies them on the headline
+	// photometry columns; the generated B/D derivation tables set them directly.
 	if v, ok := row[col.Header+"__extension_method"]; ok {
 		prov["extension_method"] = v
 	}

@@ -1,0 +1,10 @@
+IESNA:LM-63-2002
+[TEST] fake-fixture-pattern-c
+[MANUFAC] Lumenpulse
+[OTHER] This file was scaled by Lumenpulse to reflect a different configuration.
+TILT=NONE
+1 700 0.173 2 1 1 2 -0.0 0.0 0.0
+1.0 1.0 15.3
+0.0 90.0
+0.0
+919.8 0.0

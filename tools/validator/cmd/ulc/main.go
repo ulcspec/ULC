@@ -315,8 +315,10 @@ assembles each record's deep blocks, computes dual-unit companions, SHA-256
 hashes, and default provenance, then builds the index (stamping the conformance
 level) and validates each record against the ULC schema.
 
-Increment 1 supports Pattern A (single-SKU) end to end. Patterns B, C, and D are
-detected and rejected with an explicit not-yet-implemented error.
+All four authoring patterns are supported end to end: A (single-SKU) and C
+(per-IES with derived provenance) as fixed-axes pins, B (CCT multiplier table)
+and D (per-foot linear scaling) with generated declared_by_cct / declared_by_length
+photometry tables.
 
 Exit codes:
   0   every record assembled, built, and passed schema validation

@@ -1,0 +1,2 @@
+record_id,attestation_id,program,status,value_type,issued_date,test_report_id,measured_quantities,verification_type
+lumenpulse-loi-12-rgb-30x60-ts0,lm79_lumenpulse_loi_base_spectralux,lm_79_08,verified,measured,2015-03-05,S1503051-R1,,unconditional

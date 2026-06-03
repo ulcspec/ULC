@@ -49,20 +49,26 @@ func (p Pattern) String() string {
 // wb is the full workbook; id is the record_id; master is the record's row on
 // the records sheet.
 func detectPattern(wb Workbook, id string, master Row) Pattern {
-	hasCoveredAxes := len(wb.RowsFor("covered_axes", id)) > 0
+	coveredRows := wb.RowsFor("covered_axes", id)
+	hasCoveredAxes := len(coveredRows) > 0
 	hasMultipliers := len(wb.RowsFor("cct_multipliers", id)) > 0
 	hasLengths := len(wb.RowsFor("declared_by_length", id)) > 0
+	hasPerFoot := hasPerFootDerivation(coveredRows)
 
-	// Precedence: B/D derivation signals win over catalog_number.
+	// Precedence: B/D derivation signals win over catalog_number. The Pattern D
+	// signal is either a declared_by_length sheet OR a per_foot_linear_scaling
+	// derivation declared on a covered axis (DESIGN.md section 2), since the
+	// declared_by_length table is generated when the manufacturer omits the sheet.
 	switch {
-	case hasLengths:
+	case hasLengths || hasPerFoot:
 		return PatternD
 	case hasMultipliers:
 		return PatternB
 	case hasCoveredAxes:
-		// covered_axes without a multiplier or length table still indicates a
-		// multi-value applicability fork. Length signals were already handled
-		// above, so a bare covered-axes record is a Pattern B family scenario.
+		// covered_axes without a multiplier, length sheet, or per-foot derivation
+		// still indicates a multi-value applicability fork. Length signals were
+		// already handled above, so a bare covered-axes record is a Pattern B
+		// family scenario.
 		return PatternB
 	}
 
@@ -72,6 +78,19 @@ func detectPattern(wb Workbook, id string, master Row) Pattern {
 		return PatternC
 	}
 	return PatternA
+}
+
+// hasPerFootDerivation reports whether any covered_axes row declares the
+// per_foot_linear_scaling derivation method, the Pattern D signal that applies
+// when the manufacturer relies on generated (rather than authored)
+// declared_by_length rows.
+func hasPerFootDerivation(coveredRows []Row) bool {
+	for _, row := range coveredRows {
+		if row["derivation_method"] == "per_foot_linear_scaling" {
+			return true
+		}
+	}
+	return false
 }
 
 // isDerivedHeadline reports whether the record's headline photometry carries a

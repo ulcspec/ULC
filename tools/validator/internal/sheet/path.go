@@ -12,9 +12,10 @@ import (
 // wrapped errors instead of runtime panics.
 //
 // Array-aware path handling (segments like "source_files[0]") is intentionally
-// deferred: the records sheet carries no arrays, and the array-valued blocks
-// (source_files, attestations, shared_attestations) are assembled directly from
-// their own sheets. This keeps the setter small and total for increment 1.
+// omitted: the records sheet carries no arrays, and the array-valued blocks
+// (source_files, attestations, shared_attestations, covered_axes values,
+// declared_by_cct, declared_by_length) are assembled directly from their own
+// sheets and assigned as whole slices. This keeps the setter small and total.
 func setPath(root map[string]any, path string, value any) error {
 	segs := strings.Split(path, ".")
 	if len(segs) == 0 || segs[0] == "" {

@@ -1,0 +1,2 @@
+record_id,attestation_id,program,status,value_type,issued_date,test_report_id,measured_quantities,verification_type
+lumos-skyline-sr-ho-3000k,lm79_lumos_skyline_sr_ho,lm_79_08,verified,measured,2025-11-01,L99887766,electrical.input_power_w;photometry.total_luminous_flux_lm;photometry.maximum_intensity_cd,unconditional

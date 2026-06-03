@@ -1,0 +1,9 @@
+IESNA:LM-63-2002
+[TEST] fake-fixture-pattern-b
+[MANUFAC] Lumos Lighting
+TILT=NONE
+1 4200 1 2 1 1 2 -0.0 0.0 0.0
+1.0 1.0 45.0
+0.0 90.0
+0.0
+1500.0 0.0

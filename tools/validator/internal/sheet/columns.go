@@ -110,7 +110,11 @@ var recordColumns = []Column{
 	{Header: "ceiling_aperture_mm", Path: "product_family.physical_dimensions.ceiling_aperture", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 	{Header: "recess_depth_mm", Path: "product_family.physical_dimensions.recess_depth", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 	{Header: "connection_cable_length_mm", Path: "product_family.physical_dimensions.connection_cable_length", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "overall_length_mm", Path: "product_family.physical_dimensions.overall_length", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "overall_width_mm", Path: "product_family.physical_dimensions.overall_width", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "overall_height_mm", Path: "product_family.physical_dimensions.overall_height", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 	{Header: "luminaire_mass_kg", Path: "product_family.physical_dimensions.luminaire_mass", Kind: KindDualUnitSI, DualKind: dualMass, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "linear_mass_per_foot_kg_per_m", Path: "product_family.physical_dimensions.linear_mass_per_foot", Kind: KindDualUnitSI, DualKind: dualMassPerLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 
 	// --- configuration ---
 	{Header: "photometric_scenario_id", Path: "configuration.photometric_scenario_id", Kind: KindString},
@@ -121,6 +125,8 @@ var recordColumns = []Column{
 	// configuration.tested_axes
 	{Header: "distribution_manufacturer_label", Path: "configuration.tested_axes.distribution_code.manufacturer_label", Kind: KindString},
 	{Header: "distribution_type", Path: "configuration.tested_axes.distribution_code.distribution_type", Kind: KindEnum},
+	{Header: "outdoor_distribution_type_axis", Path: "configuration.tested_axes.distribution_code.outdoor_distribution_type", Kind: KindEnum},
+	{Header: "light_engine_variant", Path: "configuration.tested_axes.light_engine_variant", Kind: KindString},
 	{Header: "output_tier_manufacturer_label", Path: "configuration.tested_axes.output_tier.manufacturer_label", Kind: KindString},
 	{Header: "output_tier_meaning", Path: "configuration.tested_axes.output_tier.tier_meaning", Kind: KindString},
 	{Header: "cri_tier", Path: "configuration.tested_axes.cri_tier", Kind: KindEnum},
@@ -145,6 +151,9 @@ var recordColumns = []Column{
 	{Header: "luminaire_efficacy_lm_per_w", Path: "photometry.luminaire_efficacy_lm_per_w", Kind: KindProvNumber, Unit: "lm/W", ProvSource: "ies", ProvMethod: "computed", ProvValueType: "measured"},
 	{Header: "maximum_intensity_cd", Path: "photometry.maximum_intensity_cd", Kind: KindProvNumber, Unit: "cd", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "beam_angle_deg", Path: "photometry.beam_angle_deg", Kind: KindProvNumber, Unit: "deg", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
+	{Header: "field_angle_deg", Path: "photometry.field_angle_deg", Kind: KindProvNumber, Unit: "deg", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "nominal"},
+	{Header: "ugr_4h_8h", Path: "photometry.ugr_4h_8h", Kind: KindProvNumber, Unit: "ratio", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "ugr_4h_8h_bound_operator", Path: "photometry.ugr_4h_8h_bound_operator", Kind: KindEnum},
 	{Header: "beam_family", Path: "photometry.beam_family", Kind: KindEnum},
 	{Header: "distribution_type_photometry", Path: "photometry.distribution_type", Kind: KindEnum},
 	{Header: "symmetry_type", Path: "photometry.symmetry_type", Kind: KindEnum},
@@ -152,11 +161,30 @@ var recordColumns = []Column{
 	{Header: "luminous_opening_shape", Path: "photometry.luminous_opening_shape", Kind: KindEnum},
 	{Header: "emission_face", Path: "photometry.emission_face", Kind: KindEnum},
 
+	// --- photometry.per_length_normalized (Pattern D per-foot rates) ---
+	// These rates feed the declared_by_length generator (see linear.go) and are
+	// also written directly onto the record so a Pattern D record carries the
+	// authoritative per-unit-length values it scales from.
+	{Header: "lumens_per_foot", Path: "photometry.per_length_normalized.lumens_per_foot", Kind: KindProvNumber, Unit: "lm/ft", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "watts_per_foot", Path: "photometry.per_length_normalized.watts_per_foot", Kind: KindProvNumber, Unit: "W/ft", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "reference_length_mm", Path: "photometry.per_length_normalized.reference_length", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "normalized", ProvValueType: "nominal"},
+
+	// --- operating_point (full-level gate: any one qualifier present satisfies) ---
+	{Header: "operating_input_voltage_v", Path: "operating_point.input_voltage_v", Kind: KindProvNumber, Unit: "V", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "operating_input_frequency_hz", Path: "operating_point.input_frequency_hz", Kind: KindProvNumber, Unit: "Hz", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+
 	// --- colorimetry ---
 	{Header: "nominal_cct_k", Path: "colorimetry.nominal_cct_k", Kind: KindEnum},
 	{Header: "cri_ra", Path: "colorimetry.cri_ra", Kind: KindProvNumber, Unit: "ratio", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "duv", Path: "colorimetry.duv", Kind: KindProvNumber, Unit: "ratio", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "sdcm_step", Path: "colorimetry.sdcm_step", Kind: KindProvNumber, Unit: "ratio", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+
+	// --- outdoor_classification (full-level gate for outdoor products) ---
+	{Header: "bug_b", Path: "outdoor_classification.bug_rating.b", Kind: KindNumber},
+	{Header: "bug_u", Path: "outdoor_classification.bug_rating.u", Kind: KindNumber},
+	{Header: "bug_g", Path: "outdoor_classification.bug_rating.g", Kind: KindNumber},
+	{Header: "outdoor_distribution_type", Path: "outdoor_classification.outdoor_distribution_type", Kind: KindEnum},
+	{Header: "longitudinal_distribution_range", Path: "outdoor_classification.longitudinal_distribution_range", Kind: KindEnum},
 
 	// --- test_conditions / instrumentation (standard-level hard gates) ---
 	{Header: "photometry_basis", Path: "test_conditions.photometry_basis", Kind: KindEnum},

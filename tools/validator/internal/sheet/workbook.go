@@ -10,11 +10,14 @@
 // for the full sheet list, the column-to-path contract, and the resolved
 // implementer decisions.
 //
-// Increment 1 covers the CSV-bundle input format and the Pattern A (single-SKU)
-// happy path end to end. Patterns B, C, and D are detected (detect.go) and
-// rejected with an explicit "not yet implemented" error rather than silently
-// mis-handled. The extension points for the remaining patterns and the full
-// long-sheet set are called out inline.
+// All four authoring patterns are handled over the CSV-bundle input format.
+// Patterns A and C share the fixed-axes pin path (C differs only in per-column
+// provenance, supplied through the provenance override columns). Patterns B and D
+// add the covered-axes assembler: the applicability block plus the
+// derivation-generated photometry.declared_by_cct (CCT multiplier table) and
+// photometry.declared_by_length (per-foot linear scaling) tables. The full
+// long-sheet set beyond these (cie97, alpha_opic, flicker, package) remains an
+// optional future input.
 package sheet
 
 // Row is one spreadsheet row as a header->cell map. A blank or whitespace-only

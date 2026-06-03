@@ -1,0 +1,2 @@
+record_id,attestation_id,program,status,value_type,issued_date,test_report_id,standard_revision,measured_quantities,verification_type
+vode-nexa-807-so-3500k-90cri-hl-black-48in,lm79_19_vode_nexa_807_l072310201,lm_79_19,verified,measured,2023-07-19,L072310201-1,LM-79-19,electrical.input_power_w;photometry.total_luminous_flux_lm;photometry.maximum_intensity_cd,unconditional
