@@ -195,6 +195,38 @@ func TestBuildAttestationApplicability(t *testing.T) {
 	}
 }
 
+// TestRatedOverrideSwitchesSourceOffIES locks that overriding a default-IES
+// photometry anchor to rated (the IES-free path) switches provenance.source off
+// "ies" so the record cannot claim IES provenance with no IES file; an explicit
+// prov_source override is still honored, and the measured default keeps ies.
+func TestRatedOverrideSwitchesSourceOffIES(t *testing.T) {
+	col := Column{Header: "total_luminous_flux_lm", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"}
+
+	rp, err := resolveProvenance(col, Row{"total_luminous_flux_lm__value_type": "rated"}, provenanceContext{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rp.provenance["source"] == "ies" {
+		t.Errorf("rated override should switch the default ies source off, got %v", rp.provenance["source"])
+	}
+
+	rp, err = resolveProvenance(col, Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__prov_source": "ies"}, provenanceContext{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rp.provenance["source"] != "ies" {
+		t.Errorf("explicit prov_source=ies should be honored even when rated, got %v", rp.provenance["source"])
+	}
+
+	rp, err = resolveProvenance(col, Row{}, provenanceContext{lm79AttestationID: "L1", lm79Count: 1})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rp.provenance["source"] != "ies" {
+		t.Errorf("measured default should keep ies, got %v", rp.provenance["source"])
+	}
+}
+
 // TestAnchorRequiresAttestationID locks that a single lm_79* attestation with no
 // attestation_id cannot be used as an auto-link anchor (it must error, not emit
 // an empty attestation_ref).

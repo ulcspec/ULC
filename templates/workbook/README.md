@@ -75,7 +75,10 @@ one `attestations` row with an `lm_79*` program; for an attestation-free draft
 instead, set `total_luminous_flux_lm__value_type=rated` and
 `input_power_w__value_type=rated`. Everything beyond that climbs the record
 toward standard and full. Nothing you add is capped: the converter ingests every
-field you supply and the grade follows the data.
+documented field you supply and the grade follows the data. (Columns and sheets
+it does not recognize are ignored, not an error, so a typoed column name is
+silently skipped: check the column names against the templates if a value you
+expected does not appear.)
 
 ## The sheets
 

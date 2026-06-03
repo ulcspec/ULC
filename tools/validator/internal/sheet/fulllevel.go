@@ -199,10 +199,15 @@ func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any)
 		copyIf(entry, row, "flux_maintenance_threshold", "flux_maintenance_threshold")
 		copyIf(entry, row, "projection_reliability", "projection_reliability")
 		copyIf(entry, row, "tm_21_interpolation_type", "tm_21_interpolation_type")
+		// NOTE: test_temperature_c is intentionally NOT emitted here. The schema
+		// types it as a scalar ProvenancedNumber (unit C) while the other
+		// temperature fields (ambient_temperature, case_temperature) are dual-unit
+		// {c,f}. That schema inconsistency is a schema-level decision; until it is
+		// reconciled, the converter does not author test_temperature_c rather than
+		// ship a value that conflicts with the dual-unit temperature policy.
 		for _, q := range []struct{ col, key, unit string }{
 			{"tm_21_projection_hours", "tm_21_projection_hours", "h"},
 			{"test_hours", "test_hours", "h"},
-			{"test_temperature_c", "test_temperature_c", "C"},
 			{"drive_current_ma", "drive_current_ma", "mA"},
 		} {
 			raw := row[q.col]

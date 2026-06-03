@@ -118,6 +118,14 @@ plus the schema-required `value_type`:
 | `*_m2` | `.m2` | `.ft2` = m2*10.7639 |
 | `*_kg_per_m` | `.kg_per_m` | `.lb_per_ft` = kg_per_m*0.671969 |
 
+The dual-unit companion applies only to fields the schema types as a `DualUnit*`
+object (lengths, masses, the `ambient_temperature` / `case_temperature`
+temperatures, areas). NOTE: the schema currently types the lumen-maintenance
+package `test_temperature_c` as a scalar `ProvenancedNumber` (unit `C`), not a
+dual-unit temperature. That is a schema inconsistency; until it is reconciled at
+the schema level, the converter does NOT author `test_temperature_c` (rather than
+emit a value that conflicts with the dual-unit temperature policy).
+
 ### 3.2 SHA-256 + cutsheet dual-write
 Any path-input column (`records.cutsheet_file`, `source_files.filename`,
 `attestations.source_document_file`) is a local path the converter resolves, hashes (lowercase

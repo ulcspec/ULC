@@ -575,7 +575,8 @@ func buildFileReference(filename string, row Row, header string, hasher *fileHas
 // carry its own file_type override).
 func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef map[string]any, hasher *fileHasher) ([]any, error) {
 	out := []any{}
-	seenTypes := map[string]string{}
+	seen := map[string]bool{}
+	cutsheetListed := false
 
 	for _, row := range wb.RowsFor("source_files", id) {
 		filename := row["filename"]
@@ -586,32 +587,35 @@ func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef m
 		if fileType == "" {
 			return nil, fmt.Errorf("source_files row %q: missing file_type", filename)
 		}
-		if _, dup := seenTypes[filename]; dup {
+		if seen[filename] {
 			return nil, fmt.Errorf("record %q: source_files lists filename %q more than once; each source file must appear in exactly one row", id, filename)
 		}
-		ref, err := buildFileReference(filename, row, "filename", hasher)
-		if err != nil {
-			return nil, err
+		seen[filename] = true
+
+		var ref map[string]any
+		if filename == cutsheetFilename {
+			// Same file as records.cutsheet_file. It must be the datasheet_pdf, and
+			// it reuses the cutsheet's reference so product_family.cutsheet and this
+			// source_files[] entry cannot drift in hash or revision metadata.
+			if fileType != "datasheet_pdf" {
+				return nil, fmt.Errorf("record %q: cutsheet file %q is also listed in source_files with file_type=%q; the cutsheet must be datasheet_pdf (drop the conflicting source_files row or set its file_type to datasheet_pdf)", id, cutsheetFilename, fileType)
+			}
+			ref = cutsheetRef
+			cutsheetListed = true
+		} else {
+			var err error
+			ref, err = buildFileReference(filename, row, "filename", hasher)
+			if err != nil {
+				return nil, err
+			}
 		}
-		out = append(out, map[string]any{
-			"file_type": fileType,
-			"reference": ref,
-		})
-		seenTypes[filename] = fileType
+		out = append(out, map[string]any{"file_type": fileType, "reference": ref})
 	}
 
-	// Cutsheet dual-write: synthesize a datasheet_pdf entry unless the
-	// manufacturer already listed this filename in source_files. If they listed
-	// it under a conflicting file_type, error rather than silently drop the
-	// datasheet from source_files[].
-	switch t, listed := seenTypes[cutsheetFilename]; {
-	case !listed:
-		out = append(out, map[string]any{
-			"file_type": "datasheet_pdf",
-			"reference": cutsheetRef,
-		})
-	case t != "datasheet_pdf":
-		return nil, fmt.Errorf("record %q: cutsheet file %q is also listed in source_files with file_type=%q; the cutsheet must be datasheet_pdf (drop the conflicting source_files row or set its file_type to datasheet_pdf)", id, cutsheetFilename, t)
+	// Cutsheet dual-write: synthesize the datasheet_pdf entry when the
+	// manufacturer did not list it themselves.
+	if !cutsheetListed {
+		out = append(out, map[string]any{"file_type": "datasheet_pdf", "reference": cutsheetRef})
 	}
 	return out, nil
 }

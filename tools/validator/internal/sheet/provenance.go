@@ -44,12 +44,22 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 		valueType = v
 	}
 	source := col.ProvSource
+	sourceOverridden := false
 	if v, ok := row[col.Header+"__prov_source"]; ok {
 		source = v
+		sourceOverridden = true
 	}
 	method := col.ProvMethod
 	if v, ok := row[col.Header+"__prov_method"]; ok {
 		method = v
+	}
+
+	// A non-measured value did not come from an IES measurement. When the author
+	// overrides the default value_type to rated/nominal (the IES-free path) without
+	// also setting the provenance source, switch the default "ies" to the rated
+	// datasheet source so the record cannot claim IES provenance with no IES file.
+	if valueType != "measured" && source == "ies" && !sourceOverridden {
+		source = "datasheet_pdf"
 	}
 
 	prov := map[string]any{}
