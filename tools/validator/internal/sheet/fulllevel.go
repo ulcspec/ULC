@@ -412,6 +412,9 @@ func assembleCIE97Table(wb Workbook, id string, rec map[string]any) error {
 			if err != nil {
 				return fmt.Errorf("cie97_lmf row %d for %q: cleaning_interval_years: %w", i+1, id, err)
 			}
+			if years < 0 {
+				return fmt.Errorf("cie97_lmf row %d for %q: cleaning_interval_years must be non-negative, got %d", i+1, id, years)
+			}
 			clean := row["ambient_cleanliness"]
 			if clean == "" {
 				return fmt.Errorf("cie97_lmf row %d for %q: missing ambient_cleanliness", i+1, id)
@@ -439,6 +442,9 @@ func assembleCIE97Table(wb Workbook, id string, rec map[string]any) error {
 			hours, err := parseIntCell(row["hours"])
 			if err != nil {
 				return fmt.Errorf("cie97_llmf row %d for %q: hours: %w", i+1, id, err)
+			}
+			if hours < 0 {
+				return fmt.Errorf("cie97_llmf row %d for %q: hours must be non-negative, got %d", i+1, id, hours)
 			}
 			item := map[string]any{"hours": hours}
 			if raw := row["llmf"]; raw != "" {
@@ -481,8 +487,15 @@ func parseIntCell(raw string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("invalid integer %q", raw)
 	}
-	if f != math.Trunc(f) || math.IsInf(f, 0) {
+	if f != math.Trunc(f) || math.IsNaN(f) || math.IsInf(f, 0) {
 		return 0, fmt.Errorf("expected an integer, got %q", raw)
+	}
+	// Range-check before the int64 conversion: a large float literal (1e100)
+	// passes the integral check above but overflows int64, producing a corrupt
+	// value. maxInt64AsFloat is 2^63 (one past int64 max as a float64).
+	const maxInt64AsFloat = 9223372036854775808.0
+	if f >= maxInt64AsFloat || f < -maxInt64AsFloat {
+		return 0, fmt.Errorf("integer %q is out of int64 range", raw)
 	}
 	return int64(f), nil
 }

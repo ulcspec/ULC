@@ -307,7 +307,7 @@ func runFromSheet(args []string) int {
 	var allowMissing bool
 	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>.ulc.json files into.")
 	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, IES, attestation docs) resolve against. Defaults to the bundle directory.")
-	fs.BoolVar(&allowMissing, "allow-missing-files", false, "Stamp the 64-zero sentinel SHA-256 and warn (instead of erroring) when a referenced file is absent on disk.")
+	fs.BoolVar(&allowMissing, "allow-missing-files", false, "When a referenced file is absent on disk, stamp the 64-zero sentinel SHA-256 and treat the record as a DRAFT (reported, not written to --out; the run exits non-zero) instead of erroring immediately.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a manufacturer workbook into validated ULC records.
 

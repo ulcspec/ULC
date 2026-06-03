@@ -770,6 +770,12 @@ func buildSharedAttestation(row Row) (map[string]any, error) {
 	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
 		return nil, err
 	}
+	if att["program"] == nil {
+		return nil, errors.New("shared_attestations row missing required program")
+	}
+	if att["value_type"] == nil {
+		return nil, errors.New("shared_attestations row missing required value_type")
+	}
 	return att, nil
 }
 
