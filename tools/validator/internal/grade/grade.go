@@ -62,17 +62,22 @@ func (l Level) String() string {
 // directionalCategories is the set of PrimaryCategory enum values for which a
 // beam angle is meaningful (the product throws a defined beam: downlights,
 // track/spot/accent heads, cylinders, wall grazers and washers, facade
-// projectors, aimed sports floods). Area, roadway, inground, linear and cove
-// categories are omitted on purpose: they distribute broadly and carry no
-// single beam angle. Confirmed against taxonomy.schema.json PrimaryCategory.
+// projectors, aimed in-ground uplights, aimed sports floods). Area, roadway,
+// linear and cove categories are omitted on purpose, as are the broadly-
+// distributing in-ground and landscape fixtures (bollard, step_marker,
+// landscape_path_marker): they distribute broadly and carry no single beam
+// angle. The in_ground_uplight category, by contrast, is an aimed architectural
+// uplight (column, tree, and facade uplighting) specified by beam angle, so it
+// is directional. Confirmed against taxonomy.schema.json PrimaryCategory.
 var directionalCategories = map[string]bool{
-	"downlight":        true,
-	"tracklight":       true,
-	"cylinder":         true,
-	"wall_washer":      true,
-	"grazer":           true,
-	"facade_projector": true,
-	"sports_flood":     true,
+	"downlight":         true,
+	"tracklight":        true,
+	"cylinder":          true,
+	"wall_washer":       true,
+	"grazer":            true,
+	"facade_projector":  true,
+	"in_ground_uplight": true,
+	"sports_flood":      true,
 }
 
 // AchievedLevel returns the highest cumulative level whose hard requirements
@@ -265,9 +270,16 @@ func emitFullObservations(record map[string]any, report *findings.Report) {
 			"full records commonly carry a measurement uncertainty block; absent here")
 	}
 	// Method-backed lumen-maintenance projection (a bare manufacturer_rated_claim
-	// does not count).
+	// does not count). Point the author at the block they already have: a record
+	// carrying a lumen_maintenance_luminaire framework but no package adds the
+	// tm_28 projection there, while a record with a package (or neither block)
+	// adds a TM-21 projection to the package.
 	if !hasMethodBackedLumenMaintenance(record) {
-		report.AddInfo(findings.CodeConformanceObservation, "/lumen_maintenance_package",
+		lmPath := "/lumen_maintenance_package"
+		if hasMap(record, "lumen_maintenance_luminaire") && !hasLumenMaintenancePackage(record) {
+			lmPath = "/lumen_maintenance_luminaire/tm_28"
+		}
+		report.AddInfo(findings.CodeConformanceObservation, lmPath,
 			"full records commonly carry a method-backed lumen-maintenance projection (TM-21 hours or a TM-28 projection); only a manufacturer-rated claim is present")
 	}
 	// Sustainability declaration.
@@ -357,13 +369,14 @@ func attestationPrograms(record map[string]any) []string {
 // present. Any framework satisfies the standard hard gate, including a bare
 // lumen_maintenance_luminaire that carries only a manufacturer_rated_claim.
 func hasLumenMaintenance(record map[string]any) bool {
-	if hasMap(record, "lumen_maintenance_luminaire") {
-		return true
-	}
-	if arr, ok := record["lumen_maintenance_package"].([]any); ok && len(arr) > 0 {
-		return true
-	}
-	return false
+	return hasMap(record, "lumen_maintenance_luminaire") || hasLumenMaintenancePackage(record)
+}
+
+// hasLumenMaintenancePackage reports whether a non-empty lumen_maintenance_package
+// array is present.
+func hasLumenMaintenancePackage(record map[string]any) bool {
+	arr, ok := record["lumen_maintenance_package"].([]any)
+	return ok && len(arr) > 0
 }
 
 // hasMethodBackedLumenMaintenance reports whether the record carries a

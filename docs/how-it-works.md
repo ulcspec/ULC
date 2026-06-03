@@ -34,7 +34,7 @@ As part of that pass, the validator computes the record's conformance level from
 
 - **core**: the minimum identifying and photometric dataset.
 - **standard**: what a typical LM-79 test report produces.
-- **full**: adds the comprehensive set (TM-30 hue bins, lumen-maintenance projections, BUG for outdoor products, measurement uncertainty, operating-point qualifiers, and instrumentation metadata) where applicable to the product.
+- **full**: requires operating-point qualifiers (and, for outdoor products, a BUG rating). Records at full commonly also carry deeper comprehensive data (TM-30 hue bins, method-backed lumen-maintenance projections, measurement uncertainty, and instrumentation metadata), which the v1 rubric reports as INFO observations rather than hard requirements.
 
 `ulc validate` reports the level a record achieves and, below `full`, the specific fields that would raise it to the next level. The level is verified from the data, not asserted by the author, and it is never a pass/fail gate. Because the index (including the conformance level) is a deterministic function of the deep blocks, a hand-edited value fails the builder-parity check like any other index field.
 

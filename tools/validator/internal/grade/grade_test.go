@@ -130,6 +130,13 @@ func TestReportFullObservations(t *testing.T) {
 		t.Errorf("expected provenance INFO on efficacy value_type; observations: %+v",
 			findingsFor(report, findings.CodeConformanceObservation))
 	}
+	// vode carries only a manufacturer_rated_claim in lumen_maintenance_luminaire
+	// (no package, no tm_28), so the method-backed lumen-maintenance observation
+	// must point at the luminaire block the author already has, not at the package.
+	if !hasObservationAt(report, "/lumen_maintenance_luminaire/tm_28") {
+		t.Errorf("expected method-backed lumen-maintenance INFO at /lumen_maintenance_luminaire/tm_28; observations: %+v",
+			findingsFor(report, findings.CodeConformanceObservation))
+	}
 }
 
 // TestReportGapGuidance confirms that a record below full is told which hard

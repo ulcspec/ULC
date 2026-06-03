@@ -278,7 +278,7 @@
           "type": "string"
         },
         "attestation_ref": {
-          "description": "Reference to an attestation record's test ID when the value is anchored to a specific lab attestation. Required for fields with value_type `measured`.",
+          "description": "Reference to an attestation record's test ID when the value is anchored to a specific lab attestation. Expected on fields with value_type `measured`, so a measured quantity can be traced to its lab attestation.",
           "type": "string"
         },
         "base_attestation_ref": {
@@ -1291,7 +1291,7 @@
         "test_report_id": { "type": "string" },
         "standard_revision": { "type": "string" },
         "measured_quantities": {
-          "description": "JSON paths of ULC fields this attestation covers. Validators check that each claimed field's `provenance.attestation_ref` matches the attestation_id.",
+          "description": "JSON paths of ULC fields this attestation covers. Each covered field's `provenance.attestation_ref` is expected to reference this attestation's `attestation_id`.",
           "type": "array",
           "items": { "type": "string" }
         },
