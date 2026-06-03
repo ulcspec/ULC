@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## Unreleased
+## 0.6.1 (2026-06-03)
 
 ### Tools
 
