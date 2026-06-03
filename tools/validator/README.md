@@ -4,7 +4,7 @@ The `ulc` command-line tool is the reference implementation of the ULC specifica
 
 ## Shipped features
 
-As of v0.4.0:
+As of the next release:
 
 - [x] `ulc build-index <record>` — deterministic index projection (`<record>` is any `.ulc` or `.ulc.json` file)
 - [x] `ulc build-index <record> --check` — verify stored index matches the builder; exit 1 on drift
@@ -13,6 +13,7 @@ As of v0.4.0:
 - [x] Builder parity is included in `ulc validate` (stored `index` vs. computed)
 - [x] Source-file SHA-256 hash verification when referenced files are reachable on the local filesystem
 - [x] Structured `ERROR` / `WARNING` / `INFO` findings, each with a JSON Pointer into the record
+- [x] Conformance grading: the conformance level (`core` / `standard` / `full`) is computed by the builder from the record's populated fields and stamped into the generated index as `index.conformance_level`, so it is authoritative rather than self-claimed (a hand-tampered value fails the builder-parity check like any other index field). `ulc validate` reports the computed level as `INFO`, plus `INFO` guidance listing the specific fields needed to reach the next level (and, at `full`, observations for comprehensive items the record omits). Because there is no declared level to fall short of, conformance grading emits no `WARNING`. Inapplicable fields are skipped by predicate (a downlight has no BUG gate, a pure RGB/RGBA fixture with no white channel has no CRI gate; fixtures with a white channel such as RGBW or RGBWW keep the CRI gate).
 - [x] `--json` machine-readable output
 - [x] Single-file binaries via GoReleaser for Linux / macOS / Windows × x64 / arm64, cut on tag push
 - [x] Embedded schemas via `go:embed` so the binary runs outside the source repository
@@ -20,7 +21,7 @@ As of v0.4.0:
 
 Deferred to a follow-up CLI release (scope for post-pilot feedback):
 
-- [ ] **Conformance-grading rubric** — currently emits a single `INFO` marker per record acknowledging the declared `conformance_level`. The rubric that grades records against the `standard` and `full` completeness targets is intentionally left unimplemented until manufacturer pilot feedback indicates what those levels should require.
+- [ ] Tightening the `standard` and `full` completeness bar. The v1 rubric is intentionally lenient: the comprehensive items the taxonomy associates with `full` (TM-30 per-hue-bin fidelity, measurement uncertainty, method-backed lumen-maintenance projections, sustainability declarations, deeper instrumentation metadata) are graded as `INFO` nudges rather than hard requirements, so today's reference records grade cleanly. Manufacturer pilot feedback may promote some of these to graded requirements.
 
 ## Language
 

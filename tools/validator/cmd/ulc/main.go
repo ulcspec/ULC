@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
+	"github.com/ulcspec/ULC/tools/validator/internal/grade"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
 	"github.com/ulcspec/ULC/tools/validator/internal/validate"
 )
@@ -83,9 +84,10 @@ func runValidate(args []string) int {
 
 Runs four checks and emits a findings report:
   1. JSON Schema Draft 2020-12 structural validation
-  2. Builder parity (stored index matches the deterministic projection)
+  2. Builder parity (stored index matches the deterministic projection,
+     including the computed index.conformance_level)
   3. Source-file SHA-256 hash verification (when files are reachable locally)
-  4. Conformance grading (currently stubbed; full rubric lands post-pilot)
+  4. Conformance report (INFO: the computed level plus guidance toward the next)
 
 Exit codes:
   0   no ERROR findings (WARNING and INFO do not fail validation)
@@ -184,12 +186,13 @@ USAGE
 	recordDir := filepath.Dir(recordPath)
 	validate.VerifyHashes(recordDir, recordMap, report)
 
-	// 4. Conformance grading stub. Full rubric deferred to a follow-up CLI
-	// release informed by pilot feedback on what "standard" and "full" imply.
-	if level, _ := recordMap["conformance_level"].(string); level != "" {
-		report.AddInfo(findings.CodeConformanceGradingDeferred, "/conformance_level",
-			fmt.Sprintf("conformance grading at level %q is not yet implemented; only structural, parity, and hash checks run", level))
-	}
+	// 4. Conformance report. The achieved level was already computed by the
+	// builder and stored in index.conformance_level, and the parity step above
+	// guards that stored value. This step is the human-facing report: it prints
+	// the computed level plus guidance toward the next level (INFO only, never a
+	// defect). A record is whatever level its data achieves; there is nothing to
+	// fall short of, so conformance produces no WARNINGs.
+	grade.Report(recordMap, report)
 
 	report.Finalize()
 

@@ -9,7 +9,7 @@ import (
 
 func TestFinalizeSortsAndCounts(t *testing.T) {
 	r := NewReport()
-	r.AddInfo(CodeConformanceGradingDeferred, "/x", "info one")
+	r.AddInfo(CodeConformanceLevel, "/x", "info one")
 	r.AddError(CodeIndexDrift, "/index/nominal_total_lumens", "lumens drift")
 	r.AddWarning(CodeSourceFileNotFound, "/source_files/0", "pdf missing")
 	r.AddError(CodeSchemaViolation, "/product_family", "schema issue")

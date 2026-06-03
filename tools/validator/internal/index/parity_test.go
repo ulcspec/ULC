@@ -92,8 +92,7 @@ func repoRoot(t *testing.T) string {
 // change there that adds a new emit path needs a matching field here.
 func maximalFixture() map[string]any {
 	return map[string]any{
-		"record_id":         "test-record",
-		"conformance_level": "full",
+		"record_id": "test-record",
 		"product_family": map[string]any{
 			"family_id":           "test-fam",
 			"family_display_name": "Test Family",

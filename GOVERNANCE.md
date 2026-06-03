@@ -2,7 +2,7 @@
 
 ## Origin
 
-The ULC specification was introduced by Foad Shafighi, MIES, IALD, CLD, in a talk on AI in lighting design at IALD Enlighten Europe 2025 in Valencia. It has since been developed through active dialogue with industry bodies, including DIAL (the German organization behind DIALux and GLDF), the Illuminating Engineering Society (IES) in the United States, and the Lighting Industry Association (LIA) in the UK. Pilot discussions with luminaire manufacturers and software vendors are underway.
+The ULC specification was introduced by Foad Shafighi, MIES, IALD, CLD, in a talk on AI in lighting design at IALD Enlighten Europe 2025 in Valencia, and was developed further through dialogue following the National Lighting Bureau AI Think Tank in New York in 2026. It has since continued through active dialogue with industry bodies, including DIAL (the German organization behind DIALux and GLDF), the Illuminating Engineering Society (IES) in the United States, and the Lighting Industry Association (LIA) in the UK. Pilot discussions with luminaire manufacturers and software vendors are underway.
 
 ## Stewardship
 

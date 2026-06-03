@@ -86,7 +86,7 @@ func TestMissingRequiredKeysSorted(t *testing.T) {
 		"primary_category": "downlight",
 	}
 	missing := MissingRequiredKeys(built)
-	want := []string{"manufacturer_slug", "nominal_input_power_w", "nominal_total_lumens"}
+	want := []string{"conformance_level", "manufacturer_slug", "nominal_input_power_w", "nominal_total_lumens"}
 	if len(missing) != len(want) {
 		t.Fatalf("got %v, want %v", missing, want)
 	}

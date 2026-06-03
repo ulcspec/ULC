@@ -2,15 +2,11 @@
 
 This directory contains narrative documentation for the ULC specification. Where `schema/` holds the machine-readable definitions, this directory explains them in prose for implementers, authors, and readers who want to understand how and why ULC is structured the way it is.
 
-## Scope
+## Contents
 
-Documentation in this directory covers:
-
-- What ULC is, why it exists, and how it relates to adjacent standards
-- The normative specification, including dual-unit handling, provenance, and versioning
-- Per-field definitions with units, required flags, and examples
-- The luminaire taxonomy, synonyms, and scope notes
-- Step-by-step guidance for authoring a ULC record from a datasheet, IES file, and LDT file
+- `how-it-works.md`: how ULC works end to end for a consumer, covering what a record is, provenance and integrity, how records are consumed today, validation and the computed conformance level, and how to try it now.
+- `methodology.md`: why ULC is shaped the way it is, covering the "one attested photometric scenario" unit, the design principles behind the schema, and how the standard evolves.
+- `authoring-patterns.md`: the four manufacturer authoring patterns (A/B/C/D), the architectural primitives, and the generated index, with each pattern grounded in a real cutsheet.
 
 ## See also
 

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ulcspec.org/schema/ulc.schema.json",
   "title": "ULC Record",
-  "description": "The canonical ULC (Universal Luminaire Cutsheet) record. One record describes one attested photometric scenario for a luminaire, with an applicability block that declares which orderable SKU configurations the record covers. Enumerated values are defined in taxonomy.schema.json and referenced here by $ref. Dual-unit conventions (SI authoritative with Imperial companion) apply to every unit-sensitive field. Conformance is graded at three levels (core, standard, full); JSON Schema `required` is used sparingly and only for core-level fields, with the reference validator emitting ERROR / WARNING / INFO diagnostics for fields that are absent at higher declared levels. This schema is machine-readable; docs/authoring-patterns.md explains the four manufacturer authoring patterns this schema supports and how to map real cutsheets into it.",
+  "description": "The canonical ULC (Universal Luminaire Cutsheet) record. One record describes one attested photometric scenario for a luminaire, with an applicability block that declares which orderable SKU configurations the record covers. Enumerated values are defined in taxonomy.schema.json and referenced here by $ref. Dual-unit conventions (SI authoritative with Imperial companion) apply to every unit-sensitive field. Conformance is computed at three levels (core, standard, full): the reference builder grades the record from its populated fields and stamps the achieved level into the generated index as `index.conformance_level`, so a record is whatever level its data earns rather than whatever level it claims. JSON Schema `required` is used sparingly and only for core-level fields; the reference validator reports the computed level plus INFO guidance toward the next level. This schema is machine-readable; docs/authoring-patterns.md explains the four manufacturer authoring patterns this schema supports and how to map real cutsheets into it.",
   "type": "object",
 
   "properties": {
@@ -33,10 +33,7 @@
       "format": "date"
     },
 
-    "conformance_level": {
-      "description": "The completeness target this record declares. The reference validator grades the record against this level.",
-      "$ref": "taxonomy.schema.json#/$defs/ConformanceLevel"
-    },
+    "conformance_level": false,
 
     "index": {
       "description": "Denormalized scan surface for AI agents, search indexers, and filter UIs. Every field is a projection of authoritative values from the deeper blocks below. GENERATED, NOT HAND-AUTHORED: produced deterministically by the `ulc build-index` reference CLI (see `tools/validator/`) from the deep blocks and stamped with `x-ulc-generated: true` plus a `builder_version` so consumers can detect stale indices. Manufacturers never type these values; their PIM export or ULC CLI writes them. Drift is prevented by construction, because the builder is a pure function of the deep blocks.",
@@ -168,7 +165,6 @@
     "ulc_version",
     "record_id",
     "record_status",
-    "conformance_level",
     "index",
     "product_family",
     "configuration",
@@ -191,6 +187,10 @@
           "description": "Semver of the builder that produced this index. Consumers compare against the current builder version to detect stale indices.",
           "type": "string",
           "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "conformance_level": {
+          "description": "The completeness level this record achieves. GENERATED, NOT HAND-AUTHORED: the reference builder computes it from the record's populated fields (applying the conditional rubric: directional categories require a beam angle, pure RGB/RGBA fixtures with no white channel skip CRI, outdoor products require BUG at full, and so on) and stamps it here like every other index value. Because it is a builder projection, a hand-tampered value fails the build-parity check just like any other index field, so the level a record claims is the level its data actually achieves.",
+          "$ref": "taxonomy.schema.json#/$defs/ConformanceLevel"
         },
         "manufacturer_slug": { "type": "string" },
         "catalog_model": { "type": "string" },
@@ -247,6 +247,7 @@
       "required": [
         "x-ulc-generated",
         "builder_version",
+        "conformance_level",
         "manufacturer_slug",
         "catalog_model",
         "primary_category",
@@ -279,7 +280,7 @@
           "type": "string"
         },
         "attestation_ref": {
-          "description": "Reference to an attestation record's test ID when the value is anchored to a specific lab attestation. Required for fields with value_type `measured`.",
+          "description": "Reference to an attestation record's test ID when the value is anchored to a specific lab attestation. Expected on fields with value_type `measured`, so a measured quantity can be traced to its lab attestation.",
           "type": "string"
         },
         "base_attestation_ref": {
@@ -1292,7 +1293,7 @@
         "test_report_id": { "type": "string" },
         "standard_revision": { "type": "string" },
         "measured_quantities": {
-          "description": "JSON paths of ULC fields this attestation covers. Validators check that each claimed field's `provenance.attestation_ref` matches the attestation_id.",
+          "description": "JSON paths of ULC fields this attestation covers. Each covered field's `provenance.attestation_ref` is expected to reference this attestation's `attestation_id`.",
           "type": "array",
           "items": { "type": "string" }
         },

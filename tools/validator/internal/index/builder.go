@@ -15,6 +15,8 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/ulcspec/ULC/tools/validator/internal/grade"
 )
 
 // BuilderVersion is stamped into every index block under `builder_version`.
@@ -23,7 +25,10 @@ import (
 // 0.2.0: matches tools/build-index.py 0.2.0 — removed `nominal_cct_k` from
 // RequiredKeys to allow color-changing fixtures (RGB, RGBW, RGBA) to pass
 // validation without a placeholder CCT value.
-const BuilderVersion = "0.2.0"
+// 0.3.0: conformance_level is now a generated index field. The builder computes
+// it from the record's populated fields (grade.AchievedLevel) and stamps it into
+// the index, replacing the hand-declared top-level conformance_level.
+const BuilderVersion = "0.3.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard
@@ -31,6 +36,7 @@ const BuilderVersion = "0.2.0"
 var RequiredKeys = []string{
 	"x-ulc-generated",
 	"builder_version",
+	"conformance_level",
 	"manufacturer_slug",
 	"catalog_model",
 	"primary_category",
@@ -46,6 +52,10 @@ var RequiredKeySources = map[string]string{
 	"primary_category":      "product_family.primary_category",
 	"nominal_total_lumens":  "photometry.total_luminous_flux_lm.value",
 	"nominal_input_power_w": "electrical.input_power_w.value",
+	// conformance_level is computed from the core anchors (the same three fields
+	// above plus the primary category); when those are absent the record is not
+	// a photometric record and grade.AchievedLevel returns no valid level.
+	"conformance_level": "photometry.total_luminous_flux_lm.value, electrical.input_power_w.value, product_family.primary_category",
 }
 
 // Record is the in-memory representation of a parsed .ulc file.
@@ -67,6 +77,21 @@ func Build(record Record) Index {
 	idx := Index{
 		"x-ulc-generated": true,
 		"builder_version": BuilderVersion,
+	}
+
+	// Conformance level: computed from the record's populated fields, the single
+	// source of truth for the stored level. Emit only a valid enum token
+	// (core / standard / full). A record lacking the core photometric anchors
+	// grades below core; conformance_level is then absent and MissingRequiredKeys
+	// reports it alongside the other missing core keys, so the builder never
+	// emits an out-of-enum value.
+	switch grade.AchievedLevel(record) {
+	case grade.LevelCore:
+		idx["conformance_level"] = "core"
+	case grade.LevelStandard:
+		idx["conformance_level"] = "standard"
+	case grade.LevelFull:
+		idx["conformance_level"] = "full"
 	}
 
 	if v := getString(pf, "manufacturer", "slug"); v != "" {
