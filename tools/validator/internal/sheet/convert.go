@@ -260,7 +260,60 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 		return nil, err
 	}
 
+	if err := verifyIESReference(rec, id); err != nil {
+		return nil, err
+	}
+
 	return rec, nil
+}
+
+// verifyIESReference enforces that a record whose headline photometry is
+// measured from an IES file actually references and hashes an IES in
+// source_files. The converter defaults the photometric anchors to
+// value_type=measured with provenance.source=ies, so a record on the default
+// path that lists no ies source_files row would otherwise claim IES-sourced
+// data that is never referenced or hashed. (configuration.source_ies_ref is the
+// manufacturer's logical IES identifier and is intentionally not required to
+// equal a source_files filename, which is the actual archived file.)
+func verifyIESReference(rec map[string]any, id string) error {
+	if !photometryCitesMeasuredIES(rec) {
+		return nil
+	}
+	hasIES := false
+	if sf, ok := rec["source_files"].([]any); ok {
+		for _, e := range sf {
+			if m, ok := e.(map[string]any); ok && m["file_type"] == "ies" {
+				hasIES = true
+				break
+			}
+		}
+	}
+	if !hasIES {
+		return fmt.Errorf("record %q: photometry.total_luminous_flux_lm is measured with provenance.source=ies, but source_files has no file_type=ies row; add the IES file to source_files (or set the photometry value_type to rated for an IES-free record)", id)
+	}
+	return nil
+}
+
+// photometryCitesMeasuredIES reports whether the record's headline luminous flux
+// is a measured value sourced from an IES file (the converter default).
+func photometryCitesMeasuredIES(rec map[string]any) bool {
+	v, ok := getPath(rec, "photometry.total_luminous_flux_lm")
+	if !ok {
+		return false
+	}
+	pn, ok := v.(map[string]any)
+	if !ok {
+		return false
+	}
+	if vt, _ := pn["value_type"].(string); vt != "measured" {
+		return false
+	}
+	prov, ok := pn["provenance"].(map[string]any)
+	if !ok {
+		return false
+	}
+	src, _ := prov["source"].(string)
+	return src == "ies"
 }
 
 // assembleCoveredAxisRecord adds the multi-value-applicability deep blocks shared
@@ -502,7 +555,7 @@ func buildFileReference(filename string, row Row, header string, hasher *fileHas
 // carry its own file_type override).
 func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef map[string]any, hasher *fileHasher) ([]any, error) {
 	out := []any{}
-	seenFilenames := map[string]bool{}
+	seenTypes := map[string]string{}
 
 	for _, row := range wb.RowsFor("source_files", id) {
 		filename := row["filename"]
@@ -521,16 +574,21 @@ func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef m
 			"file_type": fileType,
 			"reference": ref,
 		})
-		seenFilenames[filename] = true
+		seenTypes[filename] = fileType
 	}
 
 	// Cutsheet dual-write: synthesize a datasheet_pdf entry unless the
-	// manufacturer already listed this filename in source_files.
-	if !seenFilenames[cutsheetFilename] {
+	// manufacturer already listed this filename in source_files. If they listed
+	// it under a conflicting file_type, error rather than silently drop the
+	// datasheet from source_files[].
+	switch t, listed := seenTypes[cutsheetFilename]; {
+	case !listed:
 		out = append(out, map[string]any{
 			"file_type": "datasheet_pdf",
 			"reference": cutsheetRef,
 		})
+	case t != "datasheet_pdf":
+		return nil, fmt.Errorf("record %q: cutsheet file %q is also listed in source_files with file_type=%q; the cutsheet must be datasheet_pdf (drop the conflicting source_files row or set its file_type to datasheet_pdf)", id, cutsheetFilename, t)
 	}
 	return out, nil
 }

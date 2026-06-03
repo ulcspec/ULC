@@ -106,6 +106,8 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 // column on the offending field).
 func (ctx provenanceContext) measuredAttestationRef(header string) (string, error) {
 	switch {
+	case ctx.lm79Count == 1 && ctx.lm79AttestationID == "":
+		return "", fmt.Errorf("column %q would auto-link to the record's single lm_79* attestation, but that row has no attestation_id to reference; add an attestation_id to the lm_79* attestations row", header)
 	case ctx.lm79Count == 1:
 		return ctx.lm79AttestationID, nil
 	case ctx.lm79Count == 0:
@@ -120,6 +122,8 @@ func (ctx provenanceContext) measuredAttestationRef(header string) (string, erro
 // measured auto-link.
 func (ctx provenanceContext) baseAttestationRef(header, method string) (string, error) {
 	switch {
+	case ctx.lm79Count == 1 && ctx.lm79AttestationID == "":
+		return "", fmt.Errorf("column %q (derived method %q) would anchor base_attestation_ref to the record's single lm_79* attestation, but that row has no attestation_id; add an attestation_id to the lm_79* attestations row", header, method)
 	case ctx.lm79Count == 1:
 		return ctx.lm79AttestationID, nil
 	case ctx.lm79Count == 0:

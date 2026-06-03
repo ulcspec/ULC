@@ -191,3 +191,69 @@ func TestBuildAttestationApplicability(t *testing.T) {
 		t.Error("an unconditional attestation should carry no applicability block")
 	}
 }
+
+// TestAnchorRequiresAttestationID locks that a single lm_79* attestation with no
+// attestation_id cannot be used as an auto-link anchor (it must error, not emit
+// an empty attestation_ref).
+func TestAnchorRequiresAttestationID(t *testing.T) {
+	col := Column{Header: "total_luminous_flux_lm", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"}
+	if _, err := resolveProvenance(col, Row{}, provenanceContext{lm79Count: 1, lm79AttestationID: ""}); err == nil {
+		t.Error("expected error: single lm_79 anchor with no attestation_id")
+	}
+}
+
+// TestAssembleSourceFilesCutsheetConflict locks that listing the cutsheet
+// filename in source_files with a non-datasheet_pdf file_type errors (rather
+// than silently dropping the datasheet from source_files[]).
+func TestAssembleSourceFilesCutsheetConflict(t *testing.T) {
+	h := &fileHasher{allowMissing: true} // no real files on disk
+	cutRef := map[string]any{"filename": "cut.pdf", "sha256": zeroSHA256}
+
+	conflict := Workbook{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "ies"}}}
+	if _, err := assembleSourceFiles(conflict, "r1", "cut.pdf", cutRef, h); err == nil {
+		t.Error("expected error: cutsheet filename listed with conflicting file_type=ies")
+	}
+
+	ok := Workbook{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "datasheet_pdf"}}}
+	out, err := assembleSourceFiles(ok, "r1", "cut.pdf", cutRef, h)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(out) != 1 {
+		t.Fatalf("want 1 source_files entry (no duplicate), got %d", len(out))
+	}
+}
+
+// TestVerifyIESReference locks that a record whose headline photometry is
+// measured from an IES must reference an IES in source_files; rated photometry
+// (no IES) and a present IES source both pass.
+func TestVerifyIESReference(t *testing.T) {
+	iesSF := []any{map[string]any{"file_type": "ies", "reference": map[string]any{"filename": "lumos-skyline.ies"}}}
+	measuredFlux := map[string]any{"value_type": "measured", "provenance": map[string]any{"source": "ies"}}
+
+	// measured-ies flux but no ies source_files row -> error
+	if err := verifyIESReference(map[string]any{
+		"source_files": []any{},
+		"photometry":   map[string]any{"total_luminous_flux_lm": measuredFlux},
+	}, "r1"); err == nil {
+		t.Error("expected error: measured-ies photometry with no ies source_files row")
+	}
+
+	// measured-ies flux + an ies source (filename need not equal source_ies_ref) -> ok
+	if err := verifyIESReference(map[string]any{
+		"source_files":  iesSF,
+		"configuration": map[string]any{"source_ies_ref": "SKY-SR-HO.ies"},
+		"photometry":    map[string]any{"total_luminous_flux_lm": measuredFlux},
+	}, "r1"); err != nil {
+		t.Errorf("valid record (logical source_ies_ref differs from filename) should pass: %v", err)
+	}
+
+	// rated flux (no IES) needs no ies source -> ok
+	ratedFlux := map[string]any{"value_type": "rated", "provenance": map[string]any{"source": "datasheet_pdf"}}
+	if err := verifyIESReference(map[string]any{
+		"source_files": []any{},
+		"photometry":   map[string]any{"total_luminous_flux_lm": ratedFlux},
+	}, "r1"); err != nil {
+		t.Errorf("rated photometry without an IES should pass: %v", err)
+	}
+}

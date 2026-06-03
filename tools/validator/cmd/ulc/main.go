@@ -370,10 +370,12 @@ USAGE
 	failed := false
 	sawSentinel := false
 	for _, res := range results {
+		recordSentinel := false
 		for _, w := range res.Warnings {
 			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", res.RecordID, w)
 			if strings.Contains(w, "zero-sentinel") {
 				sawSentinel = true
+				recordSentinel = true
 			}
 		}
 
@@ -393,6 +395,15 @@ USAGE
 		res.Record["index"] = built
 
 		outPath := filepath.Join(outDir, res.RecordID+".ulc.json")
+
+		// A record that references files not present on disk carries placeholder
+		// (zero-sentinel) hashes under --allow-missing-files. It is a DRAFT, not a
+		// validated record, so it is never written to --out (the run also exits
+		// non-zero below).
+		if recordSentinel {
+			fmt.Printf("%s -> DRAFT, not written (references files not present; --allow-missing-files stamped placeholder hashes)\n", res.RecordID)
+			continue
+		}
 
 		// Marshal once and validate the bytes BEFORE writing, so a record that
 		// fails schema validation never lands in --out. The validator wants the
