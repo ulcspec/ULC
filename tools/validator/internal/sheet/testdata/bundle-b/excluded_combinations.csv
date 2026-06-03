@@ -1,0 +1,2 @@
+record_id,axes,reason
+lumos-skyline-sr-ho-3000k,"{""output"":""MO"",""cct"":""2200""}",Max Output tier is not available at 2200K per spec sheet note 3; noted for family-level completeness.

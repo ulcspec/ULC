@@ -1,0 +1,11 @@
+record_id,zone,lumens,conflict_notes
+lumos-skyline-sr-ho-3000k,fl,920,
+lumos-skyline-sr-ho-3000k,fm,1750,
+lumos-skyline-sr-ho-3000k,fh,1280,
+lumos-skyline-sr-ho-3000k,fvh,50,
+lumos-skyline-sr-ho-3000k,bl,920,Symmetric Type V distribution; BL mirrors FL.
+lumos-skyline-sr-ho-3000k,bm,1750,
+lumos-skyline-sr-ho-3000k,bh,1280,
+lumos-skyline-sr-ho-3000k,bvh,50,
+lumos-skyline-sr-ho-3000k,ul,0,
+lumos-skyline-sr-ho-3000k,uh,0,

@@ -1,0 +1,13 @@
+record_id,cleaning_interval_years,ambient_cleanliness,lmf
+lumos-skyline-sr-ho-3000k,1,pure,0.96
+lumos-skyline-sr-ho-3000k,1,clean,0.93
+lumos-skyline-sr-ho-3000k,1,normal,0.89
+lumos-skyline-sr-ho-3000k,1,dirty,0.83
+lumos-skyline-sr-ho-3000k,2,pure,0.94
+lumos-skyline-sr-ho-3000k,2,clean,0.89
+lumos-skyline-sr-ho-3000k,2,normal,0.84
+lumos-skyline-sr-ho-3000k,2,dirty,0.76
+lumos-skyline-sr-ho-3000k,3,pure,0.92
+lumos-skyline-sr-ho-3000k,3,clean,0.86
+lumos-skyline-sr-ho-3000k,3,normal,0.79
+lumos-skyline-sr-ho-3000k,3,dirty,0.70

@@ -1,0 +1,2 @@
+record_id,package_identifier,tested_product_type,flux_maintenance_quantity,flux_maintenance_threshold,tm_21_projection_hours
+lumos-skyline-sr-ho-3000k,lumos-skyline-led-module,led_package,luminous_flux,L90,60000

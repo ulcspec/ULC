@@ -5,6 +5,7 @@
 //
 //	ulc validate <record.ulc>        Validate a record against the ULC schema.
 //	ulc build-index <record.ulc>     Regenerate the record's index block.
+//	ulc from-sheet <input>           Convert a workbook (CSV bundle or .xlsx) into records.
 //	ulc version                      Print the CLI version.
 //
 // For per-subcommand flags and semantics, run `ulc <subcommand> -h`.
@@ -24,6 +25,7 @@ import (
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	"github.com/ulcspec/ULC/tools/validator/internal/grade"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
+	"github.com/ulcspec/ULC/tools/validator/internal/sheet"
 	"github.com/ulcspec/ULC/tools/validator/internal/validate"
 )
 
@@ -44,6 +46,8 @@ func main() {
 		os.Exit(runValidate(args))
 	case "build-index":
 		os.Exit(runBuildIndex(args))
+	case "from-sheet":
+		os.Exit(runFromSheet(args))
 	case "version", "-v", "--version":
 		fmt.Printf("ulc %s (builder %s)\n", CLIVersion, index.BuilderVersion)
 	case "help", "-h", "--help":
@@ -64,6 +68,7 @@ USAGE
 SUBCOMMANDS
     validate      Validate a ULC record against the ULC schema.
     build-index   Regenerate the record's index block from its deep blocks.
+    from-sheet    Convert a workbook (CSV bundle or .xlsx) into validated ULC records.
     version       Print the CLI version.
     help          Print this help message.
 
@@ -288,6 +293,170 @@ USAGE
 	}
 }
 
+// --- from-sheet ---
+
+// runFromSheet converts a CSV bundle directory or a native .xlsx workbook into
+// validated ULC records. For each assembled record it builds the index (which
+// stamps conformance_level), checks the required index keys, writes
+// <out>/<record_id>.ulc.json only after schema validation passes, runs the
+// schema validator plus the conformance report, and prints a one-line summary.
+// It exits non-zero if any record fails schema validation.
+func runFromSheet(args []string) int {
+	fs := flag.NewFlagSet("from-sheet", flag.ExitOnError)
+	var outDir, assetsDir string
+	var allowMissing bool
+	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>.ulc.json files into.")
+	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, IES, attestation docs) resolve against. Defaults to the bundle directory.")
+	fs.BoolVar(&allowMissing, "allow-missing-files", false, "When a referenced file is absent on disk, stamp the 64-zero sentinel SHA-256 and treat the record as a DRAFT (reported, not written to --out; the run exits non-zero) instead of erroring immediately.")
+	fs.Usage = func() {
+		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a manufacturer workbook into validated ULC records.
+
+Accepts either a CSV bundle (a directory of <sheet>.csv files: records.csv plus
+the related sheets) or a native .xlsx workbook (one tab per sheet, named the same
+way). Assembles each record's deep blocks, computes dual-unit companions,
+SHA-256 hashes, and default provenance, then builds the index (stamping the
+conformance level) and validates each record against the ULC schema.
+
+All four authoring patterns are supported end to end: A (single-SKU) and C
+(per-IES with derived provenance) as fixed-axes pins, B (CCT multiplier table)
+and D (per-foot linear scaling) with generated declared_by_cct / declared_by_length
+photometry tables. Optional comprehensive sheets (alpha_opic, flicker_metrics,
+lumen_maintenance_package, zonal_lumens, lcs_zonal_lumens, ingredient_list,
+cie97_lmf / cie97_llmf) add full-level depth when present.
+
+Exit codes:
+  0   every record assembled, built, and passed schema validation
+  1   a conversion, build, or schema-validation error occurred
+  2   usage error
+
+USAGE
+    ulc from-sheet <bundle-dir|workbook.xlsx> [--out DIR] [--assets DIR] [--allow-missing-files]
+`)
+	}
+	_ = fs.Parse(reorderFlagsFirst(args))
+	if fs.NArg() != 1 {
+		fs.Usage()
+		return 2
+	}
+	input := fs.Arg(0)
+
+	results, err := sheet.Convert(input, sheet.Options{
+		AssetsRoot:        assetsDir,
+		AllowMissingFiles: allowMissing,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
+		return 1
+	}
+
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: create out dir %s: %v\n", outDir, err)
+		return 1
+	}
+
+	// Build the validator once and reuse it across records. Prefer an in-repo
+	// schema directory; fall back to the embedded schemas for released binaries.
+	var v *validate.Validator
+	if dir, ferr := validate.FindSchemaDir("", input); ferr == nil {
+		v, err = validate.NewValidator(dir)
+	} else {
+		v, err = validate.NewValidatorEmbedded()
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
+		return 1
+	}
+
+	failed := false
+	sawSentinel := false
+	for _, res := range results {
+		for _, w := range res.Warnings {
+			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", res.RecordID, w)
+		}
+		recordSentinel := res.HasMissingFileSentinel
+		if recordSentinel {
+			sawSentinel = true
+		}
+
+		built := index.Build(res.Record)
+		if missing := index.MissingRequiredKeys(built); len(missing) > 0 {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: %s: builder cannot derive required index keys:\n", res.RecordID)
+			for _, key := range missing {
+				src := index.RequiredKeySources[key]
+				if src == "" {
+					src = "(always-present marker)"
+				}
+				fmt.Fprintf(os.Stderr, "  - %s  (populate %s)\n", key, src)
+			}
+			failed = true
+			continue
+		}
+		res.Record["index"] = built
+
+		outPath := filepath.Join(outDir, res.RecordID+".ulc.json")
+
+		// A record that references files not present on disk carries placeholder
+		// (zero-sentinel) hashes under --allow-missing-files. It is a DRAFT, not a
+		// validated record, so it is never written to --out (the run also exits
+		// non-zero below).
+		if recordSentinel {
+			fmt.Printf("%s -> DRAFT, not written (references files not present; --allow-missing-files stamped placeholder hashes)\n", res.RecordID)
+			continue
+		}
+
+		// Marshal once and validate the bytes BEFORE writing, so a record that
+		// fails schema validation never lands in --out. The validator wants the
+		// json.Number-typed tree; decodeStrict reproduces the shape the validate
+		// subcommand sees. (sheet.Convert already computed each source file's
+		// SHA-256 against the resolved assets root, so no hash re-verification is
+		// needed here.)
+		recordBytes, merr := marshalRecord(res.Record)
+		if merr != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", merr)
+			failed = true
+			continue
+		}
+		report := findings.NewReport()
+		rawTree, derr := decodeStrict(recordBytes)
+		if derr != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", res.RecordID, derr)
+			failed = true
+			continue
+		}
+		v.Validate(rawTree, report)
+		grade.Report(res.Record, report)
+		report.Finalize()
+
+		level, _ := built["conformance_level"].(string)
+		if level == "" {
+			level = "none"
+		}
+		if report.HasErrors() {
+			fmt.Printf("%s -> %s (%d findings, not written)\n", res.RecordID, level, len(report.Findings))
+			if err := report.WriteText(os.Stderr, outPath); err != nil {
+				fmt.Fprintf(os.Stderr, "ulc from-sheet: write report: %v\n", err)
+			}
+			failed = true
+			continue
+		}
+		if err := os.WriteFile(outPath, recordBytes, 0o644); err != nil {
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: write %s: %v\n", outPath, err)
+			failed = true
+			continue
+		}
+		fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+	}
+
+	if sawSentinel {
+		fmt.Fprintln(os.Stderr, "ulc from-sheet: one or more records reference files that were not hashed (--allow-missing-files stamped the zero-sentinel SHA-256). These are DRAFTS, not validated records; re-run without --allow-missing-files once the files are present.")
+		return 1
+	}
+	if failed {
+		return 1
+	}
+	return 0
+}
+
 func printIndex(idx index.Index) int {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
@@ -303,10 +472,20 @@ func printIndex(idx index.Index) int {
 	return 0
 }
 
+// valueFlags are the flag names across all subcommands that take a
+// space-separated value, so reorderFlagsFirst keeps the value riding with its
+// flag when partitioning. Boolean flags are absent from this set.
+var valueFlags = map[string]bool{
+	"-schema-dir": true, "--schema-dir": true,
+	"-out": true, "--out": true,
+	"-assets": true, "--assets": true,
+}
+
 // reorderFlagsFirst lets users write either `ulc sub <file> --check` or
 // `ulc sub --check <file>`. Go's stdlib flag.Parse stops at the first
-// non-flag arg, which would otherwise force flag-first ordering. All our
-// flags are boolean (no space-separated values), so a simple partition works.
+// non-flag arg, which would otherwise force flag-first ordering. Most of our
+// flags are boolean; the value-taking ones are tracked in valueFlags so their
+// following value rides with them through the partition.
 func reorderFlagsFirst(args []string) []string {
 	flags := []string{}
 	positional := []string{}
@@ -319,9 +498,9 @@ func reorderFlagsFirst(args []string) []string {
 		}
 		if strings.HasPrefix(a, "-") {
 			flags = append(flags, a)
-			// --schema-dir takes a value; if it was passed without an `=`,
-			// the following arg is the value and must ride with it.
-			if a == "-schema-dir" || a == "--schema-dir" {
+			// A value-taking flag passed without an `=` consumes the next arg as
+			// its value, which must ride with it.
+			if valueFlags[a] {
 				skip = true
 			}
 			continue
@@ -431,15 +610,25 @@ func numberFromJSON(n json.Number) (any, error) {
 	return f, nil
 }
 
-func writeRecord(path string, record index.Record) error {
+func marshalRecord(record index.Record) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	enc.SetIndent("", "  ")
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(record); err != nil {
-		return fmt.Errorf("encode %s: %w", path, err)
+		return nil, fmt.Errorf("encode record: %w", err)
 	}
-	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+	return buf.Bytes(), nil
+}
+
+// writeRecord marshals the record and writes it to path (used by build-index's
+// in-place write; from-sheet marshals then validates before writing).
+func writeRecord(path string, record index.Record) error {
+	data, err := marshalRecord(record)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil

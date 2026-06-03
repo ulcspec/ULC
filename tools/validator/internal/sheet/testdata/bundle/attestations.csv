@@ -1,0 +1,2 @@
+record_id,attestation_id,program,status,value_type,issued_date,test_report_id,measured_quantities,verification_type
+acme-orbit-1200-4000k,lm79_acme_orbit_1200_4000k,lm_79_08,verified,measured,2026-02-20,acme-lu-0042,electrical.input_power_w;photometry.total_luminous_flux_lm;photometry.luminaire_efficacy_lm_per_w;photometry.maximum_intensity_cd;photometry.beam_angle_deg;colorimetry.cri_ra,unconditional

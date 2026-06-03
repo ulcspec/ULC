@@ -1,0 +1,3 @@
+record_id,metric,value,bound_operator
+lumos-skyline-sr-ho-3000k,svm,0.5,lte
+lumos-skyline-sr-ho-3000k,pst_lm,0.8,lte

@@ -1,0 +1,4 @@
+record_id,attestation_id,program,status,value_type,verification_type
+lumenpulse-loi-12-rgb-30x60-ts0,c_ul_listed_lumenpulse_loi,c_ul_listed,listed,rated,unconditional
+lumenpulse-loi-12-rgb-30x60-ts0,ce_lumenpulse_loi,ce,listed,rated,unconditional
+lumenpulse-loi-12-rgb-30x60-ts0,rohs_lumenpulse_loi,rohs,listed,rated,unconditional
