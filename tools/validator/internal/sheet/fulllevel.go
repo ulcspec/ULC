@@ -192,6 +192,13 @@ func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any)
 	}
 	out := []any{}
 	for _, row := range rows {
+		// A package row needs a substantive maintenance payload. A bare row (only
+		// record_id, or only descriptive identifiers) is skipped so it cannot emit
+		// a near-empty entry that nonetheless satisfies the standard-level
+		// lumen-maintenance grade gate.
+		if !hasLMPayload(row) {
+			continue
+		}
 		entry := map[string]any{}
 		copyIf(entry, row, "package_identifier", "package_identifier")
 		copyIf(entry, row, "tested_product_type", "tested_product_type")
@@ -222,8 +229,26 @@ func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any)
 		}
 		out = append(out, entry)
 	}
-	rec["lumen_maintenance_package"] = out
+	if len(out) > 0 {
+		rec["lumen_maintenance_package"] = out
+	}
 	return nil
+}
+
+// hasLMPayload reports whether a lumen_maintenance_package row carries a
+// substantive maintenance field (a flux-maintenance claim, a projection, a test
+// duration, or a drive current), as opposed to only record_id / descriptive
+// identifiers.
+func hasLMPayload(row Row) bool {
+	for _, k := range []string{
+		"flux_maintenance_quantity", "flux_maintenance_threshold",
+		"tm_21_projection_hours", "test_hours", "drive_current_ma",
+	} {
+		if row[k] != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // assembleZonalLumens builds photometry.zonal_lumens[] from the zonal_lumens

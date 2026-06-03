@@ -40,10 +40,11 @@ Three things are computed, never typed into the workbook:
   `conformance_level`).
 - Every Imperial companion leaf (`in`, `lb`, `f`, `ft2`, `lb_per_ft`) on a
   dual-unit field. You author the SI side only, in the dual-unit `*_mm` / `*_kg`
-  / `*_c` columns; the converter writes both. (A few temperature fields are
-  single-value `ProvenancedNumber`s per the schema, not dual-unit objects: the
-  lumen-maintenance-package `test_temperature_c`, for example, is emitted as a
-  scalar value with unit `C` and carries no `f` companion.)
+  / `*_c` columns; the converter writes both. (Not every `*_c` column is
+  dual-unit: the schema types the lumen-maintenance-package `test_temperature_c`
+  as a scalar `ProvenancedNumber`, which is inconsistent with the dual-unit
+  temperature fields, so the converter does not author it pending a schema
+  reconciliation.)
 - Every `sha256`. You name the file in a path column; the converter hashes it.
 
 ## Provenance defaults and overrides
@@ -86,7 +87,7 @@ expected does not appear.)
 |---|---|---|
 | `records` | One row per record: identity, taxonomy, mechanical, electrical, photometry, colorimetry, the applicability header, and the sustainability scalars. | Always |
 | `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
-| `attestations` | Per-record program attestations. The LM-79 row is the measurement anchor. | Standard and up |
+| `attestations` | Per-record program attestations. The LM-79 row is the measurement anchor. | Measured photometry needs the LM-79 anchor even at core; standard and up otherwise as applicable |
 | `shared_attestations` | Family-wide listings (UL, IEC, RoHS). | As applicable |
 | `covered_axes` | One row per (axis, covered value) with rationale and derivation. | Patterns B and D |
 | `cct_multipliers` | The CCT lumen-multiplier table. | Pattern B |

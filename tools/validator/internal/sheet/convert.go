@@ -3,6 +3,7 @@ package sheet
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -385,6 +386,15 @@ func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[strin
 	// Pattern D: generate or echo photometry.declared_by_length from the per-foot
 	// rates and the covered length axis values.
 	if isLengthScaled(wb, id, app) {
+		// declared_by_length must be contextualized by a covered_axes length axis
+		// (with a per_foot_linear_scaling derivation): the schema models the
+		// derived lengths against applicability.covered_axes.length. A
+		// declared_by_length sheet with no length covered axis is rejected.
+		if len(wb.RowsFor("declared_by_length", id)) > 0 {
+			if _, ok := coveredAxis(app, "length"); !ok {
+				return fmt.Errorf("record %q: declared_by_length rows require a covered_axes row with axis_key=length (derivation per_foot_linear_scaling) to contextualize the derived lengths; add the length covered axis", id)
+			}
+		}
 		params := declaredByLengthParams{
 			rates:        ratesFromRecord(rec),
 			lengthValues: coveredAxisValues(app, "length"),
@@ -505,6 +515,9 @@ func parseNumber(raw string) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid number %q", raw)
 	}
+	if math.IsNaN(f) || math.IsInf(f, 0) {
+		return nil, fmt.Errorf("non-finite number %q", raw)
+	}
 	return f, nil
 }
 
@@ -514,6 +527,9 @@ func parseFloat(raw string) (float64, error) {
 	f, err := strconv.ParseFloat(raw, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid number %q", raw)
+	}
+	if math.IsNaN(f) || math.IsInf(f, 0) {
+		return 0, fmt.Errorf("non-finite number %q", raw)
 	}
 	return f, nil
 }
