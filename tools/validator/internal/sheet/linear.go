@@ -48,10 +48,24 @@ type declaredByLengthParams struct {
 // so the converter surfaces them alongside missing-file notes.
 func assembleDeclaredByLength(wb Workbook, id string, p declaredByLengthParams, warnings *[]string) ([]any, error) {
 	rows := wb.RowsFor("declared_by_length", id)
+	var out []any
+	var err error
 	if len(rows) > 0 {
-		return echoDeclaredByLength(rows, id, p, warnings)
+		out, err = echoDeclaredByLength(rows, id, p, warnings)
+	} else {
+		out, err = generateDeclaredByLength(p, id)
 	}
-	return generateDeclaredByLength(p, id)
+	if err != nil {
+		return nil, err
+	}
+	// Every declared_by_length row is a length-scaled derivation, so it needs a
+	// base attestation to anchor its provenance.base_attestation_ref. If the
+	// table has any rows but no base, hard-error rather than emit derived values
+	// with no traceable base measurement.
+	if len(out) > 0 && p.baseLM79 == "" {
+		return nil, fmt.Errorf("record %q: photometry.declared_by_length has %d length-scaled row(s) but no base attestation to anchor them; the record declares no single lm_79* attestation. Add an lm_79* attestations row, or set the length base override", id, len(out))
+	}
+	return out, nil
 }
 
 // echoDeclaredByLength builds the table from the authored declared_by_length

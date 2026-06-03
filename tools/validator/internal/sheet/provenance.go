@@ -2,6 +2,17 @@ package sheet
 
 import "fmt"
 
+// derivedBaseMethods are the ProvenanceMethod values that produce a value from a
+// base measurement; the taxonomy ProvenanceMethod description says each names
+// that base in provenance.base_attestation_ref. The JSON Schema does not require
+// it structurally (Provenance.required is only {source, method}), so the
+// converter enforces it.
+var derivedBaseMethods = map[string]bool{
+	"extended_photometry": true,
+	"optical_simulation":  true,
+	"scaled":              true,
+}
+
 // provenanceContext carries the per-record facts the provenance resolver needs:
 // the single LM-79 attestation id used for the measured -> attestation_ref
 // auto-link, and how many LM-79 rows the record declared (so the resolver can
@@ -60,6 +71,21 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 		prov["base_attestation_ref"] = v
 	}
 
+	// Derived methods (extended_photometry, optical_simulation, scaled) name the
+	// base measurement they derive from in base_attestation_ref. The schema's
+	// Provenance.required is only {source, method}, so the converter enforces it:
+	// an explicit override wins, otherwise auto-link to the record's single LM-79,
+	// hard-erroring on the 0-or-many case exactly like measured -> attestation_ref.
+	if derivedBaseMethods[method] {
+		if base, _ := prov["base_attestation_ref"].(string); base == "" {
+			ref, err := ctx.baseAttestationRef(col.Header, method)
+			if err != nil {
+				return resolvedProvenance{}, err
+			}
+			prov["base_attestation_ref"] = ref
+		}
+	}
+
 	// attestation_ref: explicit override wins; otherwise auto-link when measured.
 	if v, ok := row[col.Header+"__attestation_ref"]; ok {
 		prov["attestation_ref"] = v
@@ -86,5 +112,19 @@ func (ctx provenanceContext) measuredAttestationRef(header string) (string, erro
 		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares no lm_79* attestation row to link; add an lm_79* attestations row or set %s__value_type=rated", header, header)
 	default:
 		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares %d lm_79* attestation rows; disambiguate with an explicit %s__attestation_ref column", header, ctx.lm79Count, header)
+	}
+}
+
+// baseAttestationRef returns the attestation id a derived value links to as its
+// base, with the same single-LM-79 resolution and 0-or-many hard error as the
+// measured auto-link.
+func (ctx provenanceContext) baseAttestationRef(header, method string) (string, error) {
+	switch {
+	case ctx.lm79Count == 1:
+		return ctx.lm79AttestationID, nil
+	case ctx.lm79Count == 0:
+		return "", fmt.Errorf("column %q uses derived method %q but the record declares no lm_79* attestation to anchor provenance.base_attestation_ref; add an lm_79* attestations row or set %s__base_attestation_ref explicitly", header, method, header)
+	default:
+		return "", fmt.Errorf("column %q uses derived method %q but the record declares %d lm_79* attestation rows; disambiguate with an explicit %s__base_attestation_ref column", header, method, ctx.lm79Count, header)
 	}
 }

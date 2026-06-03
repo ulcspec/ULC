@@ -2,7 +2,9 @@ package sheet
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -25,6 +27,13 @@ func parseJSONObjectCell(column, raw string) (map[string]any, error) {
 	}
 	if obj == nil {
 		return nil, fmt.Errorf("column %q: JSON object cell %q decoded to null", column, raw)
+	}
+	// Reject trailing content after the object (a cell like `{"k":"v"} junk`),
+	// matching decodeStrict so a malformed workbook cell fails loudly instead of
+	// silently ignoring the suffix.
+	var trailing any
+	if err := dec.Decode(&trailing); !errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("column %q: JSON object cell %q has trailing content after the object", column, raw)
 	}
 	return obj, nil
 }

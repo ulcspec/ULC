@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // zeroSHA256 is the 64-zero sentinel stamped into a reference when a referenced
@@ -32,10 +33,18 @@ type fileHasher struct {
 // allowMissing is set, in which case it returns the zero sentinel and records a
 // warning. Any other read error is always fatal.
 func (h *fileHasher) hashFile(filename string) (string, error) {
-	resolved := filename
-	if !filepath.IsAbs(resolved) {
-		resolved = filepath.Join(h.assetsRoot, filename)
+	// Referenced files must be relative paths under the assets root. Rejecting
+	// absolute paths and ".." traversal keeps records portable (no local
+	// filesystem paths leak into emitted FileReference filenames) and prevents
+	// the converter from hashing files outside the assets directory.
+	if filepath.IsAbs(filename) {
+		return "", fmt.Errorf("referenced file %q must be a relative path under the assets root, not an absolute path", filename)
 	}
+	cleaned := filepath.Clean(filename)
+	if cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("referenced file %q escapes the assets root via .. traversal; reference files by their relative path under the assets directory", filename)
+	}
+	resolved := filepath.Join(h.assetsRoot, cleaned)
 	f, err := os.Open(resolved)
 	if err != nil {
 		if os.IsNotExist(err) {

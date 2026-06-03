@@ -50,15 +50,23 @@ method}`. The converter fills sensible per-column defaults (a photometric anchor
 defaults to measured and auto-links to your single LM-79 attestation; a datasheet
 dimension defaults to rated). To override any provenanced column `X`, add the
 companion columns `X__value_type`, `X__prov_source`, `X__prov_method`, and
-`X__attestation_ref`. Leave them blank to take the default.
+`X__attestation_ref`. For derived photometry (Pattern C and the generated B/D
+tables), `X__extension_method` names the scaling rule and `X__base_attestation_ref`
+names the base measurement: any value whose method is `extended_photometry`,
+`optical_simulation`, or `scaled` must carry a `base_attestation_ref`, which the
+converter auto-links to your single LM-79 attestation when you do not set it
+explicitly. Leave companion columns blank to take the default.
 
 ## The smallest valid workbook
 
-`records` (one row) plus `source_files` (one IES row). The core grade needs only
-`total_luminous_flux_lm`, `input_power_w`, and `primary_category`; the rest of the
-`records` columns climb the record toward standard and full. Nothing you add is
-capped: the converter ingests every field you supply and the grade follows the
-data.
+`records` (one row) plus `source_files` (one IES row). Even the smallest record
+needs a few required `records` columns: the identity set `family_id`,
+`manufacturer_slug`, `manufacturer_display_name`, `catalog_model`, and
+`cutsheet_file` (the cutsheet is hashed and dual-written into `source_files`),
+plus the core-grade trio `total_luminous_flux_lm`, `input_power_w`, and
+`primary_category`. Everything beyond that climbs the record toward standard and
+full. Nothing you add is capped: the converter ingests every field you supply and
+the grade follows the data.
 
 ## The sheets
 

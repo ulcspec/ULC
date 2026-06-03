@@ -412,7 +412,12 @@ USAGE
 			continue
 		}
 		v.Validate(rawTree, report)
-		validate.VerifyHashes(outDir, res.Record, report)
+		// sheet.Convert already computed each source file's SHA-256 from the
+		// resolved assets root and embedded it (hard-erroring on a missing file
+		// unless --allow-missing-files), so a separate hash re-verification here is
+		// redundant. Running it against outDir, which holds only the written
+		// records and not the assets, would only emit misleading "not present
+		// locally" INFO findings.
 		grade.Report(res.Record, report)
 		report.Finalize()
 

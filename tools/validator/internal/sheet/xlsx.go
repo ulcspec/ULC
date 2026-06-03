@@ -297,7 +297,11 @@ func readWorksheet(rc io.Reader, table []string) ([]Row, error) {
 			}
 			rows = append(rows, row)
 		case xml.EndElement:
-			if se.Name.Local == "sheetData" {
+			// Match the same namespace the StartElement captured, so a
+			// foreign-namespace closing element named sheetData (permitted by the
+			// OOXML extension mechanism) cannot prematurely end the scope and drop
+			// the rows that follow it.
+			if se.Name.Local == "sheetData" && se.Name.Space == sheetDataNS {
 				inSheetData = false
 			}
 		}

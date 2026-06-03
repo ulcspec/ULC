@@ -135,7 +135,9 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 		"record_id": id,
 	}
 	// ulc_version default per DESIGN.md (overridable by the records column).
-	rec["ulc_version"] = "0.3.0"
+	// Tracks the current ULC spec version, matching every shipped example and
+	// template; a manufacturer who omits the column gets a current-spec record.
+	rec["ulc_version"] = "0.6.0"
 	// record_status default: active (overridable below).
 	rec["record_status"] = "active"
 
@@ -239,6 +241,9 @@ func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[strin
 		base := lm79ID
 		if ref := master["total_luminous_flux_lm__attestation_ref"]; ref != "" {
 			base = ref
+		}
+		if base == "" {
+			return fmt.Errorf("record %q: a cct_multipliers table generates scaled declared_by_cct rows, but the record declares no single lm_79* attestation to anchor the measured baseline and the scaled rows' provenance.base_attestation_ref (add a single lm_79* attestations row, or set total_luminous_flux_lm__attestation_ref to disambiguate)", id)
 		}
 		declared := generateDeclaredByCCT(multipliers, multOrder, baseline, baselineCCT, base)
 		if err := setPath(rec, "photometry.declared_by_cct", declared); err != nil {
