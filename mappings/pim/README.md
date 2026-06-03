@@ -110,9 +110,9 @@ Both `ulc build-index` and `ulc validate` are file-path CLIs — they read from 
 
 These guides describe the PIM-to-ULC transformation. They do not cover:
 
-- **PDF extraction** — if the PIM is downstream of a hand-maintained cutsheet PDF with no structured product data, extracting ULC from the PDF is a separate upstream task (not a PIM-mapping task). A dedicated extraction pipeline would sit upstream of the PIM and populate the PIM's attributes.
-- **IES / LDT parsing** — similar: parsing photometric files into the PIM is a separate pipeline that produces the PIM's optical attributes.
-- **Schema validation** — the `ulc validate` CLI handles that. The emitter calls it as a post-step.
+- **No PIM?** These guides assume a PIM or other structured master. If your product data lives in spreadsheets instead, use the `ulc from-sheet` converter (`tools/validator/`, with the workbook template in `templates/workbook/`): it turns a workbook into validated records directly, with no mapping integration to build.
+- **Reading data out of PDFs or photometric files.** ULC never parses a cutsheet PDF, IES, or LDT for data; those are referenced as source files by SHA-256, not read. Capturing data that exists only in unstructured documents into structured form (a spreadsheet or the PIM) is a one-time task upstream of both these guides and the converter.
+- **Schema validation.** The `ulc validate` CLI handles that; the emitter calls it as a post-step.
 
 ## See also
 
