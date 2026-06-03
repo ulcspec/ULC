@@ -204,14 +204,14 @@ func missingHard(reqs []requirement) []string {
 
 func standardRequirements(record map[string]any) []requirement {
 	reqs := []requirement{
-		{LevelStandard, "/photometry/luminaire_efficacy_lm_per_w", hasValue(record, "photometry", "luminaire_efficacy_lm_per_w")},
-		{LevelStandard, "/photometry/maximum_intensity_cd", hasValue(record, "photometry", "maximum_intensity_cd")},
+		{LevelStandard, "/photometry/luminaire_efficacy_lm_per_w", hasNumberValue(record, "photometry", "luminaire_efficacy_lm_per_w")},
+		{LevelStandard, "/photometry/maximum_intensity_cd", hasNumberValue(record, "photometry", "maximum_intensity_cd")},
 		{LevelStandard, "/photometry/distribution_type", getString(record, "photometry", "distribution_type") != ""},
 		{LevelStandard, "/photometry/photometric_coordinate_system", getString(record, "photometry", "photometric_coordinate_system") != ""},
 		{LevelStandard, "/photometry/symmetry_type", getString(record, "photometry", "symmetry_type") != ""},
 		{LevelStandard, "/electrical/control_gear_type", getString(record, "electrical", "control_gear_type") != ""},
 		// nominal_cct_k is a hard standard requirement (mandatory at standard).
-		{LevelStandard, "/colorimetry/nominal_cct_k", hasValue(record, "colorimetry", "nominal_cct_k")},
+		{LevelStandard, "/colorimetry/nominal_cct_k", getString(record, "colorimetry", "nominal_cct_k") != ""},
 		{LevelStandard, "/test_conditions/photometry_basis", getString(record, "test_conditions", "photometry_basis") != ""},
 		{LevelStandard, "/instrumentation/measurement_regime", getString(record, "instrumentation", "measurement_regime") != ""},
 		// LM-79 family attestation.
@@ -226,18 +226,18 @@ func standardRequirements(record map[string]any) []requirement {
 	// Input voltage: either input_voltage_v or input_voltage_class satisfies.
 	// The label names both accepted paths so gap guidance does not imply only
 	// input_voltage_v works.
-	voltageMet := hasValue(record, "electrical", "input_voltage_v") || getString(record, "electrical", "input_voltage_class") != ""
+	voltageMet := hasNumberValue(record, "electrical", "input_voltage_v") || getString(record, "electrical", "input_voltage_class") != ""
 	reqs = append(reqs, requirement{LevelStandard, "/electrical/input_voltage_v (or /electrical/input_voltage_class)", voltageMet})
 
 	// CONDITIONAL: beam_angle_deg only when the product is directional.
 	if isDirectional(record) {
-		reqs = append(reqs, requirement{LevelStandard, "/photometry/beam_angle_deg", hasValue(record, "photometry", "beam_angle_deg")})
+		reqs = append(reqs, requirement{LevelStandard, "/photometry/beam_angle_deg", hasNumberValue(record, "photometry", "beam_angle_deg")})
 	}
 
 	// CONDITIONAL: cri_ra only for white-light products. Pure color-mixing
 	// (rgb / rgba, no white channel) skips it.
 	if !isPureColorMixing(record) {
-		reqs = append(reqs, requirement{LevelStandard, "/colorimetry/cri_ra", hasValue(record, "colorimetry", "cri_ra")})
+		reqs = append(reqs, requirement{LevelStandard, "/colorimetry/cri_ra", hasNumberValue(record, "colorimetry", "cri_ra")})
 	}
 
 	return reqs
@@ -391,14 +391,14 @@ func hasMethodBackedLumenMaintenance(record map[string]any) bool {
 	if arr, ok := record["lumen_maintenance_package"].([]any); ok {
 		for _, e := range arr {
 			if m, ok := e.(map[string]any); ok {
-				if _, present := m["tm_21_projection_hours"]; present {
+				if hasNumberValue(m, "tm_21_projection_hours") {
 					return true
 				}
 			}
 		}
 	}
 	if lml, ok := record["lumen_maintenance_luminaire"].(map[string]any); ok {
-		if _, present := lml["tm_28"]; present {
+		if hasNumberValue(lml, "tm_28", "tm_28_projection_hours") {
 			return true
 		}
 	}
@@ -416,8 +416,22 @@ func hasOperatingPoint(record map[string]any) bool {
 		"input_voltage_v", "input_frequency_hz", "drive_current_ma",
 		"ambient_temperature", "case_temperature", "dut_operating_mode",
 	} {
-		if _, present := op[q]; present {
-			return true
+		v, present := op[q]
+		if !present {
+			continue
+		}
+		// A qualifier counts only with real content: a non-empty string
+		// (dut_operating_mode) or a non-empty object (ProvenancedNumber via
+		// .value, DualUnitTemperature via .c/.f). An empty shell does not.
+		switch vv := v.(type) {
+		case string:
+			if vv != "" {
+				return true
+			}
+		case map[string]any:
+			if len(vv) > 0 {
+				return true
+			}
 		}
 	}
 	return false
@@ -483,10 +497,10 @@ func nonMeasuredHeadlineValues(record map[string]any) []headlineValue {
 
 // --- map / value accessors (local, so grade has no dependency beyond findings) ---
 
-// hasNumberValue reports whether parent.child is a ProvenancedNumber-shaped
-// object carrying a numeric value field.
-func hasNumberValue(record map[string]any, parent, child string) bool {
-	m, ok := getMap(record, parent, child)
+// hasNumberValue reports whether the object at the given path is a
+// ProvenancedNumber-shaped object carrying a numeric value field.
+func hasNumberValue(record map[string]any, keys ...string) bool {
+	m, ok := getMap(record, keys...)
 	if !ok {
 		return false
 	}

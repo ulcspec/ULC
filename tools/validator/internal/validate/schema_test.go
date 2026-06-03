@@ -76,6 +76,34 @@ func TestValidatorRejectsBrokenRecord(t *testing.T) {
 	}
 }
 
+// TestValidatorRejectsTopLevelConformanceLevel asserts the breaking change is
+// enforced: the level is computed into index.conformance_level, so a hand-authored
+// top-level conformance_level is a hard schema error, not silently accepted.
+func TestValidatorRejectsTopLevelConformanceLevel(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+	m, ok := doc.(map[string]any)
+	if !ok {
+		t.Fatalf("record is not an object")
+	}
+	m["conformance_level"] = "full"
+
+	report := findings.NewReport()
+	v.Validate(m, report)
+	if !report.HasErrors() {
+		t.Fatalf("expected a schema error for a top-level conformance_level, got none")
+	}
+	for _, f := range report.Findings {
+		if f.Code != findings.CodeSchemaViolation {
+			t.Errorf("unexpected finding code %q, want %q", f.Code, findings.CodeSchemaViolation)
+		}
+	}
+}
+
 func TestFindSchemaDirExplicit(t *testing.T) {
 	root := repoRoot(t)
 	schemaDir := filepath.Join(root, "schema")

@@ -80,7 +80,7 @@ This repository defines the standard. It does not ship an application.
 | Path | Contents |
 |---|---|
 | `schema/` | Two JSON Schema files (Draft 2020-12): `ulc.schema.json` defines the record structure; `taxonomy.schema.json` defines the closed-enum vocabulary. They are split so the taxonomy can be loaded independently by search and classification tools. Cross-file references are validated in CI. |
-| `docs/` | Narrative specification, field reference, authoring guide, and `authoring-patterns.md` describing the four manufacturer authoring patterns the schema supports. |
+| `docs/` | Narrative documentation: `how-it-works.md` (end-to-end overview), `methodology.md` (design rationale), and `authoring-patterns.md` (the four manufacturer authoring patterns and architectural primitives). |
 | `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by required SHA-256 hash and optional URL, not committed. Reserved for vetted canonical records; authors writing new records from templates should keep in-progress files out of this directory. |
 | `templates/` | Per-category starter templates (downlight, linear-pendant, wall-pack, high-bay, bollard, wall-sconce). Each is a structurally valid `.ulc.json` skeleton with category-typical defaults and a sibling `.md` authoring guide. |
 | `mappings/` | Two kinds. Adjacent standards: planned crosswalks to GLDF and ETIM plus guidance for parsing IES and LDT sources. PIM platforms: how to emit ULC records at catalog scale from Salsify, Akeneo, SAP, or an in-house PIM (`mappings/pim/`). |

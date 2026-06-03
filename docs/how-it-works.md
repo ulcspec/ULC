@@ -30,7 +30,7 @@ Both tiers read the same ULC record. The difference is depth of lighting-domain 
 
 The reference command-line validator (`ulc`, in `tools/validator/`) checks a record end to end in one command: structure against the JSON Schema, builder parity (that the generated index matches what the builder would produce from the deep blocks), and source-file hashes.
 
-As part of that pass, the validator computes the record's conformance level from the data the record actually carries, and that level is stamped into the generated index as `index.conformance_level`. It is never hand-declared. The three levels are:
+The conformance level is computed and stamped into the generated index as `index.conformance_level` by the builder (`ulc build-index`), never hand-declared. As part of its end-to-end pass, `ulc validate` recomputes the level and checks it against the stored value (builder parity), then reports it. The three levels are:
 
 - **core**: the minimum identifying and photometric dataset.
 - **standard**: what a typical LM-79 test report produces.

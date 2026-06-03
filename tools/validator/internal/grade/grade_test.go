@@ -197,8 +197,9 @@ func TestAchievedLevelCoreMissing(t *testing.T) {
 // standard requirement (and therefore core). It is intentionally white-light,
 // non-directional, and indoor, so the conditional predicates (beam_angle_deg,
 // cri_ra, bug_rating) are all inert; individual tests flip one axis at a time to
-// isolate a single gate. Numeric anchors use float64 to match the normalized
-// shapes the grader sees from the CLI.
+// isolate a single gate. Integral numeric anchors are written as float64 here
+// for brevity; the grader treats float64/int/int64 identically (hasNumberValue),
+// so the fixture need not mirror the CLI's int64-for-integral normalization.
 func standardBase() map[string]any {
 	return map[string]any{
 		"product_family": map[string]any{
@@ -215,12 +216,12 @@ func standardBase() map[string]any {
 			"luminaire_efficacy_lm_per_w":   map[string]any{"value": float64(100)},
 			"maximum_intensity_cd":          map[string]any{"value": float64(500)},
 			"distribution_type":             "direct",
-			"photometric_coordinate_system": "type_c",
-			"symmetry_type":                 "quadrilateral",
+			"photometric_coordinate_system": "ies_c",
+			"symmetry_type":                 "symm_quad",
 		},
 		"electrical": map[string]any{
 			"input_power_w":     map[string]any{"value": float64(10)},
-			"control_gear_type": "internal_driver",
+			"control_gear_type": "led_driver_constant_current",
 			"input_voltage_v":   map[string]any{"value": float64(120)},
 		},
 		"colorimetry": map[string]any{
@@ -231,7 +232,7 @@ func standardBase() map[string]any {
 			"photometry_basis": "absolute",
 		},
 		"instrumentation": map[string]any{
-			"measurement_regime": "luminaire_level",
+			"measurement_regime": "far_field",
 		},
 		"attestations": []any{
 			map[string]any{"program": "lm_79_08"},
@@ -267,6 +268,8 @@ func TestAchievedLevelDirectionalGate(t *testing.T) {
 		{"directional missing beam angle grades core", "downlight", LevelCore},
 		// flood_area_site is non-directional: beam_angle_deg not required.
 		{"non-directional needs no beam angle grades standard", "flood_area_site", LevelStandard},
+		// in_ground_uplight is directional (added by this PR): beam_angle_deg required and absent here.
+		{"in_ground_uplight is directional, missing beam angle grades core", "in_ground_uplight", LevelCore},
 	}
 	for _, c := range cases {
 		c := c
@@ -277,6 +280,47 @@ func TestAchievedLevelDirectionalGate(t *testing.T) {
 				t.Errorf("AchievedLevel = %s, want %s", got, c.want)
 			}
 		})
+	}
+}
+
+// TestAchievedLevelCriGate pins the isPureColorMixing conditional: a white-light
+// record needs cri_ra at standard, but a pure color-mixing (rgb) record does not.
+func TestAchievedLevelCriGate(t *testing.T) {
+	// White-light record: cri_ra is a hard standard requirement; removing it drops to core.
+	rec := standardBase()
+	delete(rec["colorimetry"].(map[string]any), "cri_ra")
+	if got := AchievedLevel(rec); got != LevelCore {
+		t.Errorf("white-light without cri_ra = %s, want core", got)
+	}
+	// Same record but pure color-mixing: cri_ra is inert, so it reaches standard.
+	rec2 := standardBase()
+	delete(rec2["colorimetry"].(map[string]any), "cri_ra")
+	rec2["configuration"].(map[string]any)["tested_axes"].(map[string]any)["color_tunability"] = "rgb"
+	if got := AchievedLevel(rec2); got != LevelStandard {
+		t.Errorf("rgb without cri_ra = %s, want standard", got)
+	}
+}
+
+// TestAchievedLevelDualAcceptSatisfiers pins the two either/or standard gates:
+// input_voltage_class alone satisfies the voltage gate, and a method-backed
+// lumen_maintenance_package alone satisfies the lumen-maintenance gate.
+func TestAchievedLevelDualAcceptSatisfiers(t *testing.T) {
+	// input_voltage_class alone satisfies the voltage gate.
+	rec := standardBase()
+	el := rec["electrical"].(map[string]any)
+	delete(el, "input_voltage_v")
+	el["input_voltage_class"] = "universal_120_277"
+	if got := AchievedLevel(rec); got != LevelStandard {
+		t.Errorf("input_voltage_class alone = %s, want standard", got)
+	}
+	// A method-backed lumen_maintenance_package alone satisfies the gate.
+	rec2 := standardBase()
+	delete(rec2, "lumen_maintenance_luminaire")
+	rec2["lumen_maintenance_package"] = []any{
+		map[string]any{"tm_21_projection_hours": map[string]any{"value": int64(60000)}},
+	}
+	if got := AchievedLevel(rec2); got != LevelStandard {
+		t.Errorf("lumen_maintenance_package alone = %s, want standard", got)
 	}
 }
 

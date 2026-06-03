@@ -33,6 +33,8 @@
       "format": "date"
     },
 
+    "conformance_level": false,
+
     "index": {
       "description": "Denormalized scan surface for AI agents, search indexers, and filter UIs. Every field is a projection of authoritative values from the deeper blocks below. GENERATED, NOT HAND-AUTHORED: produced deterministically by the `ulc build-index` reference CLI (see `tools/validator/`) from the deep blocks and stamped with `x-ulc-generated: true` plus a `builder_version` so consumers can detect stale indices. Manufacturers never type these values; their PIM export or ULC CLI writes them. Drift is prevented by construction, because the builder is a pure function of the deep blocks.",
       "$ref": "#/$defs/Index"

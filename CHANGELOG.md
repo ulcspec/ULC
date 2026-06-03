@@ -27,6 +27,7 @@ Conformance level becomes a computed, builder-stamped value rather than a hand-d
 ### Schema (BREAKING, pre-1.0)
 
 - The top-level `conformance_level` field is removed from `required[]` and from `properties` in `schema/ulc.schema.json`. The conformance level is no longer declared by the author; the reference builder computes it from the record's populated fields (`grade.AchievedLevel`) and stamps it into the generated index as `index.conformance_level` (`core` / `standard` / `full`). Downstream consumers that read the top-level field must read `index.conformance_level` instead.
+- A top-level `conformance_level` is now explicitly forbidden (a `false` subschema on the removed property), so a stale or hand-authored value is a hard validation `ERROR` rather than being silently accepted. Records that still set it must drop it and re-run `ulc build-index`.
 
 ### Builder
 
@@ -35,6 +36,16 @@ Conformance level becomes a computed, builder-stamped value rather than a hand-d
 ### Validator
 
 - `ulc validate` now grades the record against the conformance rubric and reports the achieved level plus the gap to the next level up as `INFO` findings. No `WARNING` is emitted: there is no declared level for the record to fall short of, so a record simply is whatever level its populated data achieves.
+
+### Reference records and templates
+
+- All four reference records (`examples/*.ulc`) and all six templates (`templates/*.ulc.json`) were migrated to the computed-conformance shape: the hand-declared top-level `conformance_level` was removed and the builder-computed `index.conformance_level` now carries the level. Stored indices re-stamp `builder_version` `0.2.0` → `0.3.0`. The lumenpulse RGB record now grades `core` (it previously self-declared `standard`); the other three grade `full`. Records keep `ulc_version` `0.3.0` until the next tagged release bumps it.
+
+### Documentation and taxonomy descriptions
+
+- Reworded the `ConformanceLevel` and `index.conformance_level` schema descriptions from "declared" to "computed and builder-stamped", and clarified that `full` is hard-gated only on operating-point qualifiers (and a BUG rating for outdoor products); TM-30 hue bins, method-backed lumen-maintenance projections, measurement uncertainty, and instrumentation depth are reported as `INFO` observations, not hard requirements.
+- Relaxed the `attestation_ref` description from "Required for" to "Expected on" fields with `value_type: measured`, and reworded `measured_quantities` from "Validators check that ..." to "... is expected to reference ...", reflecting that the provenance and cross-record checks are planned, not yet implemented in the reference validator.
+- Corrected the `gldf` SourceFileType description: GLDF expands to Global Lighting Data Format (not Global Luminaire Data Format).
 
 ## 0.5.1 (2026-04-27)
 
