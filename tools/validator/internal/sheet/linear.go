@@ -131,16 +131,20 @@ func generateDeclaredByLength(p declaredByLengthParams, id string) ([]any, error
 	if !p.rates.hasLumens && !p.rates.hasWatts {
 		return nil, fmt.Errorf("record %q: cannot generate declared_by_length without per-foot rates; author photometry.per_length_normalized.lumens_per_foot / watts_per_foot or provide a declared_by_length sheet", id)
 	}
+	baselineIn, baseErr := strconv.ParseFloat(p.baselineIn, 64)
 	out := []any{}
 	for _, raw := range p.lengthValues {
-		if raw == p.baselineIn {
-			continue // the tested baseline length is the headline record, not a derived row
-		}
 		lengthIn, err := strconv.ParseFloat(raw, 64)
 		if err != nil {
 			// A non-numeric covered length value (for example "any") is not a real
 			// length and cannot be scaled; skip it.
 			continue
+		}
+		// Exclude the tested baseline length by numeric value, so "48" and "48.0"
+		// (or any equivalent string forms) both match and the baseline is never
+		// emitted as a derived row.
+		if baseErr == nil && math.Abs(lengthIn-baselineIn) < 1e-6 {
+			continue // the tested baseline length is the headline record, not a derived row
 		}
 		// Round the computed SI leaf to kill the binary-float artifact (96 in *
 		// 25.4 evaluates to 2438.3999999999996, not 2438.4); 4 dp is finer than any

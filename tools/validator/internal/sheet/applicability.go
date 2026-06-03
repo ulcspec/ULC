@@ -276,8 +276,12 @@ func generateDeclaredByCCT(multipliers map[string]float64, multOrder []string, b
 		lumens := math.Round(mult * baseline)
 		entry := map[string]any{"cct": cct}
 		if cct == baselineCCT {
+			// The baseline CCT row carries the actual measured flux, not a
+			// multiplier-scaled value: the baseline multiplier should be 1.0, but
+			// trusting the measured baseline keeps a mis-authored non-1.0 baseline
+			// multiplier from turning a measured value into a derived one.
 			entry["lumens"] = map[string]any{
-				"value":      numberLeaf(lumens),
+				"value":      numberLeaf(baseline),
 				"unit":       "lm",
 				"value_type": "measured",
 				"provenance": map[string]any{

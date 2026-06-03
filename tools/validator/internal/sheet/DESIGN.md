@@ -120,7 +120,7 @@ plus the schema-required `value_type`:
 Any path-input column (`records.cutsheet_file`, `source_files.filename`,
 `attestations.source_document_file`) is a local path the converter resolves, hashes (lowercase
 hex `^[a-f0-9]{64}$`), and stamps into the matching `reference.sha256`. `records.cutsheet_file`
-is dual-written to both `product_family.cutsheet.reference` AND a synthesized
+is dual-written to both `product_family.cutsheet` (the FileReference directly) AND a synthesized
 `source_files[] {file_type: datasheet_pdf}` entry (de-duplicated on filename). The manufacturer
 lists the cutsheet once.
 

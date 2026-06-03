@@ -10,6 +10,7 @@ As of the next release:
 - [x] `ulc build-index <record> --check` — verify stored index matches the builder; exit 1 on drift
 - [x] `ulc build-index <record> --stdout` — print computed index without modifying the record
 - [x] `ulc validate <record>` — JSON Schema Draft 2020-12 structural validation via [`santhosh-tekuri/jsonschema/v6`](https://github.com/santhosh-tekuri/jsonschema) with cross-file `$ref` resolution
+- [x] `ulc from-sheet <bundle-dir|workbook.xlsx>` — deterministic, offline converter from a manufacturer workbook (CSV bundle or native `.xlsx`) to validated ULC records (`--out`, `--assets`, `--allow-missing-files`)
 - [x] Builder parity is included in `ulc validate` (stored `index` vs. computed)
 - [x] Source-file SHA-256 hash verification when referenced files are reachable on the local filesystem
 - [x] Structured `ERROR` / `WARNING` / `INFO` findings, each with a JSON Pointer into the record

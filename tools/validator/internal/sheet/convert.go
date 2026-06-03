@@ -290,6 +290,12 @@ func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[strin
 			return fmt.Errorf("record %q: a cct_multipliers table is present but photometry.total_luminous_flux_lm.value (the multiplier baseline) is missing", id)
 		}
 		baselineCCT := coveredAxisBaseline(app, "cct")
+		if baselineCCT == "" {
+			return fmt.Errorf("record %q: a cct_multipliers table is present but the cct covered axis declares no baseline_axis_value, so declared_by_cct has no measured baseline row to anchor", id)
+		}
+		if _, ok := multipliers[baselineCCT]; !ok {
+			return fmt.Errorf("record %q: the cct baseline_axis_value %q has no row in the cct_multipliers table", id, baselineCCT)
+		}
 		base := lm79ID
 		if ref := master["total_luminous_flux_lm__attestation_ref"]; ref != "" {
 			base = ref
@@ -573,6 +579,28 @@ func rejectCaseByCaseMeasured(vtype string, att map[string]any) error {
 	return nil
 }
 
+// buildAttestationApplicability assembles the optional option-conditional block
+// (attestation.applicability) from the required_order_code_options (;-list) and
+// required_constraints_json (JSON object) columns. Returns nil when neither is
+// present, so an unconditional attestation carries no applicability.
+func buildAttestationApplicability(row Row) (map[string]any, error) {
+	app := map[string]any{}
+	if opts := row["required_order_code_options"]; opts != "" {
+		app["required_order_code_options"] = parseList(opts)
+	}
+	if rc := row["required_constraints_json"]; rc != "" {
+		obj, err := parseJSONObjectCell("required_constraints_json", rc)
+		if err != nil {
+			return nil, err
+		}
+		app["required_constraints"] = obj
+	}
+	if len(app) == 0 {
+		return nil, nil
+	}
+	return app, nil
+}
+
 // buildAttestation maps an attestations-sheet row onto an Attestation object.
 // The schema requires program and value_type; the rest are optional.
 func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
@@ -597,6 +625,14 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	att["verification"] = map[string]any{"type": vtype}
 	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
 		return nil, err
+	}
+
+	app, err := buildAttestationApplicability(row)
+	if err != nil {
+		return nil, err
+	}
+	if app != nil {
+		att["applicability"] = app
 	}
 
 	if doc := row["source_document_file"]; doc != "" {

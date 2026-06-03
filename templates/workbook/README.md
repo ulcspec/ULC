@@ -64,9 +64,13 @@ needs a few required `records` columns: the identity set `family_id`,
 `manufacturer_slug`, `manufacturer_display_name`, `catalog_model`, and
 `cutsheet_file` (the cutsheet is hashed and dual-written into `source_files`),
 plus the core-grade trio `total_luminous_flux_lm`, `input_power_w`, and
-`primary_category`. Everything beyond that climbs the record toward standard and
-full. Nothing you add is capped: the converter ingests every field you supply and
-the grade follows the data.
+`primary_category`. Because the photometric anchors default to `value_type:
+measured` and auto-link to your LM-79 attestation, the smallest path also needs
+one `attestations` row with an `lm_79*` program; for an attestation-free draft
+instead, set `total_luminous_flux_lm__value_type=rated` and
+`input_power_w__value_type=rated`. Everything beyond that climbs the record
+toward standard and full. Nothing you add is capped: the converter ingests every
+field you supply and the grade follows the data.
 
 ## The sheets
 

@@ -1,6 +1,7 @@
 package sheet
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -136,5 +137,57 @@ func TestCheckRelatedSheetIDs(t *testing.T) {
 	}
 	if err := checkRelatedSheetIDs(Workbook{"records": records, "instructions": {{"note": "fill this in"}}, "source_files": {{"record_id": "r1", "filename": "x.ies"}}}, records); err != nil {
 		t.Errorf("valid workbook with an ignored extra tab should pass: %v", err)
+	}
+}
+
+// TestGenerateDeclaredByCCTBaselineMeasured locks that the baseline CCT row of a
+// generated declared_by_cct table carries the measured baseline flux (not a
+// multiplier-scaled value), even when the authored baseline multiplier is not 1.0.
+func TestGenerateDeclaredByCCTBaselineMeasured(t *testing.T) {
+	mult := map[string]float64{"3000": 0.95, "4000": 1.05}
+	out := generateDeclaredByCCT(mult, []string{"3000", "4000"}, 4000, "3000", "L1")
+	for _, e := range out {
+		row := e.(map[string]any)
+		if row["cct"] != "3000" {
+			continue
+		}
+		lum := row["lumens"].(map[string]any)
+		if lum["value_type"] != "measured" {
+			t.Errorf("baseline row value_type = %v, want measured", lum["value_type"])
+		}
+		if got := fmt.Sprint(lum["value"]); got != "4000" {
+			t.Errorf("baseline lumens = %s, want 4000 (the measured baseline, not round(0.95*4000))", got)
+		}
+	}
+}
+
+// TestBuildAttestationApplicability locks the option-conditional attestation
+// block: required_order_code_options (;-list) + required_constraints_json (JSON
+// object) become attestation.applicability; an unconditional attestation has none.
+func TestBuildAttestationApplicability(t *testing.T) {
+	h := &fileHasher{}
+	att, err := buildAttestation(Row{
+		"program":                     "chicago_plenum",
+		"value_type":                  "rated",
+		"required_order_code_options": "CPP;HD",
+		"required_constraints_json":   `{"voltage":"277"}`,
+	}, h)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	app, ok := att["applicability"].(map[string]any)
+	if !ok {
+		t.Fatal("expected an applicability block")
+	}
+	if opts, _ := app["required_order_code_options"].([]any); len(opts) != 2 {
+		t.Fatalf("required_order_code_options = %v, want 2 entries", app["required_order_code_options"])
+	}
+	if rc, _ := app["required_constraints"].(map[string]any); rc["voltage"] != "277" {
+		t.Fatalf("required_constraints = %v, want voltage 277", app["required_constraints"])
+	}
+
+	plain, _ := buildAttestation(Row{"program": "ul_listed", "value_type": "rated"}, h)
+	if _, present := plain["applicability"]; present {
+		t.Error("an unconditional attestation should carry no applicability block")
 	}
 }
