@@ -35,6 +35,11 @@ type Result struct {
 	Record map[string]any
 	// Warnings are non-fatal advisories (for example missing-file sentinels).
 	Warnings []string
+	// HasMissingFileSentinel is true when a referenced file was absent on disk
+	// and a zero-sentinel SHA-256 was stamped under --allow-missing-files. The
+	// record is then a DRAFT (placeholder hashes), which callers detect via this
+	// structured flag rather than by parsing warning text.
+	HasMissingFileSentinel bool
 }
 
 // readWorkbook reads the converter input into a Workbook, dispatching on the
@@ -114,10 +119,11 @@ func Convert(input string, opts Options) ([]Result, error) {
 			return nil, fmt.Errorf("record %q: %w", id, err)
 		}
 		results = append(results, Result{
-			RecordID: id,
-			Pattern:  pattern,
-			Record:   rec,
-			Warnings: hasher.warnings,
+			RecordID:               id,
+			Pattern:                pattern,
+			Record:                 rec,
+			Warnings:               hasher.warnings,
+			HasMissingFileSentinel: hasher.sentinelStamped,
 		})
 	}
 	return results, nil
@@ -276,7 +282,7 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 // manufacturer's logical IES identifier and is intentionally not required to
 // equal a source_files filename, which is the actual archived file.)
 func verifyIESReference(rec map[string]any, id string) error {
-	if !photometryCitesMeasuredIES(rec) {
+	if !recordCitesMeasuredIES(rec) {
 		return nil
 	}
 	hasIES := false
@@ -289,31 +295,38 @@ func verifyIESReference(rec map[string]any, id string) error {
 		}
 	}
 	if !hasIES {
-		return fmt.Errorf("record %q: photometry.total_luminous_flux_lm is measured with provenance.source=ies, but source_files has no file_type=ies row; add the IES file to source_files (or set the photometry value_type to rated for an IES-free record)", id)
+		return fmt.Errorf("record %q: a measured value cites provenance.source=ies (the converter default for the photometry/electrical anchors), but source_files has no file_type=ies row; add the IES file to source_files (or set those value_types to rated for an IES-free record)", id)
 	}
 	return nil
 }
 
-// photometryCitesMeasuredIES reports whether the record's headline luminous flux
-// is a measured value sourced from an IES file (the converter default).
-func photometryCitesMeasuredIES(rec map[string]any) bool {
-	v, ok := getPath(rec, "photometry.total_luminous_flux_lm")
-	if !ok {
-		return false
+// recordCitesMeasuredIES reports whether any value anywhere in the record is a
+// measured quantity sourced from an IES file. A whole-record walk catches the
+// case where the headline flux is overridden to rated but another anchor (input
+// power, intensity, efficacy, zonal lumens, ...) remains measured-from-IES.
+func recordCitesMeasuredIES(v any) bool {
+	switch t := v.(type) {
+	case map[string]any:
+		if vt, _ := t["value_type"].(string); vt == "measured" {
+			if prov, ok := t["provenance"].(map[string]any); ok {
+				if src, _ := prov["source"].(string); src == "ies" {
+					return true
+				}
+			}
+		}
+		for _, child := range t {
+			if recordCitesMeasuredIES(child) {
+				return true
+			}
+		}
+	case []any:
+		for _, e := range t {
+			if recordCitesMeasuredIES(e) {
+				return true
+			}
+		}
 	}
-	pn, ok := v.(map[string]any)
-	if !ok {
-		return false
-	}
-	if vt, _ := pn["value_type"].(string); vt != "measured" {
-		return false
-	}
-	prov, ok := pn["provenance"].(map[string]any)
-	if !ok {
-		return false
-	}
-	src, _ := prov["source"].(string)
-	return src == "ies"
+	return false
 }
 
 // assembleCoveredAxisRecord adds the multi-value-applicability deep blocks shared
@@ -632,7 +645,7 @@ func rejectCaseByCaseMeasured(vtype string, att map[string]any) error {
 		return nil
 	}
 	if vt, _ := att["value_type"].(string); vt == "measured" {
-		return fmt.Errorf("attestation %v: verification_type=requires_manufacturer_confirmation cannot carry value_type=measured (a case-by-case claim must not be promoted to a measured value; use rated or claimed)", att["program"])
+		return fmt.Errorf("attestation %v: verification_type=requires_manufacturer_confirmation cannot carry value_type=measured (a case-by-case claim must not be promoted to a measured value; use rated or nominal)", att["program"])
 	}
 	return nil
 }

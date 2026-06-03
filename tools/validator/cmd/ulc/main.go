@@ -370,13 +370,12 @@ USAGE
 	failed := false
 	sawSentinel := false
 	for _, res := range results {
-		recordSentinel := false
 		for _, w := range res.Warnings {
 			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", res.RecordID, w)
-			if strings.Contains(w, "zero-sentinel") {
-				sawSentinel = true
-				recordSentinel = true
-			}
+		}
+		recordSentinel := res.HasMissingFileSentinel
+		if recordSentinel {
+			sawSentinel = true
 		}
 
 		built := index.Build(res.Record)

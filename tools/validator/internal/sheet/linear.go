@@ -131,19 +131,24 @@ func generateDeclaredByLength(p declaredByLengthParams, id string) ([]any, error
 	if !p.rates.hasLumens && !p.rates.hasWatts {
 		return nil, fmt.Errorf("record %q: cannot generate declared_by_length without per-foot rates; author photometry.per_length_normalized.lumens_per_foot / watts_per_foot or provide a declared_by_length sheet", id)
 	}
-	baselineIn, baseErr := strconv.ParseFloat(p.baselineIn, 64)
+	baselineIn, baselineErr := strconv.ParseFloat(p.baselineIn, 64)
+	if baselineErr != nil {
+		return nil, fmt.Errorf("record %q: generating declared_by_length needs a numeric baseline length, but the length covered axis baseline_axis_value %q is missing or non-numeric; author an explicit declared_by_length sheet instead", id, p.baselineIn)
+	}
 	out := []any{}
 	for _, raw := range p.lengthValues {
 		lengthIn, err := strconv.ParseFloat(raw, 64)
 		if err != nil {
-			// A non-numeric covered length value (for example "any") is not a real
-			// length and cannot be scaled; skip it.
-			continue
+			// Generation can only scale numeric inch lengths. A non-numeric covered
+			// length (an order-code token like "L48", or "any") cannot be scaled, so
+			// require an explicit authored declared_by_length sheet rather than
+			// silently dropping the value.
+			return nil, fmt.Errorf("record %q: covered length value %q is not numeric inches, so declared_by_length cannot be generated; use numeric inch lengths or author an explicit declared_by_length sheet", id, raw)
 		}
 		// Exclude the tested baseline length by numeric value, so "48" and "48.0"
 		// (or any equivalent string forms) both match and the baseline is never
 		// emitted as a derived row.
-		if baseErr == nil && math.Abs(lengthIn-baselineIn) < 1e-6 {
+		if math.Abs(lengthIn-baselineIn) < 1e-6 {
 			continue // the tested baseline length is the headline record, not a derived row
 		}
 		// Round the computed SI leaf to kill the binary-float artifact (96 in *

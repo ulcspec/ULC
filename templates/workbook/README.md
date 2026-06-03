@@ -38,9 +38,12 @@ Three things are computed, never typed into the workbook:
 
 - The entire `index` block (a deterministic projection, including the graded
   `conformance_level`).
-- Every Imperial companion leaf (`in`, `lb`, `f`, `ft2`, `lb_per_ft`). You author
-  the SI side only, in the `*_mm` / `*_kg` / `*_c` columns; the converter writes
-  both.
+- Every Imperial companion leaf (`in`, `lb`, `f`, `ft2`, `lb_per_ft`) on a
+  dual-unit field. You author the SI side only, in the dual-unit `*_mm` / `*_kg`
+  / `*_c` columns; the converter writes both. (A few temperature fields are
+  single-value `ProvenancedNumber`s per the schema, not dual-unit objects: the
+  lumen-maintenance-package `test_temperature_c`, for example, is emitted as a
+  scalar value with unit `C` and carries no `f` companion.)
 - Every `sha256`. You name the file in a path column; the converter hashes it.
 
 ## Provenance defaults and overrides

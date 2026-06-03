@@ -26,6 +26,10 @@ type fileHasher struct {
 	// warnings accumulates the human-facing messages emitted when a missing file
 	// is tolerated under allowMissing. The command surfaces these to the user.
 	warnings []string
+	// sentinelStamped is true once a zero-sentinel SHA-256 has been stamped for a
+	// missing file under allowMissing. Callers read this structured flag (rather
+	// than parsing warning text) to mark the record a DRAFT.
+	sentinelStamped bool
 }
 
 // hashFile resolves filename against the assets root, reads it, and returns the
@@ -49,6 +53,7 @@ func (h *fileHasher) hashFile(filename string) (string, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			if h.allowMissing {
+				h.sentinelStamped = true
 				h.warnings = append(h.warnings,
 					fmt.Sprintf("file %q not found under assets root %q: stamping zero-sentinel SHA-256 (--allow-missing-files)", filename, h.assetsRoot))
 				return zeroSHA256, nil

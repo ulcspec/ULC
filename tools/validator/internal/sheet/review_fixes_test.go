@@ -256,4 +256,35 @@ func TestVerifyIESReference(t *testing.T) {
 	}, "r1"); err != nil {
 		t.Errorf("rated photometry without an IES should pass: %v", err)
 	}
+
+	// flux overridden to rated, but another anchor (input power) is still
+	// measured-ies, with no ies source -> error (whole-record scan, not just flux)
+	if err := verifyIESReference(map[string]any{
+		"source_files": []any{},
+		"photometry":   map[string]any{"total_luminous_flux_lm": ratedFlux},
+		"electrical":   map[string]any{"input_power_w": measuredFlux},
+	}, "r1"); err == nil {
+		t.Error("expected error: a non-flux measured-ies anchor with no ies source_files row")
+	}
+}
+
+// TestGenerateDeclaredByLengthRequiresNumeric locks that Pattern D generation
+// fails fast on a non-numeric baseline or covered length, rather than silently
+// emitting the baseline as a derived row or dropping order-code length values.
+func TestGenerateDeclaredByLengthRequiresNumeric(t *testing.T) {
+	rates := linearRates{lumensPerFoot: 500, hasLumens: true}
+
+	if _, err := generateDeclaredByLength(declaredByLengthParams{rates: rates, lengthValues: []string{"96"}, baseLM79: "L1", baselineIn: "any"}, "r1"); err == nil {
+		t.Error("expected error: non-numeric baseline length")
+	}
+	if _, err := generateDeclaredByLength(declaredByLengthParams{rates: rates, lengthValues: []string{"L48", "96"}, baseLM79: "L1", baselineIn: "48"}, "r1"); err == nil {
+		t.Error("expected error: non-numeric covered length value")
+	}
+	out, err := generateDeclaredByLength(declaredByLengthParams{rates: rates, lengthValues: []string{"48", "96"}, baseLM79: "L1", baselineIn: "48"}, "r1")
+	if err != nil {
+		t.Fatalf("unexpected error on all-numeric lengths: %v", err)
+	}
+	if len(out) != 1 {
+		t.Fatalf("want 1 derived row (96; baseline 48 excluded), got %d", len(out))
+	}
 }
