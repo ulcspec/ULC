@@ -242,13 +242,22 @@ func TestVerifyIESReference(t *testing.T) {
 		t.Error("expected error: measured-ies photometry with no ies source_files row")
 	}
 
-	// measured-ies flux + an ies source (filename need not equal source_ies_ref) -> ok
+	// source_ies_ref that names no ies source_files entry -> error (schema match)
 	if err := verifyIESReference(map[string]any{
 		"source_files":  iesSF,
-		"configuration": map[string]any{"source_ies_ref": "SKY-SR-HO.ies"},
+		"configuration": map[string]any{"source_ies_ref": "some-other-name.ies"},
+		"photometry":    map[string]any{"total_luminous_flux_lm": measuredFlux},
+	}, "r1"); err == nil {
+		t.Error("expected error: source_ies_ref matches no ies source_files filename")
+	}
+
+	// source_ies_ref equal to the ies source_files filename + measured flux -> ok
+	if err := verifyIESReference(map[string]any{
+		"source_files":  iesSF,
+		"configuration": map[string]any{"source_ies_ref": "lumos-skyline.ies"},
 		"photometry":    map[string]any{"total_luminous_flux_lm": measuredFlux},
 	}, "r1"); err != nil {
-		t.Errorf("valid record (logical source_ies_ref differs from filename) should pass: %v", err)
+		t.Errorf("matching source_ies_ref should pass: %v", err)
 	}
 
 	// rated flux (no IES) needs no ies source -> ok

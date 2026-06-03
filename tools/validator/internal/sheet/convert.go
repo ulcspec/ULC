@@ -273,28 +273,35 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	return rec, nil
 }
 
-// verifyIESReference enforces that a record whose headline photometry is
-// measured from an IES file actually references and hashes an IES in
-// source_files. The converter defaults the photometric anchors to
-// value_type=measured with provenance.source=ies, so a record on the default
-// path that lists no ies source_files row would otherwise claim IES-sourced
-// data that is never referenced or hashed. (configuration.source_ies_ref is the
-// manufacturer's logical IES identifier and is intentionally not required to
-// equal a source_files filename, which is the actual archived file.)
+// verifyIESReference enforces the schema's IES-reference contract:
+//   - configuration.source_ies_ref, per its schema description ("Matches a
+//     source_files entry"), must name an ies-typed source_files filename when set.
+//   - any measured value sourced from IES (the converter default for the
+//     photometry/electrical anchors) requires at least one ies source_files row,
+//     so a record cannot cite IES-sourced data that is never referenced or hashed.
 func verifyIESReference(rec map[string]any, id string) error {
-	if !recordCitesMeasuredIES(rec) {
-		return nil
-	}
-	hasIES := false
+	iesNames := map[string]bool{}
 	if sf, ok := rec["source_files"].([]any); ok {
 		for _, e := range sf {
-			if m, ok := e.(map[string]any); ok && m["file_type"] == "ies" {
-				hasIES = true
-				break
+			m, ok := e.(map[string]any)
+			if !ok || m["file_type"] != "ies" {
+				continue
+			}
+			if ref, ok := m["reference"].(map[string]any); ok {
+				if fn, _ := ref["filename"].(string); fn != "" {
+					iesNames[fn] = true
+				}
 			}
 		}
 	}
-	if !hasIES {
+
+	if v, ok := getPath(rec, "configuration.source_ies_ref"); ok {
+		if ref, _ := v.(string); ref != "" && !iesNames[ref] {
+			return fmt.Errorf("record %q: configuration.source_ies_ref %q matches no source_files row with file_type=ies (the schema defines source_ies_ref as a reference to a source_files entry, so the two must name the same file)", id, ref)
+		}
+	}
+
+	if recordCitesMeasuredIES(rec) && len(iesNames) == 0 {
 		return fmt.Errorf("record %q: a measured value cites provenance.source=ies (the converter default for the photometry/electrical anchors), but source_files has no file_type=ies row; add the IES file to source_files (or set those value_types to rated for an IES-free record)", id)
 	}
 	return nil
@@ -578,6 +585,9 @@ func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef m
 		fileType := row["file_type"]
 		if fileType == "" {
 			return nil, fmt.Errorf("source_files row %q: missing file_type", filename)
+		}
+		if _, dup := seenTypes[filename]; dup {
+			return nil, fmt.Errorf("record %q: source_files lists filename %q more than once; each source file must appear in exactly one row", id, filename)
 		}
 		ref, err := buildFileReference(filename, row, "filename", hasher)
 		if err != nil {
