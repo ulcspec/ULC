@@ -363,9 +363,6 @@
       }
     }
   },
-  "flicker_measurements": {
-    "metrics": []
-  },
   "index": {
     "attestation_programs": [
       "baa",

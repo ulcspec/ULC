@@ -59,23 +59,25 @@ The workbook carries **only authored values**. Three things are NEVER columns: t
 The full column list per sheet (header -> dotted ULC path -> type -> required-at-level) is the
 implementation contract; see the per-sheet tables maintained alongside the converter code.
 
-### `records` minimum (core-level Pattern A, smallest happy path)
+### `records` minimum (Pattern A, smallest happy path)
 
 The smallest valid workbook is `records` (1 row), plus a `source_files` IES row for the default
 measured photometry path (a rated-only record relies on the auto-injected cutsheet `datasheet_pdf`
-source and needs no IES row). Core grading needs only `total_luminous_flux_lm.value`,
-`input_power_w.value`, and `primary_category`; schema structure adds the identity/cutsheet/scenario
-fields:
+source and needs no IES row). The three fields `total_luminous_flux_lm.value`,
+`input_power_w.value`, and `primary_category` make the record indexable (the `incomplete` tier);
+reaching `core` additionally requires the identity, electrical, applicable colorimetry, and
+safety-listing requirements documented in `docs/methodology.md`. Schema structure adds the
+identity/cutsheet/scenario fields:
 
 ```
 record_id, ulc_version(=0.7.0 default), record_status(=active),
 family_id, manufacturer_slug, manufacturer_display_name, catalog_model,
 cutsheet_file        (-> sha256 + cutsheet/source_files dual-write),
-primary_category     (CORE grade gate),
+primary_category     (indexing anchor),
 photometric_scenario_id,
 catalog_number       (Pattern-A signal),
-input_power_w        (CORE grade gate),
-total_luminous_flux_lm (CORE grade gate)
+input_power_w        (indexing anchor),
+total_luminous_flux_lm (indexing anchor)
 ```
 
 Plus, for measured photometry, a `source_files` row `{record_id, file_type=ies, filename}`. The converter supplies the

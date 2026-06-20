@@ -243,6 +243,32 @@ func TestAchievedLevelIncomplete(t *testing.T) {
 	}
 }
 
+// TestReportNoneIsNotPresentedAsConformanceLevel pins G2: an anchorless record
+// (LevelNone) emits a CodeConformanceLevel INFO that explains the missing photometric
+// anchors rather than presenting the non-enum sentinel token "none" as a conformance
+// level.
+func TestReportNoneIsNotPresentedAsConformanceLevel(t *testing.T) {
+	rec := map[string]any{
+		"product_family": map[string]any{"primary_category": "panel_troffer"},
+	}
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelNone {
+		t.Fatalf("anchorless record = %s, want none", got)
+	}
+	report.Finalize()
+	levels := findingsFor(report, findings.CodeConformanceLevel)
+	if len(levels) != 1 {
+		t.Fatalf("expected exactly one conformance-level finding, got %d: %+v", len(levels), levels)
+	}
+	msg := levels[0].Message
+	if strings.Contains(msg, `conformance level "none"`) {
+		t.Errorf("LevelNone message presents the sentinel token as a conformance level: %q", msg)
+	}
+	if !strings.Contains(msg, "photometric anchors") {
+		t.Errorf("LevelNone message should explain the missing photometric anchors: %q", msg)
+	}
+}
+
 // TestSafetyListingCoreGate pins the region-conditional safety acceptance.
 func TestSafetyListingCoreGate(t *testing.T) {
 	setListing := func(rec map[string]any, programs ...string) {

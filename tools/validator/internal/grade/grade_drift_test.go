@@ -183,6 +183,16 @@ var predicateBackedPaths = map[string]bool{
 	"/photometry/per_length_normalized":  true, // hasPerLengthNormalized: needs a per-length rate, not just reference_length
 	"/outdoor_classification/bug_rating": true, // hasBugRating: needs b + u + g
 	"/electrical/dimming_range_percent":  true, // hasDimmingRange: needs min + max
+	// Observation rows whose closures require recognized real content (a placeholder
+	// object reads as absent), so the "... not disclosed" nudge fires on hollow blocks.
+	// Behavioral coverage: TestTightenedObservationGatesRejectHollow.
+	"/product_family/shared_mechanical/ambient_operating_range": true, // hasAmbientOperatingRange: needs a numeric c/f bound
+	"/thermal_derating":                       true, // hasThermalDerating: needs thermal_control_method or curves
+	"/flicker_measurements":                   true, // hasFlickerMeasurements: needs metrics or a qualifier enum
+	"/alpha_opic_metrics":                     true, // hasAlphaOpicMetrics: needs melanopic_der / per_channel / observer
+	"/chromaticity_shift_projection":          true, // hasChromaticityShiftProjection: needs projected_hours or an enum
+	"/sustainability_declaration":             true, // hasSustainabilityDeclaration: needs a recognized declaration field
+	"/product_family/physical_dimensions/epa": true, // hasEPA: needs a numeric m2/ft2 area
 }
 
 // shapeTestable reports whether a rubric path is a single resolvable JSON Pointer
@@ -499,21 +509,111 @@ func TestTightenedObjectGatesRejectEmptyAndUnrecognized(t *testing.T) {
 // TestTightenedLumenMaintenancePackageRejectsEmptyEntry proves the package arm of
 // hasLumenMaintenance is closed: a non-empty array of empty entries (the [{}] case
 // the old len>0 check accepted, since LumenMaintenancePackageEntry has no required
-// fields) is rejected, while an entry carrying a recognized field is accepted.
+// fields) is rejected, an entry whose recognized keys carry the wrong leaf type (a
+// package_identifier:"" empty string, a value-less test_hours:{} object where a
+// ProvenancedNumber is meant) is rejected, while an entry carrying a recognized field
+// of the correct type is accepted. The old key-presence check accepted all three junk
+// forms, so every FALSE assertion below would have been RED before this change.
 func TestTightenedLumenMaintenancePackageRejectsEmptyEntry(t *testing.T) {
-	emptyEntry := map[string]any{"lumen_maintenance_package": []any{map[string]any{}}}
-	if hasLumenMaintenance(emptyEntry) {
-		t.Error("lumen_maintenance_package: closure accepted a [{}] entry (over-lenient)")
+	reject := []struct {
+		name  string
+		entry map[string]any
+	}{
+		{"empty entry", map[string]any{}},
+		{"unrecognized key only", map[string]any{"zzz_unrecognized": float64(1)}},
+		{"empty-string package_identifier", map[string]any{"package_identifier": ""}},
+		{"value-less test_hours object", map[string]any{"test_hours": map[string]any{}}},
+		{"value-less drive_current_ma object", map[string]any{"drive_current_ma": map[string]any{"junk": float64(1)}}},
+		{"empty-string enum field", map[string]any{"tm_21_interpolation_type": ""}},
 	}
-	junkEntry := map[string]any{"lumen_maintenance_package": []any{map[string]any{"zzz_unrecognized": float64(1)}}}
-	if hasLumenMaintenance(junkEntry) {
-		t.Error("lumen_maintenance_package: closure accepted an entry with only an unrecognized key (over-lenient)")
+	for _, c := range reject {
+		c := c
+		t.Run("reject/"+c.name, func(t *testing.T) {
+			rec := map[string]any{"lumen_maintenance_package": []any{c.entry}}
+			if hasLumenMaintenance(rec) {
+				t.Errorf("lumen_maintenance_package: closure accepted a hollow entry (%s) (over-lenient)", c.name)
+			}
+		})
 	}
-	goodEntry := map[string]any{"lumen_maintenance_package": []any{
-		map[string]any{"tm_21_projection_hours": map[string]any{"value": float64(60000)}},
-	}}
-	if !hasLumenMaintenance(goodEntry) {
-		t.Error("lumen_maintenance_package: closure rejected an entry with a recognized field")
+	accept := []struct {
+		name  string
+		entry map[string]any
+	}{
+		{"ProvenancedNumber projection hours", map[string]any{"tm_21_projection_hours": map[string]any{"value": float64(60000)}}},
+		{"enum field populated", map[string]any{"flux_maintenance_threshold": "L70"}},
+		{"package_identifier string", map[string]any{"package_identifier": "PKG-A"}},
+	}
+	for _, c := range accept {
+		c := c
+		t.Run("accept/"+c.name, func(t *testing.T) {
+			rec := map[string]any{"lumen_maintenance_package": []any{c.entry}}
+			if !hasLumenMaintenance(rec) {
+				t.Errorf("lumen_maintenance_package: closure rejected an entry with a recognized field (%s)", c.name)
+			}
+		})
+	}
+}
+
+// TestTightenedLumenMaintenanceLuminaireRejectsHollowSubBlock proves the luminaire arm
+// of hasLumenMaintenance is closed at the SUB-BLOCK level: a manufacturer_rated_claim,
+// tm_28, or cie_97_lmf_table that is present as a non-empty map but carries only
+// unrecognized keys (or recognized keys of the wrong leaf type) does not satisfy the
+// gate. The prior hasMap-based check accepted any non-empty sub-block, so a
+// manufacturer_rated_claim:{<only-unrecognized-key>} passed: every FALSE assertion
+// below would have been RED before this change. The accept cases pin that a real
+// claim_type enum, a real claimed_hours number, a tm_28 projection, and a populated
+// CIE 97 grid each still lift the gate.
+func TestTightenedLumenMaintenanceLuminaireRejectsHollowSubBlock(t *testing.T) {
+	wrap := func(sub map[string]any) map[string]any {
+		return map[string]any{"lumen_maintenance_luminaire": sub}
+	}
+	reject := []struct {
+		name string
+		sub  map[string]any
+	}{
+		{"manufacturer_rated_claim unrecognized key only",
+			map[string]any{"manufacturer_rated_claim": map[string]any{"zzz_unrecognized": float64(1)}}},
+		{"manufacturer_rated_claim empty-string claim_type",
+			map[string]any{"manufacturer_rated_claim": map[string]any{"claim_type": ""}}},
+		{"manufacturer_rated_claim value-less claimed_hours",
+			map[string]any{"manufacturer_rated_claim": map[string]any{"claimed_hours": map[string]any{"junk": float64(1)}}}},
+		{"tm_28 unrecognized key only",
+			map[string]any{"tm_28": map[string]any{"zzz_unrecognized": float64(1)}}},
+		{"tm_28 value-less projection hours",
+			map[string]any{"tm_28": map[string]any{"tm_28_projection_hours": map[string]any{}}}},
+		{"cie_97_lmf_table empty grids",
+			map[string]any{"cie_97_lmf_table": map[string]any{"lmf_by_cleanliness_and_interval": []any{}, "llmf_by_hours": []any{}}}},
+		{"cie_97_lmf_table unrecognized key only",
+			map[string]any{"cie_97_lmf_table": map[string]any{"zzz_unrecognized": float64(1)}}},
+	}
+	for _, c := range reject {
+		c := c
+		t.Run("reject/"+c.name, func(t *testing.T) {
+			if hasLumenMaintenance(wrap(c.sub)) {
+				t.Errorf("lumen_maintenance_luminaire: closure accepted a hollow sub-block (%s) (over-lenient)", c.name)
+			}
+		})
+	}
+	accept := []struct {
+		name string
+		sub  map[string]any
+	}{
+		{"manufacturer_rated_claim claim_type enum",
+			map[string]any{"manufacturer_rated_claim": map[string]any{"claim_type": "L70"}}},
+		{"manufacturer_rated_claim numeric claimed_hours",
+			map[string]any{"manufacturer_rated_claim": map[string]any{"claimed_hours": map[string]any{"value": float64(50000)}}}},
+		{"tm_28 projection hours",
+			map[string]any{"tm_28": map[string]any{"tm_28_projection_hours": map[string]any{"value": float64(60000)}}}},
+		{"cie_97_lmf_table populated llmf grid",
+			map[string]any{"cie_97_lmf_table": map[string]any{"llmf_by_hours": []any{map[string]any{"hours": float64(6000), "llmf": float64(0.95)}}}}},
+	}
+	for _, c := range accept {
+		c := c
+		t.Run("accept/"+c.name, func(t *testing.T) {
+			if !hasLumenMaintenance(wrap(c.sub)) {
+				t.Errorf("lumen_maintenance_luminaire: closure rejected a populated sub-block (%s)", c.name)
+			}
+		})
 	}
 }
 
@@ -607,5 +707,120 @@ func TestCapstoneJunkObjectsCapAtIncomplete(t *testing.T) {
 	rec["electrical"].(map[string]any)["dimming_range_percent"] = junk
 	if got := AchievedLevel(rec); got > LevelIncomplete {
 		t.Errorf("record with only junk in every gated object reached %s, want at most incomplete", got)
+	}
+}
+
+// TestTightenedObservationGatesRejectHollow proves the over-leniency class is closed
+// for the seven object-shaped OBSERVATION rows: each closure returns FALSE for a map
+// holding only an unrecognized key and for a map whose recognized key carries the wrong
+// leaf type (a bare scalar where a ProvenancedNumber is meant, a number where an enum
+// string is meant, a DualUnit block with only value_type metadata and no numeric leaf),
+// and TRUE once a single recognized field of the correct type is present. wrap places
+// the fragment at the exact path the closure reads. The old obj(...) / hasMap closures
+// returned TRUE for any non-empty map, so every FALSE assertion below would have been
+// RED before this change, wrongly suppressing the "... not disclosed" nudge on a hollow
+// block.
+func TestTightenedObservationGatesRejectHollow(t *testing.T) {
+	cases := []struct {
+		name    string
+		wrap    func(fragment map[string]any) map[string]any // place fragment at the observed path
+		closure func(map[string]any) bool
+		reject  []map[string]any // wrong-leaf-type forms a non-empty map could take
+		good    map[string]any   // one recognized content field of the correct type
+	}{
+		{
+			"ambient_operating_range",
+			func(f map[string]any) map[string]any {
+				return map[string]any{"product_family": map[string]any{"shared_mechanical": map[string]any{"ambient_operating_range": f}}}
+			},
+			hasAmbientOperatingRange,
+			[]map[string]any{
+				{"min": map[string]any{"value_type": "rated"}}, // DualUnitTemperature with no numeric c/f
+				{"max": map[string]any{"c": "cold"}},           // c present but not a number
+			},
+			map[string]any{"min": map[string]any{"c": float64(-30), "f": float64(-22)}},
+		},
+		{
+			"thermal_derating",
+			func(f map[string]any) map[string]any { return map[string]any{"thermal_derating": f} },
+			hasThermalDerating,
+			[]map[string]any{
+				{"thermal_control_method": float64(1)},      // enum field carrying a number
+				{"curves": map[string]any{"x": float64(1)}}, // curves as an object, not an array
+			},
+			map[string]any{"thermal_control_method": "active_fan"},
+		},
+		{
+			"flicker_measurements",
+			func(f map[string]any) map[string]any { return map[string]any{"flicker_measurements": f} },
+			hasFlickerMeasurements,
+			[]map[string]any{
+				{"risk_level": float64(1)}, // enum field carrying a number
+				{"metrics": float64(1)},    // metrics as a scalar, not an array
+				{"metrics": []any{}},       // empty metrics array
+			},
+			map[string]any{"risk_level": "no_risk"},
+		},
+		{
+			"alpha_opic_metrics",
+			func(f map[string]any) map[string]any { return map[string]any{"alpha_opic_metrics": f} },
+			hasAlphaOpicMetrics,
+			[]map[string]any{
+				{"melanopic_der": float64(1)},                      // bare scalar, not a ProvenancedNumber
+				{"melanopic_der": map[string]any{"x": float64(1)}}, // value-less map
+				{"per_channel": map[string]any{"x": float64(1)}},   // per_channel as an object, not an array
+			},
+			map[string]any{"melanopic_der": map[string]any{"value": float64(0.9)}},
+		},
+		{
+			"chromaticity_shift_projection",
+			func(f map[string]any) map[string]any { return map[string]any{"chromaticity_shift_projection": f} },
+			hasChromaticityShiftProjection,
+			[]map[string]any{
+				{"projected_hours": float64(1)}, // bare scalar, not a ProvenancedNumber
+				{"shift_metric": float64(1)},    // enum field carrying a number
+			},
+			map[string]any{"projected_hours": map[string]any{"value": float64(50000)}},
+		},
+		{
+			"sustainability_declaration",
+			func(f map[string]any) map[string]any { return map[string]any{"sustainability_declaration": f} },
+			hasSustainabilityDeclaration,
+			[]map[string]any{
+				{"declaration_type": float64(1)},      // enum field carrying a number
+				{"life_expectancy_years": "ten"},      // numeric field carrying a string
+				{"ingredient_list": map[string]any{}}, // array field carrying an object
+				{"end_of_life_options": []any{}},      // empty array
+			},
+			map[string]any{"declaration_type": "declare_label"},
+		},
+		{
+			"epa",
+			func(f map[string]any) map[string]any {
+				return map[string]any{"product_family": map[string]any{"physical_dimensions": map[string]any{"epa": f}}}
+			},
+			hasEPA,
+			[]map[string]any{
+				{"value_type": "rated"}, // only DualUnitArea metadata, no numeric area
+				{"m2": "0.5"},           // m2 present but not a number
+			},
+			map[string]any{"m2": float64(0.5), "ft2": float64(5.4)},
+		},
+	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			if c.closure(c.wrap(map[string]any{"zzz_unrecognized": float64(1)})) {
+				t.Errorf("%s: closure accepted a map with only an unrecognized key (over-lenient)", c.name)
+			}
+			for i, bad := range c.reject {
+				if c.closure(c.wrap(bad)) {
+					t.Errorf("%s: closure accepted a wrong-leaf-type form #%d %+v (over-lenient)", c.name, i, bad)
+				}
+			}
+			if !c.closure(c.wrap(c.good)) {
+				t.Errorf("%s: closure rejected a map with a recognized content field: %+v", c.name, c.good)
+			}
+		})
 	}
 }

@@ -117,7 +117,6 @@ func num(keys ...string) predicate {
 func str(keys ...string) predicate {
 	return func(r map[string]any) bool { return getString(r, keys...) != "" }
 }
-func obj(keys ...string) predicate { return func(r map[string]any) bool { return hasMap(r, keys...) } }
 
 // arr: a non-empty array at a nested path. Built on getMap so a mistyped parent
 // returns false rather than panicking. getMap with zero leading keys returns the
@@ -399,11 +398,18 @@ var naSafetyListings = map[string]bool{
 	"ul_listed": true, "c_ul_listed": true, "etl": true, "csa_listed": true,
 	"met_listed": true, "nrtl_osha_recognized": true, "ul_1598": true,
 }
+
+// anySafetyListings accepts any recognized listing, North American or otherwise. The
+// US/Canada NRTL marks (ul_listed, c_ul_listed, etl, csa_listed, met_listed,
+// nrtl_osha_recognized, ul_1598) are all included alongside the international schemes
+// (CE / ENEC / IEC 60598 / CB and the regional marks), so a non-NA record listing a
+// specific NRTL mark satisfies the gate consistently with nrtl_osha_recognized.
 var anySafetyListings = map[string]bool{
 	"ul_listed": true, "c_ul_listed": true, "etl": true, "csa_listed": true,
-	"nrtl_osha_recognized": true, "ul_1598": true, "tuv": true, "cb_scheme": true,
-	"ce": true, "ukca": true, "enec": true, "iec_60598": true, "nom": true, "ccc": true,
-	"rcm_australia": true, "saa_australia": true, "kc_korea": true, "pse_japan": true,
+	"met_listed": true, "nrtl_osha_recognized": true, "ul_1598": true, "tuv": true,
+	"cb_scheme": true, "ce": true, "ukca": true, "enec": true, "iec_60598": true,
+	"nom": true, "ccc": true, "rcm_australia": true, "saa_australia": true,
+	"kc_korea": true, "pse_japan": true,
 }
 
 // hasMarketSafetyListing checks for the PRESENCE OF A CLAIM, not third-party
@@ -496,13 +502,13 @@ var rubric = []rule{
 	{LevelObservation, "/colorimetry/duv", "", "test_report", "ANSI C78.377", "Duv (distance from the Planckian locus) not disclosed", num("colorimetry", "duv"), hasWhitePoint},
 	{LevelObservation, "/colorimetry/chromaticity_x", "", "test_report", "ANSI C78.377", "chromaticity x not disclosed", num("colorimetry", "chromaticity_x"), hasWhitePoint},
 	{LevelObservation, "/colorimetry/chromaticity_y", "", "test_report", "ANSI C78.377", "chromaticity y not disclosed", num("colorimetry", "chromaticity_y"), hasWhitePoint},
-	{LevelObservation, "/product_family/shared_mechanical/ambient_operating_range", "", "datasheet_pdf", "identity", "ambient operating range not disclosed", obj("product_family", "shared_mechanical", "ambient_operating_range"), nil},
+	{LevelObservation, "/product_family/shared_mechanical/ambient_operating_range", "", "datasheet_pdf", "identity", "ambient operating range not disclosed", hasAmbientOperatingRange, nil},
 	{LevelObservation, "/compatible_accessories", "AccessoryType", "datasheet_pdf", "identity", "compatible accessories not listed", arr("compatible_accessories"), nil},
-	{LevelObservation, "/thermal_derating", "", "test_report", "LM-82", "thermal derating not disclosed", obj("thermal_derating"), nil},
-	{LevelObservation, "/flicker_measurements", "", "test_report", "LM-90 / IEEE 1789", "flicker measurements not disclosed", obj("flicker_measurements"), nil},
-	{LevelObservation, "/alpha_opic_metrics", "", "test_report", "CIE S 026", "alpha-opic (circadian) metrics not disclosed", obj("alpha_opic_metrics"), nil},
-	{LevelObservation, "/chromaticity_shift_projection", "", "test_report", "TM-35", "chromaticity-shift projection not disclosed", obj("chromaticity_shift_projection"), nil},
-	{LevelObservation, "/sustainability_declaration", "", "datasheet_pdf", "EPD / HPD", "sustainability declaration not disclosed", obj("sustainability_declaration"), nil},
+	{LevelObservation, "/thermal_derating", "", "test_report", "LM-82", "thermal derating not disclosed", hasThermalDerating, nil},
+	{LevelObservation, "/flicker_measurements", "", "test_report", "LM-90 / IEEE 1789", "flicker measurements not disclosed", hasFlickerMeasurements, nil},
+	{LevelObservation, "/alpha_opic_metrics", "", "test_report", "CIE S 026", "alpha-opic (circadian) metrics not disclosed", hasAlphaOpicMetrics, nil},
+	{LevelObservation, "/chromaticity_shift_projection", "", "test_report", "TM-35", "chromaticity-shift projection not disclosed", hasChromaticityShiftProjection, nil},
+	{LevelObservation, "/sustainability_declaration", "", "datasheet_pdf", "EPD / HPD", "sustainability declaration not disclosed", hasSustainabilityDeclaration, nil},
 	{LevelObservation, "/photometry/field_angle_deg", "", "ies", "LM-79", "field angle not disclosed", num("photometry", "field_angle_deg"), directional},
 	{LevelObservation, "/photometry/cutoff_angle_from_horizontal_deg", "", "ies", "LM-79", "cutoff angle not disclosed", num("photometry", "cutoff_angle_from_horizontal_deg"), nil},
 	{LevelObservation, "/photometry/spacing_criterion", "", "ies", "LM-79", "spacing criterion not disclosed", num("photometry", "spacing_criterion"), nil},
@@ -510,7 +516,7 @@ var rubric = []rule{
 	{LevelObservation, "/outdoor_classification/lcs_zonal_lumens", "", "ies", "TM-15", "LCS zonal lumens not disclosed", arr("outdoor_classification", "lcs_zonal_lumens"), outdoorSite},
 	{LevelObservation, "/outdoor_classification/legacy_cutoff", "LegacyCutoffClassification", "ies", "RP-8", "legacy cutoff classification not disclosed", str("outdoor_classification", "legacy_cutoff"), outdoorSite},
 	{LevelObservation, "/product_family/shared_mechanical/ik_rating", "", "compliance_documents", "IEC 62262", "impact (IK) rating not disclosed", str("product_family", "shared_mechanical", "ik_rating"), impactPublic},
-	{LevelObservation, "/product_family/physical_dimensions/epa", "", "datasheet_pdf", "identity", "EPA (effective projected area) not disclosed", obj("product_family", "physical_dimensions", "epa"), poleMounted},
+	{LevelObservation, "/product_family/physical_dimensions/epa", "", "datasheet_pdf", "identity", "EPA (effective projected area) not disclosed", hasEPA, poleMounted},
 	// Provenance: the non-measured-headline note fires from emitHeadlineProvenance
 	// (a present-but-not-measured check), not a present-closure row.
 }
@@ -596,8 +602,17 @@ func missingAt(record map[string]any, lvl Level) []rule {
 func Report(record map[string]any, report *findings.Report) Level {
 	achieved := AchievedLevel(record)
 
-	report.AddInfo(findings.CodeConformanceLevel, "/index/conformance_level",
-		fmt.Sprintf("this record achieves conformance level %q", achieved.String()))
+	// LevelNone is not a ConformanceLevel enum token (its String() is the sentinel
+	// "none"), so present it as the absence of an indexable photometric record rather
+	// than as a conformance level. Every ordered tier (incomplete and above) names its
+	// level token.
+	if achieved == LevelNone {
+		report.AddInfo(findings.CodeConformanceLevel, "/index/conformance_level",
+			"this record lacks the photometric anchors (total_luminous_flux_lm, input_power_w, primary_category), so it is not an indexable photometric record and achieves no conformance level")
+	} else {
+		report.AddInfo(findings.CodeConformanceLevel, "/index/conformance_level",
+			fmt.Sprintf("this record achieves conformance level %q", achieved.String()))
+	}
 
 	// Roadmap to the next tier (each missing item names its document + standard).
 	switch achieved {
@@ -741,30 +756,55 @@ func attestationPrograms(record map[string]any) []string {
 }
 
 // hasLumenMaintenance reports whether either lumen-maintenance framework is present
-// with recognized content. A luminaire framework qualifies when it carries at least
-// one recognized sub-block (tm_28, cie_97_lmf_table, or manufacturer_rated_claim) as
-// a non-empty map; a package qualifies when at least one entry carries a recognized
-// field. A bare manufacturer_rated_claim still satisfies the gate (block presence,
-// not a published-hours requirement), but an empty object or one holding only
-// unrecognized keys does not.
+// with recognized content of the correct leaf type. A luminaire framework qualifies
+// when one of its sub-blocks (tm_28, cie_97_lmf_table, manufacturer_rated_claim)
+// carries a recognized populated field; a package qualifies when at least one entry
+// carries a recognized field. A bare manufacturer_rated_claim still satisfies the gate
+// (a claim_type enum or a numeric claimed_hours is enough, not a published-method
+// requirement), but an empty object, one holding only unrecognized keys, or one whose
+// recognized keys carry the wrong leaf type does not.
 func hasLumenMaintenance(record map[string]any) bool {
 	return hasLumenMaintenanceLuminaire(record) || hasLumenMaintenancePackage(record)
 }
 
 // hasLumenMaintenanceLuminaire reports whether lumen_maintenance_luminaire carries at
-// least one recognized framework sub-block as a non-empty map.
+// least one recognized framework sub-block populated with real content of the correct
+// leaf type. manufacturer_rated_claim qualifies on a non-empty claim_type enum or a
+// numeric claimed_hours (ProvenancedNumber); tm_28 on a numeric tm_28_projection_hours;
+// cie_97_lmf_table on a non-empty lmf_by_cleanliness_and_interval or llmf_by_hours
+// array. A sub-block holding only unrecognized keys, or recognized keys of the wrong
+// type, does not satisfy the gate.
 func hasLumenMaintenanceLuminaire(record map[string]any) bool {
-	for _, k := range []string{"tm_28", "cie_97_lmf_table", "manufacturer_rated_claim"} {
-		if hasMap(record, "lumen_maintenance_luminaire", k) {
+	lml, ok := getMap(record, "lumen_maintenance_luminaire")
+	if !ok {
+		return false
+	}
+	if claim, ok := getMap(lml, "manufacturer_rated_claim"); ok {
+		if getString(claim, "claim_type") != "" || hasNumberValue(claim, "claimed_hours") {
 			return true
+		}
+	}
+	if hasNumberValue(lml, "tm_28", "tm_28_projection_hours") {
+		return true
+	}
+	if cie, ok := getMap(lml, "cie_97_lmf_table"); ok {
+		for _, k := range []string{"lmf_by_cleanliness_and_interval", "llmf_by_hours"} {
+			if a, ok := cie[k].([]any); ok && len(a) > 0 {
+				return true
+			}
 		}
 	}
 	return false
 }
 
 // hasLumenMaintenancePackage reports whether a lumen_maintenance_package array has at
-// least one entry carrying a recognized LumenMaintenancePackageEntry field. The entry
-// schema has no required fields, so an empty {} entry must not satisfy the gate.
+// least one entry carrying a recognized LumenMaintenancePackageEntry field populated
+// with real content of the correct leaf type. The entry schema has no required fields,
+// so an empty {} entry, or one carrying recognized keys of the wrong type (a key with
+// an empty string where an enum is meant, or a value-less object where a
+// ProvenancedNumber is meant), must not satisfy the gate. The four ProvenancedNumber
+// fields (tm_21_projection_hours, test_hours, test_temperature_c, drive_current_ma)
+// qualify via hasNumberValue; the six string/enum fields qualify via a non-empty string.
 func hasLumenMaintenancePackage(record map[string]any) bool {
 	arr, ok := record["lumen_maintenance_package"].([]any)
 	if !ok {
@@ -776,11 +816,17 @@ func hasLumenMaintenancePackage(record map[string]any) bool {
 			continue
 		}
 		for _, k := range []string{
-			"package_identifier", "tested_product_type", "flux_maintenance_quantity",
-			"flux_maintenance_threshold", "tm_21_projection_hours", "projection_reliability",
-			"tm_21_interpolation_type", "test_hours", "test_temperature_c", "drive_current_ma",
+			"tm_21_projection_hours", "test_hours", "test_temperature_c", "drive_current_ma",
 		} {
-			if _, present := m[k]; present {
+			if hasNumberValue(m, k) {
+				return true
+			}
+		}
+		for _, k := range []string{
+			"package_identifier", "tested_product_type", "flux_maintenance_quantity",
+			"flux_maintenance_threshold", "projection_reliability", "tm_21_interpolation_type",
+		} {
+			if getString(m, k) != "" {
 				return true
 			}
 		}
@@ -808,6 +854,156 @@ func hasMethodBackedLumenMaintenance(record map[string]any) bool {
 		}
 	}
 	return false
+}
+
+// --- observation-row present-closures (non-gating; same real-content discipline) ---
+//
+// These back the LevelObservation rows that read whole sub-objects. Like the gating
+// helpers above they route every access through getMap / comma-ok and require at
+// least one recognized field of the correct leaf type, so an empty object, a map
+// holding only unrecognized keys, or recognized keys of the wrong type reads as
+// absent and the "... not disclosed" nudge still fires.
+
+// hasAmbientOperatingRange reports whether shared_mechanical.ambient_operating_range
+// carries a real bound: a min or max DualUnitTemperature populated with a numeric c or
+// f leaf (DualUnitTemperature requires both, but either present as a number signals
+// real content). A bound holding only unrecognized keys reads as absent.
+func hasAmbientOperatingRange(record map[string]any) bool {
+	rng, ok := getMap(record, "product_family", "shared_mechanical", "ambient_operating_range")
+	if !ok {
+		return false
+	}
+	for _, b := range []string{"min", "max"} {
+		if t, ok := getMap(rng, b); ok && (isNumber(t["c"]) || isNumber(t["f"])) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasThermalDerating reports whether thermal_derating carries a recognized field of the
+// correct type: a non-empty thermal_control_method enum, or a non-empty curves array.
+func hasThermalDerating(record map[string]any) bool {
+	td, ok := getMap(record, "thermal_derating")
+	if !ok {
+		return false
+	}
+	if getString(td, "thermal_control_method") != "" {
+		return true
+	}
+	a, ok := td["curves"].([]any)
+	return ok && len(a) > 0
+}
+
+// hasFlickerMeasurements reports whether flicker_measurements carries a recognized field
+// of the correct type: a non-empty metrics array, or any of the six qualifier enums
+// (risk_level, test_chamber_type, dimming_type_at_test, photodetector_correction,
+// sampling_class, waveform_file_format) populated with a non-empty string.
+func hasFlickerMeasurements(record map[string]any) bool {
+	fm, ok := getMap(record, "flicker_measurements")
+	if !ok {
+		return false
+	}
+	if a, ok := fm["metrics"].([]any); ok && len(a) > 0 {
+		return true
+	}
+	for _, k := range []string{
+		"risk_level", "test_chamber_type", "dimming_type_at_test",
+		"photodetector_correction", "sampling_class", "waveform_file_format",
+	} {
+		if getString(fm, k) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// hasAlphaOpicMetrics reports whether alpha_opic_metrics carries a recognized field of
+// the correct type: a numeric melanopic_der ProvenancedNumber, a non-empty per_channel
+// array, or a populated reference_illuminant / standard_observer const string.
+func hasAlphaOpicMetrics(record map[string]any) bool {
+	ao, ok := getMap(record, "alpha_opic_metrics")
+	if !ok {
+		return false
+	}
+	if hasNumberValue(ao, "melanopic_der") {
+		return true
+	}
+	if a, ok := ao["per_channel"].([]any); ok && len(a) > 0 {
+		return true
+	}
+	for _, k := range []string{"reference_illuminant", "standard_observer"} {
+		if getString(ao, k) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// hasChromaticityShiftProjection reports whether chromaticity_shift_projection carries a
+// recognized field of the correct type: a numeric projected_hours ProvenancedNumber, or
+// any of the four enums (shift_metric, shift_threshold, shift_mode, tm_35_edition)
+// populated with a non-empty string.
+func hasChromaticityShiftProjection(record map[string]any) bool {
+	cs, ok := getMap(record, "chromaticity_shift_projection")
+	if !ok {
+		return false
+	}
+	if hasNumberValue(cs, "projected_hours") {
+		return true
+	}
+	for _, k := range []string{"shift_metric", "shift_threshold", "shift_mode", "tm_35_edition"} {
+		if getString(cs, k) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// hasSustainabilityDeclaration reports whether sustainability_declaration carries a
+// recognized field of the correct type. The string / enum / date fields qualify via a
+// non-empty string; life_expectancy_years and recyclable_percent are bare JSON numbers;
+// end_of_life_options and ingredient_list are arrays; lbc_criteria_compliance is a bool.
+// A map holding only unrecognized keys, or recognized keys of the wrong type, reads as
+// absent.
+func hasSustainabilityDeclaration(record map[string]any) bool {
+	sd, ok := getMap(record, "sustainability_declaration")
+	if !ok {
+		return false
+	}
+	for _, k := range []string{
+		"declaration_type", "document_id", "original_issue_date", "expiration_date",
+		"final_assembly_location", "voc_content", "interior_performance", "responsible_sourcing",
+	} {
+		if getString(sd, k) != "" {
+			return true
+		}
+	}
+	for _, k := range []string{"life_expectancy_years", "recyclable_percent"} {
+		if isNumber(sd[k]) {
+			return true
+		}
+	}
+	for _, k := range []string{"end_of_life_options", "ingredient_list"} {
+		if a, ok := sd[k].([]any); ok && len(a) > 0 {
+			return true
+		}
+	}
+	if _, isBool := sd["lbc_criteria_compliance"].(bool); isBool {
+		return true
+	}
+	return false
+}
+
+// hasEPA reports whether physical_dimensions.epa carries a real area: a numeric m2 or
+// ft2 leaf of the DualUnitArea (the schema requires both, but either present as a
+// number signals real content). value_type / provenance alone read as absent.
+func hasEPA(record map[string]any) bool {
+	epa, ok := getMap(record, "product_family", "physical_dimensions", "epa")
+	if !ok {
+		return false
+	}
+	return isNumber(epa["m2"]) || isNumber(epa["ft2"])
 }
 
 // hasOperatingPoint reports whether operating_point is present with at least one
@@ -876,12 +1072,6 @@ func hasNumberValue(record map[string]any, keys ...string) bool {
 	default:
 		return false
 	}
-}
-
-// hasMap reports whether the value at the path is a non-empty object.
-func hasMap(record map[string]any, keys ...string) bool {
-	m, ok := getMap(record, keys...)
-	return ok && m != nil && len(m) > 0
 }
 
 // getMap returns the object at the path and whether it was found as an object.
