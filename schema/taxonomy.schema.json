@@ -1300,7 +1300,7 @@
 
     "TechnicalRegion": {
       "title": "Technical region",
-      "description": "Market-region configuration of the fixture, declared at the product-family level. Captures the voltage, frequency, and typical regulatory footprint of the SKU variant. Many product families ship in parallel configurations for different markets (North American 120 V / 60 Hz variants, European 230 V / 50 Hz variants, Japanese 100 V / 50-60 Hz variants). These variants typically share optics and light engines but differ in driver and certifications; listing the technical region on the record makes the market variant explicit for consumers filtering records. `universal` indicates a driver that accepts multiple voltage ranges across regions without a step-down transformer (typical of 120-277 V universal products sold across the North American market).",
+      "description": "Market-region configuration of the fixture, declared at the product-family level. Captures the voltage, frequency, and typical regulatory footprint of the SKU variant. Many product families ship in parallel configurations for different markets (North American 120 V / 60 Hz variants, European 230 V / 50 Hz variants, Japanese 100 V / 50-60 Hz variants). These variants typically share optics and light engines but differ in driver and certifications; listing the technical region on the record makes the market variant explicit for consumers filtering records. `universal` indicates a driver that accepts multiple voltage ranges across regions without a step-down transformer (typical of 120-277 V universal-voltage products, which ship into more than one market and so are not specific to any single regulatory region).",
       "type": "string",
       "enum": [
         "120v_60hz_north_america",
