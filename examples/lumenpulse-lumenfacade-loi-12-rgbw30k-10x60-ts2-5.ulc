@@ -391,6 +391,7 @@
     "luminous_opening_shape": "rectangular",
     "maximum_intensity_cd": {
       "provenance": {
+        "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
         "conflict_notes": "Peak candela from the IES table: raw 10116.7 x multiplier 0.183 = 1851 cd. The peak sits near 180 deg vertical (zenith), consistent with an inground uplight in IES Type C convention.",
         "method": "optical_simulation",
         "source": "ies"
@@ -414,6 +415,7 @@
     "symmetry_type": "symm_none",
     "total_luminous_flux_lm": {
       "provenance": {
+        "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
         "conflict_notes": "Zonal integration of the LightTools-simulated IES candela table (73 vertical x 145 horizontal, absolute photometry, candela multiplier 0.183) yields approximately 546 lm. The spec sheet page 1 photometric summary (10x60 row: 2,895 lm) is for the 48 inch RGBW40K SKU and does not apply to this 12 inch RGBW30K scenario.",
         "method": "optical_simulation",
         "source": "ies"
@@ -601,5 +603,5 @@
     "file_generation_type": "computer_simulation",
     "photometry_basis": "absolute"
   },
-  "ulc_version": "0.6.0"
+  "ulc_version": "0.7.0"
 }

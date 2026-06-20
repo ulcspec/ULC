@@ -837,5 +837,5 @@
     "file_generation_type": "undefined",
     "photometry_basis": "absolute"
   },
-  "ulc_version": "0.6.0"
+  "ulc_version": "0.7.0"
 }
