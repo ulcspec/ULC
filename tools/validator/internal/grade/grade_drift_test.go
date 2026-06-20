@@ -427,6 +427,7 @@ func TestPredicateSetsAreRealEnumMembers(t *testing.T) {
 		{"analogPhaseDimming", analogPhaseDimming, "DimmingProtocol"},
 		{"naSafetyListings", naSafetyListings, "AttestationProgram"},
 		{"anySafetyListings", anySafetyListings, "AttestationProgram"},
+		{"naRegions", naRegions, "TechnicalRegion"},
 	}
 	for _, c := range cases {
 		members := loadEnumMembers(t, taxDefs, c.enum)
@@ -435,6 +436,24 @@ func TestPredicateSetsAreRealEnumMembers(t *testing.T) {
 				t.Errorf("predicate set %s contains %q, not a member of the %s enum in taxonomy.schema.json", c.name, token, c.enum)
 			}
 		}
+	}
+}
+
+// TestDimmingRangeRejectsInverted proves hasDimmingRange requires min <= max: a
+// schema-valid but nonsensical inverted range (the schema bounds min and max to 0-100
+// independently but cannot relate them) must not satisfy the standard dimming gate.
+func TestDimmingRangeRejectsInverted(t *testing.T) {
+	mk := func(lo, hi float64) map[string]any {
+		return map[string]any{"electrical": map[string]any{"dimming_range_percent": map[string]any{"min": lo, "max": hi}}}
+	}
+	if hasDimmingRange(mk(100, 3)) {
+		t.Error("hasDimmingRange accepted an inverted range (min=100, max=3) (over-lenient)")
+	}
+	if !hasDimmingRange(mk(3, 100)) {
+		t.Error("hasDimmingRange rejected a valid range (min=3, max=100)")
+	}
+	if !hasDimmingRange(mk(50, 50)) {
+		t.Error("hasDimmingRange rejected a degenerate-but-valid range (min=max=50)")
 	}
 }
 

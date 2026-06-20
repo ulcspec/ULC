@@ -251,7 +251,9 @@ func hasDimmingRange(r map[string]any) bool {
 	if !ok {
 		return false
 	}
-	return isNumber(m["min"]) && isNumber(m["max"])
+	lo, okLo := asFloat(m["min"])
+	hi, okHi := asFloat(m["max"])
+	return okLo && okHi && lo <= hi
 }
 
 // isNumber reports whether v is one of the JSON-decoded numeric Go types the grader
@@ -276,6 +278,21 @@ func isWholeNumber(v any) bool {
 		return n == float64(int64(n))
 	default:
 		return false
+	}
+}
+
+// asFloat returns v as a float64 when it is one of the JSON-decoded numeric Go
+// types the grader sees (float64, int, int64), reporting false otherwise.
+func asFloat(v any) (float64, bool) {
+	switch n := v.(type) {
+	case float64:
+		return n, true
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	default:
+		return 0, false
 	}
 }
 
