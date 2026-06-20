@@ -127,7 +127,11 @@ func standardBase() map[string]any {
 	rec["colorimetry"].(map[string]any)["sdcm_step"] = map[string]any{"value": float64(3)}
 	rec["configuration"].(map[string]any)["tested_axes"].(map[string]any)["cri_tier"] = "cri_90"
 	rec["lumen_maintenance_luminaire"] = map[string]any{
-		"manufacturer_rated_claim": map[string]any{"rated_hours": float64(50000)},
+		"declaration_framework": "manufacturer_rated_claim",
+		"manufacturer_rated_claim": map[string]any{
+			"claim_type":    "L70",
+			"claimed_hours": map[string]any{"value": float64(50000), "value_type": "rated"},
+		},
 	}
 	return rec
 }
@@ -146,16 +150,18 @@ func fullBase() map[string]any {
 	}
 	rec["uncertainty"] = map[string]any{
 		"coverage_factor_k":                       float64(2),
-		"expanded_uncertainty_total_flux_percent": float64(5),
+		"expanded_uncertainty_total_flux_percent": map[string]any{"value": float64(5), "value_type": "measured"},
 	}
-	rec["corrections_applied"] = map[string]any{"self_absorption": true}
+	rec["corrections_applied"] = map[string]any{"self_absorption_corrected": true}
 	rec["instrumentation"].(map[string]any)["laboratory_accreditation_scheme"] = "iso_17025"
 	rec["lumen_maintenance_luminaire"].(map[string]any)["tm_28"] = map[string]any{
 		"tm_28_projection_hours": map[string]any{"value": float64(60000)},
 	}
 	rec["colorimetry"].(map[string]any)["tm_30"] = map[string]any{
-		"rf":           map[string]any{"value": float64(90)},
-		"rf_h_per_bin": []any{float64(1), float64(2), float64(3)},
+		"rf": map[string]any{"value": float64(90)},
+		"rf_h_per_bin": []any{
+			map[string]any{"bin": float64(1), "rf_h": map[string]any{"value": float64(95), "value_type": "measured"}},
+		},
 	}
 	return rec
 }

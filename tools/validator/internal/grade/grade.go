@@ -166,25 +166,118 @@ func anyOf(ps ...predicate) predicate {
 	}
 }
 
-// hasUncertainty: coverage_factor_k present plus at least one expanded_uncertainty_*,
-// on the guarded accessor.
+// hasUncertainty: coverage_factor_k present as a real number, plus at least one
+// expanded_uncertainty_* carrying a ProvenancedNumber value. Both halves require
+// real content: a bare scalar (or a value-less map) at an expanded_* field, or a
+// non-numeric coverage_factor_k, reads as absent rather than satisfying the gate.
 func hasUncertainty(r map[string]any) bool {
 	m, ok := getMap(r, "uncertainty")
 	if !ok {
 		return false
 	}
-	if _, ok := m["coverage_factor_k"]; !ok {
+	switch m["coverage_factor_k"].(type) {
+	case float64, int, int64:
+	default:
 		return false
 	}
 	for _, k := range []string{
 		"expanded_uncertainty_total_flux_percent", "expanded_uncertainty_input_power_percent",
 		"expanded_uncertainty_cct_k", "expanded_uncertainty_efficacy_percent",
 	} {
-		if _, ok := m[k]; ok {
+		if hasNumberValue(m, k) {
 			return true
 		}
 	}
 	return false
+}
+
+// hasCorrectionsApplied reports whether corrections_applied carries at least one
+// recognized correction of correct leaf type: one of the three *_corrected booleans
+// set to a bool, or an f1_prime_value carrying a ProvenancedNumber. A notes string
+// alone, or an object holding only unrecognized keys, does not count.
+func hasCorrectionsApplied(r map[string]any) bool {
+	m, ok := getMap(r, "corrections_applied")
+	if !ok {
+		return false
+	}
+	for _, k := range []string{
+		"self_absorption_corrected", "stray_light_corrected", "spectral_mismatch_corrected",
+	} {
+		if _, isBool := m[k].(bool); isBool {
+			return true
+		}
+	}
+	return hasNumberValue(m, "f1_prime_value")
+}
+
+// hasPerLengthNormalized reports whether photometry.per_length_normalized carries at
+// least one per-unit-length RATE as a ProvenancedNumber. The reference_length alone
+// (a DualUnitLength describing the basis, not a rate) does not satisfy the gate.
+func hasPerLengthNormalized(r map[string]any) bool {
+	m, ok := getMap(r, "photometry", "per_length_normalized")
+	if !ok {
+		return false
+	}
+	for _, k := range []string{
+		"lumens_per_foot", "lumens_per_meter", "watts_per_foot", "watts_per_meter",
+	} {
+		if hasNumberValue(m, k) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasBugRating reports whether outdoor_classification.bug_rating carries all three
+// of b, u, and g as whole-number (integer-typed) values. A partial rating, or an
+// object holding only unrecognized keys, does not satisfy the gate.
+func hasBugRating(r map[string]any) bool {
+	m, ok := getMap(r, "outdoor_classification", "bug_rating")
+	if !ok {
+		return false
+	}
+	for _, k := range []string{"b", "u", "g"} {
+		if !isWholeNumber(m[k]) {
+			return false
+		}
+	}
+	return true
+}
+
+// hasDimmingRange reports whether electrical.dimming_range_percent carries both a
+// numeric min and a numeric max. A partial range (only one bound), or an object
+// holding only unrecognized keys, does not satisfy the gate.
+func hasDimmingRange(r map[string]any) bool {
+	m, ok := getMap(r, "electrical", "dimming_range_percent")
+	if !ok {
+		return false
+	}
+	return isNumber(m["min"]) && isNumber(m["max"])
+}
+
+// isNumber reports whether v is one of the JSON-decoded numeric Go types the grader
+// sees (float64 from the standard decoder, int / int64 after integral normalization).
+func isNumber(v any) bool {
+	switch v.(type) {
+	case float64, int, int64:
+		return true
+	default:
+		return false
+	}
+}
+
+// isWholeNumber reports whether v is an integer-typed value: an int / int64 (an
+// integral JSON number after normalization), or a float64 with no fractional part
+// (an integral number from the un-normalized decoder). BUG codes are whole 0-5.
+func isWholeNumber(v any) bool {
+	switch n := v.(type) {
+	case int, int64:
+		return true
+	case float64:
+		return n == float64(int64(n))
+	default:
+		return false
+	}
 }
 
 // --- applicability predicates (read only core fields; see determinism note) ---
@@ -369,22 +462,22 @@ var rubric = []rule{
 	{LevelStandard, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasLM79Attestation, nil},
 	{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", "", "datasheet_pdf", "TM-21", "", hasLumenMaintenance, nil},
 	{LevelStandard, "/photometry/beam_angle_deg", "", "ies", "LM-79", "", num("photometry", "beam_angle_deg"), directional},
-	{LevelStandard, "/photometry/per_length_normalized", "", "datasheet_pdf", "LM-79", "", obj("photometry", "per_length_normalized"), linear},
+	{LevelStandard, "/photometry/per_length_normalized", "", "datasheet_pdf", "LM-79", "", hasPerLengthNormalized, linear},
 	{LevelStandard, "/photometry/declared_by_length", "", "datasheet_pdf", "LM-79", "", arr("photometry", "declared_by_length"), linear},
 	{LevelStandard, "/configuration/tested_axes/cri_tier", "CriTier", "datasheet_pdf", "CIE 13.3", "", str("configuration", "tested_axes", "cri_tier"), isWhiteLightPrimary},
 	{LevelStandard, "/colorimetry/sdcm_step", "", "datasheet_pdf", "ANSI C78.377", "", num("colorimetry", "sdcm_step"), isWhiteLightPrimary},
 	{LevelStandard, "/electrical/dimming_method", "DimmingMethod", "datasheet_pdf", "identity", "", str("electrical", "dimming_method"), requiresDimmingDetail},
-	{LevelStandard, "/electrical/dimming_range_percent", "", "datasheet_pdf", "identity", "", obj("electrical", "dimming_range_percent"), requiresDimmingDetail},
+	{LevelStandard, "/electrical/dimming_range_percent", "", "datasheet_pdf", "identity", "", hasDimmingRange, requiresDimmingDetail},
 	{LevelStandard, "/product_family/shared_mechanical/ip_rating", "", "compliance_documents", "IEC 60529", "", str("product_family", "shared_mechanical", "ip_rating"), wetOrExposed},
 	{LevelStandard, "/outdoor_classification/outdoor_distribution_type", "OutdoorDistributionType", "ies", "RP-8", "", str("outdoor_classification", "outdoor_distribution_type"), outdoorSite},
 	{LevelStandard, "/outdoor_classification/longitudinal_distribution_range", "LongitudinalDistributionRange", "ies", "RP-8", "", str("outdoor_classification", "longitudinal_distribution_range"), outdoorSite},
-	{LevelStandard, "/outdoor_classification/bug_rating", "", "datasheet_pdf", "TM-15", "", obj("outdoor_classification", "bug_rating"), outdoorSite},
+	{LevelStandard, "/outdoor_classification/bug_rating", "", "datasheet_pdf", "TM-15", "", hasBugRating, outdoorSite},
 
 	// --- FULL ---
 	{LevelFull, "/photometry/zonal_lumens", "", "ies", "LM-79", "", arr("photometry", "zonal_lumens"), nil},
 	{LevelFull, "/operating_point", "", "test_report", "LM-79", "", hasOperatingPoint, nil},
 	{LevelFull, "/uncertainty", "", "test_report", "LM-79 / GUM", "", hasUncertainty, nil},
-	{LevelFull, "/corrections_applied", "", "test_report", "LM-79", "", obj("corrections_applied"), nil},
+	{LevelFull, "/corrections_applied", "", "test_report", "LM-79", "", hasCorrectionsApplied, nil},
 	{LevelFull, "instrumentation depth (goniometer/lab)", "", "test_report", "LM-79 / LM-75", "", hasInstrumentationDepth, nil},
 	{LevelFull, "method-backed lumen maintenance (TM-21 hours or TM-28)", "", "test_report", "LM-80 / TM-21 / TM-28", "", hasMethodBackedLumenMaintenance, nil},
 	{LevelFull, "/colorimetry/tm_30/rf", "", "test_report", "TM-30", "", num("colorimetry", "tm_30", "rf"), isWhiteLightPrimary},
@@ -642,19 +735,52 @@ func attestationPrograms(record map[string]any) []string {
 	return out
 }
 
-// hasLumenMaintenance reports whether either lumen-maintenance framework is
-// present. Any framework satisfies the standard hard gate, including a bare
-// lumen_maintenance_luminaire that carries only a manufacturer_rated_claim (block
-// presence, not a published-hours requirement).
+// hasLumenMaintenance reports whether either lumen-maintenance framework is present
+// with recognized content. A luminaire framework qualifies when it carries at least
+// one recognized sub-block (tm_28, cie_97_lmf_table, or manufacturer_rated_claim) as
+// a non-empty map; a package qualifies when at least one entry carries a recognized
+// field. A bare manufacturer_rated_claim still satisfies the gate (block presence,
+// not a published-hours requirement), but an empty object or one holding only
+// unrecognized keys does not.
 func hasLumenMaintenance(record map[string]any) bool {
-	return hasMap(record, "lumen_maintenance_luminaire") || hasLumenMaintenancePackage(record)
+	return hasLumenMaintenanceLuminaire(record) || hasLumenMaintenancePackage(record)
 }
 
-// hasLumenMaintenancePackage reports whether a non-empty lumen_maintenance_package
-// array is present.
+// hasLumenMaintenanceLuminaire reports whether lumen_maintenance_luminaire carries at
+// least one recognized framework sub-block as a non-empty map.
+func hasLumenMaintenanceLuminaire(record map[string]any) bool {
+	for _, k := range []string{"tm_28", "cie_97_lmf_table", "manufacturer_rated_claim"} {
+		if hasMap(record, "lumen_maintenance_luminaire", k) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasLumenMaintenancePackage reports whether a lumen_maintenance_package array has at
+// least one entry carrying a recognized LumenMaintenancePackageEntry field. The entry
+// schema has no required fields, so an empty {} entry must not satisfy the gate.
 func hasLumenMaintenancePackage(record map[string]any) bool {
 	arr, ok := record["lumen_maintenance_package"].([]any)
-	return ok && len(arr) > 0
+	if !ok {
+		return false
+	}
+	for _, e := range arr {
+		m, ok := e.(map[string]any)
+		if !ok {
+			continue
+		}
+		for _, k := range []string{
+			"package_identifier", "tested_product_type", "flux_maintenance_quantity",
+			"flux_maintenance_threshold", "tm_21_projection_hours", "projection_reliability",
+			"tm_21_interpolation_type", "test_hours", "test_temperature_c", "drive_current_ma",
+		} {
+			if _, present := m[k]; present {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // hasMethodBackedLumenMaintenance reports whether the record carries a
@@ -680,36 +806,36 @@ func hasMethodBackedLumenMaintenance(record map[string]any) bool {
 }
 
 // hasOperatingPoint reports whether operating_point is present with at least one
-// of the recognized qualifiers carrying real content.
+// recognized qualifier carrying real content of the correct leaf type: a numeric
+// ProvenancedNumber for input_voltage_v / input_frequency_hz / drive_current_ma, a
+// numeric c or f leaf for the ambient_temperature / case_temperature DualUnit blocks,
+// or a non-empty dut_operating_mode string. A map holding only unrecognized keys, or
+// a bare scalar where a ProvenancedNumber is required, reads as absent.
 func hasOperatingPoint(record map[string]any) bool {
 	op, ok := record["operating_point"].(map[string]any)
 	if !ok {
 		return false
 	}
-	for _, q := range []string{
-		"input_voltage_v", "input_frequency_hz", "drive_current_ma",
-		"ambient_temperature", "case_temperature", "dut_operating_mode",
-	} {
-		v, present := op[q]
-		if !present {
-			continue
+	for _, q := range []string{"input_voltage_v", "input_frequency_hz", "drive_current_ma"} {
+		if hasNumberValue(op, q) {
+			return true
 		}
-		switch vv := v.(type) {
-		case string:
-			if vv != "" {
-				return true
-			}
-		case map[string]any:
-			if len(vv) > 0 {
-				return true
-			}
+	}
+	for _, q := range []string{"ambient_temperature", "case_temperature"} {
+		if t, ok := getMap(op, q); ok && (isNumber(t["c"]) || isNumber(t["f"])) {
+			return true
 		}
+	}
+	if s, _ := op["dut_operating_mode"].(string); s != "" {
+		return true
 	}
 	return false
 }
 
 // hasInstrumentationDepth reports whether instrumentation carries any field beyond
-// measurement_regime that signals lab depth.
+// measurement_regime that signals lab depth. Each of the five recognized fields is a
+// string (enum or free text) in the schema, so a non-empty string is required: a
+// non-string value at one of these keys reads as absent.
 func hasInstrumentationDepth(record map[string]any) bool {
 	instr, ok := record["instrumentation"].(map[string]any)
 	if !ok {
@@ -719,10 +845,8 @@ func hasInstrumentationDepth(record map[string]any) bool {
 		"laboratory_certification", "laboratory_accreditation_scheme",
 		"laboratory_name", "laboratory_report_id", "goniometer_type",
 	} {
-		if v, present := instr[k]; present {
-			if s, isStr := v.(string); !isStr || s != "" {
-				return true
-			}
+		if s, isStr := instr[k].(string); isStr && s != "" {
+			return true
 		}
 	}
 	return false

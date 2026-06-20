@@ -194,7 +194,7 @@ func TestReadXLSXMatchesCSVBundle(t *testing.T) {
 
 // TestConvertFromXLSX drives the whole pipeline through the .xlsx path: an .xlsx
 // mirroring the Pattern-B fixture (including the comprehensive long sheets), with
-// the referenced asset files alongside it, classifies as Pattern B, grades core
+// the referenced asset files alongside it, classifies as Pattern B, grades standard
 // (the same honest level the CSV bundle reaches under the redesigned rubric), and
 // validates against the live schema with zero ERROR findings, just as the CSV
 // bundle does. This covers the Convert input dispatch, the assets-root default

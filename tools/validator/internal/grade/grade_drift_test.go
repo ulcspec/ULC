@@ -177,8 +177,12 @@ func setDataPath(rec map[string]any, comps []string, val any) {
 // constructor), so a generic schema-correct value would not satisfy it. They are
 // covered by the behavioral tests instead.
 var predicateBackedPaths = map[string]bool{
-	"/operating_point": true, // hasOperatingPoint: needs a recognized qualifier
-	"/uncertainty":     true, // hasUncertainty: needs coverage_factor_k + an expanded_*
+	"/operating_point":                   true, // hasOperatingPoint: needs a recognized qualifier
+	"/uncertainty":                       true, // hasUncertainty: needs coverage_factor_k + an expanded_*
+	"/corrections_applied":               true, // hasCorrectionsApplied: needs a recognized correction leaf
+	"/photometry/per_length_normalized":  true, // hasPerLengthNormalized: needs a per-length rate, not just reference_length
+	"/outdoor_classification/bug_rating": true, // hasBugRating: needs b + u + g
+	"/electrical/dimming_range_percent":  true, // hasDimmingRange: needs min + max
 }
 
 // shapeTestable reports whether a rubric path is a single resolvable JSON Pointer
@@ -421,5 +425,187 @@ func TestPredicateSetsAreRealEnumMembers(t *testing.T) {
 				t.Errorf("predicate set %s contains %q, not a member of the %s enum in taxonomy.schema.json", c.name, token, c.enum)
 			}
 		}
+	}
+}
+
+// TestTightenedObjectGatesRejectEmptyAndUnrecognized proves the over-leniency class
+// is closed for the object gates: each closure returns FALSE for an empty object and
+// for an object holding only an unrecognized key, and TRUE only once a single
+// recognized content field of the correct type is present. wrap builds a full record
+// by placing the gated-object fragment at the exact path each closure reads. The old
+// obj(...) / hasMap closures returned TRUE for both the empty and the
+// unrecognized-only object (any non-empty map satisfied hasMap), so every FALSE
+// assertion below would have been RED before this change.
+func TestTightenedObjectGatesRejectEmptyAndUnrecognized(t *testing.T) {
+	cases := []struct {
+		name    string
+		wrap    func(fragment map[string]any) map[string]any // place fragment at the gated path
+		closure func(map[string]any) bool
+		good    map[string]any // one recognized content field of correct type
+	}{
+		{
+			"corrections_applied",
+			func(f map[string]any) map[string]any { return map[string]any{"corrections_applied": f} },
+			hasCorrectionsApplied,
+			map[string]any{"self_absorption_corrected": true},
+		},
+		{
+			"per_length_normalized",
+			func(f map[string]any) map[string]any {
+				return map[string]any{"photometry": map[string]any{"per_length_normalized": f}}
+			},
+			hasPerLengthNormalized,
+			map[string]any{"lumens_per_meter": map[string]any{"value": float64(800)}},
+		},
+		{
+			"bug_rating",
+			func(f map[string]any) map[string]any {
+				return map[string]any{"outdoor_classification": map[string]any{"bug_rating": f}}
+			},
+			hasBugRating,
+			map[string]any{"b": float64(1), "u": float64(0), "g": float64(1)},
+		},
+		{
+			"dimming_range_percent",
+			func(f map[string]any) map[string]any {
+				return map[string]any{"electrical": map[string]any{"dimming_range_percent": f}}
+			},
+			hasDimmingRange,
+			map[string]any{"min": float64(1), "max": float64(100)},
+		},
+		{
+			"lumen_maintenance_luminaire",
+			func(f map[string]any) map[string]any { return map[string]any{"lumen_maintenance_luminaire": f} },
+			hasLumenMaintenance,
+			map[string]any{"manufacturer_rated_claim": map[string]any{"claim_type": "L70"}},
+		},
+	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			if c.closure(c.wrap(map[string]any{})) {
+				t.Errorf("%s: closure accepted an empty object (over-lenient)", c.name)
+			}
+			if c.closure(c.wrap(map[string]any{"zzz_unrecognized": float64(1)})) {
+				t.Errorf("%s: closure accepted an object with only an unrecognized key (over-lenient)", c.name)
+			}
+			if !c.closure(c.wrap(c.good)) {
+				t.Errorf("%s: closure rejected an object with a recognized content field: %+v", c.name, c.good)
+			}
+		})
+	}
+}
+
+// TestTightenedLumenMaintenancePackageRejectsEmptyEntry proves the package arm of
+// hasLumenMaintenance is closed: a non-empty array of empty entries (the [{}] case
+// the old len>0 check accepted, since LumenMaintenancePackageEntry has no required
+// fields) is rejected, while an entry carrying a recognized field is accepted.
+func TestTightenedLumenMaintenancePackageRejectsEmptyEntry(t *testing.T) {
+	emptyEntry := map[string]any{"lumen_maintenance_package": []any{map[string]any{}}}
+	if hasLumenMaintenance(emptyEntry) {
+		t.Error("lumen_maintenance_package: closure accepted a [{}] entry (over-lenient)")
+	}
+	junkEntry := map[string]any{"lumen_maintenance_package": []any{map[string]any{"zzz_unrecognized": float64(1)}}}
+	if hasLumenMaintenance(junkEntry) {
+		t.Error("lumen_maintenance_package: closure accepted an entry with only an unrecognized key (over-lenient)")
+	}
+	goodEntry := map[string]any{"lumen_maintenance_package": []any{
+		map[string]any{"tm_21_projection_hours": map[string]any{"value": float64(60000)}},
+	}}
+	if !hasLumenMaintenance(goodEntry) {
+		t.Error("lumen_maintenance_package: closure rejected an entry with a recognized field")
+	}
+}
+
+// TestProvenancedNumberGatesRejectBareScalar proves the ProvenancedNumber-leaf gates
+// are closed: a bare scalar and a value-less {junk:1} object both read as absent, and
+// only a {value:N, value_type:...} ProvenancedNumber satisfies the gate. The old
+// hasUncertainty / hasOperatingPoint checked key-presence (or len>0 on the map), so a
+// bare scalar at an expanded_* field, or a {junk:1} qualifier map, passed; every FALSE
+// assertion below would have been RED before this change.
+func TestProvenancedNumberGatesRejectBareScalar(t *testing.T) {
+	// hasUncertainty: coverage_factor_k must be numeric AND an expanded_* must be a
+	// ProvenancedNumber.
+	t.Run("uncertainty_expanded_bare_scalar", func(t *testing.T) {
+		bare := map[string]any{"uncertainty": map[string]any{
+			"coverage_factor_k":                       float64(2),
+			"expanded_uncertainty_total_flux_percent": float64(5), // bare scalar, not a ProvenancedNumber
+		}}
+		if hasUncertainty(bare) {
+			t.Error("hasUncertainty accepted a bare scalar at an expanded_* field (over-lenient)")
+		}
+		junk := map[string]any{"uncertainty": map[string]any{
+			"coverage_factor_k":                       float64(2),
+			"expanded_uncertainty_total_flux_percent": map[string]any{"junk": float64(1)}, // value-less map
+		}}
+		if hasUncertainty(junk) {
+			t.Error("hasUncertainty accepted a value-less map at an expanded_* field (over-lenient)")
+		}
+		good := map[string]any{"uncertainty": map[string]any{
+			"coverage_factor_k":                       float64(2),
+			"expanded_uncertainty_total_flux_percent": map[string]any{"value": float64(5), "value_type": "measured"},
+		}}
+		if !hasUncertainty(good) {
+			t.Error("hasUncertainty rejected a real coverage_factor_k + ProvenancedNumber expanded value")
+		}
+		// coverage_factor_k must itself be numeric, not a bare-but-present junk value.
+		nonNumK := map[string]any{"uncertainty": map[string]any{
+			"coverage_factor_k":                       "two",
+			"expanded_uncertainty_total_flux_percent": map[string]any{"value": float64(5)},
+		}}
+		if hasUncertainty(nonNumK) {
+			t.Error("hasUncertainty accepted a non-numeric coverage_factor_k (over-lenient)")
+		}
+	})
+
+	// hasOperatingPoint: a numeric qualifier must be a ProvenancedNumber; a {junk:1}
+	// qualifier map reads as absent.
+	t.Run("operating_point_qualifier_bare_scalar", func(t *testing.T) {
+		bare := map[string]any{"operating_point": map[string]any{
+			"drive_current_ma": float64(350), // bare scalar, not a ProvenancedNumber
+		}}
+		if hasOperatingPoint(bare) {
+			t.Error("hasOperatingPoint accepted a bare scalar drive_current_ma (over-lenient)")
+		}
+		junk := map[string]any{"operating_point": map[string]any{
+			"drive_current_ma": map[string]any{"junk": float64(1)}, // value-less map
+		}}
+		if hasOperatingPoint(junk) {
+			t.Error("hasOperatingPoint accepted a value-less qualifier map (over-lenient)")
+		}
+		good := map[string]any{"operating_point": map[string]any{
+			"drive_current_ma": map[string]any{"value": float64(350), "value_type": "measured"},
+		}}
+		if !hasOperatingPoint(good) {
+			t.Error("hasOperatingPoint rejected a real ProvenancedNumber qualifier")
+		}
+	})
+}
+
+// TestCapstoneJunkObjectsCapAtIncomplete is the class-closed invariant: a record that
+// satisfies the photometric anchors but populates every gated object path with only an
+// unrecognized {"zzz":1} key reaches at most LevelIncomplete. Under the old presence
+// closures these junk objects satisfied their gates, so such a record could have
+// climbed past incomplete; this asserts the whole class of meaningless-but-non-empty
+// content no longer lifts a record.
+func TestCapstoneJunkObjectsCapAtIncomplete(t *testing.T) {
+	junk := map[string]any{"zzz": float64(1)}
+	rec := map[string]any{
+		// Photometric anchors so the record is not LevelNone.
+		"photometry":     map[string]any{"total_luminous_flux_lm": map[string]any{"value": float64(1200)}},
+		"electrical":     map[string]any{"input_power_w": map[string]any{"value": float64(10)}},
+		"product_family": map[string]any{"primary_category": "panel_troffer"},
+		// Every gated object path carries only an unrecognized key.
+		"corrections_applied":         junk,
+		"uncertainty":                 junk,
+		"operating_point":             junk,
+		"outdoor_classification":      map[string]any{"bug_rating": junk},
+		"lumen_maintenance_luminaire": junk,
+		"lumen_maintenance_package":   []any{map[string]any{"zzz": float64(1)}},
+	}
+	rec["photometry"].(map[string]any)["per_length_normalized"] = junk
+	rec["electrical"].(map[string]any)["dimming_range_percent"] = junk
+	if got := AchievedLevel(rec); got > LevelIncomplete {
+		t.Errorf("record with only junk in every gated object reached %s, want at most incomplete", got)
 	}
 }
