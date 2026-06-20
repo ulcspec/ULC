@@ -186,7 +186,7 @@ func assembleFlickerMeasurements(wb Workbook, id string, rec map[string]any) err
 // assembleLumenMaintenancePackage builds the top-level lumen_maintenance_package[]
 // array from the lumen_maintenance_package sheet (one row per LED package). The
 // numeric quantities are transcribed manufacturer figures (rated). This is the
-// method-backed projection the full-level conformance observation looks for (a
+// method-backed projection the full-tier conformance gate looks for (a
 // tm_21_projection_hours present means the record carries more than a bare
 // manufacturer claim).
 func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any) error {

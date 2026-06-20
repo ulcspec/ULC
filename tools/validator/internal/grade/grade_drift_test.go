@@ -428,6 +428,7 @@ func TestPredicateSetsAreRealEnumMembers(t *testing.T) {
 		{"naSafetyListings", naSafetyListings, "AttestationProgram"},
 		{"anySafetyListings", anySafetyListings, "AttestationProgram"},
 		{"naRegions", naRegions, "TechnicalRegion"},
+		{"poleMountedTypes", poleMountedTypes, "MountingType"},
 	}
 	for _, c := range cases {
 		members := loadEnumMembers(t, taxDefs, c.enum)

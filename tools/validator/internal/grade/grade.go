@@ -384,6 +384,14 @@ func impactPublic(r map[string]any) bool {
 	return getString(r, "product_family", "environment_rating") == "vandal_resistant"
 }
 
+// poleMountedTypes are the MountingType tokens for which a pole or mast wind-load
+// EPA is meaningful. An exact set keeps the intent explicit (rather than a "pole" /
+// "mast" substring match) and lets the drift guard verify the tokens against the enum.
+var poleMountedTypes = map[string]bool{
+	"pole_top": true, "pole_side_entry": true, "utility_pole_mount": true,
+	"mast_arm_bracket": true, "high_mast": true,
+}
+
 func poleMounted(r map[string]any) bool {
 	parent, ok := getMap(r, "product_family")
 	if !ok {
@@ -394,10 +402,8 @@ func poleMounted(r map[string]any) bool {
 		return false
 	}
 	for _, m := range mts {
-		if s, ok := m.(string); ok {
-			if strings.Contains(s, "pole") || strings.Contains(s, "mast") {
-				return true
-			}
+		if s, ok := m.(string); ok && poleMountedTypes[s] {
+			return true
 		}
 	}
 	return false
