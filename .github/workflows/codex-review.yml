@@ -47,8 +47,11 @@ jobs:
           files: |
             # ULC schema files (the spec itself)
             schema/**/*.json
-            # Python tooling
+            # Reference tooling: the Go validator and CLI, plus the commit hooks
+            tools/**/*.go
             tools/**/*.py
+            go.mod
+            go.sum
             tools/hooks/**
             # Narrative documentation
             docs/**/*.md
@@ -67,6 +70,8 @@ jobs:
             examples/**/*.ulc
             templates/**/*.json
             templates/**/*.ulc
+            templates/**/*.csv
+            templates/**/*.md
           files_ignore: |
             # Private research notes (gitignored anyway but belt and suspenders)
             research/**

@@ -184,11 +184,13 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 		_, err := fmt.Fprintf(w, "OK -- %s: 0 errors, 0 warnings, 0 infos.\n", recordPath)
 		return err
 	}
+	hidden := 0
 	for _, f := range r.Findings {
 		// Conformance observations are the comprehensive-depth nudges; suppress
 		// them in text unless Verbose is set. The achieved-level summary and the
 		// roadmap (other conformance codes) always render. WriteJSON keeps them.
 		if !r.Verbose && f.Code == CodeConformanceObservation {
+			hidden++
 			continue
 		}
 		loc := ""
@@ -203,8 +205,12 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 	if r.Summary.Errors == 0 {
 		status = "OK"
 	}
-	_, err := fmt.Fprintf(w, "\n%s -- %s: %d errors, %d warnings, %d infos.\n",
-		status, recordPath, r.Summary.Errors, r.Summary.Warnings, r.Summary.Infos)
+	hint := ""
+	if hidden > 0 {
+		hint = fmt.Sprintf(" (%d observations hidden, use --verbose)", hidden)
+	}
+	_, err := fmt.Fprintf(w, "\n%s -- %s: %d errors, %d warnings, %d infos%s.\n",
+		status, recordPath, r.Summary.Errors, r.Summary.Warnings, r.Summary.Infos, hint)
 	return err
 }
 

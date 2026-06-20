@@ -91,10 +91,10 @@ This repository defines the standard. It does not ship an application.
 
 ## Getting started
 
-The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, four canonical reference records covering the four manufacturer authoring patterns, the reference command-line validator and compiler (`ulc`) at `tools/validator/` with schema validation, builder parity, source-file hash verification, and the deterministic `from-sheet` converter, the fill-in workbook template under `templates/workbook/`, and PIM platform mapping guides under `mappings/pim/`. The [ulcspec.org](https://ulcspec.org) narrative docs site is the public-facing companion to this repository.
+The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, five canonical reference records covering the four manufacturer authoring patterns, the reference command-line validator and compiler (`ulc`) at `tools/validator/` with schema validation, builder parity, source-file hash verification, and the deterministic `from-sheet` converter, the fill-in workbook template under `templates/workbook/`, and PIM platform mapping guides under `mappings/pim/`. The [ulcspec.org](https://ulcspec.org) narrative docs site is the public-facing companion to this repository.
 
 - To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
-- To see those patterns in real data, read the four records in `examples/`. Each one exercises a distinct pattern against a real manufacturer spec sheet.
+- To see those patterns in real data, read the records in `examples/`, which exercise the four authoring patterns against real manufacturer spec sheets.
 - **To try ULC right now**, drag any `.ulc` record from `examples/` into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. No setup required.
 - To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
 - To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
@@ -113,12 +113,12 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 
 ## Adoption status
 
-Adoption is in its early days. Four canonical reference records are published in `examples/`, each derived from a real manufacturer spec sheet:
+Adoption is in its early days. Five canonical reference records are published in `examples/`, each derived from a real manufacturer spec sheet:
 
 - ERCO Quintessence: recessed downlight
 - Vode Nexa: suspended linear pendant
 - Selux Aya: exterior pole
-- Lumenpulse Lumenfacade: RGB façade
+- Lumenpulse Lumenfacade: RGB and RGBW inground façade (two records)
 
 Each exercises a distinct manufacturer authoring pattern (A/B/C/D).
 

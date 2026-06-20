@@ -22,7 +22,7 @@ As of the next release:
 
 Deferred to a follow-up CLI release (scope for post-pilot feedback):
 
-- [ ] Tightening the `standard` and `full` completeness bar. The v1 rubric is intentionally lenient: the comprehensive items the taxonomy associates with `full` (TM-30 per-hue-bin fidelity, measurement uncertainty, method-backed lumen-maintenance projections, sustainability declarations, deeper instrumentation metadata) are graded as `INFO` nudges rather than hard requirements, so today's reference records grade cleanly. Manufacturer pilot feedback may promote some of these to graded requirements.
+- [ ] Promoting selected observations to graded requirements. The `full` tier now hard-gates accredited-laboratory depth: zonal lumens, measurement uncertainty, applied corrections, method-backed lumen-maintenance projections, deeper instrumentation metadata, and (for primarily-white-light fixtures) TM-30 fidelity. A separate band of comprehensive items is still surfaced as non-gating observations (sustainability declarations, power factor, flicker, alpha-opic metrics, and similar); manufacturer pilot feedback may promote some of these to graded requirements in a future rubric revision.
 
 ## Language
 
