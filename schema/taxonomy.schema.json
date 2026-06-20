@@ -159,7 +159,7 @@
 
     "DimmingProtocol": {
       "title": "Dimming control protocol",
-      "description": "Protocol by which the luminaire's output can be controlled. A record may declare multiple protocols if the product supports more than one. Corresponds to ETIM feature series EF012152 through EF012168. `dali_dt6` and `dali_dt8` name the DALI device type (DT6 for colour-control-gear for LED modules, DT8 for colour control with sub-types Tc, XY, and RGBWAF). `dali_2_dt8` explicitly names a DALI-2 certified device implementing DT8, which is the control path used by RGBW and tunable-white architectural fixtures. `dmx_rdm` is DMX512 with the RDM (Remote Device Management) bidirectional extension, common on color-changing exterior products. `lumentalk` is a licensed powerline control protocol originated by Lumenpulse and adopted by multiple fixture manufacturers; it is included here rather than in `extensions.manufacturer_specific` because it is implemented across more than one vendor's product lines. Truly single-vendor proprietary protocols that are not industry-standardized and not licensed beyond their originator belong in `extensions.manufacturer_specific` rather than this enum.",
+      "description": "Protocol by which the luminaire's output can be controlled. A record may declare multiple protocols if the product supports more than one. Corresponds to ETIM feature series EF012152 through EF012168. `dali_dt6` and `dali_dt8` name the DALI device type (DT6 for colour-control-gear for LED modules, DT8 for colour control with sub-types Tc, XY, and RGBWAF). `dali_2_dt8` explicitly names a DALI-2 certified device implementing DT8, which is the control path used by RGBW and tunable-white architectural fixtures. `dmx_rdm` is DMX512 with the RDM (Remote Device Management) bidirectional extension, common on color-changing exterior products. `lumentalk` is a licensed powerline control protocol originated by Lumenpulse and adopted by multiple fixture manufacturers; it is included here rather than in `extensions.manufacturer_specific` because it is implemented across more than one vendor's product lines. `d4i` (DALI-2 Data and Power inside a luminaire) is the intra-luminaire extension certifying the driver, control gear, and data exchange inside the fixture, sitting above `dali_2` on the DALI, DALI-2, D4i ladder. `dali_2_dt6` is a DALI-2 certified device implementing DT6 (the LED control-gear device type), the symmetric counterpart to `dali_2_dt8`. `bluetooth_mesh` is the many-to-many Bluetooth mesh networking topology, distinct from point-to-point `bluetooth`. `lutron_ecosystem` is Lutron's digital control protocol, given its own token because it is implemented across more than one vendor's fixtures rather than tagged as a DALI variant. Truly single-vendor proprietary protocols that are not industry-standardized and not licensed beyond their originator belong in `extensions.manufacturer_specific` rather than this enum.",
       "type": "string",
       "enum": [
         "0-10v",
@@ -167,15 +167,19 @@
         "dali",
         "dali_2",
         "dali_dt6",
+        "dali_2_dt6",
         "dali_dt8",
         "dali_2_dt8",
+        "d4i",
         "dmx",
         "dmx_rdm",
         "dsi",
+        "lutron_ecosystem",
         "phase_forward",
         "phase_reverse",
         "pwm",
         "bluetooth",
+        "bluetooth_mesh",
         "zigbee",
         "casambi",
         "lumentalk",
@@ -864,7 +868,7 @@
 
     "AttestationProgram": {
       "title": "Compliance or certification program",
-      "description": "An external program, listing, certification, or test-method standard that a product may claim. Programs are referenced by identifier only; ULC does not redistribute the text of any paid or restricted standard. For IES test-method standards, both a family label (for example `lm_79`, `tm_30`, `lm_80`) and version-specific values (for example `lm_79_24`, `tm_30_24`, `lm_80_21`) are provided. Claim records should use the version-specific value whenever the revision is known, because numeric results may not be comparable across revisions (for example the TM-30 fidelity scaling factor changed between -15 and -18). The family label is a coarse filter for cases where the revision is genuinely unknown. When an errata changes normative content, the errata-corrected version is encoded as a distinct enum value with a numeric suffix (for example `lm_84_20_e1` for LM-84-20 with Errata 1). Legacy versions are retained so that datasheets published before the current revision can be ingested without data loss; the reference validator emits a WARNING when a legacy version is used to encourage migration to current revisions. Programs span several categories: trade-body and lab accreditation (LIA, ICEL, ISO 9001, NRTL), product-safety listings and marks (UL, ETL, TUV, CE, UKCA, CCC, NOM, CB Scheme, IEC 60598 / 62031 / 62471, UL 1598 / 1574 / 8750), energy and efficiency programs (DLC Standard / Premium / QPL, ENERGY STAR, California Title 24 JA8), U.S. domestic-procurement compliance (BAA, BABA), specialty building-code compliance (Chicago Plenum for plenum-rated installations), sustainability and green-building (Declare and its three LBC Red List tiers, Living Building Challenge, Living Product Challenge, Living Community Challenge, Just Label, Well Building Standard, LEED v4 / v4.1 / v5), color-rendition method references (CIE 13), and IES/ANSI test-method standards across photometry, maintenance, color, chromaticity, flicker, and melanopic metrics (LM-75, LM-78, LM-79, LM-80, LM-82, LM-84, LM-85, LM-90, TM-15, TM-21, TM-27, TM-28, TM-30, TM-35, RP-46, ANSI C78.377, ANSI C136.25/31, CSA C653/C811, NTCIP 1213, IEEE 1789, NEMA 77).",
+      "description": "An external program, listing, certification, or test-method standard that a product may claim. Programs are referenced by identifier only; ULC does not redistribute the text of any paid or restricted standard. For IES test-method standards, both a family label (for example `lm_79`, `tm_30`, `lm_80`) and version-specific values (for example `lm_79_24`, `tm_30_24`, `lm_80_21`) are provided. Claim records should use the version-specific value whenever the revision is known, because numeric results may not be comparable across revisions (for example the TM-30 fidelity scaling factor changed between -15 and -18). The family label is a coarse filter for cases where the revision is genuinely unknown. When an errata changes normative content, the errata-corrected version is encoded as a distinct enum value with a numeric suffix (for example `lm_84_20_e1` for LM-84-20 with Errata 1). Legacy versions are retained so that datasheets published before the current revision can be ingested without data loss; the reference validator emits a WARNING when a legacy version is used to encourage migration to current revisions. Programs span several categories: trade-body and lab accreditation (LIA, ICEL, ISO 9001, NRTL), product-safety listings and marks (UL, ETL, TUV, CE, UKCA, CCC, NOM, CB Scheme, IEC 60598 / 62031 / 62471, UL 1598 / 1574 / 8750), energy and efficiency programs (DLC Standard / Premium / QPL, ENERGY STAR, California Title 24 JA8), U.S. domestic-procurement compliance (BAA, BABA), specialty building-code compliance (Chicago Plenum for plenum-rated installations), sustainability and green-building (Declare and its three LBC Red List tiers, Living Building Challenge, Living Product Challenge, Living Community Challenge, Just Label, Well Building Standard, LEED v4 / v4.1 / v5), color-rendition method references (CIE 13), and IES/ANSI test-method standards across photometry, maintenance, color, chromaticity, flicker, and melanopic metrics (LM-75, LM-78, LM-79, LM-80, LM-82, LM-84, LM-85, LM-90, TM-15, TM-21, TM-27, TM-28, TM-30, TM-35, RP-46, ANSI C78.377, ANSI C136.25/31, CSA C653/C811, NTCIP 1213, IEEE 1789, NEMA 77). Beyond these, the enum covers regional market-access marks (RCM/SAA Australia, KC Korea, PSE/VCCI Japan, BIS India, EAC EAEU, INMETRO Brazil, SASO Saudi Arabia), additional North American safety listings (CSA, MET, UL 924 emergency lighting, UL 2108 low-voltage systems, UL 1994 luminous egress-path marking, IEC 61347 lamp-control-gear safety), EMC declarations (ICES Canada, CISPR 15), food-zone safety (NSF/ANSI 2), further energy and efficiency programs (ENERGY STAR Downlights v1, DLC Networked Lighting Controls, DLC LUNA, DLC Horticultural, California Title 20, EU Ecodesign and Energy Label, FTC Lighting Facts, DOE LED Lighting Facts, NRCan Energy Efficiency Regulations), environmental and material declarations (REACH SVHC, WEEE, California Prop 65, conflict-minerals 3TG, POPs, TSCA, EPD per ISO 14025, HPD, Cradle to Cradle, GreenCircle, EPEAT, UL ECOLOGO), and domestic-origin and procurement marks (TAA, American Iron and Steel, country of origin). Only a small subset of safety listings is read by the reference grader's core safety gate; the remainder are presence-tracked for catalog and search and never affect the conformance level.",
       "type": "string",
       "enum": [
         "lia_member",
@@ -969,7 +973,50 @@
         "tm_35_19",
         "tm_35_19_e1",
         "rp_46",
-        "rp_46_23"
+        "rp_46_23",
+        "csa_listed",
+        "met_listed",
+        "ul_924",
+        "ul_2108",
+        "ul_1994",
+        "iec_61347",
+        "ices_canada",
+        "cispr_15",
+        "rcm_australia",
+        "saa_australia",
+        "kc_korea",
+        "pse_japan",
+        "vcci_japan",
+        "bis_india",
+        "eac_eaeu",
+        "inmetro_brazil",
+        "saso_saudi",
+        "nsf_ansi_2",
+        "energy_star_downlights_v1",
+        "dlc_nlc",
+        "dlc_luna",
+        "dlc_horticultural",
+        "ca_title_20",
+        "eu_ecodesign_2019_2020",
+        "eu_energy_label_2019_2015",
+        "ftc_lighting_facts",
+        "doe_led_lighting_facts",
+        "nrcan_ee_regulations",
+        "reach_svhc",
+        "weee",
+        "prop_65",
+        "conflict_minerals_3tg",
+        "pops",
+        "tsca",
+        "epd_iso_14025",
+        "hpd",
+        "cradle_to_cradle",
+        "greencircle_certified",
+        "epeat",
+        "ul_ecologo",
+        "taa",
+        "american_iron_and_steel",
+        "country_of_origin"
       ]
     },
 
@@ -1046,9 +1093,10 @@
 
     "ConformanceLevel": {
       "title": "ULC conformance level",
-      "description": "The completeness level a ULC record achieves, computed by the reference builder from the record's populated fields and stamped into the generated index. It is never hand-declared. Core is the minimum identifying and photometric dataset; standard covers what a typical LM-79 test report produces; full requires operating-point qualifiers (and, for outdoor products, a BUG rating). Records at full commonly also carry deeper comprehensive data (TM-30 hue bins, method-backed lumen-maintenance projections, measurement uncertainty, and instrumentation metadata); the v1 rubric reports these as INFO observations rather than as hard requirements, so a record can reach full without them. Required fields in the JSON Schema are limited to the core level; everything beyond core is schema-optional, and the achieved level reflects which graded fields a record carries, not how much optional depth it includes.",
+      "description": "The completeness level a ULC record achieves, computed by the reference builder from the record's populated fields and stamped into the generated index. It is never hand-declared. There are four tiers, graded as a cumulative gate: the record IS the highest tier all of whose hard requirements it meets, walking the tiers low to high and stopping at the first unmet requirement. `incomplete` is a real photometric record (it carries the flux, input-power, and primary-category anchors, so it is indexable) that has not yet met every core requirement; it still receives an index and a roadmap naming the core fields it is missing. `core` is the minimum identifying, photometric, electrical, one-line-colorimetry, and market-safety-listing dataset that makes a record a complete, legally-sellable luminaire. `standard` adds the fuller specification a typical LM-79 test report produces (full photometric geometry, materials, measurement regime, an LM-79 attestation, a lumen-maintenance framework, and the white-light, directional, outdoor-site, and wet-location conditionals that apply). `full` adds exhaustive accredited characterization (zonal lumens, operating point, measurement uncertainty, corrections applied, instrumentation depth, a method-backed lumen-maintenance projection, and TM-30 detail for white-light products). Required fields in the JSON Schema are limited to the core anchors; everything beyond is schema-optional, and the achieved level reflects which graded fields a record carries. Conditional requirements that do not apply to a record (for example CRI for a pure color-mixing fixture) are never counted against it. A conformance level is a data-completeness grade, never a safety certification.",
       "type": "string",
       "enum": [
+        "incomplete",
         "core",
         "standard",
         "full"
@@ -1057,7 +1105,7 @@
 
     "SourceFileType": {
       "title": "Source file type",
-      "description": "A manufacturer-published source file from which a ULC record derives its data. Each ULC record references its source files by type; the files themselves remain with the manufacturer or in archival storage and are identified in the record by filename and SHA-256 content hash. `uld` is DIALux's proprietary binary bundle (CFBF container carrying 3D geometry, materials, light-emitting surface definition, thumbnail, and photometry). `gldf` is the open-standard Global Lighting Data Format (zipped XML bundle intended to replace ULD). Neither is parsed or embedded by ULC; they are referenced for consumers that want the 3D or rendering data. `supplementary_pdf` covers ancillary PDFs that accompany the primary datasheet: certifications cheat sheets, installation-option matrices, end-of-life program documents, and similar content that informs authoring but is not itself a photometric or safety source.",
+      "description": "A manufacturer-published source file from which a ULC record derives its data. Each ULC record references its source files by type; the files themselves remain with the manufacturer or in archival storage and are identified in the record by filename and SHA-256 content hash. `uld` is DIALux's proprietary binary bundle (CFBF container carrying 3D geometry, materials, light-emitting surface definition, thumbnail, and photometry). `gldf` is the open-standard Global Lighting Data Format (zipped XML bundle intended to replace ULD). Neither is parsed or embedded by ULC; they are referenced for consumers that want the 3D or rendering data. `supplementary_pdf` covers ancillary PDFs that accompany the primary datasheet: certifications cheat sheets, installation-option matrices, end-of-life program documents, and similar content that informs authoring but is not itself a photometric or safety source. `driver_datasheet_pdf` is the LED-driver or control-gear datasheet, the source for driver-protocol and electrical detail. `test_report` is an accredited photometric or colorimetric test report (the source for measurement uncertainty, corrections, instrumentation depth, and TM-30 detail). `compliance_documents` is a safety-listing or market-access certificate (the source for the core safety listing and ingress ratings).",
       "type": "string",
       "enum": [
         "datasheet_pdf",
@@ -1068,7 +1116,10 @@
         "gldf",
         "article_text",
         "installation_instructions_pdf",
-        "supplementary_pdf"
+        "supplementary_pdf",
+        "driver_datasheet_pdf",
+        "test_report",
+        "compliance_documents"
       ]
     },
 
@@ -1086,6 +1137,9 @@
         "article_text",
         "installation_instructions_pdf",
         "supplementary_pdf",
+        "driver_datasheet_pdf",
+        "test_report",
+        "compliance_documents",
         "manufacturer_direct",
         "computed",
         "inferred",
@@ -1231,6 +1285,16 @@
         "ccr",
         "pwm",
         "hybrid"
+      ]
+    },
+
+    "DimmingCurve": {
+      "title": "Dimming curve",
+      "description": "The mapping the driver applies between the dim command and light output. `logarithmic` (also called square-law or perceptual) tracks the eye's non-linear response so a dim sweep feels even across the range, and is typical of architectural drivers. `linear` maps the command directly to output, typical of raw or video-oriented control. Independent of DimmingMethod (the electrical technique) and DimmingProtocol (the signaling layer). Optional and ungated: most cutsheets do not publish it.",
+      "type": "string",
+      "enum": [
+        "logarithmic",
+        "linear"
       ]
     },
 

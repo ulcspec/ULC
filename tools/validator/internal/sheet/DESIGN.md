@@ -165,7 +165,7 @@ hard-errors if there are zero or more-than-one (the manufacturer then disambigua
   dependency vendored; it produces the same format-agnostic `Workbook` model the CSV reader does,
   so an `.xlsx` and an equivalent CSV bundle convert identically (locked by a parity test).
   `Convert` dispatches on the input shape (a directory is a bundle; a `.xlsx` file is a workbook).
-- Level scope: all four patterns at ALL THREE conformance levels. The converter never targets a
+- Level scope: all four patterns across every conformance tier. The converter never targets a
   level. It ingests every authored field (core, standard, AND full), assembles the record, and
   the index builder grades the achieved `conformance_level` from what is present. The full-level
   related sheets are implemented (`fulllevel.go`): `alpha_opic` -> alpha_opic_metrics,
@@ -173,9 +173,15 @@ hard-errors if there are zero or more-than-one (the manufacturer then disambigua
   `zonal_lumens` -> photometry.zonal_lumens, `lcs_zonal_lumens` -> outdoor_classification, the
   Declare roster `ingredient_list` -> sustainability_declaration (whose block scalars ride on the
   records sheet), and `cie97_lmf` / `cie97_llmf` -> lumen_maintenance_luminaire.cie_97_lmf_table.
-  Each attaches only when its sheet carries rows; none gates the level (the rubric reads
-  operating_point + the conditional bug_rating), so they are pure enrichment. A manufacturer who
-  has the data adds those sheets and the record carries more depth; one who does not grades
+  Each attaches only when its sheet carries rows. Under the redesigned rubric two of these feed
+  full-tier rules (`zonal_lumens` gates full; a `lumen_maintenance_package` with a
+  tm_21_projection_hours is the method-backed maintenance projection); the rest are non-gating
+  enrichment. No converted record reaches full on these sheets alone, because the full tier also
+  requires test-report depth (uncertainty, corrections, instrumentation, TM-30) the converter does
+  not synthesize, and an analog or phase-cut fixture that does not author its dimming method and
+  range caps at core (a digital-protocol fixture is exempt and reaches standard without them). A
+  manufacturer who has the data adds those sheets and the record carries more depth; one
+  who does not grades
   core/standard. Nothing the manufacturer supplies is dropped or capped.
 - A published, fill-in workbook template ships at `templates/workbook/` (header-only CSVs for
   every sheet plus a README): the manufacturer-facing starting point.

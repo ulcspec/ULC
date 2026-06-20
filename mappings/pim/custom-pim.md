@@ -215,4 +215,4 @@ def emit_ulc(session: Session):
 
 - [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
 - [`salsify.md`](salsify.md), [`akeneo.md`](akeneo.md), [`sap.md`](sap.md) — platform-specific guides. A manufacturer planning to migrate to a commercial PIM may find those useful as the target architecture.
-- `templates/` — ULC skeletons for structure reference.
+- `examples/`: real ULC records to reference for record structure.

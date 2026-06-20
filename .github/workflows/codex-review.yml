@@ -13,10 +13,12 @@ jobs:
     name: Codex Code Review
     runs-on: ubuntu-latest
     continue-on-error: true
-    # Skip draft PRs and dependabot
+    # Skip draft PRs, dependabot, and PRs whose title contains [skip Codex].
+    # contains() is case-insensitive, so [skip codex] / [SKIP CODEX] also match.
     if: |
       !github.event.pull_request.draft &&
-      github.actor != 'dependabot[bot]'
+      github.actor != 'dependabot[bot]' &&
+      !contains(github.event.pull_request.title, '[skip Codex]')
 
     steps:
       - name: Checkout repository

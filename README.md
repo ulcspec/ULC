@@ -46,6 +46,8 @@ A ULC record is a single JSON document that conforms to the ULC schema. It carri
 
 ULC does not embed source files. It identifies them. A consumer who obtains a source file through any channel can verify it matches the ULC record by comparing hashes.
 
+Every record also carries a computed **conformance level** (`incomplete`, `core`, `standard`, or `full`), graded by the reference builder from the fields the record populates and stamped into the generated index, never declared by the author. The grading rubric applies its requirements conditionally through a layer of applicability predicates, so a fixture is only ever asked for the data its form actually has: a pure color-mixing fixture is not graded on CRI, and an indoor downlight is not graded on a BUG rating. The tiers are not arbitrary: they mirror the way a construction specification escalates what it asks of a manufacturer, from the mandatory product data and safety listing every fixture must provide, through the selection-grade performance specifications used to compare products, to the independently-certified test reports demanded of the most rigorous fixtures. The four tiers, the per-tier requirement tables, the predicate layer, and the rationale behind the tier cut points are documented in [the conformance rubric](docs/methodology.md#the-conformance-rubric).
+
 ## Source inputs
 
 ULC is designed around the three source types realistically available across the industry today:
@@ -81,15 +83,15 @@ This repository defines the standard. It does not ship an application.
 |---|---|
 | `schema/` | Two JSON Schema files (Draft 2020-12): `ulc.schema.json` defines the record structure; `taxonomy.schema.json` defines the closed-enum vocabulary. They are split so the taxonomy can be loaded independently by search and classification tools. Cross-file references are validated in CI. |
 | `docs/` | Narrative documentation: `how-it-works.md` (end-to-end overview), `methodology.md` (design rationale), and `authoring-patterns.md` (the four manufacturer authoring patterns and architectural primitives). |
-| `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by required SHA-256 hash and optional URL, not committed. Reserved for vetted canonical records; authors writing new records from templates should keep in-progress files out of this directory. |
-| `templates/` | Per-category starter templates (downlight, linear-pendant, wall-pack, high-bay, bollard, wall-sconce). Each is a structurally valid `.ulc.json` skeleton with category-typical defaults and a sibling `.md` authoring guide. |
+| `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by required SHA-256 hash and optional URL, not committed. Reserved for vetted canonical records; authors writing new records should keep their in-progress files out of this directory. |
+| `templates/` | The fill-in workbook template (`workbook/`: a `records.csv` plus related sheets) for the deterministic `ulc from-sheet` converter. See [How records are authored](docs/how-it-works.md#how-records-are-authored). |
 | `mappings/` | Two kinds. Adjacent standards: planned crosswalks to GLDF and ETIM plus guidance for parsing IES and LDT sources. PIM platforms: how to emit ULC records at catalog scale from Salsify, Akeneo, SAP, or an in-house PIM (`mappings/pim/`). |
 | `tools/` | Reference utilities: the schema drift guard (`schema-drift-guard.py`, Python) and the `ulc` reference command-line validator at `tools/validator/` (Go, ships as a single-file binary via GoReleaser). |
 | `.github/` | Issue templates, pull request template, and continuous integration (including the schema drift guard workflow). |
 
 ## Getting started
 
-The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, four canonical reference records covering the four manufacturer authoring patterns, the reference command-line validator (`ulc`) at `tools/validator/` with schema validation, builder parity, and source-file hash verification, per-category authoring templates under `templates/`, and PIM platform mapping guides under `mappings/pim/`. The [ulcspec.org](https://ulcspec.org) narrative docs site is the public-facing companion to this repository.
+The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, four canonical reference records covering the four manufacturer authoring patterns, the reference command-line validator and compiler (`ulc`) at `tools/validator/` with schema validation, builder parity, source-file hash verification, and the deterministic `from-sheet` converter, the fill-in workbook template under `templates/workbook/`, and PIM platform mapping guides under `mappings/pim/`. The [ulcspec.org](https://ulcspec.org) narrative docs site is the public-facing companion to this repository.
 
 - To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
 - To see those patterns in real data, read the four records in `examples/`. Each one exercises a distinct pattern against a real manufacturer spec sheet.

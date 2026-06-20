@@ -749,6 +749,10 @@
           },
           "required": ["min", "max"]
         },
+        "dimming_curve": {
+          "description": "Optional dim-command-to-output mapping (logarithmic or linear). Independent of `dimming_method`; populate when the cutsheet or driver datasheet publishes it.",
+          "$ref": "taxonomy.schema.json#/$defs/DimmingCurve"
+        },
         "control_gear_type": { "$ref": "taxonomy.schema.json#/$defs/ControlGearType" },
         "led_module_power_w": {
           "description": "Optional LED-module-only input power (typically smaller than luminaire input due to driver losses). Useful when the cutsheet distinguishes module from luminaire.",
@@ -1292,6 +1296,15 @@
         "test_laboratory": { "type": "string" },
         "test_report_id": { "type": "string" },
         "standard_revision": { "type": "string" },
+        "list_date": {
+          "description": "Publication date of the substance/candidate list revision a list-versioned badge was assessed against (for example a REACH SVHC candidate list update, a California Prop 65 list revision, or a conflict-minerals 3TG reporting period). Optional; pairs with `list_version` to make a list claim precise without exposing the list text.",
+          "type": "string",
+          "format": "date"
+        },
+        "list_version": {
+          "description": "Version or revision label of the substance/candidate list a list-versioned badge was assessed against (for example the REACH SVHC candidate list revision identifier). Optional.",
+          "type": "string"
+        },
         "measured_quantities": {
           "description": "JSON paths of ULC fields this attestation covers. Each covered field's `provenance.attestation_ref` is expected to reference this attestation's `attestation_id`.",
           "type": "array",

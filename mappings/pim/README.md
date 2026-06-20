@@ -116,7 +116,7 @@ These guides describe the PIM-to-ULC transformation. They do not cover:
 
 ## See also
 
-- `templates/` — starter `.ulc.json` skeletons for hand-authoring one-off records.
+- `templates/workbook/`: the fill-in workbook for the `ulc from-sheet` converter, the path for authoring records without a PIM.
 - `schema/ulc.schema.json` — the target schema the emitter produces.
 - `docs/authoring-patterns.md` — the four manufacturer authoring patterns and how to pick which one applies per SKU family.
 - `tools/validator/README.md` — CLI reference for `ulc build-index` and `ulc validate`.

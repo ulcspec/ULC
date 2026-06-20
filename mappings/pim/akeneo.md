@@ -163,4 +163,4 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
 
 - [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
 - Akeneo REST API documentation for the actual endpoint shapes.
-- `templates/` — starter ULC skeletons for structure reference.
+- `examples/`: real ULC records for structure reference.

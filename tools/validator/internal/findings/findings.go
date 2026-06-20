@@ -52,11 +52,14 @@ const (
 	//
 	// CodeConformanceLevel is the INFO summary naming the achieved level.
 	CodeConformanceLevel Code = "conformance/level"
-	// CodeConformanceGap is the INFO guidance listing the hard fields a record
-	// must add to reach the next level up (conditional predicates applied).
+	// CodeConformanceGap is the INFO roadmap guidance: one finding per hard field a
+	// record must add to reach the next level up (conditional predicates applied),
+	// each carrying the structured source-document and standard detail.
 	CodeConformanceGap Code = "conformance/gap"
-	// CodeConformanceObservation is an INFO: depth a full record commonly carries
-	// but the rubric does not gate on, or a provenance-quality note.
+	// CodeConformanceObservation is an INFO surfaced at core and above: depth the
+	// rubric does not gate on (thermal, flicker, circadian, sustainability, and
+	// similar comprehensive data) or a provenance-quality note. Suppressed from
+	// text output unless --verbose; always present in JSON.
 	CodeConformanceObservation Code = "conformance/observation"
 )
 
@@ -67,6 +70,16 @@ type Finding struct {
 	Message string `json:"message"`
 	// Path is an optional JSON Pointer into the record that located the problem.
 	Path string `json:"path,omitempty"`
+	// NextConformanceLevel, SourceDocument, and Standard are the structured
+	// roadmap detail set on conformance/gap findings only (via AddRoadmap). They
+	// are the complete, capped machine-readable roadmap contract a future website
+	// consumes: for a missing item, which conformance level it unlocks, which
+	// source document supplies it, and which standard governs it. All three are
+	// static rule-table strings, never echoed record input, so there is no
+	// disclosure or injection surface.
+	NextConformanceLevel string `json:"next_conformance_level,omitempty"`
+	SourceDocument       string `json:"source_document,omitempty"` // a SourceFileType token
+	Standard             string `json:"standard,omitempty"`
 }
 
 // Report is the aggregate result of a validate run.
@@ -75,6 +88,12 @@ type Report struct {
 	// Summary counters; derived by Finalize but kept on the struct so JSON
 	// consumers do not have to recompute.
 	Summary Summary `json:"summary"`
+	// Verbose controls text rendering only. When false (the default), WriteText
+	// omits conformance observation findings (the comprehensive-depth nudges) so
+	// the human report stays focused on errors, warnings, the achieved level, and
+	// the roadmap to the next level. WriteJSON always emits every finding
+	// regardless of this flag. Not serialized.
+	Verbose bool `json:"-"`
 }
 
 // Summary is the counts rollup used by both the text renderer and JSON consumers.
@@ -103,6 +122,16 @@ func (r *Report) AddWarning(code Code, path, msg string) {
 }
 func (r *Report) AddInfo(code Code, path, msg string) {
 	r.Add(Finding{Level: LevelInfo, Code: code, Path: path, Message: msg})
+}
+
+// AddRoadmap appends an INFO finding carrying the structured roadmap detail
+// (the conformance level it unlocks, the source document that supplies it, and
+// the governing standard) in addition to the human-readable message. Used by the
+// grader to surface, for each missing item, how a manufacturer climbs to the
+// next conformance level.
+func (r *Report) AddRoadmap(code Code, path, nextLevel, document, standard, msg string) {
+	r.Add(Finding{Level: LevelInfo, Code: code, Path: path, Message: msg,
+		NextConformanceLevel: nextLevel, SourceDocument: document, Standard: standard})
 }
 
 // Finalize sorts findings into deterministic order (Error first, then Warning,
@@ -156,6 +185,12 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 		return err
 	}
 	for _, f := range r.Findings {
+		// Conformance observations are the comprehensive-depth nudges; suppress
+		// them in text unless Verbose is set. The achieved-level summary and the
+		// roadmap (other conformance codes) always render. WriteJSON keeps them.
+		if !r.Verbose && f.Code == CodeConformanceObservation {
+			continue
+		}
 		loc := ""
 		if f.Path != "" {
 			loc = " at " + f.Path

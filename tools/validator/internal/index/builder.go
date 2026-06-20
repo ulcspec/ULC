@@ -4,9 +4,9 @@
 // single authority. Any record whose stored `index` does not exactly match
 // Build() output is considered stale.
 //
-// This is the Go port of tools/build-index.py. The two implementations must
-// stay in lockstep during the transition; once the `ulc` CLI is authoritative,
-// the Python script retires.
+// This is the Go port of tools/build-index.py, which has since retired: the `ulc`
+// CLI is now the single authoritative builder. The references to build-index.py
+// elsewhere in this file document the behavioral parity contract the port was held to.
 package index
 
 import (
@@ -28,7 +28,13 @@ import (
 // 0.3.0: conformance_level is now a generated index field. The builder computes
 // it from the record's populated fields (grade.AchievedLevel) and stamps it into
 // the index, replacing the hand-declared top-level conformance_level.
-const BuilderVersion = "0.3.0"
+// 0.4.0: conformance rubric expanded to the taxonomy-mapped declarative table.
+// The four-tier ladder adds `incomplete` (a real photometric record that has not
+// yet met every core requirement); core is richer (identity + headline numbers +
+// one-line colorimetry + a market safety listing); standard and full gain
+// white-light, directional, outdoor-site, and wet-location conditionals. Computed
+// levels recompute, so every stored index re-stamps on the next ulc build-index.
+const BuilderVersion = "0.4.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard
@@ -52,9 +58,12 @@ var RequiredKeySources = map[string]string{
 	"primary_category":      "product_family.primary_category",
 	"nominal_total_lumens":  "photometry.total_luminous_flux_lm.value",
 	"nominal_input_power_w": "electrical.input_power_w.value",
-	// conformance_level is computed from the core anchors (the same three fields
-	// above plus the primary category); when those are absent the record is not
-	// a photometric record and grade.AchievedLevel returns no valid level.
+	// conformance_level emission is gated on the three photometric anchors (the
+	// flux and power values above plus the primary category); when those are
+	// absent the record is not a photometric record and grade.AchievedLevel
+	// returns LevelNone (no token emitted). When the anchors are present the
+	// emitted token may be `incomplete` if a core requirement beyond the anchors
+	// is still missing; the record is indexed and carries a roadmap to core.
 	"conformance_level": "photometry.total_luminous_flux_lm.value, electrical.input_power_w.value, product_family.primary_category",
 }
 
@@ -81,17 +90,14 @@ func Build(record Record) Index {
 
 	// Conformance level: computed from the record's populated fields, the single
 	// source of truth for the stored level. Emit only a valid enum token
-	// (core / standard / full). A record lacking the core photometric anchors
-	// grades below core; conformance_level is then absent and MissingRequiredKeys
-	// reports it alongside the other missing core keys, so the builder never
-	// emits an out-of-enum value.
-	switch grade.AchievedLevel(record) {
-	case grade.LevelCore:
-		idx["conformance_level"] = "core"
-	case grade.LevelStandard:
-		idx["conformance_level"] = "standard"
-	case grade.LevelFull:
-		idx["conformance_level"] = "full"
+	// (incomplete / core / standard / full). A record carrying the photometric
+	// anchors always reaches at least `incomplete`, so a real photometric record
+	// is never refused over its grade. A record LACKING the anchors grades
+	// grade.LevelNone: it is not a photometric record at all, conformance_level is
+	// then absent, and MissingRequiredKeys reports it alongside the other missing
+	// core keys, so the builder never emits an out-of-enum value.
+	if lvl := grade.AchievedLevel(record); lvl != grade.LevelNone {
+		idx["conformance_level"] = lvl.String()
 	}
 
 	if v := getString(pf, "manufacturer", "slug"); v != "" {
@@ -507,9 +513,9 @@ func collectAttestationPrograms(record Record) []string {
 	if sd, ok := record["sustainability_declaration"].(map[string]any); ok {
 		if dt, ok := sd["declaration_type"].(string); ok {
 			mapping := map[string]string{
-				"ilfi_declare":       "declare",
-				"red_list_free":      "lbc_red_list_free",
-				"red_list_approved":  "lbc_red_list_approved",
+				"ilfi_declare":      "declare",
+				"red_list_free":     "lbc_red_list_free",
+				"red_list_approved": "lbc_red_list_approved",
 				"red_list_declared": "lbc_red_list_declared",
 			}
 			if mapped, ok := mapping[dt]; ok {

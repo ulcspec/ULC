@@ -171,5 +171,5 @@ def emit_ulc_from_salsify(product, scenario):
 ## See also
 
 - [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
-- `templates/` — starter ULC skeletons to reference while building the emitter.
+- `examples/`: real ULC records to reference while building the emitter.
 - Salsify API documentation (product and digital-asset schemas) for the actual property and asset field names in use.

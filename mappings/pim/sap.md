@@ -181,4 +181,4 @@ def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
 
 - [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
 - SAP S/4HANA OData API Business Hub documentation (`API_PRODUCT_SRV`, `API_CLFN_CHARACTERISTIC_SRV`, `API_DMS_DOC_SRV`) for actual endpoint shapes.
-- `templates/` — ULC skeletons for structure reference.
+- `examples/`: real ULC records to reference for record structure.

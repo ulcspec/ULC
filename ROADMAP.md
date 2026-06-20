@@ -91,6 +91,32 @@ revision.
   `taxonomy.schema.json` but not yet wired into record fields. They are
   retained as staged vocabulary, to be wired in when matching cutsheets
   appear in example records, or pruned in a later revision.
+- **Emergency-lighting operational data.** ULC carries `emergency_luminaire`
+  and `exit_sign` categories and a UL 924 attestation, but not the defining
+  emergency data: battery chemistry and capacity, rated emergency runtime,
+  reduced emergency-mode lumen output, self-test capability (manual,
+  status-indicator, remote, or integral automatic), and the normal-power
+  transfer threshold. A future revision may add an `emergency` field group,
+  grounded once an emergency-luminaire example record surfaces.
+- **Entertainment fixture capabilities.** Moving-head and theatrical fixtures
+  expose capabilities not modeled today: pan and tilt range, zoom (variable
+  field-angle) range, beam-shaping hardware (framing shutters, gobo wheels,
+  iris), strobe, subtractive CMY color mixing, and the entertainment control
+  transports sACN and Art-Net (DMX and RDM already exist in `DimmingProtocol`).
+  These are fixture capabilities, ranges and mechanisms; the as-aimed position
+  on a project is design context and stays out of scope (see below). Held for
+  an entertainment-fixture example.
+- **Beam-spread classification for floods.** Area and sports floodlights are
+  classified by NEMA beam-spread type (Type 1 through 7), distinct from the IES
+  distribution Type I through V that `photometry.distribution_type` already
+  carries. A future revision may add a `beam_spread_nema_type` field.
+- **Structured safety-listing detail.** A safety listing is recorded today as a
+  single `AttestationProgram` token. A listing is verified by its exact scope:
+  the governing product-safety standard (UL 1598 / 1574 / 8750 / 924), the
+  listing category (UL CCN), the exact listed model, and the warranting entity
+  when it differs from the seller. A future revision may add a structured
+  listing-detail object alongside the token. Relates to the `New
+  AttestationProgram values` item above.
 
 ## Explicitly NOT in v1.0.0
 
