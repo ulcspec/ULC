@@ -23,12 +23,12 @@ func schemaDir(t *testing.T) string {
 	return dir
 }
 
-// TestConvertPatternAStandard runs the full increment-1 happy path: convert a
+// TestConvertPatternA runs the full increment-1 happy path: convert a
 // one-record CSV bundle, build the index (stamping conformance_level), assert no
 // required index key is missing, validate against the live ULC schema with zero
 // ERROR findings, and assert the fixture earns the conformance level its data
 // honestly carries.
-func TestConvertPatternAStandard(t *testing.T) {
+func TestConvertPatternA(t *testing.T) {
 	bundle := filepath.Join("testdata", "bundle")
 
 	results, err := Convert(bundle, Options{})
@@ -55,12 +55,16 @@ func TestConvertPatternAStandard(t *testing.T) {
 		t.Fatalf("MissingRequiredKeys is not empty: %v", missing)
 	}
 
-	// The fixture authors the full standard field set, so it must grade standard.
-	if got := grade.AchievedLevel(res.Record); got != grade.LevelStandard {
-		t.Fatalf("expected conformance level standard, got %s", got)
+	// This minimal Pattern A fixture grades core under the redesigned rubric: it
+	// authors identity, headline numbers, one-line colorimetry, and a safety
+	// listing (core), but a complete standard record additionally needs the SDCM
+	// step, lens material, and the analog dimming method and range. This bundle
+	// authors none of those, so core is the honest grade for its data.
+	if got := grade.AchievedLevel(res.Record); got != grade.LevelCore {
+		t.Fatalf("expected conformance level core, got %s", got)
 	}
-	if level, _ := built["conformance_level"].(string); level != "standard" {
-		t.Fatalf("expected index.conformance_level standard, got %q", level)
+	if level, _ := built["conformance_level"].(string); level != "core" {
+		t.Fatalf("expected index.conformance_level core, got %q", level)
 	}
 
 	// Validate against the live schema. The validator wants the json.Number-typed
@@ -170,7 +174,7 @@ func assertMeasuredAttestationRef(t *testing.T, record map[string]any) {
 // validates against the live schema with zero ERROR findings, and asserts the
 // achieved conformance level. It returns the assembled record (with index) for
 // pattern-specific structural assertions. It is the shared spine of the B/C/D
-// tests, mirroring TestConvertPatternAStandard.
+// tests, mirroring TestConvertPatternA.
 func convertOne(t *testing.T, bundle string, wantPattern Pattern, wantLevel grade.Level) map[string]any {
 	t.Helper()
 	results, err := Convert(bundle, Options{})
@@ -217,10 +221,14 @@ func convertOne(t *testing.T, bundle string, wantPattern Pattern, wantLevel grad
 // TestConvertPatternB runs the multiplier-table path end to end: covered_axes +
 // cct_multipliers + excluded_combinations join into an applicability block, and a
 // generated photometry.declared_by_cct[] derives each CCT's lumens from
-// round(multiplier * measured_baseline_flux). The fixture grades full (outdoor
-// with bug_rating and an operating_point).
+// round(multiplier * measured_baseline_flux). Under the redesigned rubric the
+// fixture grades standard: it authors the full standard surface for an analog
+// fixture, including the SDCM step and the dimming method and range (the records
+// sheet now carries the dimming_range_min/max_percent and dimming_curve columns).
+// Full would additionally need test-report depth the converter does not synthesize.
+// The multiplier-table and dimming assertions below are the point of this test.
 func TestConvertPatternB(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, grade.LevelFull)
+	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, grade.LevelStandard)
 
 	// Structural fact 1: the CCT multiplier table is present on the covered axis.
 	table, ok := getPath(record, "applicability.covered_axes.cct.derivation.multiplier_table")
@@ -250,15 +258,78 @@ func TestConvertPatternB(t *testing.T) {
 		t.Fatalf("Pattern B: declared_by_cct[3000].lumens.value = %v, want round(1.00*4200)=4200", got3000)
 	}
 	assertDeclaredCCTBaselineMeasured(t, declared, "3000")
+
+	// Structural fact 3: the analog dimming detail authored on the records sheet
+	// lands in the electrical block, which is what lifts this analog fixture to
+	// standard. The dimming_range_percent object carries both halves, and the new
+	// dimming_curve enum column writes through.
+	rng, ok := getPath(record, "electrical.dimming_range_percent")
+	if !ok {
+		t.Fatalf("Pattern B: electrical.dimming_range_percent missing")
+	}
+	rngMap, _ := rng.(map[string]any)
+	if _, has := rngMap["min"]; !has {
+		t.Fatalf("Pattern B: electrical.dimming_range_percent.min missing")
+	}
+	if _, has := rngMap["max"]; !has {
+		t.Fatalf("Pattern B: electrical.dimming_range_percent.max missing")
+	}
+	if got, _ := getPath(record, "electrical.dimming_curve"); got != "logarithmic" {
+		t.Fatalf("Pattern B: electrical.dimming_curve = %v, want logarithmic", got)
+	}
+}
+
+// TestDimmingRangeRequiresBothHalves proves the schema rejects a one-sided
+// dimming_range_percent. The converter authors min and max from two independent
+// records-sheet columns (dimming_range_min_percent / dimming_range_max_percent, the
+// bug_rating b/u/g pattern), so a blank companion cell must not slip a half-filled
+// object past validation. It starts from the bundle-b record, which carries a complete
+// {min,max} range and validates clean, then drops one half and confirms the schema
+// now errors. The baseline-clean assertion makes the failure attributable to the range.
+func TestDimmingRangeRequiresBothHalves(t *testing.T) {
+	results, err := Convert(filepath.Join("testdata", "bundle-b"), Options{})
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	record := results[0].Record
+	record["index"] = index.Build(record)
+
+	v, err := validate.NewValidator(schemaDir(t))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+
+	base := findings.NewReport()
+	v.Validate(numberTree(t, record), base)
+	base.Finalize()
+	if base.HasErrors() {
+		t.Fatalf("baseline bundle-b record should validate clean before mutation")
+	}
+
+	el, _ := record["electrical"].(map[string]any)
+	for _, half := range []map[string]any{
+		{"min": float64(1)},   // max omitted
+		{"max": float64(100)}, // min omitted
+	} {
+		el["dimming_range_percent"] = half
+		report := findings.NewReport()
+		v.Validate(numberTree(t, record), report)
+		report.Finalize()
+		if !report.HasErrors() {
+			t.Errorf("half-filled dimming_range_percent %v validated clean; schema must require both min and max", half)
+		}
+	}
 }
 
 // TestConvertPatternC runs the per-IES-with-provenance path: structurally a
 // fixed-axes pin like A, but the headline photometry carries derived provenance
 // (method=extended_photometry + base_attestation_ref) supplied via the per-column
 // provenance override columns. The extensions_json overflow lands at
-// extensions.manufacturer_specific.<slug>.
+// extensions.manufacturer_specific.<slug>. This bundle is the DMX/RDM color-mixing
+// Lumenfacade SKU, so it grades standard: a digital protocol is exempt from the
+// analog/phase dimming detail, and pure RGB waives the white-light color gates.
 func TestConvertPatternC(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, grade.LevelCore)
+	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, grade.LevelStandard)
 
 	// Structural fact: a headline photometric value carries
 	// provenance.method=extended_photometry + base_attestation_ref.
@@ -290,7 +361,11 @@ func TestConvertPatternC(t *testing.T) {
 // input power from the per-foot rates. The fixture omits the declared_by_length
 // sheet, so the table is generated.
 func TestConvertPatternD(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-d"), PatternD, grade.LevelStandard)
+	// Grades core under the redesigned rubric: a white-light linear fixture whose
+	// standard gaps are the SDCM step and the dimming range, neither authored on
+	// this bundle's sheet. The declared_by_length derivation below is the point of
+	// the test.
+	record := convertOne(t, filepath.Join("testdata", "bundle-d"), PatternD, grade.LevelCore)
 
 	declared, ok := getPath(record, "photometry.declared_by_length")
 	if !ok {
@@ -354,14 +429,19 @@ func TestConvertPatternDAuthoredLengthSheet(t *testing.T) {
 }
 
 // TestConvertFullLevelSheets exercises the optional comprehensive long sheets on
-// the bundle-b fixture (an outdoor area light that already grades full): the
-// alpha_opic, flicker_metrics, lumen_maintenance_package, zonal_lumens,
-// lcs_zonal_lumens, ingredient_list, and cie97_lmf / cie97_llmf sheets each
-// assemble into their ULC block, and convertOne re-validates the enriched record
-// against the live schema with zero ERROR findings. These blocks are INFO-level
-// enrichment, so the achieved grade stays full.
+// the bundle-b fixture (an outdoor area light): the alpha_opic, flicker_metrics,
+// lumen_maintenance_package, zonal_lumens, lcs_zonal_lumens, ingredient_list, and
+// cie97_lmf / cie97_llmf sheets each assemble into their ULC block, and convertOne
+// re-validates the enriched record against the live schema with zero ERROR
+// findings. The "full-level" name refers to these comprehensive sheets, not the
+// conformance grade: under the redesigned rubric the converted record grades
+// standard (it authors the analog dimming method and range), and full additionally
+// needs test-report depth (uncertainty, corrections, instrumentation, TM-30) the
+// converter does not synthesize. Several of these blocks (zonal_lumens, the
+// method-backed lumen-maintenance package) feed full-tier rules, but they cannot
+// lift the grade alone.
 func TestConvertFullLevelSheets(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, grade.LevelFull)
+	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, grade.LevelStandard)
 
 	// alpha_opic_metrics: block scalars + a single melanopic per_channel efficacy,
 	// both rated ProvenancedNumbers (no attestation link).

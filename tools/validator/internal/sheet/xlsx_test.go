@@ -193,11 +193,12 @@ func TestReadXLSXMatchesCSVBundle(t *testing.T) {
 }
 
 // TestConvertFromXLSX drives the whole pipeline through the .xlsx path: an .xlsx
-// mirroring the full Pattern-B fixture (including the comprehensive long sheets),
-// with the referenced asset files alongside it, classifies as Pattern B, grades
-// full, and validates against the live schema with zero ERROR findings, just as
-// the CSV bundle does. This covers the Convert input dispatch, the assets-root
-// default (the .xlsx's parent directory), and SHA-256 resolution.
+// mirroring the Pattern-B fixture (including the comprehensive long sheets), with
+// the referenced asset files alongside it, classifies as Pattern B, grades standard
+// (the same honest level the CSV bundle reaches under the redesigned rubric), and
+// validates against the live schema with zero ERROR findings, just as the CSV
+// bundle does. This covers the Convert input dispatch, the assets-root default
+// (the .xlsx's parent directory), and SHA-256 resolution.
 func TestConvertFromXLSX(t *testing.T) {
 	src := filepath.Join("testdata", "bundle-b")
 	dir := t.TempDir()
@@ -222,8 +223,8 @@ func TestConvertFromXLSX(t *testing.T) {
 	if missing := index.MissingRequiredKeys(built); len(missing) > 0 {
 		t.Fatalf("xlsx: MissingRequiredKeys not empty: %v", missing)
 	}
-	if got := grade.AchievedLevel(res.Record); got != grade.LevelFull {
-		t.Fatalf("xlsx grade = %s, want full", got)
+	if got := grade.AchievedLevel(res.Record); got != grade.LevelStandard {
+		t.Fatalf("xlsx grade = %s, want standard", got)
 	}
 	res.Record["index"] = built
 	tree := numberTree(t, res.Record)

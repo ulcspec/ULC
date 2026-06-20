@@ -6,11 +6,11 @@ SAP ERP and adjacent SAP master-data products (SAP MDG, SAP PLM) hold the produc
 
 SAP's product-master story is spread across several modules. Emitters typically pull from more than one:
 
-- **SAP MM (Material Management)** — the core material master (MARA, MAKT, MVKE, etc.) holds identity, units of measure, and sales-relevant data. Every material has a material number (`MATNR`).
-- **SAP PLM (Product Lifecycle Management)** — holds engineering master data, CAD revisions, and change-management workflows.
-- **SAP MDG (Master Data Governance)** — the enterprise governance layer on top; enforces data quality, workflows, and approval gates.
-- **Classification System (CA-CL)** — characteristics (CABN) and classes (KLAH) assigned to materials. This is where luminaire-specific attributes (`BEAM_ANGLE`, `CCT_K`, `INPUT_POWER_W`) live. SAP's classification is the closest analog to a PIM attribute system.
-- **Document Info Records (DMS)** — cutsheet PDFs, IES files, and LDT files live as DMS records linked to materials.
+- **SAP MM (Material Management)**: the core material master (MARA, MAKT, MVKE, etc.) holds identity, units of measure, and sales-relevant data. Every material has a material number (`MATNR`).
+- **SAP PLM (Product Lifecycle Management)**: holds engineering master data, CAD revisions, and change-management workflows.
+- **SAP MDG (Master Data Governance)**: the enterprise governance layer on top; enforces data quality, workflows, and approval gates.
+- **Classification System (CA-CL)**: characteristics (CABN) and classes (KLAH) assigned to materials. This is where luminaire-specific attributes (`BEAM_ANGLE`, `CCT_K`, `INPUT_POWER_W`) live. SAP's classification is the closest analog to a PIM attribute system.
+- **Document Info Records (DMS)**: cutsheet PDFs, IES files, and LDT files live as DMS records linked to materials.
 
 Older SAP ECC landscapes use **IDocs** (XML-ish envelopes) for integration. Modern S/4HANA exposes **OData** (REST/JSON) for every master-data entity. The ULC emitter can work with either; OData is the preferred integration path for new work.
 
@@ -114,8 +114,8 @@ Listings, certifications, and test-method conformance typically live as characte
 
 SAP's configurable materials (class-type 300) describe a material with variant characteristics (voltage, CCT, finish). Each variant configuration (`VBAP` → variant) produces one ULC scenario record. The `applicability` block carries the variant axes:
 
-- `applicability.fixed_axes` — per-scenario fixed characteristic values.
-- `applicability.covered_axes.<axis_name>` — axes where a single scenario's photometry applies across multiple variants. Each `CoveredAxis` carries a `values[]` list, a `rationale` string, and optionally a `derivation` rule (multiplier table, per-foot linear scaling, voltage-independence rationale) that describes how non-baseline values are computed from the tested baseline.
+- `applicability.fixed_axes`: per-scenario fixed characteristic values.
+- `applicability.covered_axes.<axis_name>`: axes where a single scenario's photometry applies across multiple variants. Each `CoveredAxis` carries a `values[]` list, a `rationale` string, and optionally a `derivation` rule (multiplier table, per-foot linear scaling, voltage-independence rationale) that describes how non-baseline values are computed from the tested baseline.
 
 ## Gotchas
 
@@ -155,7 +155,7 @@ In practice, ABAP handles data extraction (CDS views or SAP CAP/RAP) and a Pytho
 def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
     primary_category = CLASS_TO_ULC_CATEGORY[material['class']]
     record = {
-        "ulc_version": "0.3.0",
+        "ulc_version": "0.7.0",
         "record_id": slug(f"{material['brand_slug']}-{material['matnr']}-{variant['scenario_slug']}"),
         "record_status": "active",
         "product_family": build_family(material, primary_category),
@@ -179,6 +179,6 @@ def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
 
 ## See also
 
-- [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
+- [`README.md`](README.md): shared PIM-to-ULC translation concerns.
 - SAP S/4HANA OData API Business Hub documentation (`API_PRODUCT_SRV`, `API_CLFN_CHARACTERISTIC_SRV`, `API_DMS_DOC_SRV`) for actual endpoint shapes.
-- `templates/` — ULC skeletons for structure reference.
+- `examples/`: real ULC records to reference for record structure.

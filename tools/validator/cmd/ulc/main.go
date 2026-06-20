@@ -81,8 +81,10 @@ Run 'ulc <subcommand> -h' for per-subcommand options.
 func runValidate(args []string) int {
 	fs := flag.NewFlagSet("validate", flag.ExitOnError)
 	var jsonOut bool
+	var verbose bool
 	var schemaDir string
 	fs.BoolVar(&jsonOut, "json", false, "Emit findings as machine-readable JSON instead of human-readable text.")
+	fs.BoolVar(&verbose, "verbose", false, "Include conformance observation findings (comprehensive-depth nudges) in text output. JSON always includes them.")
 	fs.StringVar(&schemaDir, "schema-dir", "", "Directory containing ulc.schema.json and taxonomy.schema.json. Auto-detected when omitted.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc validate -- validate a ULC record against the ULC schema.
@@ -100,7 +102,7 @@ Exit codes:
   2   usage error
 
 USAGE
-    ulc validate [--json] [--schema-dir PATH] <record.ulc>
+    ulc validate [--json] [--verbose] [--schema-dir PATH] <record.ulc>
 `)
 	}
 	_ = fs.Parse(reorderFlagsFirst(args))
@@ -143,6 +145,9 @@ USAGE
 	}
 
 	report := findings.NewReport()
+	// --verbose surfaces the conformance observation findings in text output; JSON
+	// always carries them. Set before rendering (it only affects WriteText).
+	report.Verbose = verbose
 
 	// 1. JSON Schema validation (on the json.Number-typed tree).
 	v.Validate(rawTree, report)

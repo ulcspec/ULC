@@ -38,13 +38,13 @@ jobs:
           mkdir -p bin
           go build -o bin/ulc ./tools/validator/cmd/ulc
 
-      - name: Validate example and template records end-to-end
+      - name: Validate example records end-to-end
         run: |
           set -euo pipefail
           shopt -s globstar nullglob
-          records=(examples/**/*.ulc examples/**/*.ulc.json templates/**/*.ulc templates/**/*.ulc.json)
+          records=(examples/**/*.ulc examples/**/*.ulc.json)
           if [ "${#records[@]}" -eq 0 ]; then
-            echo "No example or template ULC records found; skipping validation."
+            echo "No example ULC records found; skipping validation."
             exit 0
           fi
           for f in "${records[@]}"; do

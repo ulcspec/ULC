@@ -18,11 +18,15 @@ import (
 //	ingredient_list            -> sustainability_declaration.ingredient_list[]
 //	cie97_lmf / cie97_llmf     -> lumen_maintenance_luminaire.cie_97_lmf_table
 //
-// Each block attaches only when its sheet carries rows for the record. None of
-// these gates the conformance level (the rubric reads operating_point and the
-// conditional bug_rating, not these blocks), so they are pure enrichment: a
-// manufacturer who has the data adds the sheet and the record carries more
-// depth, while one who does not simply omits it. The sustainability_declaration
+// Each block attaches only when its sheet carries rows for the record. Under the
+// redesigned conformance rubric two of these now feed full-tier rules: zonal_lumens
+// gates full, and a lumen_maintenance_package carrying a tm_21_projection_hours
+// satisfies the method-backed lumen-maintenance rule. The rest are pure enrichment
+// (non-gating observations): a manufacturer who has the data adds the sheet and the
+// record carries more depth, while one who does not simply omits it. No converted
+// record reaches full on these blocks alone, because the full tier additionally
+// requires test-report depth (measurement uncertainty, corrections, instrumentation,
+// TM-30) the converter does not synthesize. The sustainability_declaration
 // block-level scalars (declaration_type, dates, recyclable_percent, ...) ride on
 // the records sheet via recordColumns; this assembler only adds its ingredient
 // roster, which coexists with those scalars under the same parent.
@@ -182,7 +186,7 @@ func assembleFlickerMeasurements(wb Workbook, id string, rec map[string]any) err
 // assembleLumenMaintenancePackage builds the top-level lumen_maintenance_package[]
 // array from the lumen_maintenance_package sheet (one row per LED package). The
 // numeric quantities are transcribed manufacturer figures (rated). This is the
-// method-backed projection the full-level conformance observation looks for (a
+// method-backed projection the full-tier conformance gate looks for (a
 // tm_21_projection_hours present means the record carries more than a bare
 // manufacturer claim).
 func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any) error {

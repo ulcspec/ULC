@@ -1,0 +1,607 @@
+{
+  "applicability": {
+    "applicable_catalog_pattern": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX",
+    "applicable_sku_count_estimate": 1,
+    "fixed_axes": {
+      "color_mode": "rgbw30k",
+      "control_option": "unspecified",
+      "housing": "LOI",
+      "length": "12_in",
+      "optic": "10x60",
+      "optical_option": "intl_internal_louver",
+      "option": "none",
+      "tilt_setting": "2.5_deg",
+      "voltage": "120_277v"
+    }
+  },
+  "attestations": [
+    {
+      "attestation_id": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+      "issued_date": "2020-08-27",
+      "measured_quantities": [],
+      "program": "lm_79_24",
+      "source_document_ref": {
+        "filename": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX.ies",
+        "sha256": "c260dd66e8e3ceaa6c2a24941bbfb8a66c27dbcceddf7de3cf30c9827ddedd76"
+      },
+      "status": "claimed",
+      "test_laboratory": "Lumenpulse (LightTools optical simulation)",
+      "test_report_id": "G1504071-R1",
+      "value_type": "rated",
+      "verification": {
+        "notes": "Spec sheet page 1 footnote 3 states photometric performance is measured in compliance with IESNA LM-79-24. The cited IES, however, is a LightTools ray-trace optical simulation (IES TESTLAB = LightTools Simulation, TEST G1504071-R1), not a physical goniophotometer measurement, so every photometric value in this record carries value_type rated with provenance method optical_simulation. The LM-79-24 reference is recorded as a manufacturer claim about the methodology, not an accredited physical test attestation.",
+        "type": "requires_manufacturer_confirmation"
+      }
+    },
+    {
+      "attestation_id": "baa_lumenpulse_loi",
+      "program": "baa",
+      "status": "claimed",
+      "value_type": "nominal",
+      "verification": {
+        "contact_reference": "info@lumenpulse.com or 514.937.3003",
+        "notes": "Spec sheet page 10 note 2: Consult factory for products that are BAA-approved (Buy American Act). BAA is available on request, not standard for this SKU; case-by-case factory confirmation required.",
+        "type": "requires_manufacturer_confirmation"
+      }
+    }
+  ],
+  "colorimetry": {
+    "nominal_cct_k": "3000",
+    "reference_illuminant": "planckian"
+  },
+  "compatible_accessories": [
+    {
+      "accessory_catalog_number": "LOILC",
+      "accessory_type": "cable_leader",
+      "changes_photometry": false,
+      "description": "Leader cable, UL or CE, in 10/25/50 ft lengths. Connects the fixture to a junction box or power distribution.",
+      "display_name": "Leader Cable"
+    },
+    {
+      "accessory_catalog_number": "LOIJC",
+      "accessory_type": "cable_jumper",
+      "changes_photometry": false,
+      "description": "Jumper cable, UL or CE, in 2/4/10 ft lengths. Daisy-chains fixtures in continuous runs.",
+      "display_name": "Jumper Cable"
+    },
+    {
+      "accessory_catalog_number": "CBX-DMX/RDM",
+      "accessory_type": "control_box",
+      "changes_photometry": false,
+      "description": "External DMX/RDM control box, up to six power and data outputs, daisy-chain or star configuration.",
+      "display_name": "DMX/RDM Control Box"
+    },
+    {
+      "accessory_catalog_number": "PACBOX",
+      "accessory_type": "control_box",
+      "changes_photometry": false,
+      "description": "Integral Power And Control Box with driver and control electronics; ships with each fixture, not separately orderable.",
+      "display_name": "Power And Control Box (included)"
+    },
+    {
+      "accessory_catalog_number": "LOI-JBOX",
+      "accessory_type": "junction_box",
+      "changes_photometry": false,
+      "description": "IP68 junction box starter kit for stand-alone or first-of-run installs.",
+      "display_name": "IP68 Junction Box",
+      "incompatibility_reason": "The LOI-JBOX does not fit the 12 in fixture per spec sheet page 5.",
+      "is_compatible_with_this_sku": false
+    }
+  ],
+  "configuration": {
+    "catalog_number": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX",
+    "photometric_scenario_id": "lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5",
+    "scenario_label": "Lumenfacade Inground LOI, 120-277V, 12 inch length, RGBW30K (RGB + 3000K white) 4-channel color mixing, 10x60 deg asymmetric optic, 2.5 deg tilt, INTL internal louver, no additional options",
+    "source_ies_ref": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX.ies",
+    "tested_axes": {
+      "color_tunability": "rgbw",
+      "distribution_code": {
+        "distribution_type": "asymmetric",
+        "manufacturer_label": "10x60 (10 deg x 60 deg asymmetric)"
+      },
+      "light_engine_variant": "12-LED RGBW30K (3 Red + 3 Green + 3 Blue + 3 White 3000K per 12 inch fixture)",
+      "output_tier": {
+        "manufacturer_label": "Full output, all four RGBW channels at 100%",
+        "tier_meaning": "Additive full-output state. IES input watts 15.3 W for the 12 inch RGBW30K fixture; spec sheet electrical spec is 17.25 W/ft, typically 20 percent higher at the 12 inch length."
+      }
+    },
+    "tested_conditions": {
+      "ambient_temperature": {
+        "c": 25,
+        "f": 77,
+        "provenance": {
+          "confidence": 0.7,
+          "conflict_notes": "Neither the IES header nor the spec sheet states the simulation ambient; 25 C assumed per LM-79 default.",
+          "method": "inferred",
+          "source": "inferred"
+        },
+        "value_type": "nominal"
+      },
+      "input_voltage_at_test": "universal_120_277",
+      "mounting_at_test": "in_ground",
+      "nominal_cct_at_test": "3000"
+    }
+  },
+  "electrical": {
+    "control_gear_type": "led_driver_constant_current",
+    "driver_protocol": "dmx_rdm",
+    "input_power_w": {
+      "provenance": {
+        "conflict_notes": "Input watts 15.3 W from the IES ballast/watts line for this RGBW30K 12 inch configuration. The spec sheet electrical section states 17.25 W/ft (typically 20 percent higher for the 12 inch length, implying roughly 20.7 W at full output); the IES-declared 15.3 W is tied to the simulated photometric scenario and is used as the record's electrical baseline.",
+        "method": "extracted",
+        "source": "ies"
+      },
+      "unit": "W",
+      "value": 15.3,
+      "value_type": "rated"
+    },
+    "input_voltage_class": "universal_120_277"
+  },
+  "extensions": {
+    "experimental": {
+      "photometry_provenance": {
+        "candela_multiplier_applied": 0.183,
+        "class": "optical_simulation",
+        "ies_issue_date": "2020-08-27",
+        "ies_scaled_date": "2025-08-20",
+        "ies_test_id": "G1504071-R1",
+        "rationale": "Lumenpulse ships per-SKU IES files generated by LightTools ray-trace simulation and scaled to each configuration (see the IES _CONVERT and OTHER header notes). No physical goniophotometer test is cited for this SKU; the spec sheet asserts LM-79-24 methodology compliance. Recorded honestly as value_type rated / method optical_simulation rather than measured.",
+        "tool": "LightTools"
+      }
+    },
+    "manufacturer_specific": {
+      "lumenpulse": {
+        "baa_status_note": "Consult factory for BAA-approved products per spec sheet page 10 note 2.",
+        "color_mixing_detail": {
+          "cri_note": "The spec sheet publishes no CRI/Ra for the 3000K white channel; color-changing RGBW fixtures are specified by color mixing and white CCT, not by a white-light CRI. nominal_cct_k is carried (3000); cri_ra is intentionally absent because the source does not publish it.",
+          "leds_per_12in": {
+            "blue": 3,
+            "green": 3,
+            "red": 3,
+            "total": 12,
+            "white_3000k": 3
+          },
+          "mode": "RGBW30K",
+          "other_color_modes_available": [
+            "RGB",
+            "RGBW40K",
+            "RGBA"
+          ],
+          "white_channel_cct_k": 3000
+        },
+        "dimming_depth_percent_dali_2_dt8": 0.1,
+        "dimming_protocols_available": [
+          "lumentalk",
+          "dmx_rdm",
+          "dali_2_dt8"
+        ],
+        "driver": {
+          "class_note": "Inferred constant-current driver typical of per-channel color-mixing fixtures; the spec sheet does not state CC vs CV explicitly.",
+          "connectors": "IP68 push-lock",
+          "fixture_cable": "5C #16-5 (5 conductors, #16 AWG)",
+          "location": "integral_pacbox",
+          "output": "constant_current"
+        },
+        "end_of_life": {
+          "guidelines_doc": "160542-lumenpulse-product-end-of-life-guidelines.pdf",
+          "program_name": "Lumencycle",
+          "recyclable_components_note": "End-of-life guidelines (doc 160542) state LED boards and drivers are RoHS, and that housing aluminum/steel/polycarbonate, tempered-glass lens, copper/PVC/nylon cabling, silicone gaskets, and steel hardware are recyclable. Lumenpulse fixtures are treated as electronic products; most components can be recycled."
+        },
+        "environmental": {
+          "impact_rating": "IK10",
+          "ingress_protection": "IP68 (up to 1 ft depth; not permanent immersion)",
+          "operating_temperature_f": {
+            "max": 122,
+            "min": -40
+          },
+          "startup_temperature_f": {
+            "max": 122,
+            "min": -13
+          },
+          "storage_temperature_f": {
+            "max": 185,
+            "min": -40
+          },
+          "walk_over_load_kg": {
+            "concrete": 1000,
+            "general_ground": 500
+          }
+        },
+        "ies_header": {
+          "candela_multiplier": 0.183,
+          "convert_note": "Luminaire test position and photometric web converted from original test data",
+          "horizontal_angles": 145,
+          "issue_date": "2020-08-27",
+          "luminaire_string": "Lumenfacade Inground",
+          "luminous_dimensions_ft": {
+            "height": 0,
+            "length": 1,
+            "width": 0.193
+          },
+          "manufac": "Lumenpulse",
+          "more_note": "This file was created by Lumenpulse to reflect an accessorized configuration (DG 4-22-2021).",
+          "other_note": "This file was scaled by Lumenpulse to reflect a different fixture configuration 20-08-2025 08:35:57",
+          "photometric_type": "type_c",
+          "raw_peak_candela": 10116.7,
+          "scaled_peak_candela": 1851,
+          "test_id": "G1504071-R1",
+          "testlab": "LightTools Simulation",
+          "vertical_angles": 73
+        },
+        "lumcat": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX",
+        "lumen_maintenance_extras": {
+          "l70_hours": 280000,
+          "l95_hours": 35000
+        },
+        "manufacturer_address": "1220 Marie-Victorin Blvd., Longueuil, QC, J4G 2H9, Canada",
+        "materials_detail": {
+          "blockout": "polymer recycled PVC reinforced with stainless steel frame",
+          "end_cap": "die cast aluminum",
+          "hardware": "stainless steel",
+          "lens": "tempered glass",
+          "optical_chamber": "aluminum",
+          "trim": "anodized aluminum"
+        },
+        "order_code_positions": {
+          "1_housing": "LOI (Lumenfacade Inground)",
+          "2_voltage": "120/277 (120-277V)",
+          "3_length": "12 (12 inch, overall 13 1/16 inch)",
+          "4_color_mixing": "RGBW30K (4-channel: Red, Green, Blue, White 3000K)",
+          "5_optic": "10x60 (10 deg x 60 deg asymmetric beam)",
+          "6_tilt": "TS2.5 (2.5 deg factory-set)",
+          "7_optical_option": "INTL (internal louver)",
+          "8_control_option": "XX (unspecified: LT Lumentalk / DMX-RDM / DALIT8 available)",
+          "9_option": "XX (no ASL Anti-Slip Lens, no CE labeling change)"
+        },
+        "parent_company": "LMPG Inc.",
+        "product_page": "https://www.lumenpulse.com/products/4883",
+        "profile_envelope_in": {
+          "approx_depth": 8.5,
+          "approx_height": 4.4375,
+          "approx_width": 5.5625
+        },
+        "spec_sheet_summary_note": "The page 1 photometric summary and page 2 performance numbers are based on the 48 inch (4 ft) fixture (RGBW40K for the summary table, per-mode values on page 2) and do not drive this 12 inch RGBW30K record. The IES-derived values (546 lm, 1851 cd) are authoritative for this scenario.",
+        "warranty": "5-year limited warranty (Lumencycle program)",
+        "weight_by_length_lb": {
+          "12in": 7.5,
+          "24in": 15.3,
+          "36in": 21.4,
+          "48in": 27
+        }
+      }
+    }
+  },
+  "index": {
+    "attestation_programs": [
+      "baa",
+      "c_ul_listed",
+      "ce",
+      "iec_60598",
+      "lm_79_24",
+      "rohs"
+    ],
+    "beam_family": "asymmetric",
+    "builder_version": "0.4.0",
+    "catalog_model": "Lumenfacade Inground LOI Color Changing",
+    "catalog_number": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX",
+    "color_tunability": "rgbw",
+    "conformance_level": "standard",
+    "dimming_protocols": [
+      "dmx_rdm"
+    ],
+    "display_name": "Lumenfacade Inground LOI, 120-277V, 12 inch length, RGBW30K (RGB + 3000K white) 4-channel color mixing, 10x60 deg asymmetric optic, 2.5 deg tilt, INTL internal louver, no additional options",
+    "environment_rating": "wet",
+    "ik_rating": "IK10",
+    "indoor_outdoor": "outdoor",
+    "ip_rating": "IP68",
+    "manufacturer_slug": "lumenpulse",
+    "mounting_types": [
+      "in_ground"
+    ],
+    "nominal_cct_k": "3000",
+    "nominal_efficacy_lm_per_w": 35.7,
+    "nominal_input_power_w": 15.3,
+    "nominal_total_lumens": 546,
+    "primary_category": "in_ground_uplight",
+    "primary_distribution": "asymmetric",
+    "search_keywords": [
+      "Lumenfacade Inground",
+      "Lumenfacade Inground LOI Color Changing",
+      "Lumenfacade Inground LOI, 120-277V, 12 inch length, RGBW30K (RGB + 3000K white) 4-channel color mixing, 10x60 deg asymmetric optic, 2.5 deg tilt, INTL internal louver, no additional options"
+    ],
+    "secondary_function": [
+      "asymmetric",
+      "graze"
+    ],
+    "source_file_types_present": [
+      "datasheet_pdf",
+      "ies",
+      "supplementary_pdf"
+    ],
+    "x-ulc-generated": true
+  },
+  "instrumentation": {
+    "laboratory_name": "Lumenpulse (LightTools optical simulation)",
+    "laboratory_report_id": "G1504071-R1",
+    "measurement_regime": "far_field"
+  },
+  "lumen_maintenance_luminaire": {
+    "declaration_framework": "manufacturer_rated_claim",
+    "manufacturer_rated_claim": {
+      "claim_type": "L70",
+      "claimed_hours": {
+        "provenance": {
+          "conflict_notes": "Spec sheet page 2 declares L70 at 280,000 hrs and L95 at 35,000 hrs with no cited LM-80/TM-21/TM-28 method. The L95 value is parked in extensions.manufacturer_specific.lumenpulse.lumen_maintenance_extras.",
+          "method": "transcribed",
+          "source": "datasheet_pdf"
+        },
+        "unit": "h",
+        "value": 280000,
+        "value_type": "rated"
+      }
+    }
+  },
+  "operating_point": {
+    "input_voltage_v": {
+      "provenance": {
+        "confidence": 0.6,
+        "conflict_notes": "Universal 120-277V driver. The LUMCAT position 2 is 120; the simulated IES does not state a test voltage. 120V recorded as the nominal operating point for this SKU.",
+        "method": "inferred",
+        "source": "inferred"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "nominal"
+    }
+  },
+  "photometry": {
+    "beam_angle_deg": {
+      "provenance": {
+        "conflict_notes": "Narrow-axis beam angle from the 10x60 optic designation (10 deg in one plane, 60 deg in the orthogonal plane). The asymmetric beam is aimed toward the wall by the 2.5 deg factory tilt.",
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "deg",
+      "value": 10,
+      "value_type": "nominal"
+    },
+    "beam_family": "asymmetric",
+    "distribution_type": "asymmetric",
+    "emission_face": "top",
+    "field_angle_deg": {
+      "provenance": {
+        "conflict_notes": "Wide-axis angle from the 10x60 optic designation.",
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "deg",
+      "value": 60,
+      "value_type": "nominal"
+    },
+    "luminaire_efficacy_lm_per_w": {
+      "provenance": {
+        "conflict_notes": "546 lm / 15.3 W = 35.7 lm/W. Inherits the rated/simulated provenance of the underlying flux and the IES-declared input power.",
+        "method": "computed",
+        "source": "ies"
+      },
+      "unit": "lm/W",
+      "value": 35.7,
+      "value_type": "rated"
+    },
+    "luminous_opening_shape": "rectangular",
+    "maximum_intensity_cd": {
+      "provenance": {
+        "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+        "conflict_notes": "Peak candela from the IES table: raw 10116.7 x multiplier 0.183 = 1851 cd. The peak sits near 180 deg vertical (zenith), consistent with an inground uplight in IES Type C convention.",
+        "method": "optical_simulation",
+        "source": "ies"
+      },
+      "unit": "cd",
+      "value": 1851,
+      "value_type": "rated"
+    },
+    "per_length_normalized": {
+      "reference_length": {
+        "in": 12,
+        "mm": 304.8,
+        "provenance": {
+          "method": "normalized",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "nominal"
+      }
+    },
+    "photometric_coordinate_system": "ies_c",
+    "symmetry_type": "symm_none",
+    "total_luminous_flux_lm": {
+      "provenance": {
+        "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+        "conflict_notes": "Zonal integration of the LightTools-simulated IES candela table (73 vertical x 145 horizontal, absolute photometry, candela multiplier 0.183) yields approximately 546 lm. The spec sheet page 1 photometric summary (10x60 row: 2,895 lm) is for the 48 inch RGBW40K SKU and does not apply to this 12 inch RGBW30K scenario.",
+        "method": "optical_simulation",
+        "source": "ies"
+      },
+      "unit": "lm",
+      "value": 546,
+      "value_type": "rated"
+    }
+  },
+  "product_family": {
+    "catalog_line": "Lumenfacade Inground",
+    "catalog_model": "Lumenfacade Inground LOI Color Changing",
+    "cutsheet": {
+      "filename": "lumenpulse-lumenfacade-inground-color-changing-loi-complete-specsheet-na-imperial.pdf",
+      "revision_date": "2025-09-05",
+      "revision_label": "JC - R25",
+      "sha256": "2f69ab8c9119d533477e24828e80a62bb5da42b3db25e8f879cb5b0e0353248b"
+    },
+    "end_of_life_program_url": "https://www.lumenpulse.com/lumencycle",
+    "environment_rating": "wet",
+    "family_description": "Outdoor inground linear color-changing facade luminaire in Lumenpulse's Lumenfacade family, for asymmetric wall washing, grazing, and linear wayfinding. One spec sheet covers four lengths (12/24/36/48 in), four color modes (RGB, RGBW30K, RGBW40K, RGBA), fourteen optics, and four tilt settings. This record is the 12 inch, RGBW30K (RGB + 3000K white), 10x60 optic, 2.5 degree tilt scenario. Its photometry is a Lumenpulse LightTools optical simulation (IES TEST G1504071-R1), not a physical goniophotometer measurement; the spec sheet asserts LM-79-24 compliance for the methodology, so the photometric values carry value_type rated with provenance method optical_simulation.",
+    "family_display_name": "Lumenfacade Inground LOI Color Changing",
+    "family_id": "lumenpulse-lumenfacade-inground-color-changing-loi",
+    "indoor_outdoor": "outdoor",
+    "manufacturer": {
+      "display_name": "Lumenpulse",
+      "slug": "lumenpulse"
+    },
+    "mounting_types": [
+      "in_ground"
+    ],
+    "physical_dimensions": {
+      "lens_width": {
+        "in": 2.3125,
+        "mm": 59,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "luminaire_mass": {
+        "kg": 3.4,
+        "lb": 7.5,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_length": {
+        "in": 13.0625,
+        "mm": 332,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      }
+    },
+    "primary_category": "in_ground_uplight",
+    "secondary_function": [
+      "graze",
+      "asymmetric"
+    ],
+    "shape": "linear",
+    "shared_attestations": [
+      {
+        "attestation_id": "c_ul_us_listed_lumenpulse_loi",
+        "program": "c_ul_listed",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "cULus badge on spec sheet page 2. UL/cUL listing for wet-location outdoor use.",
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "ce_lumenpulse_loi",
+        "program": "ce",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "CE badge on spec sheet page 2. CE option in the order code covers the European Economic Area.",
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "rohs_lumenpulse_loi",
+        "program": "rohs",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "RoHS badge on spec sheet page 2; end-of-life guidelines confirm LED boards and drivers are RoHS.",
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "ip68_lumenpulse_loi",
+        "program": "iec_60598",
+        "standard_revision": "IEC 60598 (IP68 ingress protection per IEC 60529)",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "IP68 declared on spec sheet page 2; rated for up to 1 ft depth, not permanent immersion. Carried under the IEC 60598 luminaire-safety family because the taxonomy has no dedicated ip_rating attestation token; the value also lives on product_family.shared_mechanical.ip_rating.",
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "ik10_lumenpulse_loi",
+        "program": "iec_60598",
+        "standard_revision": "IEC 62262 (IK10 impact rating)",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "IK10 declared on spec sheet page 2. Walk-over compliant to 500 kg (any ground) and 1000 kg (concrete). The value also lives on product_family.shared_mechanical.ik_rating.",
+          "type": "unconditional"
+        }
+      }
+    ],
+    "shared_mechanical": {
+      "ambient_operating_range": {
+        "max": {
+          "c": 50,
+          "f": 122,
+          "provenance": {
+            "method": "extracted",
+            "source": "datasheet_pdf"
+          },
+          "value_type": "rated"
+        },
+        "min": {
+          "c": -40,
+          "f": -40,
+          "provenance": {
+            "method": "extracted",
+            "source": "datasheet_pdf"
+          },
+          "value_type": "rated"
+        }
+      },
+      "finish_color_options": [
+        "anodized_aluminum_trim"
+      ],
+      "housing_material": "aluminum_unspecified",
+      "ik_rating": "IK10",
+      "ip_rating": "IP68",
+      "lens_material": "tempered_glass"
+    },
+    "technical_region": "universal"
+  },
+  "record_id": "lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5",
+  "record_status": "active",
+  "record_status_as_of": "2026-06-18",
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "lumenpulse-lumenfacade-inground-color-changing-loi-complete-specsheet-na-imperial.pdf",
+        "revision_date": "2025-09-05",
+        "revision_label": "JC - R25",
+        "sha256": "2f69ab8c9119d533477e24828e80a62bb5da42b3db25e8f879cb5b0e0353248b"
+      }
+    },
+    {
+      "file_type": "ies",
+      "reference": {
+        "filename": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX.ies",
+        "revision_date": "2025-08-20",
+        "revision_label": "G1504071-R1 (LightTools simulation, issued 2020-08-27, scaled 2025-08-20)",
+        "sha256": "c260dd66e8e3ceaa6c2a24941bbfb8a66c27dbcceddf7de3cf30c9827ddedd76"
+      }
+    },
+    {
+      "file_type": "supplementary_pdf",
+      "reference": {
+        "filename": "160542-lumenpulse-product-end-of-life-guidelines.pdf",
+        "revision_date": "2026-03-19",
+        "revision_label": "160542 (JC - R0)",
+        "sha256": "2ef26ba3d6d085026b20352bab3a4228f659d063de85e4509124a14cfe5c1730"
+      }
+    }
+  ],
+  "test_conditions": {
+    "file_generation_type": "computer_simulation",
+    "photometry_basis": "absolute"
+  },
+  "ulc_version": "0.7.0"
+}

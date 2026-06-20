@@ -20,6 +20,52 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 0.7.0 (2026-06-20)
+
+The conformance rubric is redesigned from a thin 16-field check into an exhaustive, document-aware rule table, and the conformance ladder gains an `incomplete` tier below `core`. Stored indices recompute, so several records change level.
+
+### Schema (additive, pre-1.0)
+
+- `ConformanceLevel` gains an `incomplete` token, so the ladder is now `incomplete` < `core` < `standard` < `full`. An `incomplete` record is a real photometric record (it carries the flux, input-power, and primary-category anchors, so it indexes) that has not yet met every core requirement; it still receives an index and a roadmap naming the core fields it is missing. Additive: no existing record becomes invalid, and a record carries the token only after it re-stamps.
+- `SourceFileType` and `ProvenanceSource` gain `test_report`, `compliance_documents`, and `driver_datasheet_pdf`.
+- `AttestationProgram` gains 43 tokens spanning regional market-access marks, additional North American safety listings, EMC declarations, food-zone safety, energy programs, and environmental, material, and origin declarations. Only a small subset of safety listings is read by the grader's core safety gate; the rest are presence-tracked for catalog and search and never affect the conformance level.
+- The `Attestation` block gains optional `list_date` and `list_version` for list-versioned badges (REACH SVHC, California Prop 65, conflict minerals).
+- `DimmingProtocol` gains `dali_2_dt6`, `d4i`, `lutron_ecosystem`, and `bluetooth_mesh`, covering the DALI-2 DT6 device type, the D4i intra-luminaire standard, Lutron's EcoSystem protocol, and the Bluetooth mesh topology (distinct from point-to-point `bluetooth`).
+- A new optional `electrical.dimming_curve` field, backed by a new `DimmingCurve` taxonomy (`logarithmic` or `linear`), records the dim-command-to-output mapping when the driver datasheet publishes it. Ungated and absent unless declared.
+
+### Grading (breaking for stored indices, pre-1.0)
+
+- The conformance rubric is now a declarative, taxonomy-mapped rule table with a composable applicability-predicate layer, replacing the inline checks. Core is richer (full identity, headline photometric and electrical numbers, one-line colorimetry, and a market safety listing). Standard and full gain white-light, directional, outdoor-site, linear, analog-dimming, and wet-location conditionals. `zonal_lumens` is a full-tier requirement (it is IES-derived, not datasheet-published), and the MacAdam SDCM step is a standard requirement for primarily white-light fixtures.
+- The dimming-method and dimming-range standard gates apply only to analog and phase-cut drivers (0-10V, 1-10V, phase, PWM-input), whose dim floor and electrical method are published driver specs a designer selects on. Digital control protocols (the DALI family, DMX, DSI), wireless protocols, and non-dimming drivers are exempt, so a complete digital-control datasheet is not held back for a value its cutsheet does not carry.
+- The safety-listing core gate checks for the presence of a self-asserted listing claim, not third-party verification of it. A conformance level is a data-completeness grade, never a safety certification.
+- Each missing requirement now carries a machine-readable roadmap (the conformance level it unlocks, the source document that supplies it, and the governing standard) at every climb, including out of `incomplete` into `core`. This is also an output-shape change for tooling: the gap is now emitted as one finding per missing requirement, anchored at that field's own path, replacing the single aggregate finding previously emitted at `/index/conformance_level`. Consumers that parsed the old aggregate finding must read the per-field findings instead.
+- Recomputed example levels: `erco-quintessence` and `selux-aya-pole` move full to standard, and `vode-nexa` moves full to core (its only standard gap is the SDCM step). The `lumenpulse-lumenfacade` RGB record moves core to standard, and a new RGBW companion record is added at standard; both are color-mixing DMX/RDM fixtures whose digital driver is exempt from the analog and phase-cut dimming gates.
+
+### Builder
+
+- `BuilderVersion` bumped `0.3.0` to `0.4.0`. Stored indices re-stamp (and may change level) on the next `ulc build-index`, and the builder now stamps the `incomplete` token.
+
+### Validator
+
+- `ulc validate` gains a `--verbose` flag. By default the text report shows the achieved level plus the roadmap and omits the non-gating conformance observations (the comprehensive-depth nudges); `--verbose` includes them. JSON output always includes everything.
+
+### Documentation
+
+- New `docs/compliance-attestation.md`: a glossary of every `AttestationProgram` token, its governing program, its category, and whether the grader reads it for the core safety gate, headed by the trust-boundary note that grading checks claim presence, not verification.
+- `docs/methodology.md` gains a top-level conformance-rubric section documenting the four tiers, the membership tables, and a dedicated applicability-predicates subsection.
+- `docs/how-it-works.md` gains a "How records are authored" section documenting the two authoring paths (filling the `templates/workbook/` spreadsheet for the deterministic `ulc from-sheet` converter, or emitting from a PIM), which source documents to gather, and why the compiled output is accurate by construction.
+- `docs/methodology.md` adds a "Why the tiers fall where they do" subsection: the conformance tiers mirror how a construction specification escalates its submittal requirements (mandatory product data plus a safety listing, then selection-grade performance specifications, then independently-certified test reports), ordered by evidence depth and scoped by applicability. The root `README.md` conformance paragraph gains the one-line principle and points to it.
+- `ROADMAP.md` records new deferred-schema items: emergency-lighting operational data, entertainment fixture capabilities, NEMA flood beam-spread classification, and structured safety-listing detail.
+
+### Repository
+
+- The six per-category hand-fill JSON skeleton templates (`templates/downlight.ulc.json` and siblings, with their `.md` guides) are removed. Hand-authoring JSON is not a recommended path: a record is compiled from the manufacturer's source documents by a deterministic tool regardless of luminaire type, so the curated `examples/` plus the schema serve the reference need better than an arbitrary subset of category skeletons. The fill-in workbook template at `templates/workbook/` (the input to `ulc from-sheet`) is retained.
+
+### Examples
+
+- The `lumenpulse-lumenfacade-loi-12-rgb` reference record is corrected to the `-ASL` (anti-slip lens) order option it documents: the catalog number and the referenced IES filename and SHA-256 are updated to the ASL photometry, and the headline figures are re-scaled to that file (total luminous flux 700 to 637 lm, with the maximum-intensity, efficacy, and candela-multiplier values that follow).
+- A second Lumenpulse facade record, `lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5`, is added: the RGBW (3000 K white channel) counterpart to the RGB facade record. Its white channel is graded for nominal CCT, while the white-light-quality gates (CRI, SDCM, TM-30) are waived for the color-mixing architecture.
+
 ## 0.6.1 (2026-06-03)
 
 ### Tools

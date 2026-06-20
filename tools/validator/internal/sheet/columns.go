@@ -143,6 +143,14 @@ var recordColumns = []Column{
 	{Header: "input_voltage_class", Path: "electrical.input_voltage_class", Kind: KindString},
 	{Header: "driver_protocol", Path: "electrical.driver_protocol", Kind: KindEnum},
 	{Header: "dimming_method", Path: "electrical.dimming_method", Kind: KindEnum},
+	// dimming_range_percent is the {min, max} dim floor. Both halves are authored
+	// as their own number columns (mirroring the bug_rating b/u/g pattern); the
+	// schema's required [min, max] rejects a half-filled object. An analog or
+	// phase-cut fixture needs this present to reach standard; digital and wireless
+	// protocols are exempt.
+	{Header: "dimming_range_min_percent", Path: "electrical.dimming_range_percent.min", Kind: KindNumber},
+	{Header: "dimming_range_max_percent", Path: "electrical.dimming_range_percent.max", Kind: KindNumber},
+	{Header: "dimming_curve", Path: "electrical.dimming_curve", Kind: KindEnum},
 	{Header: "control_gear_type", Path: "electrical.control_gear_type", Kind: KindEnum},
 	{Header: "led_module_power_w", Path: "electrical.led_module_power_w", Kind: KindProvNumber, Unit: "W", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 

@@ -13,10 +13,12 @@ jobs:
     name: Codex Code Review
     runs-on: ubuntu-latest
     continue-on-error: true
-    # Skip draft PRs and dependabot
+    # Skip draft PRs, dependabot, and PRs whose title contains [skip Codex].
+    # contains() is case-insensitive, so [skip codex] / [SKIP CODEX] also match.
     if: |
       !github.event.pull_request.draft &&
-      github.actor != 'dependabot[bot]'
+      github.actor != 'dependabot[bot]' &&
+      !contains(github.event.pull_request.title, '[skip Codex]')
 
     steps:
       - name: Checkout repository
@@ -45,8 +47,11 @@ jobs:
           files: |
             # ULC schema files (the spec itself)
             schema/**/*.json
-            # Python tooling
+            # Reference tooling: the Go validator and CLI, plus the commit hooks
+            tools/**/*.go
             tools/**/*.py
+            go.mod
+            go.sum
             tools/hooks/**
             # Narrative documentation
             docs/**/*.md
@@ -65,6 +70,8 @@ jobs:
             examples/**/*.ulc
             templates/**/*.json
             templates/**/*.ulc
+            templates/**/*.csv
+            templates/**/*.md
           files_ignore: |
             # Private research notes (gitignored anyway but belt and suspenders)
             research/**
