@@ -545,8 +545,11 @@ func AchievedLevel(record map[string]any) Level {
 	return LevelFull
 }
 
-// hasPhotometricAnchors: the minimum that makes a record an indexable photometric
-// record. The same three fields gate index.conformance_level emission in builder.go.
+// hasPhotometricAnchors: the minimum that makes a record a gradeable photometric
+// record (it reaches at least LevelIncomplete). The same three fields gate
+// index.conformance_level emission in builder.go. They make the record gradeable,
+// not fully index-valid: a complete index also needs the identity core-fields
+// (manufacturer_slug, catalog_model), which builder.go reports via MissingRequiredKeys.
 func hasPhotometricAnchors(record map[string]any) bool {
 	return hasNumberValue(record, "photometry", "total_luminous_flux_lm") &&
 		hasNumberValue(record, "electrical", "input_power_w") &&

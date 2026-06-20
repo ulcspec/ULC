@@ -189,7 +189,7 @@
           "pattern": "^\\d+\\.\\d+\\.\\d+$"
         },
         "conformance_level": {
-          "description": "The completeness level this record achieves. GENERATED, NOT HAND-AUTHORED: the reference builder computes it from the record's populated fields (applying the conditional rubric: directional categories require a beam angle, pure RGB/RGBA fixtures with no white channel skip CRI, outdoor products require BUG at full, and so on) and stamps it here like every other index value. Because it is a builder projection, a hand-tampered value fails the build-parity check just like any other index field, so the level a record claims is the level its data actually achieves.",
+          "description": "The completeness level this record achieves. GENERATED, NOT HAND-AUTHORED: the reference builder computes it from the record's populated fields (applying the conditional rubric: directional categories require a beam angle, pure RGB/RGBA fixtures with no white channel skip CRI, outdoor-site products require BUG at standard, and so on) and stamps it here like every other index value. Because it is a builder projection, a hand-tampered value fails the build-parity check just like any other index field, so the level a record claims is the level its data actually achieves.",
           "$ref": "taxonomy.schema.json#/$defs/ConformanceLevel"
         },
         "manufacturer_slug": { "type": "string" },

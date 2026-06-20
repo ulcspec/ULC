@@ -12,12 +12,12 @@ This guide describes the common patterns. Adapt them to the actual schema in use
 
 The common shape, regardless of framework:
 
-- **Products table** — one row per SKU or per product family, with columns for identity, category, basic dimensions, and rating.
-- **Attributes table** (key/value or EAV) — for values that vary per product or per scenario, often stored as a property bag to avoid schema churn.
-- **Categories table** — hierarchical or flat.
-- **Files / assets table** — cutsheet PDFs, IES files, LDT files; often with a file-storage pointer (S3 key, SAN path) rather than the file bytes.
-- **Relationships table** — accessory compatibility, replacement chains, kit composition.
-- **Test reports table** (sometimes) — lab attestations with doc references.
+- **Products table**: one row per SKU or per product family, with columns for identity, category, basic dimensions, and rating.
+- **Attributes table** (key/value or EAV): for values that vary per product or per scenario, often stored as a property bag to avoid schema churn.
+- **Categories table**: hierarchical or flat.
+- **Files / assets table**: cutsheet PDFs, IES files, LDT files; often with a file-storage pointer (S3 key, SAN path) rather than the file bytes.
+- **Relationships table**: accessory compatibility, replacement chains, kit composition.
+- **Test reports table** (sometimes): lab attestations with doc references.
 
 Sometimes the schema is fully normalized (one column per attribute, strongly typed); sometimes it's a "products + JSON blob" hybrid. Both work for ULC emit.
 
@@ -47,7 +47,7 @@ The "SKU → `configuration.catalog_number`" mapping is the Pattern A default (o
 
 ### Category
 
-The integration maintains a mapping table from the in-house `category_id` (or `category_label`) to ULC enum values. Store this table as a version-controlled config file, not as another database table — the ULC enum changes with schema releases and should track the spec version.
+The integration maintains a mapping table from the in-house `category_id` (or `category_label`) to ULC enum values. Store this table as a version-controlled config file, not as another database table; the ULC enum changes with schema releases and should track the spec version.
 
 ```python
 # Example config
@@ -186,7 +186,7 @@ def emit_ulc(session: Session):
         family = build_family(product, primary_category, mounting)
         for scenario in product.photometric_scenarios:
             record = {
-                "ulc_version": "0.3.0",
+                "ulc_version": "0.7.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
                 "product_family": family,
@@ -213,6 +213,6 @@ def emit_ulc(session: Session):
 
 ## See also
 
-- [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
-- [`salsify.md`](salsify.md), [`akeneo.md`](akeneo.md), [`sap.md`](sap.md) — platform-specific guides. A manufacturer planning to migrate to a commercial PIM may find those useful as the target architecture.
+- [`README.md`](README.md): shared PIM-to-ULC translation concerns.
+- [`salsify.md`](salsify.md), [`akeneo.md`](akeneo.md), [`sap.md`](sap.md): platform-specific guides. A manufacturer planning to migrate to a commercial PIM may find those useful as the target architecture.
 - `examples/`: real ULC records to reference for record structure.

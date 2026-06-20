@@ -8,10 +8,10 @@ Akeneo is an open-source PIM popular with European manufacturers, PHP-stack shop
 - **Families** group products that share an attribute set. A downlight family might include `input_power_w`, `beam_angle_deg`, `recess_depth_mm`; a linear-pendant family adds `overall_length_mm` and `linear_mass_per_foot`.
 - **Attribute groups** organize attributes within a family (`electrical`, `photometry`, `colorimetry`, `physical`).
 - **Variants and variant groups** model SKU-level variation within a family. A parent product-model holds shared attributes; variants carry the per-SKU differences (CCT, distribution, finish).
-- **Categories** are a separate hierarchy from families — used for marketing navigation and channel filtering.
+- **Categories** are a separate hierarchy from families, used for marketing navigation and channel filtering.
 - **Channels** define per-channel localization and completeness rules. A ULC emit channel can enforce that only records with complete photometric data ship.
 - **Assets** and **reference entities** (both PIM Enterprise Edition) hold cutsheet PDFs, IES files, and LDT files. Community Edition has neither; it uses plain file or image attributes on the product instead.
-- **API** — REST with OAuth2 for both reads and writes.
+- **API**: REST with OAuth2 for both reads and writes.
 
 The ULC emitter is typically implemented as an external service that pulls from Akeneo's REST API on a scheduled export or webhook trigger.
 
@@ -104,7 +104,7 @@ The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own com
 2. **Attribute completeness.** Akeneo tracks per-channel-and-locale completeness. Tie the ULC emit to the `ulc_export` channel's completeness so partially-populated SKUs don't ship as broken ULC records.
 3. **METRIC unit drift.** If different variants store the same attribute in different units (unusual but possible), normalize to the canonical unit before computing the companion.
 4. **Reference entity depth.** In PIM Enterprise, an attestation (UL-listed, DLC-qualified) can be modeled as a reference entity with its own structured attributes. Deep-walk these into ULC `attestations[]` entries with `program`, `status`, `value_type`, and `verification` populated.
-5. **Published vs draft.** Akeneo's workflow distinguishes products in draft state from published products. Never emit ULC from a draft product — wait for the workflow to publish.
+5. **Published vs draft.** Akeneo's workflow distinguishes products in draft state from published products. Never emit ULC from a draft product; wait for the workflow to publish.
 
 ## Emit flow
 
@@ -138,7 +138,7 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         return null;
     }
     $record = [
-        'ulc_version' => '0.3.0',
+        'ulc_version' => '0.7.0',
         'record_id' => slug("{$product->getBrand()}-{$product->getIdentifier()}-{$variant->getScenarioSlug()}"),
         'record_status' => 'active',
         'product_family' => buildFamily($product, $primaryCategory),
@@ -161,6 +161,6 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
 
 ## See also
 
-- [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
+- [`README.md`](README.md): shared PIM-to-ULC translation concerns.
 - Akeneo REST API documentation for the actual endpoint shapes.
 - `examples/`: real ULC records for structure reference.

@@ -19,12 +19,12 @@ schema surface. Pre-1.0 releases generally aim for additive changes;
 compatibility-tightening changes may occur when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v0.5.x
+## Active version: v0.7.x
 
 - Patch releases for clarifications, doc fixes, mapping refinements
-- No new normative fields without a v0.6.0 minor bump
+- No new normative fields without a v0.8.0 minor bump
 
-## Next minor: v0.6.0
+## Next minor: v0.8.0
 
 - Continued expansion of reference records, real cutsheets only (see
   `CONTRIBUTING.md` for sourcing rules)

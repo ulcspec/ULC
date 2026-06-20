@@ -8,8 +8,8 @@ Salsify is a cloud PIM popular with consumer-facing brands, retail-syndicated pr
 - **Properties** (Salsify's term for attributes) are typed fields on products. Properties can be strings, numbers, enums, digital assets, or references to other products.
 - **Product relationships** model accessories, replacements, and bundle components through typed reference properties.
 - **Digital assets** (images, PDFs, IES files as arbitrary binaries) are first-class objects with their own IDs, versioning, and renditions.
-- **Channels and recipes** define per-channel export transformations — the hook into which the ULC emitter plugs.
-- **APIs** — GraphQL for rich queries, REST for bulk operations and webhooks, CSV for imports.
+- **Channels and recipes** define per-channel export transformations, the hook into which the ULC emitter plugs.
+- **APIs**: GraphQL for rich queries, REST for bulk operations and webhooks, CSV for imports.
 
 The ULC emitter is typically implemented as a Salsify channel recipe plus an external transform service. The recipe exports the relevant properties and asset manifests; the transform service produces ULC JSON and posts it wherever ULC records publish (GitHub, manufacturer website, CDN).
 
@@ -113,7 +113,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 
 1. **Multi-CCT product families** are commonly modeled in Salsify as a parent product with variant children. One child per CCT becomes one ULC scenario record; the shared `product_family` block derives from the parent. Treat the parent as the record-grouper, not a separate ULC record.
 2. **Localization**. Salsify properties support per-locale values. ULC is locale-neutral at the schema level but accepts display-name fields that look best in the manufacturer's primary locale. The emitter chooses a canonical locale (typically en-US or the manufacturer's home market).
-3. **Property type mismatches.** Salsify's "number" type is a double. ULC distinguishes `integer` in some fields (minItems counts, step counts). Coerce at emit time — do not emit `1.0` where the schema expects an integer.
+3. **Property type mismatches.** Salsify's "number" type is a double. ULC distinguishes `integer` in some fields (minItems counts, step counts). Coerce at emit time; do not emit `1.0` where the schema expects an integer.
 4. **Asset digest caching.** Computing SHA-256 on every asset for every record on every run is expensive. Cache by Salsify asset ID + version and invalidate on `updated_at` change.
 5. **Missing required values.** If a Salsify property a record should carry is blank for a given SKU, skip or fail the export for that SKU rather than shipping a thin record as if it were complete. There is no level to downgrade: `ulc build-index` computes the achieved completeness level from whatever you populate, so an under-populated record simply grades lower on its own. The point is to gate the export on completeness **in the PIM** so you don't publish thin records that look indistinguishable from complete ones downstream. Workflow state (draft, pending-review, waiting-for-lab) belongs in the Salsify channel's completeness rules, not in the ULC record.
 
@@ -130,8 +130,8 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
    - Stream assets, compute SHA-256
    - Walk accessory references, populate compatible_accessories
    - Assemble JSON record and write to a temp file (the CLI is file-based, not stdin-based)
-   - Shell out: `ulc build-index <tmpfile>` — writes the computed index back into the file
-   - Shell out: `ulc validate <tmpfile>` — exits 1 on ERROR findings
+   - Shell out: `ulc build-index <tmpfile>`, writes the computed index back into the file
+   - Shell out: `ulc validate <tmpfile>`, exits 1 on ERROR findings
    - On success: publish the file to its destination
    - On validation failure: log, skip, alert integration owner
 ```
@@ -142,7 +142,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 # Illustrative pseudocode, not a working implementation.
 def emit_ulc_from_salsify(product, scenario):
     record = {
-        "ulc_version": "0.3.0",
+        "ulc_version": "0.7.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
         "product_family": build_family_from_salsify(product),
@@ -170,6 +170,6 @@ def emit_ulc_from_salsify(product, scenario):
 
 ## See also
 
-- [`README.md`](README.md) — shared PIM-to-ULC translation concerns.
+- [`README.md`](README.md): shared PIM-to-ULC translation concerns.
 - `examples/`: real ULC records to reference while building the emitter.
 - Salsify API documentation (product and digital-asset schemas) for the actual property and asset field names in use.

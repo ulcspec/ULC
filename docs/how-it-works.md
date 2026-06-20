@@ -60,7 +60,7 @@ The reference command-line validator (`ulc`, in `tools/validator/`) checks a rec
 
 The conformance level is computed and stamped into the generated index as `index.conformance_level` by the builder (`ulc build-index`), never hand-declared. As part of its end-to-end pass, `ulc validate` recomputes the level and checks it against the stored value (builder parity), then reports it. Grading is a cumulative gate: a record is the highest tier all of whose hard requirements it meets. The four levels are:
 
-- **incomplete**: a real photometric record (it carries the flux, input-power, and primary-category anchors, so it indexes) that has not yet met every core requirement. It still gets an index and a roadmap naming the core fields it is missing.
+- **incomplete**: a real photometric record (it carries the flux, input-power, and primary-category anchors) that has not yet met every core requirement. Those anchors make the record gradeable at this tier and earn it a roadmap naming the core fields it is missing; a fully valid index also requires the identity core-fields (`manufacturer_slug` and `catalog_model`), which the builder reports through `MissingRequiredKeys` when they are absent.
 - **core**: a complete, identifiable, legally-sellable luminaire: full identity, headline photometric and electrical numbers, one-line colorimetry, and a market safety listing.
 - **standard**: core plus the fuller specification a typical LM-79 report produces (full photometric geometry, materials, an LM-79 attestation, a lumen-maintenance framework, and the white-light, directional, outdoor-site, and wet-location conditionals that apply).
 - **full**: standard plus exhaustive accredited characterization (zonal lumens, an operating point, measurement uncertainty, corrections, instrumentation depth, a method-backed lumen-maintenance projection, and TM-30 detail for white-light products), mostly from an accredited test report.
@@ -71,7 +71,7 @@ The safety-listing core gate checks for the presence of a self-asserted listing 
 
 Two paths, both available right now:
 
-- **Read a record with an LLM.** Drag any `.ulc` record from [examples/](../examples/) into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. The four example records each exercise a distinct manufacturer authoring pattern.
+- **Read a record with an LLM.** Drag any `.ulc` record from [examples/](../examples/) into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. The example records each exercise one of the four manufacturer authoring patterns.
 - **Validate a record with the CLI.** Run `ulc validate <record>` to check structure, builder parity, and source-file hashes and to see the computed conformance level. Download a release binary from the GitHub Releases page, or build from source with `cd tools/validator && go build -o bin/ulc ./cmd/ulc`. To regenerate a record's `index` block, run `ulc build-index <record>`; the index is always generated, never hand-authored.
 
 For the design rationale behind the schema, see [methodology.md](methodology.md). For the detailed authoring patterns and architectural primitives, see [authoring-patterns.md](authoring-patterns.md).
