@@ -387,9 +387,14 @@ func poleMounted(r map[string]any) bool {
 	return false
 }
 
-// Safety-listing acceptance. Only the TechnicalRegion token
-// 120v_60hz_north_america contains "north_america"; the other three
-// (230v_50hz_europe, 100v_50_60hz_japan, universal) route to anySafetyListings.
+// Safety-listing acceptance, by region. North American records require an
+// NA-recognized listing; every other region accepts any recognized listing
+// (including IEC 60598 / CE). naRegions enumerates the TechnicalRegion tokens
+// that take the stricter NA gate; add future North American voltage variants
+// (for example a 277 V or 347 V token) here.
+var naRegions = map[string]bool{
+	"120v_60hz_north_america": true,
+}
 var naSafetyListings = map[string]bool{
 	"ul_listed": true, "c_ul_listed": true, "etl": true, "csa_listed": true,
 	"met_listed": true, "nrtl_osha_recognized": true, "ul_1598": true,
@@ -408,7 +413,7 @@ var anySafetyListings = map[string]bool{
 // satisfies the gate.
 func hasMarketSafetyListing(r map[string]any) bool {
 	accept := anySafetyListings
-	if strings.Contains(getString(r, "product_family", "technical_region"), "north_america") {
+	if naRegions[getString(r, "product_family", "technical_region")] {
 		accept = naSafetyListings
 	}
 	for _, p := range attestationPrograms(r) {
