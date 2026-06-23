@@ -4,8 +4,31 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+// copyFlatDir copies a flat directory of files (the sheet bundle fixtures are flat)
+// from src into dst, which must already exist.
+func copyFlatDir(t *testing.T, src, dst string) {
+	t.Helper()
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		t.Fatalf("read %s: %v", src, err)
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(src, e.Name()))
+		if err != nil {
+			t.Fatalf("read %s: %v", e.Name(), err)
+		}
+		if err := os.WriteFile(filepath.Join(dst, e.Name()), b, 0o644); err != nil {
+			t.Fatalf("write %s: %v", e.Name(), err)
+		}
+	}
+}
 
 // repoRoot resolves the repository root from this package directory
 // (tools/validator/cmd/ulc -> up four levels).
@@ -72,6 +95,37 @@ func TestCLIFloorExitsZero(t *testing.T) {
 	}
 }
 
+// missingDesignationRecord drops catalog_model: identity (the manufacturer name and
+// the catalog designation) is the ONLY non-optional thing, so a record that cannot be
+// identified is malformed, distinct from the incomplete floor.
+const missingDesignationRecord = `{
+  "ulc_version": "0.8.0",
+  "record_id": "example-no-designation",
+  "record_status": "announced",
+  "index": { "x-ulc-generated": true },
+  "product_family": {
+    "family_id": "example-floor",
+    "manufacturer": { "slug": "example", "display_name": "Example Manufacturer" }
+  },
+  "configuration": { "photometric_scenario_id": "floor-demo-default" },
+  "source_files": []
+}`
+
+// TestCLIMissingIdentityIsRejected pins the floor's one hard requirement: a record
+// missing its designation (catalog_model) is rejected, NOT graded incomplete. This is
+// the boundary between "incomplete is a valid floor" and "the record cannot be
+// identified," so build-index reports the missing required key and exits nonzero.
+func TestCLIMissingIdentityIsRejected(t *testing.T) {
+	dir := t.TempDir()
+	recordPath := filepath.Join(dir, "no-designation.ulc")
+	if err := os.WriteFile(recordPath, []byte(missingDesignationRecord), 0o644); err != nil {
+		t.Fatalf("write record: %v", err)
+	}
+	if rc := runBuildIndex([]string{recordPath}); rc == 0 {
+		t.Error("build-index exit = 0 for a record missing catalog_model; identity (name + designation) is required, so this is malformed, not incomplete")
+	}
+}
+
 // TestCLIFromSheetWritesRecord guards the from-sheet write path: a converted record
 // is WRITTEN to --out and the run exits 0 (the converter no longer skips records on
 // data completeness). Uses the canonical CSV bundle fixture, whose referenced files
@@ -99,5 +153,60 @@ func TestCLIFromSheetWritesRecord(t *testing.T) {
 	}
 	if wrote == 0 {
 		t.Error("from-sheet wrote no records to --out; the converter should write, not skip")
+	}
+}
+
+// TestCLIFromSheetWritesIncompleteRecord pins the headline from-sheet promise at the
+// CLI seam: a workbook record with no cutsheet is WRITTEN to --out (not skipped),
+// exits 0, and lands with conformance_level "incomplete".
+func TestCLIFromSheetWritesIncompleteRecord(t *testing.T) {
+	bundleSrc := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
+	if _, err := os.Stat(bundleSrc); err != nil {
+		t.Skipf("bundle fixture not available: %v", err)
+	}
+	bundleDir := filepath.Join(t.TempDir(), "bundle")
+	if err := os.MkdirAll(bundleDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	copyFlatDir(t, bundleSrc, bundleDir)
+	// Blank the cutsheet so the converted record grades incomplete.
+	recordsPath := filepath.Join(bundleDir, "records.csv")
+	b, err := os.ReadFile(recordsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(recordsPath, []byte(strings.Replace(string(b), "acme-orbit-1200-specs.pdf", "", 1)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	outDir := t.TempDir()
+	if rc := runFromSheet([]string{"--out", outDir, bundleDir}); rc != 0 {
+		t.Fatalf("from-sheet exit = %d, want 0 (an incomplete record is written, not skipped)", rc)
+	}
+
+	entries, err := os.ReadDir(outDir)
+	if err != nil {
+		t.Fatalf("read out dir: %v", err)
+	}
+	written := ""
+	for _, e := range entries {
+		if filepath.Ext(e.Name()) == ".json" {
+			written = filepath.Join(outDir, e.Name())
+		}
+	}
+	if written == "" {
+		t.Fatal("from-sheet did not write the incomplete record to --out")
+	}
+	raw, err := os.ReadFile(written)
+	if err != nil {
+		t.Fatalf("read written record: %v", err)
+	}
+	var rec map[string]any
+	if err := json.Unmarshal(raw, &rec); err != nil {
+		t.Fatalf("unmarshal written record: %v", err)
+	}
+	idx, _ := rec["index"].(map[string]any)
+	if got := idx["conformance_level"]; got != "incomplete" {
+		t.Errorf("written record conformance_level = %v, want \"incomplete\"", got)
 	}
 }

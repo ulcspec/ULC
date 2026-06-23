@@ -94,7 +94,7 @@ Runs four checks and emits a findings report:
   2. Builder parity (stored index matches the deterministic projection,
      including the computed index.conformance_level)
   3. Source-file SHA-256 hash verification (when files are reachable locally)
-  4. Conformance report (INFO: the computed level plus guidance toward the next)
+  4. Conformance report (INFO: the computed grade plus a per-grade roadmap to full)
 
 Exit codes:
   0   no ERROR findings (WARNING and INFO do not fail validation)
@@ -196,10 +196,10 @@ USAGE
 	recordDir := filepath.Dir(recordPath)
 	validate.VerifyHashes(recordDir, recordMap, report)
 
-	// 4. Conformance report. The achieved level was already computed by the
+	// 4. Conformance report. The achieved grade was already computed by the
 	// builder and stored in index.conformance_level, and the parity step above
 	// guards that stored value. This step is the human-facing report: it prints
-	// the computed level plus guidance toward the next level (INFO only, never a
+	// the computed grade plus a per-grade roadmap to full (INFO only, never a
 	// defect). A record is whatever level its data achieves; there is nothing to
 	// fall short of, so conformance produces no WARNINGs.
 	grade.Report(recordMap, report)

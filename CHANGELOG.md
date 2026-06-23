@@ -43,7 +43,7 @@ For emergency manual releases (bypassing the PR flow), trigger the `Release on m
 ### Builder and CLI
 
 - The builder always stamps `conformance_level`. The index may be sparse for an `incomplete` record (photometric projections are omitted when their data is absent). `BuilderVersion` is `0.5.0`, so every stored index re-stamps on the next `ulc build-index`.
-- `ulc from-sheet` writes an `incomplete` converted record to its output directory with a console notice that it is below core; it no longer skips such a record.
+- `ulc from-sheet` accepts a workbook record with an empty `cutsheet_file`: it converts the record (omitting `product_family.cutsheet` and the synthesized datasheet source-file entry) instead of failing, so a cutsheet-less record grades `incomplete` with a roadmap. It writes an `incomplete` converted record to its output directory with a console notice that it is below core; it no longer skips such a record.
 
 ### Examples and docs
 

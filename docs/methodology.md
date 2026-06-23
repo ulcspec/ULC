@@ -121,6 +121,7 @@ Two axes order the whole structure. The first is **evidence depth**: each tier a
 | --- | --- | --- |
 | Manufacturer slug and display name | `product_family.manufacturer.slug`, `.display_name` | `datasheet_pdf` |
 | Catalog model | `product_family.catalog_model` | `datasheet_pdf` |
+| Cutsheet | `product_family.cutsheet` | `datasheet_pdf` |
 | Primary category | `product_family.primary_category` | `datasheet_pdf` |
 | Indoor / outdoor | `product_family.indoor_outdoor` | `datasheet_pdf` |
 | Secondary function | `product_family.secondary_function` | `datasheet_pdf` |
