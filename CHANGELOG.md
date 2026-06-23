@@ -26,7 +26,7 @@ For emergency manual releases (bypassing the PR flow), trigger the `Release on m
 
 ### Behavior change (important for consumers)
 
-- Records that previously failed `ulc validate`, `ulc build-index`, or `ulc from-sheet` because they were anchorless or missing required index keys now SUCCEED (exit 0) and grade `incomplete` with a roadmap. Any external tooling or CI that treated a nonzero exit as "this record is unacceptable" must now treat `incomplete` as a valid, expected, below-core state. The three subcommands exit nonzero only on schema-invalidity, malformed input, source-file integrity failures (hash mismatch, unreadable files), or a stored-vs-recomputed conformance drift. No data-completeness condition produces a nonzero exit.
+- Records that previously failed `ulc validate`, `ulc build-index`, or `ulc from-sheet` because they were anchorless or missing required index keys now SUCCEED (exit 0) and grade `incomplete` with a roadmap. Any external tooling or CI that treated a nonzero exit as "this record is unacceptable" must now treat `incomplete` as a valid, expected, below-core state. The subcommands still exit nonzero on malformed input, missing record identity, source-file integrity failures (hash mismatch, unreadable files), or a stored-vs-recomputed conformance drift; `ulc validate` and `ulc from-sheet` additionally exit nonzero on JSON Schema invalidity, while `ulc build-index` runs no schema validation and instead gates on the builder's required index keys. No data-completeness condition produces a nonzero exit.
 - `index.conformance_level` is now always present, including `incomplete`. The internal below-floor sentinel (`none`) is removed: the grader never returns it and nothing renders it.
 
 ### Schema (additive, pre-1.0)

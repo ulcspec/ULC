@@ -138,7 +138,7 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         return null;
     }
     $record = [
-        'ulc_version' => '0.7.0',
+        'ulc_version' => '0.8.0',
         'record_id' => slug("{$product->getBrand()}-{$product->getIdentifier()}-{$variant->getScenarioSlug()}"),
         'record_status' => 'active',
         'product_family' => buildFamily($product, $primaryCategory),

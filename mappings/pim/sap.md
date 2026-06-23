@@ -155,7 +155,7 @@ In practice, ABAP handles data extraction (CDS views or SAP CAP/RAP) and a Pytho
 def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
     primary_category = CLASS_TO_ULC_CATEGORY[material['class']]
     record = {
-        "ulc_version": "0.7.0",
+        "ulc_version": "0.8.0",
         "record_id": slug(f"{material['brand_slug']}-{material['matnr']}-{variant['scenario_slug']}"),
         "record_status": "active",
         "product_family": build_family(material, primary_category),

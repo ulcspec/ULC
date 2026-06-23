@@ -186,7 +186,7 @@ def emit_ulc(session: Session):
         family = build_family(product, primary_category, mounting)
         for scenario in product.photometric_scenarios:
             record = {
-                "ulc_version": "0.7.0",
+                "ulc_version": "0.8.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
                 "product_family": family,
