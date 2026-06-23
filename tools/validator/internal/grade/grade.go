@@ -637,9 +637,11 @@ func Report(record map[string]any, report *findings.Report) Level {
 	//   3. gated            the grade is outstanding but its OWN rows are all met; it
 	//                       is gated only by a lower grade. This is the cascade signal
 	//                       (close the lower grade and this one unlocks immediately).
-	// blocker tracks the lowest outstanding grade that has a real delta, so a gated
-	// grade can name what to reach to unlock it. Because the walk is ascending, the
-	// first grade with a delta is the blocker for every gated grade above it.
+	// blocker tracks the HIGHEST outstanding grade that still has a real delta, so a
+	// gated grade can name what to reach to unlock it. Reaching that grade implies
+	// every lower grade is met too, whereas reaching a lower grade alone is not enough
+	// when an intermediate grade still has a gap. The ascending walk updates blocker on
+	// every roadmap grade, so it holds the last delta grade below any gated grade.
 	blocker := LevelObservation // sentinel: no gap seen yet
 	for _, tier := range []Level{LevelCore, LevelStandard, LevelFull} {
 		if tier <= achieved {
@@ -649,16 +651,16 @@ func Report(record map[string]any, report *findings.Report) Level {
 		}
 		delta := missingAt(record, tier)
 		if len(delta) == 0 {
-			// blocker is always set here: by the ladder, the grade just above `achieved`
-			// has a non-empty delta and is walked (setting blocker) before any gated
-			// grade above it, so a gated grade always has a named blocker to reach.
+			// blocker is the highest outstanding grade below this one that still has a
+			// delta; reaching it (and thus every lower grade) unlocks this grade, whose
+			// own rows are already met. It is always set: the grade just above `achieved`
+			// has a non-empty delta and is walked before any gated grade above it.
 			report.AddInfo(findings.CodeConformanceGradeGated, "/index/conformance_level",
 				fmt.Sprintf("conformance grade %q requirements are met; unlocked once %q is reached", tier.String(), blocker.String()))
 			continue
 		}
-		if blocker == LevelObservation {
-			blocker = tier
-		}
+		// Update on every roadmap grade so blocker holds the highest delta grade.
+		blocker = tier
 		emitRoadmap(tier, delta, report)
 	}
 

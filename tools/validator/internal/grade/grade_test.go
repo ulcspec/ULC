@@ -705,6 +705,35 @@ func TestGatedNamesIntermediateBlocker(t *testing.T) {
 	}
 }
 
+// TestGatedBlockerIsHighestDelta pins the multi-delta case: when an incomplete record
+// has BOTH a core gap and a standard gap while every full requirement is met, full is
+// gated and its blocker must be the HIGHEST outstanding delta grade (standard), not the
+// lowest (core). Reaching core alone leaves standard's gap open, so full stays locked;
+// naming core would mislead.
+func TestGatedBlockerIsHighestDelta(t *testing.T) {
+	rec := fullBase()
+	delete(rec["product_family"].(map[string]any), "cutsheet")         // a core rule
+	delete(rec["photometry"].(map[string]any), "maximum_intensity_cd") // a standard rule
+	if got := AchievedLevel(rec); got != LevelIncomplete {
+		t.Fatalf("achieved = %s, want incomplete", got)
+	}
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	found := false
+	for _, g := range findingsFor(report, findings.CodeConformanceGradeGated) {
+		if strings.Contains(g.Message, `"full"`) {
+			found = true
+			if !strings.Contains(g.Message, `unlocked once "standard" is reached`) {
+				t.Errorf("full's blocker should be standard (the highest delta grade), got: %q", g.Message)
+			}
+		}
+	}
+	if !found {
+		t.Error("expected full to be gated when core+standard carry deltas but full's own rows are met")
+	}
+}
+
 // TestRoadmapPerTierToFull confirms the per-grade decomposition: a core record emits
 // both a to-standard and a to-full roadmap whose deltas are disjoint (no path repeats);
 // a standard record emits only a to-full roadmap.
