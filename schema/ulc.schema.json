@@ -143,7 +143,7 @@
     },
 
     "source_files": {
-      "description": "Source files from which this record derives its data. Each file is referenced by filename, optional URL, and SHA-256 content hash. Files are not embedded. The array may be empty for an incomplete record that is still being authored; source files are graded core items, not a schema requirement.",
+      "description": "Source files from which this record derives its data. Each file is referenced by filename, optional URL, and SHA-256 content hash. Files are not embedded. The array may be empty for an incomplete record that is still being authored; the array is neither schema-required nor graded. The graded core cutsheet item is the family-level pointer `product_family.cutsheet`; `source_files[]` is the integrity-tracked provenance manifest for whatever documents a record cites.",
       "type": "array",
       "items": { "$ref": "#/$defs/SourceFile" },
       "minItems": 0
