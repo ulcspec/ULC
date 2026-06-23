@@ -50,11 +50,21 @@ const (
 	// parity check). Conformance grading therefore produces only INFO findings: a
 	// human-facing report of what was computed, never a defect.
 	//
-	// CodeConformanceLevel is the INFO summary naming the achieved level.
+	// CodeConformanceLevel is the INFO summary naming the achieved grade.
 	CodeConformanceLevel Code = "conformance/level"
+	// CodeConformanceGradeSatisfied is the INFO finding emitted for each grade at or
+	// below the achieved grade: that grade is genuinely met. Carries the grade name in
+	// its message.
+	CodeConformanceGradeSatisfied Code = "conformance/grade-satisfied"
+	// CodeConformanceGradeGated is the INFO finding emitted for an outstanding grade
+	// (above the achieved grade) whose own requirements are nonetheless all met: it is
+	// gated only by an unmet lower grade. This is the cascade signal (close the lower
+	// grade and this one unlocks). A code-keyed consumer MUST treat this as "NOT
+	// achieved": the achieved grade is index.conformance_level, never this finding.
+	CodeConformanceGradeGated Code = "conformance/grade-gated"
 	// CodeConformanceGap is the INFO roadmap guidance: one finding per hard field a
-	// record must add to reach the next level up (conditional predicates applied),
-	// each carrying the structured source-document and standard detail.
+	// record must add to reach a given grade (conditional predicates applied), each
+	// carrying the structured source-document and standard detail.
 	CodeConformanceGap Code = "conformance/gap"
 	// CodeConformanceObservation is an INFO surfaced at core and above: depth the
 	// rubric does not gate on (thermal, flicker, circadian, sustainability, and

@@ -16,15 +16,15 @@ Source files (the original PDF datasheets, IES photometric files, and related do
 
 ## Conformance levels and roadmap
 
-Each record is graded by the reference validator, which computes a conformance level from the fields actually present and emits a roadmap of what the record would need to climb to the next level. The level is stamped into `index.conformance_level` and is never hand-declared. The table below is the machine output of `ulc validate --verbose <record>`; every gap names the field, the source document it comes from, and the governing standard.
+Each record is graded by the reference validator, which computes a conformance grade from the fields actually present and emits a per-grade roadmap to full: the grades the record already satisfies and, for each grade not yet reached, only that grade's own remaining fields. The grade is stamped into `index.conformance_level` and is never hand-declared. The table below is the machine output of `ulc validate --verbose <record>`; every gap names the field, the source document it comes from, and the governing standard, grouped per grade to full.
 
-| File | Level | To reach the next level |
+| File | Grade | Remaining grades to full |
 |---|---|---|
 | `erco-quintessence-30416-023.ulc` | standard | **full** needs test-report depth: `zonal_lumens` (IES, LM-79), `corrections_applied` (test report, LM-79), `uncertainty` (test report, LM-79 / GUM), `tm_30.rf` and `tm_30.rf_h_per_bin` (test report, TM-30), and instrumentation depth (test report, LM-79 / LM-75) |
 | `selux-aya-pole-sr-ho-3000k.ulc` | standard | **full** needs `corrections_applied`, `uncertainty` (test report, LM-79 / GUM), method-backed lumen maintenance (test report, LM-80 / TM-21 / TM-28), and `tm_30.rf` and `tm_30.rf_h_per_bin` (test report, TM-30) |
 | `lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc` | standard | **full** needs `zonal_lumens` (IES, LM-79), `corrections_applied`, `uncertainty` (test report, LM-79 / GUM), and method-backed lumen maintenance (test report, LM-80 / TM-21 / TM-28) |
 | `lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc` | standard | **full** needs `zonal_lumens` (IES, LM-79), `corrections_applied`, `uncertainty` (test report, LM-79 / GUM), and method-backed lumen maintenance (test report, LM-80 / TM-21 / TM-28) |
-| `vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc` | core | **standard** needs `sdcm_step`, the MacAdam ellipse step (datasheet, ANSI C78.377); the Vode cutsheet publishes no MacAdam step |
+| `vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc` | core | **standard** needs `sdcm_step`, the MacAdam ellipse step (datasheet, ANSI C78.377); the Vode cutsheet publishes no MacAdam step. **full** additionally needs `zonal_lumens` (IES, LM-79), `corrections_applied`, `uncertainty` (test report, LM-79 / GUM), method-backed lumen maintenance (test report, LM-80 / TM-21 / TM-28), and `tm_30.rf` and `tm_30.rf_h_per_bin` (test report, TM-30) |
 
 The four standard records sit one tier below full for the same structural reason: full certifies the complete accredited-report depth, measurement uncertainty, applied corrections, TM-30 fidelity, zonal lumens, and a method-backed maintenance projection, none of which a published cutsheet carries. A record may already satisfy one or two of those gates (Selux carries zonal lumens; Erco a TM-21 maintenance projection), but none carries the whole set. The Vode record is the lone example held at core, by a single missing field: it publishes no MacAdam SDCM step, which standard requires of a white-light fixture.
 

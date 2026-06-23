@@ -34,7 +34,13 @@ import (
 // one-line colorimetry + a market safety listing); standard and full gain
 // white-light, directional, outdoor-site, and wet-location conditionals. Computed
 // levels recompute, so every stored index re-stamps on the next ulc build-index.
-const BuilderVersion = "0.4.0"
+// 0.5.0: `incomplete` is now the floor (the zero value); conformance_level is
+// ALWAYS stamped (the builder never refuses on data completeness); the index may be
+// sparse for an incomplete record (photometric projections omitted when absent);
+// RequiredKeys shrinks to identity plus the always-generated keys; the cutsheet
+// moved from schema-required to a graded core item; the roadmap is per-grade to
+// full. Computed levels recompute, so every stored index re-stamps on build-index.
+const BuilderVersion = "0.5.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard
@@ -45,26 +51,19 @@ var RequiredKeys = []string{
 	"conformance_level",
 	"manufacturer_slug",
 	"catalog_model",
-	"primary_category",
-	"nominal_total_lumens",
-	"nominal_input_power_w",
 }
 
 // RequiredKeySources gives the source path for each required key, used when
 // the builder refuses to emit an invalid index because a deep block is sparse.
+// Only identity keys remain: a record missing them is schema-invalid (malformed),
+// which is distinct from `incomplete`. conformance_level is always stamped (the
+// grader floors at `incomplete`), so it is never reported missing for a data-
+// completeness gap; the photometric projections are now sparse-by-nature and no
+// longer required keys.
 var RequiredKeySources = map[string]string{
-	"manufacturer_slug":     "product_family.manufacturer.slug",
-	"catalog_model":         "product_family.catalog_model",
-	"primary_category":      "product_family.primary_category",
-	"nominal_total_lumens":  "photometry.total_luminous_flux_lm.value",
-	"nominal_input_power_w": "electrical.input_power_w.value",
-	// conformance_level emission is gated on the three photometric anchors (the
-	// flux and power values above plus the primary category); when those are
-	// absent the record is not a photometric record and grade.AchievedLevel
-	// returns LevelNone (no token emitted). When the anchors are present the
-	// emitted token may be `incomplete` if a core requirement beyond the anchors
-	// is still missing; the record is indexed and carries a roadmap to core.
-	"conformance_level": "photometry.total_luminous_flux_lm.value, electrical.input_power_w.value, product_family.primary_category",
+	"manufacturer_slug": "product_family.manufacturer.slug",
+	"catalog_model":     "product_family.catalog_model",
+	"conformance_level": "computed by grade.AchievedLevel (always stamped; floors at incomplete)",
 }
 
 // Record is the in-memory representation of a parsed .ulc file.
@@ -88,17 +87,13 @@ func Build(record Record) Index {
 		"builder_version": BuilderVersion,
 	}
 
-	// Conformance level: computed from the record's populated fields, the single
-	// source of truth for the stored level. Emit only a valid enum token
-	// (incomplete / core / standard / full). A record carrying the photometric
-	// anchors always reaches at least `incomplete`, so a real photometric record
-	// is never refused over its grade. A record LACKING the anchors grades
-	// grade.LevelNone: it is not a photometric record at all, conformance_level is
-	// then absent, and MissingRequiredKeys reports it alongside the other missing
-	// core keys, so the builder never emits an out-of-enum value.
-	if lvl := grade.AchievedLevel(record); lvl != grade.LevelNone {
-		idx["conformance_level"] = lvl.String()
-	}
+	// Conformance grade: computed from the record's populated fields, the single
+	// source of truth for the stored grade. ALWAYS stamped: grade.AchievedLevel
+	// floors at `incomplete` (the zero value) and never returns a below-floor
+	// sentinel, so every record (down to identity-only) gets a valid enum token
+	// (incomplete / core / standard / full). The builder never refuses on data
+	// completeness; an incomplete record is indexed and carries a roadmap to core.
+	idx["conformance_level"] = grade.AchievedLevel(record).String()
 
 	if v := getString(pf, "manufacturer", "slug"); v != "" {
 		idx["manufacturer_slug"] = v

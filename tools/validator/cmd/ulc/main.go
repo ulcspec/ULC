@@ -432,10 +432,9 @@ USAGE
 		grade.Report(res.Record, report)
 		report.Finalize()
 
+		// conformance_level is always stamped now (the grader floors at `incomplete`),
+		// so the level string is never empty.
 		level, _ := built["conformance_level"].(string)
-		if level == "" {
-			level = "none"
-		}
 		if report.HasErrors() {
 			fmt.Printf("%s -> %s (%d findings, not written)\n", res.RecordID, level, len(report.Findings))
 			if err := report.WriteText(os.Stderr, outPath); err != nil {
@@ -449,7 +448,14 @@ USAGE
 			failed = true
 			continue
 		}
-		fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+		// `incomplete` is a valid, expected outcome (the floor, below core): write the
+		// record and flag that it is not yet a publishable grade. The roadmap in the
+		// report names what core still needs.
+		if level == grade.LevelIncomplete.String() {
+			fmt.Printf("%s -> incomplete (below core; see roadmap) (%d findings)\n", res.RecordID, len(report.Findings))
+		} else {
+			fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+		}
 	}
 
 	if sawSentinel {

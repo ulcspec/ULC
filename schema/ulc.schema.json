@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ulcspec.org/schema/ulc.schema.json",
   "title": "ULC Record",
-  "description": "The canonical ULC (Universal Luminaire Cutsheet) record. One record describes one attested photometric scenario for a luminaire, with an applicability block that declares which orderable SKU configurations the record covers. Enumerated values are defined in taxonomy.schema.json and referenced here by $ref. Dual-unit conventions (SI authoritative with Imperial companion) apply to every unit-sensitive field. Conformance is computed at four levels (incomplete, core, standard, full): the reference builder grades the record from its populated fields and stamps the achieved level into the generated index as `index.conformance_level`, so a record is whatever level its data earns rather than whatever level it claims. JSON Schema `required` is used sparingly and only for core-level fields; the reference validator reports the computed level plus INFO guidance toward the next level. This schema is machine-readable; docs/authoring-patterns.md explains the four manufacturer authoring patterns this schema supports and how to map real cutsheets into it.",
+  "description": "The canonical ULC (Universal Luminaire Cutsheet) record. One record describes one attested photometric scenario for a luminaire, with an applicability block that declares which orderable SKU configurations the record covers. Enumerated values are defined in taxonomy.schema.json and referenced here by $ref. Dual-unit conventions (SI authoritative with Imperial companion) apply to every unit-sensitive field. Conformance is computed as three grades (core, standard, full) above an incomplete floor: the reference builder grades the record from its populated fields and stamps the achieved grade into the generated index as `index.conformance_level`, so a record is whatever grade its data earns rather than whatever grade it claims. `incomplete` is the floor, the state of a record that has not yet met core; it always travels with a roadmap and is never a published grade. JSON Schema `required` is used sparingly and only for record identity; the reference validator reports the computed grade plus INFO roadmap guidance toward each higher grade. This schema is machine-readable; docs/authoring-patterns.md explains the four manufacturer authoring patterns this schema supports and how to map real cutsheets into it.",
   "type": "object",
 
   "properties": {
@@ -143,10 +143,10 @@
     },
 
     "source_files": {
-      "description": "Source files from which this record derives its data. Each file is referenced by filename, optional URL, and SHA-256 content hash. Files are not embedded. At least one source file is required at core level.",
+      "description": "Source files from which this record derives its data. Each file is referenced by filename, optional URL, and SHA-256 content hash. Files are not embedded. The array may be empty for an incomplete record that is still being authored; source files are graded core items, not a schema requirement.",
       "type": "array",
       "items": { "$ref": "#/$defs/SourceFile" },
-      "minItems": 1
+      "minItems": 0
     },
 
     "attestations": {
@@ -189,7 +189,7 @@
           "pattern": "^\\d+\\.\\d+\\.\\d+$"
         },
         "conformance_level": {
-          "description": "The completeness level this record achieves. GENERATED, NOT HAND-AUTHORED: the reference builder computes it from the record's populated fields (applying the conditional rubric: directional categories require a beam angle, pure RGB/RGBA fixtures with no white channel skip CRI, outdoor-site products require BUG at standard, and so on) and stamps it here like every other index value. Because it is a builder projection, a hand-tampered value fails the build-parity check just like any other index field, so the level a record claims is the level its data actually achieves.",
+          "description": "The conformance grade this record achieves: one of the three grades (core, standard, full) or the incomplete floor. GENERATED, NOT HAND-AUTHORED: the reference builder computes it from the record's populated fields (applying the conditional rubric: directional categories require a beam angle, pure RGB/RGBA fixtures with no white channel skip CRI, outdoor-site products require BUG at standard, and so on) and stamps it here like every other index value. `incomplete` is the floor, below core: a record that has not yet met a core requirement. Because it is a builder projection, a hand-tampered value fails the build-parity check just like any other index field, so the grade a record claims is the grade its data actually achieves.",
           "$ref": "taxonomy.schema.json#/$defs/ConformanceLevel"
         },
         "manufacturer_slug": { "type": "string" },
@@ -249,10 +249,7 @@
         "builder_version",
         "conformance_level",
         "manufacturer_slug",
-        "catalog_model",
-        "primary_category",
-        "nominal_total_lumens",
-        "nominal_input_power_w"
+        "catalog_model"
       ]
     },
 
@@ -554,7 +551,7 @@
         "introduced_at": { "type": "string", "format": "date" },
         "end_of_life_program_url": { "type": "string", "format": "uri" }
       },
-      "required": ["family_id", "manufacturer", "catalog_model", "cutsheet"]
+      "required": ["family_id", "manufacturer", "catalog_model"]
     },
 
     "Configuration": {

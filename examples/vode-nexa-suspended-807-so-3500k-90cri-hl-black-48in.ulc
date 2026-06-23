@@ -381,7 +381,7 @@
       "ul_1598"
     ],
     "beam_family": "medium_flood",
-    "builder_version": "0.4.0",
+    "builder_version": "0.5.0",
     "catalog_model": "Nexa Suspended 807",
     "catalog_number": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
     "color_tunability": "static_white",
@@ -979,5 +979,5 @@
     "file_generation_type": "test_accredited_lab",
     "photometry_basis": "absolute"
   },
-  "ulc_version": "0.7.0"
+  "ulc_version": "0.8.0"
 }

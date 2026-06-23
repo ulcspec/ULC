@@ -6,8 +6,8 @@
 // runs first and catches structural defects; grading layers the conformance
 // rubric on top.
 //
-// A record is not assigned a conformance level by hand: it simply IS whatever
-// level its populated fields achieve. AchievedLevel is the pure computation the
+// A record is not assigned a conformance grade by hand: it simply IS whatever
+// grade its populated fields achieve. AchievedLevel is the pure computation the
 // reference builder calls to stamp index.conformance_level, and the build-parity
 // check then guards that stored value like any other index field. Because there
 // is no declaration to fall short of, conformance grading produces no WARNINGs.
@@ -20,27 +20,26 @@
 // requirement. Conditional rules whose applicability-predicate is false are
 // dropped entirely, never reported missing.
 //
-// Four ordered tiers:
+// Three grades above an incomplete floor:
 //
-//	incomplete  a real photometric record (the three anchors flux + power +
-//	            primary_category are present, so it is indexable) that has not yet
-//	            met every core requirement. It still gets an index and a roadmap.
-//	core        a complete, identifiable, legally-sellable luminaire with headline
-//	            photometric/electrical numbers, one-line colorimetry, and a market
-//	            safety listing.
+//	incomplete  the floor: a record that has not yet met a core requirement. It is
+//	            not a grade. It always gets an index and a roadmap to core, and the
+//	            tooling never refuses it. It is the zero value of Level.
+//	core        a complete, identifiable, legally-sellable luminaire with an
+//	            attached cutsheet, headline photometric/electrical numbers, one-line
+//	            colorimetry, and a market safety listing.
 //	standard    core plus the fuller specification an LM-79 report produces.
 //	full        standard plus exhaustive accredited characterization.
 //
-// LevelNone sits below incomplete for a genuinely non-photometric record (no
-// anchors); such a record is normally already rejected by schema validation and
-// fails ulc build-index on its required keys regardless. LevelObservation is a
-// non-ordered sentinel for the non-gating depth rows in the same table.
+// LevelObservation is a non-ordered sentinel for the non-gating depth rows in the
+// same table.
 //
 // Severity model:
 //
-//	INFO    everything grading emits: the achieved-level summary, the roadmap to
-//	        the next tier (each missing item naming its source document and
-//	        standard), and, at core and above, the non-gating depth observations.
+//	INFO    everything grading emits: the achieved-grade summary, the per-grade
+//	        roadmap (each missing item naming its source document and standard,
+//	        plus satisfied-grade and gated-grade markers), and, at core and above,
+//	        the non-gating depth observations.
 package grade
 
 import (
@@ -51,17 +50,14 @@ import (
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 )
 
-// Level is a conformance tier, ordered none < incomplete < core < standard < full.
+// Level is a conformance grade, ordered incomplete < core < standard < full.
 type Level int
 
 const (
-	// LevelNone: not a photometric record (missing the three anchors). Normally
-	// already rejected by schema validation, and fails ulc build-index on the
-	// nominal_total_lumens / nominal_input_power_w required keys regardless.
-	LevelNone Level = iota
-	// LevelIncomplete: a real photometric record (anchors present) that misses a
-	// core requirement. It gets an index and a roadmap to core.
-	LevelIncomplete
+	// LevelIncomplete is the floor: a record that has not yet met core. It is not a
+	// grade; it always carries a roadmap to core, and the tooling never refuses it.
+	// It is the zero value, so an unset Level reads as the floor.
+	LevelIncomplete Level = iota
 	LevelCore
 	LevelStandard
 	LevelFull
@@ -73,16 +69,16 @@ const (
 // String returns the canonical lowercase conformance_level token.
 func (l Level) String() string {
 	switch l {
-	case LevelIncomplete:
-		return "incomplete"
 	case LevelCore:
 		return "core"
 	case LevelStandard:
 		return "standard"
 	case LevelFull:
 		return "full"
+	case LevelObservation:
+		return "observation"
 	default:
-		return "none"
+		return "incomplete" // floor fallback; the zero value renders here
 	}
 }
 
@@ -453,6 +449,20 @@ func hasMarketSafetyListing(r map[string]any) bool {
 	return false
 }
 
+// hasCutsheet checks that the product-family cutsheet is attached with a content
+// hash. The cutsheet is a FileReference object whose sha256 is schema-required, so
+// keying on sha256 means a placeholder object (no hash) reads as absent. The
+// cutsheet moved from schema-required to a graded core item, so an unattached
+// cutsheet now grades incomplete with a roadmap entry instead of failing schema
+// validation.
+func hasCutsheet(r map[string]any) bool {
+	m, ok := getMap(r, "product_family", "cutsheet")
+	if !ok {
+		return false
+	}
+	return getString(m, "sha256") != ""
+}
+
 // --- the rubric table ---
 
 // One row per section-3 item. Gating rows omit message (the roadmap derives it);
@@ -466,6 +476,7 @@ var rubric = []rule{
 	{LevelCore, "/product_family/manufacturer/slug", "", "datasheet_pdf", "identity", "", str("product_family", "manufacturer", "slug"), nil},
 	{LevelCore, "/product_family/manufacturer/display_name", "", "datasheet_pdf", "identity", "", str("product_family", "manufacturer", "display_name"), nil},
 	{LevelCore, "/product_family/catalog_model", "", "datasheet_pdf", "identity", "", str("product_family", "catalog_model"), nil},
+	{LevelCore, "/product_family/cutsheet", "", "datasheet_pdf", "identity", "", hasCutsheet, nil},
 	{LevelCore, "/product_family/primary_category", "PrimaryCategory", "datasheet_pdf", "identity", "", str("product_family", "primary_category"), nil},
 	{LevelCore, "/product_family/indoor_outdoor", "IndoorOutdoor", "datasheet_pdf", "identity", "", str("product_family", "indoor_outdoor"), nil},
 	{LevelCore, "/product_family/secondary_function", "SecondaryFunction", "datasheet_pdf", "identity", "", arr("product_family", "secondary_function"), nil},
@@ -546,16 +557,15 @@ var rubric = []rule{
 
 // --- the ladder ---
 
-// AchievedLevel returns the honest tier the record reaches: the highest tier all
+// AchievedLevel returns the honest grade the record reaches: the highest grade all
 // of whose hard requirements (conditional predicates applied) are met, walking
-// incomplete -> core -> standard -> full and stopping at the first unmet tier.
-// A record without the photometric anchors is LevelNone (not a photometric
-// record); a record with the anchors but missing a core requirement is
-// LevelIncomplete. index.conformance_level == AchievedLevel().String().
+// core -> standard -> full and stopping at the first unmet grade. The floor of the
+// walk is LevelIncomplete (returned when core is not yet met), the zero value: the
+// grader never refuses and never returns a below-floor sentinel. A record missing
+// identity (manufacturer_slug, catalog_model) is schema-invalid and is caught
+// upstream; builder.go also reports it via MissingRequiredKeys.
+// index.conformance_level == AchievedLevel().String().
 func AchievedLevel(record map[string]any) Level {
-	if !hasPhotometricAnchors(record) {
-		return LevelNone
-	}
 	if !allRulesMet(record, LevelCore) {
 		return LevelIncomplete
 	}
@@ -566,17 +576,6 @@ func AchievedLevel(record map[string]any) Level {
 		return LevelStandard
 	}
 	return LevelFull
-}
-
-// hasPhotometricAnchors: the minimum that makes a record a gradeable photometric
-// record (it reaches at least LevelIncomplete). The same three fields gate
-// index.conformance_level emission in builder.go. They make the record gradeable,
-// not fully index-valid: a complete index also needs the identity core-fields
-// (manufacturer_slug, catalog_model), which builder.go reports via MissingRequiredKeys.
-func hasPhotometricAnchors(record map[string]any) bool {
-	return hasNumberValue(record, "photometry", "total_luminous_flux_lm") &&
-		hasNumberValue(record, "electrical", "input_power_w") &&
-		getString(record, "product_family", "primary_category") != ""
 }
 
 // allRulesMet reports whether every applicable hard rule at lvl is present.
@@ -617,37 +616,50 @@ func missingAt(record map[string]any, lvl Level) []rule {
 // --- reporting ---
 
 // Report appends the conformance INFO findings to report and returns the achieved
-// level. It is the human-facing half of grading: the stored index.conformance_level
+// grade. It is the human-facing half of grading: the stored index.conformance_level
 // is already verified by the builder-parity step, so this explains what the record
-// achieved and how to climb. It emits the achieved-level summary; a roadmap to the
-// next tier (each missing item naming its source document and standard); and, once
-// the record is a real core record, the non-gating depth observations, the
-// non-measured-headline provenance note, and the attestation-coverage note.
+// achieved and how to climb. It emits the achieved-grade summary; then, for each of
+// the three grades, one of three per-grade states; and, once the record is a real
+// core record, the non-gating depth observations, the non-measured-headline
+// provenance note, and the attestation-coverage note.
 //
 // Report emits no WARNINGs and no ERRORs: there is no declaration to violate.
 func Report(record map[string]any, report *findings.Report) Level {
 	achieved := AchievedLevel(record)
 
-	// LevelNone is not a ConformanceLevel enum token (its String() is the sentinel
-	// "none"), so present it as the absence of an indexable photometric record rather
-	// than as a conformance level. Every ordered tier (incomplete and above) names its
-	// level token.
-	if achieved == LevelNone {
-		report.AddInfo(findings.CodeConformanceLevel, "/index/conformance_level",
-			"this record lacks the photometric anchors (total_luminous_flux_lm, input_power_w, primary_category), so it is not an indexable photometric record and achieves no conformance level")
-	} else {
-		report.AddInfo(findings.CodeConformanceLevel, "/index/conformance_level",
-			fmt.Sprintf("this record achieves conformance level %q", achieved.String()))
-	}
+	report.AddInfo(findings.CodeConformanceLevel, "/index/conformance_level",
+		fmt.Sprintf("this record achieves conformance level %q", achieved.String()))
 
-	// Roadmap to the next tier (each missing item names its document + standard).
-	switch achieved {
-	case LevelIncomplete:
-		emitRoadmap(LevelCore, missingAt(record, LevelCore), report)
-	case LevelCore:
-		emitRoadmap(LevelStandard, missingAt(record, LevelStandard), report)
-	case LevelStandard:
-		emitRoadmap(LevelFull, missingAt(record, LevelFull), report)
+	// Per-grade emission, walking core -> standard -> full. missingAt is exact-tier,
+	// so each grade lists only its own delta (no repeats). Three states per grade:
+	//   1. satisfied        the grade is at or below the achieved grade.
+	//   2. roadmap delta    the grade is outstanding and has missing rows.
+	//   3. gated            the grade is outstanding but its OWN rows are all met; it
+	//                       is gated only by a lower grade. This is the cascade signal
+	//                       (close the lower grade and this one unlocks immediately).
+	// blocker tracks the lowest outstanding grade that has a real delta, so a gated
+	// grade can name what to reach to unlock it. Because the walk is ascending, the
+	// first grade with a delta is the blocker for every gated grade above it.
+	blocker := LevelObservation // sentinel: no gap seen yet
+	for _, tier := range []Level{LevelCore, LevelStandard, LevelFull} {
+		if tier <= achieved {
+			report.AddInfo(findings.CodeConformanceGradeSatisfied, "/index/conformance_level",
+				fmt.Sprintf("conformance grade %q satisfied", tier.String()))
+			continue
+		}
+		delta := missingAt(record, tier)
+		if len(delta) == 0 {
+			// blocker is always set here: by the ladder, the grade just above `achieved`
+			// has a non-empty delta and is walked (setting blocker) before any gated
+			// grade above it, so a gated grade always has a named blocker to reach.
+			report.AddInfo(findings.CodeConformanceGradeGated, "/index/conformance_level",
+				fmt.Sprintf("conformance grade %q requirements are met; unlocked once %q is reached", tier.String(), blocker.String()))
+			continue
+		}
+		if blocker == LevelObservation {
+			blocker = tier
+		}
+		emitRoadmap(tier, delta, report)
 	}
 
 	// Depth observations and attestation coverage, only once the record is a real
