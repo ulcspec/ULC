@@ -20,6 +20,10 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 0.8.1 (2026-06-23)
+
+Corrects the `source_files` field description in `schema/ulc.schema.json`, which contradicted the rest of the schema. The `source_files` key is a required member of the record envelope (present on every record), while its array may be empty (`minItems` 0) and its entries are neither required nor graded. The description previously said the array was "neither schema-required," disagreeing with the root `required` array and the record-envelope descriptions in the root schema and the `ConformanceLevel` definition. This is a description-only correction: no structural change, no enum or behavior change, and no re-grade. Records continue to declare `ulc_version` `0.8.0`; a 0.8.0 record is unchanged and valid under 0.8.1.
+
 ## 0.8.0 (2026-06-23)
 
 `incomplete` becomes the true floor of the conformance model. The tooling never fails a record on data completeness: a record with identity but zero source documents is valid, grades `incomplete`, and carries a roadmap to core. The roadmap now decomposes per grade all the way to full, showing the grades a record already satisfies and, for each grade it has not yet reached, only that grade's own remaining fields. The model is now framed as three grades (`core`, `standard`, `full`) above an `incomplete` floor.
