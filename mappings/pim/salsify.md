@@ -84,7 +84,7 @@ Salsify's asset model maps cleanly to ULC's `source_files[]`:
 
 The emitter streams each asset by its Salsify asset ID, computes SHA-256, and populates `source_files[].reference.{filename, sha256, url, revision_label, revision_date}`. `revision_label` comes from Salsify's asset version number; `revision_date` from the asset's `updated_at` timestamp.
 
-**The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `ProductFamily.required` in the schema includes `cutsheet`, so an emitter that writes only the `source_files[]` entry will produce schema-invalid records. When the Salsify `cutsheet_pdf` asset is streamed and hashed, copy the computed `{filename, sha256, url, revision_label, revision_date}` into `product_family.cutsheet` as well. The same bytes live in one place on disk; the record references them twice with different consumer semantics.
+**The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `product_family.cutsheet` is a graded core requirement, so an emitter that writes only the `source_files[]` entry produces a record that grades `incomplete` rather than `core` (it still validates and carries a roadmap naming the cutsheet). When the Salsify `cutsheet_pdf` asset is streamed and hashed, copy the computed `{filename, sha256, url, revision_label, revision_date}` into `product_family.cutsheet` as well. The same bytes live in one place on disk; the record references them twice with different consumer semantics.
 
 ### Relationships to accessories
 
@@ -142,7 +142,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 # Illustrative pseudocode, not a working implementation.
 def emit_ulc_from_salsify(product, scenario):
     record = {
-        "ulc_version": "0.7.0",
+        "ulc_version": "0.8.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
         "product_family": build_family_from_salsify(product),

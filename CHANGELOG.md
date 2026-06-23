@@ -20,6 +20,36 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 0.8.0 (2026-06-23)
+
+`incomplete` becomes the true floor of the conformance model. The tooling never fails a record on data completeness: a record with identity but zero source documents is valid, grades `incomplete`, and carries a roadmap to core. The roadmap now decomposes per grade all the way to full, showing the grades a record already satisfies and, for each grade it has not yet reached, only that grade's own remaining fields. The model is now framed as three grades (`core`, `standard`, `full`) above an `incomplete` floor.
+
+### Behavior change (important for consumers)
+
+- Records that previously failed `ulc validate`, `ulc build-index`, or `ulc from-sheet` because they were anchorless or missing required index keys now SUCCEED (exit 0) and grade `incomplete` with a roadmap. Any external tooling or CI that treated a nonzero exit as "this record is unacceptable" must now treat `incomplete` as a valid, expected, below-core state. The subcommands still exit nonzero on malformed input, missing record identity, source-file integrity failures (hash mismatch, unreadable files), or a stored-vs-recomputed conformance drift; `ulc validate` and `ulc from-sheet` additionally exit nonzero on JSON Schema invalidity, while `ulc build-index` runs no schema validation and instead gates on the builder's required index keys. No data-completeness condition produces a nonzero exit.
+- `index.conformance_level` is now always present, including `incomplete`. The internal below-floor sentinel (`none`) is removed: the grader never returns it and nothing renders it.
+
+### Schema (additive, pre-1.0)
+
+- Three `required` sites are loosened so an identity-only record is representable: the index drops the three photometric projections (`primary_category`, `nominal_total_lumens`, `nominal_input_power_w`) from its required keys, `product_family` drops `cutsheet`, and `source_files` may be empty (`minItems` 1 to 0). All three are loosenings, so no existing record becomes invalid.
+- The `ConformanceLevel` description is reframed: `incomplete` is the floor (a record that has not yet met core), never a published grade, always traveling with a roadmap. The enum values are unchanged.
+
+### Grading
+
+- The cutsheet moves from a schema requirement to a graded core item, so an unattached cutsheet now grades `incomplete` with a roadmap entry naming `/product_family/cutsheet` instead of failing schema validation. This is the only rubric membership change; which fields gate which grade is otherwise unchanged. Example grades do not change.
+- `AchievedLevel` floors at `incomplete` (the zero value) and never returns a below-floor sentinel.
+- The roadmap is emitted per grade through full. Each grade reports one of three states: satisfied (a new `conformance/grade-satisfied` info finding), an outstanding delta (the existing `conformance/gap` roadmap), or gated (a new `conformance/grade-gated` info finding when a grade's own requirements are met but a lower grade is not, naming the grade to reach to unlock it). The structured `Finding` fields are unchanged, so existing JSON consumers keep parsing; they see two new info codes. A consumer keying on `conformance/grade-gated` must treat it as NOT achieved; the achieved grade is `index.conformance_level`.
+
+### Builder and CLI
+
+- The builder always stamps `conformance_level`. The index may be sparse for an `incomplete` record (photometric projections are omitted when their data is absent). `BuilderVersion` is `0.5.0`, so every stored index re-stamps on the next `ulc build-index`.
+- `ulc from-sheet` accepts a workbook record with an empty `cutsheet_file`: it converts the record (omitting `product_family.cutsheet` and the synthesized datasheet source-file entry) instead of failing, so a cutsheet-less record grades `incomplete` with a roadmap. It writes an `incomplete` converted record to its output directory with a console notice that it is below core; it no longer skips such a record.
+
+### Examples and docs
+
+- The five reference records re-stamp to `ulc_version` `0.8.0` and `builder_version` `0.5.0`. Grades are unchanged (erco, selux, and both Lumenpulse records at `standard`; Vode at `core`); their roadmaps now render the full per-grade decomposition.
+- `methodology.md`, `how-it-works.md`, `authoring-patterns.md`, the README, and the examples README are reframed from "four levels" to "three grades above an incomplete floor."
+
 ## 0.7.0 (2026-06-20)
 
 The conformance rubric is redesigned from a thin 16-field check into an exhaustive, document-aware rule table, and the conformance ladder gains an `incomplete` tier below `core`. Stored indices recompute, so several records change level.

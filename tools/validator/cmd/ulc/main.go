@@ -94,7 +94,7 @@ Runs four checks and emits a findings report:
   2. Builder parity (stored index matches the deterministic projection,
      including the computed index.conformance_level)
   3. Source-file SHA-256 hash verification (when files are reachable locally)
-  4. Conformance report (INFO: the computed level plus guidance toward the next)
+  4. Conformance report (INFO: the computed grade plus a per-grade roadmap to full)
 
 Exit codes:
   0   no ERROR findings (WARNING and INFO do not fail validation)
@@ -196,10 +196,10 @@ USAGE
 	recordDir := filepath.Dir(recordPath)
 	validate.VerifyHashes(recordDir, recordMap, report)
 
-	// 4. Conformance report. The achieved level was already computed by the
+	// 4. Conformance report. The achieved grade was already computed by the
 	// builder and stored in index.conformance_level, and the parity step above
 	// guards that stored value. This step is the human-facing report: it prints
-	// the computed level plus guidance toward the next level (INFO only, never a
+	// the computed grade plus a per-grade roadmap to full (INFO only, never a
 	// defect). A record is whatever level its data achieves; there is nothing to
 	// fall short of, so conformance produces no WARNINGs.
 	grade.Report(recordMap, report)
@@ -432,10 +432,9 @@ USAGE
 		grade.Report(res.Record, report)
 		report.Finalize()
 
+		// conformance_level is always stamped now (the grader floors at `incomplete`),
+		// so the level string is never empty.
 		level, _ := built["conformance_level"].(string)
-		if level == "" {
-			level = "none"
-		}
 		if report.HasErrors() {
 			fmt.Printf("%s -> %s (%d findings, not written)\n", res.RecordID, level, len(report.Findings))
 			if err := report.WriteText(os.Stderr, outPath); err != nil {
@@ -449,7 +448,14 @@ USAGE
 			failed = true
 			continue
 		}
-		fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+		// `incomplete` is a valid, expected outcome (the floor, below core): write the
+		// record and flag that it is not yet a publishable grade. The roadmap in the
+		// report names what core still needs.
+		if level == grade.LevelIncomplete.String() {
+			fmt.Printf("%s -> incomplete (below core; see roadmap) (%d findings)\n", res.RecordID, len(report.Findings))
+		} else {
+			fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+		}
 	}
 
 	if sawSentinel {

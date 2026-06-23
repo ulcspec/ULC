@@ -86,7 +86,7 @@ func TestMissingRequiredKeysSorted(t *testing.T) {
 		"primary_category": "downlight",
 	}
 	missing := MissingRequiredKeys(built)
-	want := []string{"conformance_level", "manufacturer_slug", "nominal_input_power_w", "nominal_total_lumens"}
+	want := []string{"conformance_level", "manufacturer_slug"}
 	if len(missing) != len(want) {
 		t.Fatalf("got %v, want %v", missing, want)
 	}
@@ -94,6 +94,33 @@ func TestMissingRequiredKeysSorted(t *testing.T) {
 		if missing[i] != want[i] {
 			t.Fatalf("got %v, want %v", missing, want)
 		}
+	}
+}
+
+// TestBuildStampsIncompleteFloorSparse pins the v0.8.0 floor at the builder layer:
+// Build() always stamps conformance_level (the grader floors at incomplete, never a
+// below-floor sentinel), the index is sparse for an identity-only record (the
+// photometric projections are omitted when their data is absent), and no required
+// key is missing because identity is present.
+func TestBuildStampsIncompleteFloorSparse(t *testing.T) {
+	record := Record{
+		"product_family": map[string]any{
+			"manufacturer":  map[string]any{"slug": "acme", "display_name": "Acme Lighting"},
+			"catalog_model": "Orbit 1200",
+		},
+		"source_files": []any{},
+	}
+	built := Build(record)
+	if got := built["conformance_level"]; got != "incomplete" {
+		t.Errorf("conformance_level = %v, want \"incomplete\" (always stamped, floored)", got)
+	}
+	for _, key := range []string{"primary_category", "nominal_total_lumens", "nominal_input_power_w"} {
+		if v, present := built[key]; present {
+			t.Errorf("sparse index should omit %q for an identity-only record, got %v", key, v)
+		}
+	}
+	if missing := MissingRequiredKeys(built); len(missing) != 0 {
+		t.Errorf("identity-only record should have no missing required keys, got %v", missing)
 	}
 }
 

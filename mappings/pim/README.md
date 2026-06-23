@@ -74,7 +74,7 @@ ULC's `source_files[]` array requires a SHA-256 hash for every source file (cuts
 
 If the manufacturer serves cutsheet PDFs from a CDN, the `reference.url` field can point to the stable URL; `sha256` still anchors integrity even if the URL rots.
 
-**The cutsheet file lives in two places in a ULC record.** The schema requires `product_family.cutsheet` as its own `FileReference` (the family-level cutsheet pointer) in addition to the `source_files[]` entry with `file_type: "datasheet_pdf"`. An emitter that populates only `source_files[]` will produce schema-invalid records because `ProductFamily.required` includes `cutsheet`. Populate both places with the same filename, sha256, revision label, and revision date from the single computed hash; the two blocks carry different consumer semantics (family identity vs. integrity-tracked source-file list) but refer to the same byte-identical file.
+**The cutsheet file lives in two places in a ULC record.** A complete record carries `product_family.cutsheet` as its own `FileReference` (the family-level cutsheet pointer) in addition to the `source_files[]` entry with `file_type: "datasheet_pdf"`. An emitter that populates only `source_files[]` produces a record that grades `incomplete` rather than `core`, because `product_family.cutsheet` is a graded core requirement (it is not schema-required, so the record still validates and carries a roadmap naming the cutsheet). Populate both places with the same filename, sha256, revision label, and revision date from the single computed hash; the two blocks carry different consumer semantics (family identity vs. integrity-tracked source-file list) but refer to the same byte-identical file.
 
 ### 5. Category and enum mapping
 

@@ -177,6 +177,7 @@ func setDataPath(rec map[string]any, comps []string, val any) {
 // constructor), so a generic schema-correct value would not satisfy it. They are
 // covered by the behavioral tests instead.
 var predicateBackedPaths = map[string]bool{
+	"/product_family/cutsheet":           true, // hasCutsheet: needs an attached cutsheet with a content hash
 	"/operating_point":                   true, // hasOperatingPoint: needs a recognized qualifier
 	"/uncertainty":                       true, // hasUncertainty: needs coverage_factor_k + an expanded_*
 	"/corrections_applied":               true, // hasCorrectionsApplied: needs a recognized correction leaf
@@ -711,7 +712,8 @@ func TestProvenancedNumberGatesRejectBareScalar(t *testing.T) {
 func TestCapstoneJunkObjectsCapAtIncomplete(t *testing.T) {
 	junk := map[string]any{"zzz": float64(1)}
 	rec := map[string]any{
-		// Photometric anchors so the record is not LevelNone.
+		// Photometric anchors present; the record still floors at incomplete because
+		// the gated object paths carry only junk.
 		"photometry":     map[string]any{"total_luminous_flux_lm": map[string]any{"value": float64(1200)}},
 		"electrical":     map[string]any{"input_power_w": map[string]any{"value": float64(10)}},
 		"product_family": map[string]any{"primary_category": "panel_troffer"},

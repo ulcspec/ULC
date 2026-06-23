@@ -130,7 +130,7 @@ def build_source_file_entry(file_record):
 
 If files live on S3 or a remote store, stream via the storage SDK rather than downloading into memory for large files. Cache the (storage-key, version) → hash mapping; the hash is stable as long as the bytes don't change.
 
-**The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `ProductFamily.required` in the schema includes `cutsheet`, so an emitter that writes only the `source_files[]` entry will produce schema-invalid records. In the `build_source_file_entry` pipeline above, the cutsheet's computed `{filename, sha256, revision_date}` should additionally be written into `product_family.cutsheet`. The same bytes live in one place; the record references them twice with different consumer semantics (family identity vs. integrity-tracked source-file list).
+**The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `product_family.cutsheet` is a graded core requirement, so an emitter that writes only the `source_files[]` entry produces a record that grades `incomplete` rather than `core` (it still validates and carries a roadmap naming the cutsheet). In the `build_source_file_entry` pipeline above, the cutsheet's computed `{filename, sha256, revision_date}` should additionally be written into `product_family.cutsheet`. The same bytes live in one place; the record references them twice with different consumer semantics (family identity vs. integrity-tracked source-file list).
 
 ### Attestations
 
@@ -186,7 +186,7 @@ def emit_ulc(session: Session):
         family = build_family(product, primary_category, mounting)
         for scenario in product.photometric_scenarios:
             record = {
-                "ulc_version": "0.7.0",
+                "ulc_version": "0.8.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
                 "product_family": family,

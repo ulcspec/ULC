@@ -74,6 +74,7 @@ func coreBase() map[string]any {
 		"product_family": map[string]any{
 			"manufacturer":       map[string]any{"slug": "acme", "display_name": "Acme Lighting"},
 			"catalog_model":      "Orbit 1200",
+			"cutsheet":           map[string]any{"filename": "orbit-1200.pdf", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
 			"primary_category":   "panel_troffer",
 			"indoor_outdoor":     "indoor",
 			"secondary_function": []any{"general_ambient"},
@@ -218,11 +219,11 @@ func TestReportEmitsInfoOnly(t *testing.T) {
 
 // --- the ladder ---
 
-// TestAchievedLevelIncomplete pins the incomplete rung: a photometric record (the
-// three anchors present) missing only a core requirement grades incomplete; adding
-// the requirement lifts it to core; a record without the anchors grades none.
+// TestAchievedLevelIncomplete pins the incomplete rung: a core-complete record
+// missing only one core requirement grades incomplete; adding the requirement lifts
+// it to core; an anchorless record also grades incomplete (the floor), never below.
 func TestAchievedLevelIncomplete(t *testing.T) {
-	// Drop the safety listing: anchors present, core safety gate unmet -> incomplete.
+	// Drop the safety listing: core safety gate unmet -> incomplete.
 	rec := coreBase()
 	delete(rec["product_family"].(map[string]any), "shared_attestations")
 	if got := AchievedLevel(rec); got != LevelIncomplete {
@@ -235,25 +236,24 @@ func TestAchievedLevelIncomplete(t *testing.T) {
 	if got := AchievedLevel(rec); got != LevelCore {
 		t.Errorf("with safety listing = %s, want core", got)
 	}
-	// No photometric anchors -> none (not a photometric record).
+	// No photometric anchors -> incomplete (the floor), not a below-floor sentinel.
 	if got := AchievedLevel(map[string]any{
 		"product_family": map[string]any{"primary_category": "panel_troffer"},
-	}); got != LevelNone {
-		t.Errorf("no anchors = %s, want none", got)
+	}); got != LevelIncomplete {
+		t.Errorf("no anchors = %s, want incomplete (the floor)", got)
 	}
 }
 
-// TestReportNoneIsNotPresentedAsConformanceLevel pins G2: an anchorless record
-// (LevelNone) emits a CodeConformanceLevel INFO that explains the missing photometric
-// anchors rather than presenting the non-enum sentinel token "none" as a conformance
-// level.
-func TestReportNoneIsNotPresentedAsConformanceLevel(t *testing.T) {
+// TestReportFloorIsIncomplete pins the floor: an anchorless record grades incomplete
+// (never a below-floor sentinel), its CodeConformanceLevel INFO names the "incomplete"
+// token, and it carries a to-core roadmap rather than refusing to grade.
+func TestReportFloorIsIncomplete(t *testing.T) {
 	rec := map[string]any{
 		"product_family": map[string]any{"primary_category": "panel_troffer"},
 	}
 	report := findings.NewReport()
-	if got := Report(rec, report); got != LevelNone {
-		t.Fatalf("anchorless record = %s, want none", got)
+	if got := Report(rec, report); got != LevelIncomplete {
+		t.Fatalf("anchorless record = %s, want incomplete", got)
 	}
 	report.Finalize()
 	levels := findingsFor(report, findings.CodeConformanceLevel)
@@ -261,11 +261,16 @@ func TestReportNoneIsNotPresentedAsConformanceLevel(t *testing.T) {
 		t.Fatalf("expected exactly one conformance-level finding, got %d: %+v", len(levels), levels)
 	}
 	msg := levels[0].Message
-	if strings.Contains(msg, `conformance level "none"`) {
-		t.Errorf("LevelNone message presents the sentinel token as a conformance level: %q", msg)
+	if !strings.Contains(msg, `conformance level "incomplete"`) {
+		t.Errorf("floor message should name the incomplete token: %q", msg)
 	}
-	if !strings.Contains(msg, "photometric anchors") {
-		t.Errorf("LevelNone message should explain the missing photometric anchors: %q", msg)
+	// The floor always travels with a to-core roadmap.
+	if gaps := findingsFor(report, findings.CodeConformanceGap); len(gaps) == 0 {
+		t.Errorf("an incomplete record must carry a to-core roadmap; got none")
+	}
+	// No satisfied-grade findings: nothing is achieved at the floor.
+	if sat := findingsFor(report, findings.CodeConformanceGradeSatisfied); len(sat) != 0 {
+		t.Errorf("floor record should emit no satisfied-grade findings, got %d", len(sat))
 	}
 }
 
@@ -544,10 +549,11 @@ func TestRequiresDimmingDetailGate(t *testing.T) {
 
 // --- roadmap + observations ---
 
-// TestRoadmapNamesDocumentAndStandard confirms each gap finding carries the
-// structured next-level / source-document / standard detail.
+// TestRoadmapNamesDocumentAndStandard confirms the per-grade roadmap: an incomplete
+// record (missing only the core safety listing) emits a to-core delta plus to-standard
+// and to-full deltas, and every gap carries the structured next-grade / source-document
+// / standard detail.
 func TestRoadmapNamesDocumentAndStandard(t *testing.T) {
-	// An incomplete record's to-core roadmap.
 	rec := coreBase()
 	delete(rec["product_family"].(map[string]any), "shared_attestations")
 	report := findings.NewReport()
@@ -557,15 +563,236 @@ func TestRoadmapNamesDocumentAndStandard(t *testing.T) {
 	report.Finalize()
 	gaps := findingsFor(report, findings.CodeConformanceGap)
 	if len(gaps) == 0 {
-		t.Fatal("expected to-core gap findings, got none")
+		t.Fatal("expected roadmap gap findings, got none")
 	}
+	validNext := map[string]bool{"core": true, "standard": true, "full": true}
+	coreGaps := 0
 	for _, g := range gaps {
-		if g.NextConformanceLevel != "core" {
-			t.Errorf("gap %q next level = %q, want core", g.Path, g.NextConformanceLevel)
+		if !validNext[g.NextConformanceLevel] {
+			t.Errorf("gap %q next level = %q, want one of core/standard/full", g.Path, g.NextConformanceLevel)
+		}
+		if g.NextConformanceLevel == "core" {
+			coreGaps++
 		}
 		if g.SourceDocument == "" || g.Standard == "" {
 			t.Errorf("gap %q missing document/standard: %+v", g.Path, g)
 		}
+	}
+	if coreGaps == 0 {
+		t.Error("expected at least one to-core gap (the missing safety listing)")
+	}
+}
+
+// TestCutsheetIsCoreRule confirms the cutsheet is a graded core requirement: a record
+// otherwise core-complete but missing the cutsheet grades incomplete, and its to-core
+// roadmap names /product_family/cutsheet.
+func TestCutsheetIsCoreRule(t *testing.T) {
+	rec := coreBase()
+	delete(rec["product_family"].(map[string]any), "cutsheet")
+	if got := AchievedLevel(rec); got != LevelIncomplete {
+		t.Fatalf("no cutsheet = %s, want incomplete", got)
+	}
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	named := false
+	for _, g := range findingsFor(report, findings.CodeConformanceGap) {
+		if g.Path == "/product_family/cutsheet" && g.NextConformanceLevel == "core" {
+			named = true
+		}
+	}
+	if !named {
+		t.Error("to-core roadmap must name /product_family/cutsheet")
+	}
+}
+
+// TestSatisfiedGradesReported confirms the satisfied-grade findings: a standard record
+// reports core+standard satisfied; a full record reports all three and emits no
+// roadmap; a core record reports only core satisfied.
+func TestSatisfiedGradesReported(t *testing.T) {
+	count := func(rec map[string]any, code findings.Code) int {
+		report := findings.NewReport()
+		Report(rec, report)
+		report.Finalize()
+		return len(findingsFor(report, code))
+	}
+	if got := count(standardBase(), findings.CodeConformanceGradeSatisfied); got != 2 {
+		t.Errorf("standard record satisfied-grade findings = %d, want 2 (core, standard)", got)
+	}
+	if got := count(fullBase(), findings.CodeConformanceGradeSatisfied); got != 3 {
+		t.Errorf("full record satisfied-grade findings = %d, want 3", got)
+	}
+	if got := count(fullBase(), findings.CodeConformanceGap); got != 0 {
+		t.Errorf("full record gap findings = %d, want 0", got)
+	}
+	if got := count(coreBase(), findings.CodeConformanceGradeSatisfied); got != 1 {
+		t.Errorf("core record satisfied-grade findings = %d, want 1 (core)", got)
+	}
+}
+
+// TestGatedGradesReported pins the cascade case: a record carrying full standard- and
+// full-grade data but missing only the cutsheet grades incomplete, emits NO satisfied-
+// grade finding, a to-core roadmap naming the cutsheet, and a gated-grade finding for
+// BOTH standard and full (their own requirements are met, gated by core).
+func TestGatedGradesReported(t *testing.T) {
+	rec := fullBase()
+	delete(rec["product_family"].(map[string]any), "cutsheet")
+	if got := AchievedLevel(rec); got != LevelIncomplete {
+		t.Fatalf("full-data record missing cutsheet = %s, want incomplete", got)
+	}
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+
+	if sat := findingsFor(report, findings.CodeConformanceGradeSatisfied); len(sat) != 0 {
+		t.Errorf("cascade record should emit no satisfied-grade findings, got %d", len(sat))
+	}
+	gated := map[string]bool{}
+	for _, g := range findingsFor(report, findings.CodeConformanceGradeGated) {
+		if strings.Contains(g.Message, `"standard"`) {
+			gated["standard"] = true
+		}
+		if strings.Contains(g.Message, `"full"`) {
+			gated["full"] = true
+		}
+		// The gated message must name the blocker grade to reach (the cascade reveal):
+		// core is the only unmet grade, so every gated grade unlocks once core is reached.
+		if !strings.Contains(g.Message, `unlocked once "core" is reached`) {
+			t.Errorf("gated message should name the blocker grade to reach: %q", g.Message)
+		}
+	}
+	if !gated["standard"] || !gated["full"] {
+		t.Errorf("expected gated findings for standard AND full, got %v", gated)
+	}
+	coreGapNamesCutsheet := false
+	for _, g := range findingsFor(report, findings.CodeConformanceGap) {
+		if g.NextConformanceLevel == "core" && g.Path == "/product_family/cutsheet" {
+			coreGapNamesCutsheet = true
+		}
+		if g.NextConformanceLevel != "core" {
+			t.Errorf("cascade record should have only to-core gaps, got %q at %q", g.NextConformanceLevel, g.Path)
+		}
+	}
+	if !coreGapNamesCutsheet {
+		t.Error("to-core roadmap must name /product_family/cutsheet")
+	}
+}
+
+// TestGatedNamesIntermediateBlocker pins the second blocker path: a record that meets
+// core and every full requirement but is missing one STANDARD row achieves core, and
+// full (its own rows all met) is gated by standard, so the gated message names standard
+// (not core) as the grade to reach.
+func TestGatedNamesIntermediateBlocker(t *testing.T) {
+	rec := fullBase()
+	delete(rec["photometry"].(map[string]any), "maximum_intensity_cd") // a standard rule
+	if got := AchievedLevel(rec); got != LevelCore {
+		t.Fatalf("achieved = %s, want core", got)
+	}
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	found := false
+	for _, g := range findingsFor(report, findings.CodeConformanceGradeGated) {
+		if strings.Contains(g.Message, `"full"`) {
+			found = true
+			if !strings.Contains(g.Message, `unlocked once "standard" is reached`) {
+				t.Errorf("full gated message should name standard as the blocker: %q", g.Message)
+			}
+		}
+	}
+	if !found {
+		t.Error("expected full to be gated (by standard) when only a standard row is missing")
+	}
+}
+
+// TestGatedBlockerIsHighestDelta pins the multi-delta case: when an incomplete record
+// has BOTH a core gap and a standard gap while every full requirement is met, full is
+// gated and its blocker must be the HIGHEST outstanding delta grade (standard), not the
+// lowest (core). Reaching core alone leaves standard's gap open, so full stays locked;
+// naming core would mislead.
+func TestGatedBlockerIsHighestDelta(t *testing.T) {
+	rec := fullBase()
+	delete(rec["product_family"].(map[string]any), "cutsheet")         // a core rule
+	delete(rec["photometry"].(map[string]any), "maximum_intensity_cd") // a standard rule
+	if got := AchievedLevel(rec); got != LevelIncomplete {
+		t.Fatalf("achieved = %s, want incomplete", got)
+	}
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	found := false
+	for _, g := range findingsFor(report, findings.CodeConformanceGradeGated) {
+		if strings.Contains(g.Message, `"full"`) {
+			found = true
+			if !strings.Contains(g.Message, `unlocked once "standard" is reached`) {
+				t.Errorf("full's blocker should be standard (the highest delta grade), got: %q", g.Message)
+			}
+		}
+	}
+	if !found {
+		t.Error("expected full to be gated when core+standard carry deltas but full's own rows are met")
+	}
+}
+
+// TestRoadmapPerTierToFull confirms the per-grade decomposition: a core record emits
+// both a to-standard and a to-full roadmap whose deltas are disjoint (no path repeats);
+// a standard record emits only a to-full roadmap.
+func TestRoadmapPerTierToFull(t *testing.T) {
+	report := findings.NewReport()
+	Report(coreBase(), report)
+	report.Finalize()
+	std, full := map[string]bool{}, map[string]bool{}
+	for _, g := range findingsFor(report, findings.CodeConformanceGap) {
+		switch g.NextConformanceLevel {
+		case "standard":
+			std[g.Path] = true
+		case "full":
+			full[g.Path] = true
+		default:
+			t.Errorf("core record gap at unexpected grade %q (%q)", g.NextConformanceLevel, g.Path)
+		}
+	}
+	if len(std) == 0 || len(full) == 0 {
+		t.Fatalf("core record should emit both to-standard (%d) and to-full (%d) deltas", len(std), len(full))
+	}
+	for p := range std {
+		if full[p] {
+			t.Errorf("path %q appears in BOTH to-standard and to-full deltas; must be disjoint", p)
+		}
+	}
+
+	report2 := findings.NewReport()
+	Report(standardBase(), report2)
+	report2.Finalize()
+	for _, g := range findingsFor(report2, findings.CodeConformanceGap) {
+		if g.NextConformanceLevel != "full" {
+			t.Errorf("standard record should emit only to-full gaps, got %q at %q", g.NextConformanceLevel, g.Path)
+		}
+	}
+}
+
+// TestZeroDocumentRecordGradesIncomplete pins the floor's worked case: an identity-only
+// record (no photometry, no electrical, no documents) grades incomplete, emits only INFO
+// findings, and carries a to-core roadmap.
+func TestZeroDocumentRecordGradesIncomplete(t *testing.T) {
+	rec := map[string]any{
+		"product_family": map[string]any{
+			"family_id":     "acme-orbit",
+			"manufacturer":  map[string]any{"slug": "acme", "display_name": "Acme Lighting"},
+			"catalog_model": "Orbit 1200",
+		},
+		"source_files": []any{},
+	}
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelIncomplete {
+		t.Fatalf("identity-only record = %s, want incomplete", got)
+	}
+	report.Finalize()
+	if report.Summary.Errors != 0 || report.Summary.Warnings != 0 {
+		t.Errorf("floor record should be INFO-only, got %d errors, %d warnings", report.Summary.Errors, report.Summary.Warnings)
+	}
+	if gaps := findingsFor(report, findings.CodeConformanceGap); len(gaps) == 0 {
+		t.Error("identity-only record must carry a to-core roadmap")
 	}
 }
 

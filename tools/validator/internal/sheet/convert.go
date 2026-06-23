@@ -192,7 +192,7 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	// ulc_version default per DESIGN.md (overridable by the records column).
 	// Tracks the current ULC spec version, matching every shipped example and
 	// template; a manufacturer who omits the column gets a current-spec record.
-	rec["ulc_version"] = "0.7.0"
+	rec["ulc_version"] = "0.8.0"
 	// record_status default: active (overridable below).
 	rec["record_status"] = "active"
 
@@ -218,17 +218,20 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	}
 
 	// Cutsheet dual-write: records.cutsheet_file -> product_family.cutsheet AND a
-	// synthesized source_files[] datasheet_pdf entry.
+	// synthesized source_files[] datasheet_pdf entry. The cutsheet is a graded core
+	// requirement, not a schema requirement, so an omitted cutsheet_file is allowed:
+	// the record converts and grades incomplete with a roadmap naming the cutsheet.
 	cutsheetFile := master["cutsheet_file"]
-	if cutsheetFile == "" {
-		return nil, errors.New("missing required column cutsheet_file")
-	}
-	cutsheetRef, err := buildFileReference(cutsheetFile, master, "cutsheet_file", hasher)
-	if err != nil {
-		return nil, err
-	}
-	if err := setPath(rec, "product_family.cutsheet", cutsheetRef); err != nil {
-		return nil, err
+	var cutsheetRef map[string]any
+	if cutsheetFile != "" {
+		var err error
+		cutsheetRef, err = buildFileReference(cutsheetFile, master, "cutsheet_file", hasher)
+		if err != nil {
+			return nil, err
+		}
+		if err := setPath(rec, "product_family.cutsheet", cutsheetRef); err != nil {
+			return nil, err
+		}
 	}
 
 	// source_files (joined sheet) plus the synthesized cutsheet entry.
@@ -628,9 +631,11 @@ func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef m
 		out = append(out, map[string]any{"file_type": fileType, "reference": ref})
 	}
 
-	// Cutsheet dual-write: synthesize the datasheet_pdf entry when the
-	// manufacturer did not list it themselves.
-	if !cutsheetListed {
+	// Cutsheet dual-write: synthesize the datasheet_pdf entry when a cutsheet was
+	// provided and the manufacturer did not list it themselves. With no cutsheet the
+	// record grades incomplete (the cutsheet is a graded core requirement), so there
+	// is nothing to synthesize.
+	if cutsheetFilename != "" && !cutsheetListed {
 		out = append(out, map[string]any{"file_type": "datasheet_pdf", "reference": cutsheetRef})
 	}
 	return out, nil

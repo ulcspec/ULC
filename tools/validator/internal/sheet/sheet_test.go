@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
@@ -690,5 +691,42 @@ func TestAllowMissingFilesSentinel(t *testing.T) {
 	cut, _ := pf["cutsheet"].(map[string]any)
 	if sha, _ := cut["sha256"].(string); sha != zeroSHA256 {
 		t.Fatalf("expected zero-sentinel sha256 for missing cutsheet, got %q", sha)
+	}
+}
+
+// TestConvertCutsheetOptionalGradesIncomplete confirms the cutsheet is a graded
+// core requirement, not a converter requirement: a workbook record with an empty
+// cutsheet_file converts successfully (no hard fail), omits product_family.cutsheet
+// and the synthesized datasheet_pdf source-file entry, and grades incomplete.
+func TestConvertCutsheetOptionalGradesIncomplete(t *testing.T) {
+	dir := t.TempDir()
+	writeFixtureCopy(t, dir)
+	// Blank the cutsheet_file value so the record carries no cutsheet.
+	recordsCSV := strings.Replace(readFixture(t, "records.csv"), "acme-orbit-1200-specs.pdf", "", 1)
+	writeFile(t, filepath.Join(dir, "records.csv"), recordsCSV)
+
+	results, err := Convert(dir, Options{})
+	if err != nil {
+		t.Fatalf("Convert without a cutsheet should succeed (cutsheet is graded, not required): %v", err)
+	}
+	if len(results) == 0 {
+		t.Fatal("no records converted")
+	}
+	rec := results[0].Record
+
+	pf, _ := rec["product_family"].(map[string]any)
+	if _, present := pf["cutsheet"]; present {
+		t.Error("product_family.cutsheet should be absent when cutsheet_file is empty")
+	}
+	for _, sf := range rec["source_files"].([]any) {
+		if m, ok := sf.(map[string]any); ok && m["file_type"] == "datasheet_pdf" {
+			t.Error("no datasheet_pdf source_files entry should be synthesized without a cutsheet")
+		}
+	}
+
+	// End to end: build the index and confirm the cutsheet-less record grades the floor.
+	rec["index"] = index.Build(rec)
+	if got := grade.AchievedLevel(rec); got != grade.LevelIncomplete {
+		t.Errorf("cutsheet-less record grades %s, want incomplete", got)
 	}
 }
