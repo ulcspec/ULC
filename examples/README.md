@@ -14,7 +14,7 @@ Source files (the original PDF datasheets, IES photometric files, and related do
 | `lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc` | C: per-IES with provenance classes | The `extended_photometry` provenance class: every photometric value carries `value_type: rated` and points back to a base LM-79 attestation (Spectralux test ID S1503051-R1, 2015-03-05) via `base_attestation_ref`, preserving the 1:1 IES-to-record mapping specifiers expect while distinguishing scaled derivatives from direct measurements |
 | `lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc` | C: per-IES with provenance classes | The RGBW counterpart to the RGB facade record: a four-channel fixture whose white channel carries a 3000 K nominal CCT, exercising the white-point split, the CCT is graded while CRI, SDCM, and TM-30 are waived for the color-mixing architecture |
 
-## Conformance levels and roadmap
+## Conformance grades and roadmap
 
 Each record is graded by the reference validator, which computes a conformance grade from the fields actually present and emits a per-grade roadmap to full: the grades the record already satisfies and, for each grade not yet reached, only that grade's own remaining fields. The grade is stamped into `index.conformance_level` and is never hand-declared. The table below is the machine output of `ulc validate --verbose <record>`; every gap names the field, the source document it comes from, and the governing standard, grouped per grade to full.
 
