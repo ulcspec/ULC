@@ -16,7 +16,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ulcspec/ULC/tools/validator/internal/grade"
+	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 )
 
 // BuilderVersion is stamped into every index block under `builder_version`.
@@ -26,7 +26,7 @@ import (
 // RequiredKeys to allow color-changing fixtures (RGB, RGBW, RGBA) to pass
 // validation without a placeholder CCT value.
 // 0.3.0: conformance_level is now a generated index field. The builder computes
-// it from the record's populated fields (grade.AchievedLevel) and stamps it into
+// it from the record's populated fields (completeness.AchievedLevel) and stamps it into
 // the index, replacing the hand-declared top-level conformance_level.
 // 0.4.0: conformance rubric expanded to the taxonomy-mapped declarative table.
 // The four-tier ladder adds `incomplete` (a real photometric record that has not
@@ -63,7 +63,7 @@ var RequiredKeys = []string{
 var RequiredKeySources = map[string]string{
 	"manufacturer_slug": "product_family.manufacturer.slug",
 	"catalog_model":     "product_family.catalog_model",
-	"conformance_level": "computed by grade.AchievedLevel (always stamped; floors at incomplete)",
+	"conformance_level": "computed by completeness.AchievedLevel (always stamped; floors at incomplete)",
 }
 
 // Record is the in-memory representation of a parsed .ulc file.
@@ -88,12 +88,12 @@ func Build(record Record) Index {
 	}
 
 	// Conformance grade: computed from the record's populated fields, the single
-	// source of truth for the stored grade. ALWAYS stamped: grade.AchievedLevel
+	// source of truth for the stored grade. ALWAYS stamped: completeness.AchievedLevel
 	// floors at `incomplete` (the zero value) and never returns a below-floor
 	// sentinel, so every record (down to identity-only) gets a valid enum token
 	// (incomplete / core / standard / full). The builder never refuses on data
 	// completeness; an incomplete record is indexed and carries a roadmap to core.
-	idx["conformance_level"] = grade.AchievedLevel(record).String()
+	idx["conformance_level"] = completeness.AchievedLevel(record).String()
 
 	if v := getString(pf, "manufacturer", "slug"); v != "" {
 		idx["manufacturer_slug"] = v

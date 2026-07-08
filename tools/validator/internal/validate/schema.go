@@ -17,8 +17,8 @@ import (
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
 
-	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	embedded "github.com/ulcspec/ULC/schema"
+	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 )
 
 // Validator holds a compiled ULC schema ready for repeated Validate calls.

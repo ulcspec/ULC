@@ -1,4 +1,4 @@
-package grade
+package completeness
 
 import (
 	"encoding/json"
@@ -89,13 +89,24 @@ func childSchema(node map[string]any, key string, ulcDefs map[string]any) (map[s
 }
 
 // resolveDataPath walks a data JSON Pointer (slash-separated components) from the
-// root schema to the leaf property schema.
+// root schema to the leaf property schema. A component ending in "[]" is an array
+// hop: resolve the array property, then descend into its items schema (a single hop;
+// every array path in the rubric is one level deep).
 func resolveDataPath(root map[string]any, comps []string, ulcDefs map[string]any) (map[string]any, bool) {
 	node := root
 	for _, c := range comps {
-		child, ok := childSchema(node, c, ulcDefs)
+		key := strings.TrimSuffix(c, "[]")
+		child, ok := childSchema(node, key, ulcDefs)
 		if !ok {
 			return nil, false
+		}
+		if strings.HasSuffix(c, "[]") {
+			child = derefObject(child, ulcDefs)
+			items, ok := mapOf(child["items"])
+			if !ok {
+				return nil, false
+			}
+			child = items
 		}
 		node = child
 	}
@@ -159,9 +170,25 @@ func representativeValue(kind string) any {
 	return nil
 }
 
+// setDataPath builds the nested fixture down to the leaf. A component ending in "[]"
+// becomes a one-element array whose single entry is the descending map (a single
+// array hop, mirroring resolveDataPath). The leaf itself is never an array hop.
 func setDataPath(rec map[string]any, comps []string, val any) {
 	node := rec
 	for _, c := range comps[:len(comps)-1] {
+		if strings.HasSuffix(c, "[]") {
+			key := strings.TrimSuffix(c, "[]")
+			var elem map[string]any
+			if arr, ok := node[key].([]any); ok && len(arr) > 0 {
+				elem, _ = arr[0].(map[string]any)
+			}
+			if elem == nil {
+				elem = map[string]any{}
+				node[key] = []any{elem}
+			}
+			node = elem
+			continue
+		}
 		next, ok := node[c].(map[string]any)
 		if !ok {
 			next = map[string]any{}
@@ -184,9 +211,9 @@ var predicateBackedPaths = map[string]bool{
 	"/photometry/per_length_normalized":  true, // hasPerLengthNormalized: needs a per-length rate, not just reference_length
 	"/outdoor_classification/bug_rating": true, // hasBugRating: needs b + u + g
 	"/electrical/dimming_range_percent":  true, // hasDimmingRange: needs min + max
-	// Observation rows whose closures require recognized real content (a placeholder
-	// object reads as absent), so the "... not disclosed" nudge fires on hollow blocks.
-	// Behavioral coverage: TestTightenedObservationGatesRejectHollow.
+	// Enrichment/observation rows whose closures require recognized real content (a
+	// placeholder object reads as absent), so the "... not disclosed" nudge fires on
+	// hollow blocks. Behavioral coverage: TestTightenedObservationGatesRejectHollow.
 	"/product_family/shared_mechanical/ambient_operating_range": true, // hasAmbientOperatingRange: needs a numeric c/f bound
 	"/thermal_derating":                       true, // hasThermalDerating: needs thermal_control_method or curves
 	"/flicker_measurements":                   true, // hasFlickerMeasurements: needs metrics or a qualifier enum
@@ -194,6 +221,9 @@ var predicateBackedPaths = map[string]bool{
 	"/chromaticity_shift_projection":          true, // hasChromaticityShiftProjection: needs projected_hours or an enum
 	"/sustainability_declaration":             true, // hasSustainabilityDeclaration: needs a recognized declaration field
 	"/product_family/physical_dimensions/epa": true, // hasEPA: needs a numeric m2/ft2 area
+	// Block-level enrichment row whose closure requires a populated grid (a placeholder
+	// object reads as absent), so the nudge fires on a hollow table.
+	"/lumen_maintenance_luminaire/cie_97_lmf_table": true, // hasCie97LmfTable: needs a non-empty LMF/LLMF grid
 }
 
 // shapeTestable reports whether a rubric path is a single resolvable JSON Pointer
@@ -237,6 +267,19 @@ func TestRubricPathsResolve(t *testing.T) {
 	}
 }
 
+// TestReferenceIlluminantTypePathResolves guards the wired-not-nudged field: because
+// reference_illuminant_type carries no rubric row and is allowlisted, exhaustiveness
+// passes whether or not the schema field exists, so a forgotten or misspelled wire
+// would be undetectable. This asserts the path resolves to a real schema field.
+func TestReferenceIlluminantTypePathResolves(t *testing.T) {
+	ulc := loadJSONSchema(t, "ulc.schema.json")
+	ulcDefs, _ := mapOf(ulc["$defs"])
+	comps := []string{"colorimetry", "tm_30", "reference_illuminant_type"}
+	if _, ok := resolveDataPath(ulc, comps, ulcDefs); !ok {
+		t.Error("colorimetry.tm_30.reference_illuminant_type does not resolve in ulc.schema.json (a forgotten wire)")
+	}
+}
+
 // rubricTaxonomies is the set of taxonomy enum $defs the rubric maps (via each
 // row's taxonomy field).
 func rubricTaxonomies() map[string]bool {
@@ -254,6 +297,12 @@ func rubricTaxonomies() map[string]bool {
 // file-format, and domain sub-structure enums. Enumerated explicitly so the
 // exhaustiveness guard is green on day one and any newly-referenced enum forces a
 // conscious decision (grade it, or allowlist it as descriptive).
+// v0.9.0 pruned this list: the enrichment roadmap (Phase C) wired the flicker,
+// chromaticity-shift, thermal, test-condition, operating-point, lumen-maintenance, and
+// descriptive-label enums as rubric rows, so they moved from here to rubricTaxonomies().
+// The allowlist-disjointness guard (TestAllowlistDisjointFromRubric) fires if an enum
+// is ever both rubric-covered and allowlisted, keeping this registry a conscious record
+// of what is deliberately NOT on a roadmap.
 var descriptiveAllowlist = map[string]bool{
 	// Record + provenance + file plumbing.
 	"RecordStatus":        true,
@@ -262,52 +311,25 @@ var descriptiveAllowlist = map[string]bool{
 	"RegulatoryValueType": true,
 	"ComparisonOperator":  true,
 	"SourceFileType":      true,
-	"FileGenerationType":  true,
-	"PhotometryFormat":    true,
+	// ReferenceIlluminantType is wired as an optional field (colorimetry.tm_30) but
+	// deliberately NOT nudged: it is derivable by definition from the test-source CCT,
+	// so a roadmap entry would push authors to hand-enter a derivable constant. Its path
+	// resolving is guarded by TestReferenceIlluminantTypePathResolves.
+	"ReferenceIlluminantType": true,
 	// Attestation sub-structure (the AttestationProgram itself is graded; these qualify it).
 	"AttestationStatus":           true,
 	"AttestationVerificationType": true,
-	// Lab + test-condition depth (observations, not gated on the specific enum).
+	// Lab depth (the measurement_regime gate is graded, not the specific enum).
 	"LaboratoryCertification":       true,
 	"LaboratoryAccreditationScheme": true,
-	"NonstandardConditionFlag":      true,
-	"TemperatureAxis":               true,
-	"AmbientCleanliness":            true,
-	// Descriptive labels and projections.
-	"DimmingCurve":               true,
-	"BeamFamily":                 true,
-	"PhotometryMethod":           true,
-	"NegativeIntensityHandling":  true,
-	"GoniometerType":             true,
-	"StabilizationMethod":        true,
-	"TemperatureMonitoringPoint": true,
-	"DutOperatingMode":           true,
-	// Flicker block (observation) sub-structure.
-	"FlickerMetric":                          true,
-	"FlickerDimmingType":                     true,
-	"FlickerRiskLevel":                       true,
-	"FlickerSamplingClass":                   true,
-	"FlickerTestChamberType":                 true,
-	"FlickerWaveformFileFormat":              true,
-	"FlickerPhotodetectorSpectralCorrection": true,
-	// Alpha-opic / circadian block (observation).
+	"GoniometerType":                true,
+	// Required members of their array items: surfaced by the reclassified parent
+	// enrichment row (/alpha_opic_metrics, /flicker_measurements), so they can never be
+	// applicable-and-absent on a valid record and get no own row. This is their one home.
 	"AlphaOpicChannel": true,
-	// Chromaticity-shift projection block (observation).
-	"ChromaticityShiftMetric":    true,
-	"ChromaticityShiftMode":      true,
-	"ChromaticityShiftThreshold": true,
-	"TM35Edition":                true,
-	// Lumen-maintenance block sub-structure (the block presence is what is gated).
-	"LumenMaintenanceDeclarationFramework": true,
-	"LumenMaintenanceProjectionMethod":     true,
-	"FluxMaintenanceQuantity":              true,
-	"FluxMaintenanceThreshold":             true,
-	"ProjectionBasis":                      true,
-	"ProjectionReliability":                true,
-	"TM21InterpolationType":                true,
-	"TestedProductType":                    true,
-	"ThermalControlMethod":                 true,
-	// Sustainability block (observation).
+	"FlickerMetric":    true,
+	// Sustainability block: the /sustainability_declaration row is a non-nudged
+	// observation (empty taxonomy token), so these sub-enums stay descriptive.
 	"SustainabilityDeclarationType": true,
 	"IngredientRedListStatus":       true,
 }
@@ -426,6 +448,8 @@ func TestPredicateSetsAreRealEnumMembers(t *testing.T) {
 		{"outdoorSiteCategories", outdoorSiteCategories, "PrimaryCategory"},
 		{"linearCategories", linearCategories, "PrimaryCategory"},
 		{"analogPhaseDimming", analogPhaseDimming, "DimmingProtocol"},
+		{"nonControllableDrivers", nonControllableDrivers, "DimmingProtocol"},
+		{"photometrySourceFileTypes", photometrySourceFileTypes, "SourceFileType"},
 		{"naSafetyListings", naSafetyListings, "AttestationProgram"},
 		{"anySafetyListings", anySafetyListings, "AttestationProgram"},
 		{"naRegions", naRegions, "TechnicalRegion"},
@@ -733,7 +757,8 @@ func TestCapstoneJunkObjectsCapAtIncomplete(t *testing.T) {
 }
 
 // TestTightenedObservationGatesRejectHollow proves the over-leniency class is closed
-// for the seven object-shaped OBSERVATION rows: each closure returns FALSE for a map
+// for the object-shaped non-gating rows (now mostly enrichment closures, plus the
+// sustainability observation): each closure returns FALSE for a map
 // holding only an unrecognized key and for a map whose recognized key carries the wrong
 // leaf type (a bare scalar where a ProvenancedNumber is meant, a number where an enum
 // string is meant, a DualUnit block with only value_type metadata and no numeric leaf),
@@ -844,5 +869,64 @@ func TestTightenedObservationGatesRejectHollow(t *testing.T) {
 				t.Errorf("%s: closure rejected a map with a recognized content field: %+v", c.name, c.good)
 			}
 		})
+	}
+}
+
+// TestLevelStringTokens pins the full Level set and their String() tokens: the four
+// ordered grades plus the two non-ordered sentinels. A future sentinel added to the
+// iota block without a String() case would fall through to "incomplete"; this catches
+// that (both by asserting each token and by pinning LevelEnrichment as the highest
+// defined value).
+func TestLevelStringTokens(t *testing.T) {
+	cases := []struct {
+		level Level
+		want  string
+	}{
+		{LevelIncomplete, "incomplete"},
+		{LevelCore, "core"},
+		{LevelStandard, "standard"},
+		{LevelFull, "full"},
+		{LevelObservation, "observation"},
+		{LevelEnrichment, "enrichment"},
+	}
+	for _, c := range cases {
+		if got := c.level.String(); got != c.want {
+			t.Errorf("Level(%d).String() = %q, want %q", int(c.level), got, c.want)
+		}
+	}
+	if LevelEnrichment != LevelObservation+1 {
+		t.Errorf("LevelEnrichment = %d, want LevelObservation+1 (%d): a new level slipped into the iota block unpinned",
+			int(LevelEnrichment), int(LevelObservation+1))
+	}
+}
+
+// TestNoDuplicateLevelPath guards that no two rubric rows share a (level, path) pair.
+// The appendix is de-collided to field-precise paths so this passes; a copy-paste row
+// collision (two rows at the same level and path) would double-emit or mask each other
+// and is caught here. Two rows of one taxonomy at DIFFERENT paths (a double-path enum)
+// are allowed: the key includes the path.
+func TestNoDuplicateLevelPath(t *testing.T) {
+	seen := map[string]bool{}
+	for _, ru := range rubric {
+		key := ru.level.String() + "\x00" + ru.path
+		if seen[key] {
+			t.Errorf("duplicate rubric row at (level %s, path %q)", ru.level, ru.path)
+		}
+		seen[key] = true
+	}
+}
+
+// TestAllowlistDisjointFromRubric guards that no taxonomy enum is simultaneously
+// rubric-covered (some row carries its token) and listed in descriptiveAllowlist. The
+// allowlist is the "consciously NOT on a roadmap" registry; an enum in both places is a
+// stale allowlist entry left behind when its row landed. Multiple rows sharing one
+// token (the two double-path enums) is fine: coverage is by token, so pruning the
+// allowlist entry once satisfies this.
+func TestAllowlistDisjointFromRubric(t *testing.T) {
+	covered := rubricTaxonomies()
+	for name := range descriptiveAllowlist {
+		if covered[name] {
+			t.Errorf("taxonomy %q is both rubric-covered and in descriptiveAllowlist; remove the allowlist entry", name)
+		}
 	}
 }

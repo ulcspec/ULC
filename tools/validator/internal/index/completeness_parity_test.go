@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ulcspec/ULC/tools/validator/internal/grade"
+	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 )
 
 // TestBuildConformanceMatchesGrade is the order-independent build-parity guard for
 // the conformance projection: for every example, the token Build() stamps into
-// index.conformance_level must equal grade.AchievedLevel(record).String(). It reads
+// index.conformance_level must equal completeness.AchievedLevel(record).String(). It reads
 // the freshly computed values (never the stored index), so it holds both before and
 // after the re-stamp step and verifies builder.go's switch stays in lockstep with
 // the grader's ladder (including the incomplete token).
@@ -36,9 +36,9 @@ func TestBuildConformanceMatchesGrade(t *testing.T) {
 			}
 			built := Build(record)
 			got, _ := built["conformance_level"].(string)
-			want := grade.AchievedLevel(record).String()
+			want := completeness.AchievedLevel(record).String()
 			if got != want {
-				t.Errorf("%s: Build() conformance_level = %q, grade.AchievedLevel = %q", name, got, want)
+				t.Errorf("%s: Build() conformance_level = %q, completeness.AchievedLevel = %q", name, got, want)
 			}
 		})
 	}

@@ -192,7 +192,7 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	// ulc_version default per DESIGN.md (overridable by the records column).
 	// Tracks the current ULC spec version, matching every shipped example and
 	// template; a manufacturer who omits the column gets a current-spec record.
-	rec["ulc_version"] = "0.8.0"
+	rec["ulc_version"] = "0.9.0"
 	// record_status default: active (overridable below).
 	rec["record_status"] = "active"
 

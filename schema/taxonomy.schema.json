@@ -82,7 +82,7 @@
 
     "Orientation": {
       "title": "Primary emission orientation",
-      "description": "Direction in which the luminaire primarily distributes light when installed in its intended orientation. `horizontal` describes fixtures that emit primarily sideways, such as sconces, wall-mount task lights, and facade projectors. `omnidirectional` describes fixtures with 360-degree emission in the horizontal plane, such as certain bollards, bare-lamp styles, and candelabra forms. `multi_directional` describes fixtures with multiple distinct emission directions, such as direct-indirect pendants or bidirectional wall grazers. `adjustable` means the emission direction is user-configurable at installation.",
+      "description": "Direction in which the luminaire primarily distributes light when installed in its intended orientation. `horizontal` describes fixtures that emit primarily sideways, such as sconces, wall-mount task lights, and facade projectors. `omnidirectional` describes fixtures with 360-degree emission in the horizontal plane, such as certain bollards, bare-lamp styles, and candelabra forms. `multi_directional` describes fixtures with multiple distinct emission directions, such as direct-indirect pendants or bidirectional wall grazers. `adjustable` means the emission direction is user-configurable at installation. Recorded at `product_family.orientation`, an installed-intent family-level catalog attribute alongside `shape`.",
       "type": "string",
       "enum": [
         "downward",
@@ -190,7 +190,7 @@
 
     "AdaptiveLightingMode": {
       "title": "Adaptive lighting mode",
-      "description": "A built-in adaptive control capability the luminaire provides. Multiple values may apply. Complements DimmingProtocol, which describes the protocol used to dim, by describing the control behavior the fixture supports. Definitions aligned with ANSI/IES RP-8-22 Section 6.10.",
+      "description": "A built-in adaptive control capability the luminaire provides. Multiple values may apply. Complements DimmingProtocol, which describes the protocol used to dim, by describing the control behavior the fixture supports. Definitions aligned with ANSI/IES RP-8-22 Section 6.10. Recorded as an array at `electrical.adaptive_lighting_modes`.",
       "type": "string",
       "enum": [
         "integrated_photocell",
@@ -262,7 +262,7 @@
 
     "LegacyCutoffClassification": {
       "title": "Legacy cutoff classification (deprecated)",
-      "description": "Deprecated luminaire cutoff classification superseded by the Luminaire Classification System (LCS) and BUG rating since 2009, per ANSI/IES TM-15-20 Section 3.1 and ANSI/IES RP-8-22 Section 2.6.3.1. The original four-class system was lamp-lumens-based and was invalidated by LED absolute photometry. Retained in the taxonomy only so that legacy manufacturer datasheets can still be ingested without data loss. New records should use the BUG rating fields and LCS zonal lumens in the main schema instead. The reference validator emits an INFO-level diagnostic when this field is populated on a new record.",
+      "description": "Deprecated luminaire cutoff classification superseded by the Luminaire Classification System (LCS) and BUG rating since 2009, per ANSI/IES TM-15-20 Section 3.1 and ANSI/IES RP-8-22 Section 2.6.3.1. The original four-class system was lamp-lumens-based and was invalidated by LED absolute photometry. Retained in the taxonomy only so that legacy manufacturer datasheets can still be ingested without data loss. New records should use the BUG rating fields and LCS zonal lumens in the main schema instead. It is kept off the enrichment roadmap because it is deprecated, and is a candidate for removal in a future major version.",
       "type": "string",
       "enum": [
         "full_cutoff",
@@ -363,7 +363,7 @@
 
     "OpticalRadiationBand": {
       "title": "Optical radiation band",
-      "description": "The wavelength band that characterizes a luminaire's primary emission, per LM-80-21 Section 1.2 which scopes measurement to sources in the 200-2000 nm range. Visible covers typical general-lighting SSL products. UV and IR are significant for disinfection, horticulture, medical, and industrial applications. Broadband indicates emission spanning multiple bands.",
+      "description": "The wavelength band that characterizes a luminaire's primary emission, per LM-80-21 Section 1.2 which scopes measurement to sources in the 200-2000 nm range. Visible covers typical general-lighting SSL products. UV and IR are significant for disinfection, horticulture, medical, and industrial applications. Broadband indicates emission spanning multiple bands. Recorded at `photometry.optical_radiation_band`.",
       "type": "string",
       "enum": [
         "uv",
@@ -375,7 +375,7 @@
 
     "PhotometryFormat": {
       "title": "Photometric data format and version",
-      "description": "The specific standard and version of a photometric data source file. Used in the photometry section of a ULC record to declare which format a source file conforms to. TM-33 is the newer XML and JSON format for luminaire optical data; LM-63 is the legacy candela-table format; EULUMDAT is the European equivalent of LM-63.",
+      "description": "The specific standard and version of a photometric data source file. Recorded on each `source_files[]` entry (as `photometry_format`) to declare which format that source file conforms to. TM-33 is the newer XML and JSON format for luminaire optical data; LM-63 is the legacy candela-table format; EULUMDAT is the European equivalent of LM-63.",
       "type": "string",
       "enum": [
         "lm63_1986",
@@ -552,7 +552,7 @@
 
     "ReferenceIlluminantType": {
       "title": "TM-30 reference illuminant regime",
-      "description": "The reference illuminant class used in TM-30 color-rendition calculations, determined by the test-source correlated color temperature per TM-30-24 Section 2.3. A Planckian blackbody radiator is used at or below 4000 K. A blended mixture of Planckian and CIE D-series daylight is used between 4000 K and 5000 K. CIE D-series daylight is used at or above 5000 K. The reference illuminant CCT equals the test-source CCT by definition.",
+      "description": "The reference illuminant class used in TM-30 color-rendition calculations, determined by the test-source correlated color temperature per TM-30-24 Section 2.3. A Planckian blackbody radiator is used at or below 4000 K. A blended mixture of Planckian and CIE D-series daylight is used between 4000 K and 5000 K. CIE D-series daylight is used at or above 5000 K. The reference illuminant CCT equals the test-source CCT by definition, so this value is derivable from the test-source CCT rather than independently authored. Recorded at `colorimetry.tm_30.reference_illuminant_type` for explicitness and TM-33 interop.",
       "type": "string",
       "enum": [
         "planckian",

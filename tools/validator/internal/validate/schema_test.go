@@ -104,6 +104,54 @@ func TestValidatorRejectsTopLevelConformanceLevel(t *testing.T) {
 	}
 }
 
+// TestValidatorConstrainsPhotometryFormatToPhotometricFiles asserts the v0.9.0
+// SourceFile conditional: photometry_format is only valid on a photometric source
+// file (ies / ldt / tm33). A photometry_format on a non-photometric entry (for example
+// datasheet_pdf) is a schema error; on an ies entry it validates.
+func TestValidatorConstrainsPhotometryFormatToPhotometricFiles(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		return m
+	}
+	setFormatOn := func(m map[string]any, fileType string) {
+		sf, _ := m["source_files"].([]any)
+		for _, e := range sf {
+			if entry, ok := e.(map[string]any); ok && entry["file_type"] == fileType {
+				entry["photometry_format"] = "lm63_2019"
+				return
+			}
+		}
+		t.Fatalf("no source_files entry of type %q to mutate", fileType)
+	}
+
+	// Bad: photometry_format on a datasheet_pdf entry -> schema error.
+	bad := load()
+	setFormatOn(bad, "datasheet_pdf")
+	rBad := findings.NewReport()
+	v.Validate(bad, rBad)
+	if !rBad.HasErrors() {
+		t.Error("expected a schema error for photometry_format on a datasheet_pdf source file, got none")
+	}
+
+	// Good: photometry_format on an ies entry -> valid.
+	good := load()
+	setFormatOn(good, "ies")
+	rGood := findings.NewReport()
+	v.Validate(good, rGood)
+	if rGood.HasErrors() {
+		t.Errorf("photometry_format on an ies source file must validate; got: %+v", rGood.Findings)
+	}
+}
+
 func TestFindSchemaDirExplicit(t *testing.T) {
 	root := repoRoot(t)
 	schemaDir := filepath.Join(root, "schema")

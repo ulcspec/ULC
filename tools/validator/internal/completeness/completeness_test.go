@@ -1,4 +1,4 @@
-package grade
+package completeness
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 )
 
 // repoRoot resolves the repository root from this test package's directory
-// (tools/validator/internal/grade -> four levels up).
+// (tools/validator/internal/completeness -> four levels up).
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	root, err := filepath.Abs(filepath.Join("..", "..", "..", ".."))
@@ -47,6 +47,15 @@ func hasObservationAt(report *findings.Report, path string) bool {
 		}
 	}
 	return false
+}
+
+func enrichmentAt(report *findings.Report, path string) (findings.Finding, bool) {
+	for _, f := range findingsFor(report, findings.CodeConformanceEnrichment) {
+		if f.Path == path {
+			return f, true
+		}
+	}
+	return findings.Finding{}, false
 }
 
 func hasGapFor(report *findings.Report, path string) (findings.Finding, bool) {
@@ -796,20 +805,50 @@ func TestZeroDocumentRecordGradesIncomplete(t *testing.T) {
 	}
 }
 
-// TestObservationsAtCoreAndAbove confirms a core record emits observation findings
-// (including Duv for a white-light fixture) while an incomplete record emits none.
+// TestObservationsAtCoreAndAbove is the three-way split guard for the reclassified
+// depth band: at core, the enrichment rows (thermal, Duv) now emit under
+// conformance/enrichment with byte-identical messages, while the retained notes
+// (sustainability, legacy cutoff) stay under conformance/observation; an incomplete
+// record emits ZERO of BOTH codes (including from the two direct note emitters),
+// pinning the single core gate.
 func TestObservationsAtCoreAndAbove(t *testing.T) {
-	// Core white-light record: observations fire (thermal, sustainability, Duv).
+	// Core white-light record.
 	report := findings.NewReport()
 	Report(coreBase(), report)
 	report.Finalize()
-	for _, p := range []string{"/thermal_derating", "/sustainability_declaration", "/colorimetry/duv"} {
-		if !hasObservationAt(report, p) {
-			t.Errorf("core record: expected observation at %s; observations: %+v",
-				p, findingsFor(report, findings.CodeConformanceObservation))
+
+	// The reclassified rows emit as enrichment, with the exact prior message text.
+	wantEnrichment := map[string]string{
+		"/thermal_derating": "thermal derating not disclosed",
+		"/colorimetry/duv":  "Duv (distance from the Planckian locus) not disclosed",
+	}
+	for path, msg := range wantEnrichment {
+		f, ok := enrichmentAt(report, path)
+		if !ok {
+			t.Errorf("core record: expected enrichment at %s; enrichment: %+v",
+				path, findingsFor(report, findings.CodeConformanceEnrichment))
+			continue
+		}
+		if f.Message != msg {
+			t.Errorf("enrichment %s message = %q, want byte-identical %q", path, f.Message, msg)
+		}
+		if hasObservationAt(report, path) {
+			t.Errorf("reclassified row %s must no longer emit conformance/observation", path)
 		}
 	}
-	// Incomplete record: no observations, only the to-core roadmap.
+
+	// The retained note (sustainability) stays an observation.
+	if !hasObservationAt(report, "/sustainability_declaration") {
+		t.Errorf("core record: sustainability must stay an observation; observations: %+v",
+			findingsFor(report, findings.CodeConformanceObservation))
+	}
+	if _, ok := enrichmentAt(report, "/sustainability_declaration"); ok {
+		t.Error("sustainability must NOT appear on the enrichment roadmap")
+	}
+
+	// Incomplete record: ZERO enrichment AND zero observations. This pins the single
+	// core gate covering the rubric rows AND the two direct note emitters (the
+	// attestation-coverage note would otherwise leak on an incomplete record).
 	inc := coreBase()
 	delete(inc["product_family"].(map[string]any), "shared_attestations")
 	report2 := findings.NewReport()
@@ -817,8 +856,433 @@ func TestObservationsAtCoreAndAbove(t *testing.T) {
 		t.Fatalf("achieved = %s, want incomplete", got)
 	}
 	report2.Finalize()
+	if enr := findingsFor(report2, findings.CodeConformanceEnrichment); len(enr) != 0 {
+		t.Errorf("incomplete record emitted %d enrichment findings, want 0: %+v", len(enr), enr)
+	}
 	if obs := findingsFor(report2, findings.CodeConformanceObservation); len(obs) != 0 {
-		t.Errorf("incomplete record emitted %d observations, want 0: %+v", len(obs), obs)
+		t.Errorf("incomplete record emitted %d observations, want 0 (note emitters must sit inside the core gate): %+v", len(obs), obs)
+	}
+
+	// JSON always carries the enrichment block at core+ regardless of Verbose.
+	jbuf := &bytes.Buffer{}
+	jreport := findings.NewReport()
+	Report(coreBase(), jreport)
+	jreport.Finalize()
+	if err := jreport.WriteJSON(jbuf); err != nil {
+		t.Fatalf("WriteJSON: %v", err)
+	}
+	if !strings.Contains(jbuf.String(), "conformance/enrichment") {
+		t.Errorf("JSON must always carry the enrichment block at core+:\n%s", jbuf.String())
+	}
+}
+
+// TestEnrichmentRowsFireOnPresentParentOnly pins the blockPresent-gated enrichment
+// rows: a sub-field nudge fires only when its parent block is genuinely present
+// (non-empty) and the sub-field absent; a hollow ({}) or absent parent draws no
+// sub-field spam.
+func TestEnrichmentRowsFireOnPresentParentOnly(t *testing.T) {
+	emit := func(rec map[string]any) *findings.Report {
+		r := findings.NewReport()
+		Report(rec, r)
+		r.Finalize()
+		return r
+	}
+
+	// coreBase has a populated photometry block missing beam_family -> fires.
+	if _, ok := enrichmentAt(emit(coreBase()), "/photometry/beam_family"); !ok {
+		t.Error("beam_family enrichment should fire: photometry present, beam_family absent")
+	}
+
+	// test_conditions absent on coreBase -> no test-condition sub-field rows.
+	base := emit(coreBase())
+	for _, p := range []string{"/test_conditions/photometry_method", "/test_conditions/stabilization_method"} {
+		if _, ok := enrichmentAt(base, p); ok {
+			t.Errorf("%s must not fire when test_conditions is absent", p)
+		}
+	}
+
+	// A hollow test_conditions:{} still draws no sub-field spam (blockPresent excludes it).
+	hollow := coreBase()
+	hollow["test_conditions"] = map[string]any{}
+	rH := emit(hollow)
+	for _, p := range []string{"/test_conditions/photometry_method", "/test_conditions/file_generation_type"} {
+		if _, ok := enrichmentAt(rH, p); ok {
+			t.Errorf("%s must not fire on a hollow test_conditions:{}", p)
+		}
+	}
+
+	// A present, non-empty test_conditions missing the sub-field DOES fire.
+	present := coreBase()
+	present["test_conditions"] = map[string]any{"photometry_basis": "absolute"}
+	if _, ok := enrichmentAt(emit(present), "/test_conditions/photometry_method"); !ok {
+		t.Error("photometry_method enrichment should fire on a present test_conditions missing it")
+	}
+
+	// A test_conditions that HAS the sub-field does NOT fire it.
+	filled := coreBase()
+	filled["test_conditions"] = map[string]any{"photometry_method": "goniophotometer"}
+	if _, ok := enrichmentAt(emit(filled), "/test_conditions/photometry_method"); ok {
+		t.Error("photometry_method enrichment must not fire when the field is present")
+	}
+}
+
+// TestArrItemEnrichmentAnyEntry pins arrItemHas semantics: ANY array entry carrying
+// the field satisfies the row (the nudge is "start disclosing this dimension"). A
+// lumen_maintenance_package whose one entry carries tested_product_type but not
+// flux_maintenance_quantity fires the flux row and not the tested-product-type row.
+func TestArrItemEnrichmentAnyEntry(t *testing.T) {
+	rec := standardBase()
+	rec["lumen_maintenance_package"] = []any{
+		map[string]any{"tested_product_type": "led_package"},
+	}
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	if _, ok := enrichmentAt(report, "/lumen_maintenance_package[]/flux_maintenance_quantity"); !ok {
+		t.Error("flux_maintenance_quantity enrichment should fire: package present, field absent in every entry")
+	}
+	if _, ok := enrichmentAt(report, "/lumen_maintenance_package[]/tested_product_type"); ok {
+		t.Error("tested_product_type enrichment must NOT fire: an entry carries it")
+	}
+}
+
+// TestOperatingPointEnrichmentWindow pins the operating_point sub-field window: the
+// dut_operating_mode / monitoring-point rows fire only when operating_point is present
+// (hasOperatingPoint) but the sub-field absent. hasOperatingPoint counts
+// dut_operating_mode itself as a satisfying qualifier, so the fixture makes
+// operating_point present via a DIFFERENT qualifier (drive_current_ma) while
+// dut_operating_mode is absent.
+func TestOperatingPointEnrichmentWindow(t *testing.T) {
+	rec := coreBase()
+	rec["operating_point"] = map[string]any{
+		"drive_current_ma": map[string]any{"value": float64(350)},
+	}
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	for _, p := range []string{"/operating_point/dut_operating_mode", "/operating_point/case_temperature_monitoring_point"} {
+		if _, ok := enrichmentAt(report, p); !ok {
+			t.Errorf("%s enrichment should fire: operating_point present via drive_current_ma, sub-field absent", p)
+		}
+	}
+
+	// operating_point absent -> neither fires (no hasOperatingPoint).
+	report2 := findings.NewReport()
+	Report(coreBase(), report2)
+	report2.Finalize()
+	if _, ok := enrichmentAt(report2, "/operating_point/dut_operating_mode"); ok {
+		t.Error("dut_operating_mode must not fire when operating_point is absent")
+	}
+}
+
+// TestAdaptiveLightingModeControllableDriver pins the controllableDriver applicability
+// with a positive AND a negative fixture, so an empty or wrong token set is caught
+// rather than silently no-op: a controllable driver_protocol (0-10v) fires the
+// AdaptiveLightingMode row; non_dimming waives it; declared modes suppress it.
+func TestAdaptiveLightingModeControllableDriver(t *testing.T) {
+	fires := func(rec map[string]any) bool {
+		report := findings.NewReport()
+		Report(rec, report)
+		report.Finalize()
+		_, ok := enrichmentAt(report, "/electrical/adaptive_lighting_modes")
+		return ok
+	}
+	// Positive: coreBase carries a controllable 0-10v driver and no adaptive modes.
+	if !fires(coreBase()) {
+		t.Error("adaptive_lighting_modes enrichment should fire for a controllable (0-10v) driver")
+	}
+	// Negative: a non_dimming driver waives the row.
+	nd := coreBase()
+	nd["electrical"].(map[string]any)["driver_protocol"] = "non_dimming"
+	if fires(nd) {
+		t.Error("adaptive_lighting_modes enrichment must NOT fire for a non_dimming driver")
+	}
+	// Declared modes suppress the nudge even for a controllable driver.
+	filled := coreBase()
+	filled["electrical"].(map[string]any)["adaptive_lighting_modes"] = []any{"integrated_photocell"}
+	if fires(filled) {
+		t.Error("adaptive_lighting_modes enrichment must NOT fire when modes are declared")
+	}
+}
+
+// TestPvfCodeCompoundApplicability pins the pvf_code row's AND predicate: it fires only
+// when the fixture is white-light-primary AND a tm_30 block is present (but pvf_code
+// absent). A present pvf_code, an absent tm_30 block, or a color-mixing fixture waives it.
+func TestPvfCodeCompoundApplicability(t *testing.T) {
+	fires := func(rec map[string]any) bool {
+		report := findings.NewReport()
+		Report(rec, report)
+		report.Finalize()
+		_, ok := enrichmentAt(report, "/colorimetry/tm_30/pvf_code")
+		return ok
+	}
+	// White-light fixture with a tm_30 block (rf) but no pvf_code -> fires.
+	rec := coreBase()
+	rec["colorimetry"].(map[string]any)["tm_30"] = map[string]any{"rf": map[string]any{"value": float64(90)}}
+	if !fires(rec) {
+		t.Error("pvf_code enrichment should fire: white-light-primary, tm_30 present, pvf_code absent")
+	}
+	// pvf_code present -> suppressed.
+	rec2 := coreBase()
+	rec2["colorimetry"].(map[string]any)["tm_30"] = map[string]any{"pvf_code": "P2"}
+	if fires(rec2) {
+		t.Error("pvf_code enrichment must not fire when pvf_code is present")
+	}
+	// No tm_30 block -> waived (blockPresent false).
+	if fires(coreBase()) {
+		t.Error("pvf_code enrichment must not fire when tm_30 is absent")
+	}
+	// Color-mixing fixture (rgb) with a tm_30 block -> waived (not white-light-primary).
+	rgb := coreBase()
+	rgb["configuration"].(map[string]any)["tested_axes"].(map[string]any)["color_tunability"] = "rgb"
+	delete(rgb["colorimetry"].(map[string]any), "nominal_cct_k")
+	delete(rgb["colorimetry"].(map[string]any), "cri_ra")
+	rgb["colorimetry"].(map[string]any)["tm_30"] = map[string]any{"rf": map[string]any{"value": float64(90)}}
+	if fires(rgb) {
+		t.Error("pvf_code enrichment must not fire for a color-mixing (rgb) fixture")
+	}
+}
+
+// TestEnrichmentFieldsDoNotGate is the level-invariance guard: populating any
+// enrichment-only field or block on a graded record must NOT change AchievedLevel.
+// This pins the release's central compatibility promise (grades and
+// index.conformance_level do not move) at the field level, and catches a future edit
+// that accidentally moved an enrichment field into the gating walk or gave a row a
+// gating level. It complements TestPredicatesReadOnlyCoreFields, which only proves the
+// gating predicates read core fields (not that a populated enrichment field can lift a
+// grade).
+func TestEnrichmentFieldsDoNotGate(t *testing.T) {
+	pf := func(r map[string]any) map[string]any { return r["product_family"].(map[string]any) }
+	phot := func(r map[string]any) map[string]any { return r["photometry"].(map[string]any) }
+	el := func(r map[string]any) map[string]any { return r["electrical"].(map[string]any) }
+	col := func(r map[string]any) map[string]any { return r["colorimetry"].(map[string]any) }
+	// setTM adds a key to colorimetry.tm_30 without clobbering an existing block (fullBase
+	// carries a real tm_30 that the level depends on).
+	setTM := func(r map[string]any, k string, v any) {
+		c := col(r)
+		tm, ok := c["tm_30"].(map[string]any)
+		if !ok {
+			tm = map[string]any{}
+			c["tm_30"] = tm
+		}
+		tm[k] = v
+	}
+
+	mutations := []struct {
+		name string
+		add  func(map[string]any)
+	}{
+		// The 5 additive Phase-D optional fields.
+		{"orientation", func(r map[string]any) { pf(r)["orientation"] = "downward" }},
+		{"optical_radiation_band", func(r map[string]any) { phot(r)["optical_radiation_band"] = "visible" }},
+		{"adaptive_lighting_modes", func(r map[string]any) { el(r)["adaptive_lighting_modes"] = []any{"networked_control"} }},
+		{"photometry_format", func(r map[string]any) {
+			r["source_files"] = []any{map[string]any{"file_type": "ies", "photometry_format": "lm63_2019"}}
+		}},
+		{"reference_illuminant_type", func(r map[string]any) { setTM(r, "reference_illuminant_type", "planckian") }},
+		{"pvf_code", func(r map[string]any) { setTM(r, "pvf_code", "P2") }},
+		// Representative reclassified + Bucket-B enrichment fields/blocks across blocks.
+		{"power_factor", func(r map[string]any) { el(r)["power_factor"] = map[string]any{"value": float64(0.95)} }},
+		{"thermal_derating", func(r map[string]any) { r["thermal_derating"] = map[string]any{"thermal_control_method": "active_fan"} }},
+		{"flicker_measurements", func(r map[string]any) { r["flicker_measurements"] = map[string]any{"risk_level": "no_risk"} }},
+		{"chromaticity_shift_projection", func(r map[string]any) { r["chromaticity_shift_projection"] = map[string]any{"shift_metric": "duv"} }},
+		{"dimming_curve", func(r map[string]any) { el(r)["dimming_curve"] = "logarithmic" }},
+		{"beam_family", func(r map[string]any) { phot(r)["beam_family"] = "spot" }},
+		{"duv", func(r map[string]any) { col(r)["duv"] = map[string]any{"value": float64(0.001)} }},
+		{"compatible_accessories", func(r map[string]any) {
+			r["compatible_accessories"] = []any{map[string]any{"accessory_type": "louver"}}
+		}},
+	}
+
+	bases := []struct {
+		name string
+		make func() map[string]any
+	}{
+		{"core", coreBase},
+		{"standard", standardBase},
+		{"full", fullBase},
+	}
+	for _, b := range bases {
+		want := AchievedLevel(b.make())
+		for _, m := range mutations {
+			rec := b.make()
+			m.add(rec)
+			if got := AchievedLevel(rec); got != want {
+				t.Errorf("%s base + enrichment mutation %q changed level %s -> %s (enrichment must never gate)", b.name, m.name, want, got)
+			}
+		}
+	}
+}
+
+// TestComputeContract exercises the Compute() entry point directly (not only through
+// Report): it is pure and UNCONDITIONAL (an incomplete record still yields the full
+// Enrichment slice, while render gates emission behind core), its TierRoadmap carries
+// real NextLevel values whose messages match the emitted conformance/gap findings (the
+// shared roadmapMessage helper), and Result.Observations holds only the rubric
+// observation rows (not the two note emitters).
+func TestComputeContract(t *testing.T) {
+	inc := coreBase()
+	delete(inc["product_family"].(map[string]any), "shared_attestations")
+
+	res := Compute(inc)
+	if res.Level != LevelIncomplete {
+		t.Fatalf("Compute(incomplete).Level = %s, want incomplete", res.Level)
+	}
+	if len(res.Enrichment) == 0 {
+		t.Error("Compute is ungated: an incomplete record must still yield Enrichment items")
+	}
+	if len(res.TierRoadmap) == 0 {
+		t.Fatal("Compute(incomplete).TierRoadmap must carry the to-core (and beyond) gaps")
+	}
+
+	// Report/render gates the same incomplete record: zero enrichment emitted.
+	report := findings.NewReport()
+	Report(inc, report)
+	report.Finalize()
+	if n := len(findingsFor(report, findings.CodeConformanceEnrichment)); n != 0 {
+		t.Errorf("Report(incomplete) emitted %d enrichment findings, want 0 (render gates behind core)", n)
+	}
+
+	// Every TierRoadmap item carries a real NextLevel, and its message is byte-identical
+	// to the emitted conformance/gap finding for the same (level, path).
+	gapMsg := map[string]string{}
+	for _, f := range findingsFor(report, findings.CodeConformanceGap) {
+		gapMsg[f.NextConformanceLevel+"|"+f.Path] = f.Message
+	}
+	for _, it := range res.TierRoadmap {
+		if it.NextLevel != LevelCore && it.NextLevel != LevelStandard && it.NextLevel != LevelFull {
+			t.Errorf("TierRoadmap item %q has NextLevel %s, want a real tier", it.Path, it.NextLevel)
+		}
+		key := it.NextLevel.String() + "|" + it.Path
+		if gapMsg[key] != it.Message {
+			t.Errorf("TierRoadmap message for %s diverges from the emitted gap: %q vs %q", key, it.Message, gapMsg[key])
+		}
+	}
+
+	// Result.Observations carries ONLY rubric observation rows (the two note emitters are
+	// appended by render, not part of the slice).
+	core := Compute(coreBase())
+	for _, it := range core.Observations {
+		if it.Path != "/sustainability_declaration" && it.Path != "/outdoor_classification/legacy_cutoff" {
+			t.Errorf("Result.Observations contains unexpected path %q (rubric observation rows only)", it.Path)
+		}
+	}
+}
+
+// TestReclassifiedEnrichmentMessagesByteIdentical pins ALL 20 rows reclassified from
+// observation to enrichment against their exact message text: the reclassification
+// changed only the finding code, and the CHANGELOG promises byte-identical wording, so
+// a typo introduced into any of the 20 during the move must fail here.
+func TestReclassifiedEnrichmentMessagesByteIdentical(t *testing.T) {
+	want := map[string]string{
+		"/electrical/power_factor":                                  "full records commonly disclose power factor; absent here",
+		"/product_family/shared_warranty/term_years":                "warranty term not disclosed",
+		"/photometry/luminous_opening_shape":                        "luminous opening shape not disclosed",
+		"/photometry/emission_face":                                 "emission face not disclosed",
+		"/colorimetry/duv":                                          "Duv (distance from the Planckian locus) not disclosed",
+		"/colorimetry/chromaticity_x":                               "chromaticity x not disclosed",
+		"/colorimetry/chromaticity_y":                               "chromaticity y not disclosed",
+		"/product_family/shared_mechanical/ambient_operating_range": "ambient operating range not disclosed",
+		"/compatible_accessories":                                   "compatible accessories not listed",
+		"/thermal_derating":                                         "thermal derating not disclosed",
+		"/flicker_measurements":                                     "flicker measurements not disclosed",
+		"/alpha_opic_metrics":                                       "alpha-opic (circadian) metrics not disclosed",
+		"/chromaticity_shift_projection":                            "chromaticity-shift projection not disclosed",
+		"/photometry/field_angle_deg":                               "field angle not disclosed",
+		"/photometry/cutoff_angle_from_horizontal_deg":              "cutoff angle not disclosed",
+		"/photometry/spacing_criterion":                             "spacing criterion not disclosed",
+		"/photometry/ugr_4h_8h":                                     "UGR not disclosed",
+		"/outdoor_classification/lcs_zonal_lumens":                  "LCS zonal lumens not disclosed",
+		"/product_family/shared_mechanical/ik_rating":               "impact (IK) rating not disclosed",
+		"/product_family/physical_dimensions/epa":                   "EPA (effective projected area) not disclosed",
+	}
+	if len(want) != 20 {
+		t.Fatalf("test table has %d rows, want 20", len(want))
+	}
+	seen := map[string]bool{}
+	for _, ru := range rubric {
+		if ru.level != LevelEnrichment {
+			continue
+		}
+		if w, ok := want[ru.path]; ok {
+			seen[ru.path] = true
+			if ru.message != w {
+				t.Errorf("reclassified row %s message = %q, want byte-identical %q", ru.path, ru.message, w)
+			}
+		}
+	}
+	for path := range want {
+		if !seen[path] {
+			t.Errorf("reclassified path %s is not present as a LevelEnrichment rubric row", path)
+		}
+	}
+}
+
+// TestPhotometryFormatEnrichment pins the Phase-D PhotometryFormat row and its
+// hasPhotometrySourceFile applicability: it fires when a photometric source file
+// (ies/ldt/tm33) lacks a format, is waived when only a non-photometric file (or none)
+// is present, and is suppressed once any source file carries a format.
+func TestPhotometryFormatEnrichment(t *testing.T) {
+	fires := func(rec map[string]any) bool {
+		report := findings.NewReport()
+		Report(rec, report)
+		report.Finalize()
+		_, ok := enrichmentAt(report, "/source_files[]/photometry_format")
+		return ok
+	}
+	for _, ft := range []string{"ies", "ldt", "tm33"} {
+		r := coreBase()
+		r["source_files"] = []any{map[string]any{"file_type": ft}}
+		if !fires(r) {
+			t.Errorf("photometry_format should fire for a %s source file lacking a format", ft)
+		}
+	}
+	noPhot := coreBase()
+	noPhot["source_files"] = []any{map[string]any{"file_type": "datasheet_pdf"}}
+	if fires(noPhot) {
+		t.Error("photometry_format must be waived when no ies/ldt/tm33 source file is present")
+	}
+	absent := coreBase()
+	delete(absent, "source_files")
+	if fires(absent) {
+		t.Error("photometry_format must be waived when source_files is absent")
+	}
+	filled := coreBase()
+	filled["source_files"] = []any{map[string]any{"file_type": "ies", "photometry_format": "lm63_2019"}}
+	if fires(filled) {
+		t.Error("photometry_format must not fire once a source file carries a format")
+	}
+}
+
+// TestCie97LmfTableEnrichment pins the block-level AmbientCleanliness row and its
+// hasCie97LmfTable closure: it fires when a luminaire framework is present without a
+// populated CIE 97 grid, is waived when no luminaire framework exists, is suppressed
+// once a real grid is present, and still fires on a hollow (empty-grid) table.
+func TestCie97LmfTableEnrichment(t *testing.T) {
+	fires := func(rec map[string]any) bool {
+		report := findings.NewReport()
+		Report(rec, report)
+		report.Finalize()
+		_, ok := enrichmentAt(report, "/lumen_maintenance_luminaire/cie_97_lmf_table")
+		return ok
+	}
+	if !fires(standardBase()) {
+		t.Error("cie_97_lmf_table should fire: luminaire framework present, no CIE 97 table")
+	}
+	if fires(coreBase()) {
+		t.Error("cie_97_lmf_table must be waived when no luminaire framework is present")
+	}
+	populated := standardBase()
+	populated["lumen_maintenance_luminaire"].(map[string]any)["cie_97_lmf_table"] = map[string]any{
+		"llmf_by_hours": []any{map[string]any{"hours": float64(6000), "llmf": float64(0.95)}},
+	}
+	if fires(populated) {
+		t.Error("cie_97_lmf_table must not fire once a populated grid is present")
+	}
+	hollow := standardBase()
+	hollow["lumen_maintenance_luminaire"].(map[string]any)["cie_97_lmf_table"] = map[string]any{"llmf_by_hours": []any{}}
+	if !fires(hollow) {
+		t.Error("cie_97_lmf_table should still fire on a hollow table (empty grids read as absent)")
 	}
 }
 
@@ -863,22 +1327,28 @@ func TestAttestationCoverageObservation(t *testing.T) {
 
 // --- determinism + panic-safety ---
 
-// TestPredicatesReadOnlyCoreFields asserts the applicability predicates read only
-// core fields: stripping every standard/full field leaves each predicate's value
-// unchanged. coreBase and fullBase share identical core fields, so each predicate
-// must agree across them, for a neutral fixture and an outdoor-site fixture.
+// TestPredicatesReadOnlyCoreFields asserts the GATING-row applicability predicates
+// read only core fields: stripping every standard/full field leaves each predicate's
+// value unchanged. coreBase and fullBase share identical core fields, so every gating
+// row's predicate must agree across them, for a neutral, an outdoor-site, and a
+// directional fixture. Rubric-driven so it automatically covers every gating row and
+// naturally EXEMPTS enrichment/observation rows (which may read parent-block presence
+// because they never affect the level; see the applicability-predicates note in
+// completeness.go). This replaces the former hand-enumerated predicate map.
 func TestPredicatesReadOnlyCoreFields(t *testing.T) {
-	preds := map[string]predicate{
-		"hasWhitePoint": hasWhitePoint, "isWhiteLightPrimary": isWhiteLightPrimary,
-		"directional": directional, "outdoorSite": outdoorSite, "linear": linear,
-		"requiresDimmingDetail": requiresDimmingDetail, "wetOrExposed": wetOrExposed, "impactPublic": impactPublic,
-		"poleMounted": poleMounted, "hasMarketSafetyListing": hasMarketSafetyListing,
-	}
 	check := func(t *testing.T, core, full map[string]any) {
-		for name, p := range preds {
-			if p(core) != p(full) {
-				t.Errorf("predicate %s differs between core and full fixtures (reads a non-core field): core=%v full=%v",
-					name, p(core), p(full))
+		for _, ru := range rubric {
+			switch ru.level {
+			case LevelCore, LevelStandard, LevelFull:
+			default:
+				continue // enrichment / observation rows are non-gating and exempt
+			}
+			if ru.applicable == nil {
+				continue // universal
+			}
+			if ru.applicable(core) != ru.applicable(full) {
+				t.Errorf("gating row (level %s, path %q) applicability differs between core and full fixtures (reads a non-core field): core=%v full=%v",
+					ru.level, ru.path, ru.applicable(core), ru.applicable(full))
 			}
 		}
 	}
@@ -923,6 +1393,13 @@ func TestGradeHostileInput(t *testing.T) {
 		{nil, "lumen_maintenance_luminaire"}, {nil, "attestations"}, {nil, "compatible_accessories"},
 		{nil, "test_conditions"}, {nil, "thermal_derating"}, {nil, "flicker_measurements"},
 		{nil, "alpha_opic_metrics"}, {nil, "chromaticity_shift_projection"}, {nil, "sustainability_declaration"},
+		// New Phase C array / sub-block parents the enrichment closures descend into.
+		{[]string{"thermal_derating"}, "curves"},
+		{[]string{"lumen_maintenance_luminaire"}, "tm_28"},
+		{[]string{"lumen_maintenance_luminaire"}, "manufacturer_rated_claim"},
+		{[]string{"lumen_maintenance_luminaire"}, "cie_97_lmf_table"},
+		// Phase D array parent (PhotometryFormat closure descends into source_files).
+		{nil, "source_files"},
 	}
 	for _, tgt := range targets {
 		for _, h := range hostiles {

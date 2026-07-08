@@ -395,9 +395,19 @@
       "type": "object",
       "properties": {
         "file_type": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" },
-        "reference": { "$ref": "#/$defs/FileReference" }
+        "reference": { "$ref": "#/$defs/FileReference" },
+        "photometry_format": { "$ref": "taxonomy.schema.json#/$defs/PhotometryFormat" }
       },
-      "required": ["file_type", "reference"]
+      "required": ["file_type", "reference"],
+      "if": { "required": ["photometry_format"] },
+      "then": {
+        "properties": {
+          "file_type": {
+            "description": "A photometry_format is only meaningful on a photometric data file, so it is constrained to the IES, LDT, and TM-33 source-file types.",
+            "enum": ["ies", "ldt", "tm33"]
+          }
+        }
+      }
     },
 
     "ProductFamily": {
@@ -443,6 +453,7 @@
         },
         "environment_rating": { "$ref": "taxonomy.schema.json#/$defs/EnvironmentRating" },
         "shape": { "$ref": "taxonomy.schema.json#/$defs/Shape" },
+        "orientation": { "$ref": "taxonomy.schema.json#/$defs/Orientation" },
         "shared_mechanical": {
           "type": "object",
           "properties": {
@@ -750,6 +761,11 @@
           "description": "Optional dim-command-to-output mapping (logarithmic or linear). Independent of `dimming_method`; populate when the cutsheet or driver datasheet publishes it.",
           "$ref": "taxonomy.schema.json#/$defs/DimmingCurve"
         },
+        "adaptive_lighting_modes": {
+          "description": "Built-in adaptive control capabilities the luminaire provides (integrated photocell, motion sensing, scheduled dimming, networked control). Multiple values may apply. Populate when the driver protocol is controllable and the cutsheet declares these behaviors.",
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/AdaptiveLightingMode" }
+        },
         "control_gear_type": { "$ref": "taxonomy.schema.json#/$defs/ControlGearType" },
         "led_module_power_w": {
           "description": "Optional LED-module-only input power (typically smaller than luminaire input due to driver losses). Useful when the cutsheet distinguishes module from luminaire.",
@@ -778,6 +794,7 @@
           "$ref": "#/$defs/ProvenancedNumber"
         },
         "beam_family": { "$ref": "taxonomy.schema.json#/$defs/BeamFamily" },
+        "optical_radiation_band": { "$ref": "taxonomy.schema.json#/$defs/OpticalRadiationBand" },
         "distribution_type": { "$ref": "taxonomy.schema.json#/$defs/DistributionType" },
         "symmetry_type": { "$ref": "taxonomy.schema.json#/$defs/SymmetryType" },
         "photometric_coordinate_system": { "$ref": "taxonomy.schema.json#/$defs/PhotometricCoordinateSystem" },
@@ -875,6 +892,10 @@
           "properties": {
             "rf": { "$ref": "#/$defs/ProvenancedNumber" },
             "rg": { "$ref": "#/$defs/ProvenancedNumber" },
+            "reference_illuminant_type": {
+              "description": "TM-30 reference illuminant regime. Derivable by definition from the test-source CCT (the reference illuminant CCT equals the test-source CCT), so it is an explicitness/interop convenience rather than an independently authored value.",
+              "$ref": "taxonomy.schema.json#/$defs/ReferenceIlluminantType"
+            },
             "pvf_code": {
               "description": "Preference/Vividness/Fidelity two-character code per TM-30-24: a letter (P / V / F) identifying the design-intent axis, followed by a level digit (1-3). Example values: `P2`, `V1`, `F3`. A single PVF code expresses the highest-priority design intent level achieved.",
               "type": "string",
