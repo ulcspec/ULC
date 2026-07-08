@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
-	"github.com/ulcspec/ULC/tools/validator/internal/grade"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
 	"github.com/ulcspec/ULC/tools/validator/internal/sheet"
 	"github.com/ulcspec/ULC/tools/validator/internal/validate"
@@ -84,7 +84,7 @@ func runValidate(args []string) int {
 	var verbose bool
 	var schemaDir string
 	fs.BoolVar(&jsonOut, "json", false, "Emit findings as machine-readable JSON instead of human-readable text.")
-	fs.BoolVar(&verbose, "verbose", false, "Include conformance observation findings (comprehensive-depth nudges) in text output. JSON always includes them.")
+	fs.BoolVar(&verbose, "verbose", false, "Include the optional conformance findings (the enrichment roadmap and observation notes) in text output. JSON always includes them.")
 	fs.StringVar(&schemaDir, "schema-dir", "", "Directory containing ulc.schema.json and taxonomy.schema.json. Auto-detected when omitted.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc validate -- validate a ULC record against the ULC schema.
@@ -202,7 +202,7 @@ USAGE
 	// the computed grade plus a per-grade roadmap to full (INFO only, never a
 	// defect). A record is whatever level its data achieves; there is nothing to
 	// fall short of, so conformance produces no WARNINGs.
-	grade.Report(recordMap, report)
+	completeness.Report(recordMap, report)
 
 	report.Finalize()
 
@@ -422,6 +422,9 @@ USAGE
 			continue
 		}
 		report := findings.NewReport()
+		// from-sheet exposes neither --verbose nor --json, so drop that advice from the
+		// hidden-findings hint if the report is rendered on a failure.
+		report.OmitFlagHint = true
 		rawTree, derr := decodeStrict(recordBytes)
 		if derr != nil {
 			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", res.RecordID, derr)
@@ -429,7 +432,7 @@ USAGE
 			continue
 		}
 		v.Validate(rawTree, report)
-		grade.Report(res.Record, report)
+		completeness.Report(res.Record, report)
 		report.Finalize()
 
 		// conformance_level is always stamped now (the grader floors at `incomplete`),
@@ -451,7 +454,7 @@ USAGE
 		// `incomplete` is a valid, expected outcome (the floor, below core): write the
 		// record and flag that it is not yet a publishable grade. The roadmap in the
 		// report names what core still needs.
-		if level == grade.LevelIncomplete.String() {
+		if level == completeness.LevelIncomplete.String() {
 			fmt.Printf("%s -> incomplete (below core; see roadmap) (%d findings)\n", res.RecordID, len(report.Findings))
 		} else {
 			fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))

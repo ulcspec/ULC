@@ -1,4 +1,4 @@
-// Package grade implements the ULC conformance-level grading rubric.
+// Package completeness implements the ULC conformance-level grading rubric.
 //
 // Grading is a pure function of an already-parsed record map. It reads only
 // fields that are present in the record (no I/O, no external data, no schema
@@ -31,16 +31,24 @@
 //	standard    core plus the fuller specification an LM-79 report produces.
 //	full        standard plus exhaustive accredited characterization.
 //
-// LevelObservation is a non-ordered sentinel for the non-gating depth rows in the
-// same table.
+// The table also carries two non-ordered sentinels for non-gating rows, both
+// excluded from grading: LevelEnrichment for the enrichment roadmap (optional
+// dimensions a record could disclose to deepen the datasheet, surfaced as
+// conformance/enrichment) and LevelObservation for the residual data-quality and
+// tracked-declaration notes (surfaced as conformance/observation).
+//
+// Compute walks the rubric once and returns a structured Result (the achieved
+// level plus the tier roadmap, the enrichment roadmap, and the observation rows);
+// render reproduces the human-facing INFO emission from it. AchievedLevel stays
+// the independent, cheap level ladder the index builder calls.
 //
 // Severity model:
 //
 //	INFO    everything grading emits: the achieved-grade summary, the per-grade
 //	        roadmap (each missing item naming its source document and standard,
 //	        plus satisfied-grade and gated-grade markers), and, at core and above,
-//	        the non-gating depth observations.
-package grade
+//	        the non-gating enrichment roadmap and observation notes.
+package completeness
 
 import (
 	"fmt"
@@ -61,9 +69,14 @@ const (
 	LevelCore
 	LevelStandard
 	LevelFull
-	// LevelObservation: sentinel for non-gating depth rows. Excluded from
-	// AchievedLevel / allRulesMet / missingAt; iterated only by emitObservations.
+	// LevelObservation: sentinel for the residual non-gating notes (sustainability
+	// declaration, deprecated legacy cutoff). Excluded from AchievedLevel /
+	// allRulesMet / missingAt; collected into Result.Observations by Compute.
 	LevelObservation
+	// LevelEnrichment: sentinel for the non-gating enrichment roadmap (optional
+	// dimensions a record could disclose). Excluded from AchievedLevel /
+	// allRulesMet / missingAt; collected into Result.Enrichment by Compute.
+	LevelEnrichment
 )
 
 // String returns the canonical lowercase conformance_level token.
@@ -77,6 +90,8 @@ func (l Level) String() string {
 		return "full"
 	case LevelObservation:
 		return "observation"
+	case LevelEnrichment:
+		return "enrichment"
 	default:
 		return "incomplete" // floor fallback; the zero value renders here
 	}
@@ -159,6 +174,67 @@ func anyOf(ps ...predicate) predicate {
 		}
 		return false
 	}
+}
+
+// both builds an AND of two predicates: satisfied only when both hold. Used by the
+// pvf_code enrichment row (white-light-primary AND a tm_30 block present).
+func both(a, b predicate) predicate {
+	return func(r map[string]any) bool { return a(r) && b(r) }
+}
+
+// arrItemHas builds a present-closure for a field inside array items: satisfied when
+// the array at arrayPath carries at least ONE map entry whose leafKey holds real
+// content. The nudge is "start disclosing this dimension", not "complete every
+// entry", so any qualifying entry is enough. Total on hostile input (the grader runs
+// pre-schema-validation): a non-array parent, a non-map entry, or a wrong-typed leaf
+// reads as absent rather than panicking.
+func arrItemHas(arrayPath []string, leafKey string) predicate {
+	return func(r map[string]any) bool {
+		if len(arrayPath) == 0 {
+			return false // no array to inspect; matches arr/scalarNum's zero-key guard
+		}
+		parent := r
+		if len(arrayPath) > 1 {
+			p, ok := getMap(r, arrayPath[:len(arrayPath)-1]...)
+			if !ok {
+				return false
+			}
+			parent = p
+		}
+		a, ok := parent[arrayPath[len(arrayPath)-1]].([]any)
+		if !ok {
+			return false
+		}
+		for _, e := range a {
+			m, ok := e.(map[string]any)
+			if !ok {
+				continue
+			}
+			if leafHasContent(m, leafKey) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// leafHasContent reports whether m[key] holds recognized real content: a non-empty
+// string (enum/string leaves), a bare JSON number, or a ProvenancedNumber-shaped
+// object carrying a numeric value. A missing key, an empty string, or a wrong-typed
+// value reads as absent.
+func leafHasContent(m map[string]any, key string) bool {
+	switch v := m[key].(type) {
+	case string:
+		return v != ""
+	case float64, int, int64:
+		return true
+	case map[string]any:
+		switch v["value"].(type) {
+		case float64, int, int64:
+			return true
+		}
+	}
+	return false
 }
 
 // hasUncertainty: coverage_factor_k present as a real number, plus at least one
@@ -292,9 +368,29 @@ func asFloat(v any) (float64, bool) {
 	}
 }
 
-// --- applicability predicates (read only core fields; see determinism note) ---
+// --- applicability predicates ---
+//
+// Determinism note: GATING-row (Core/Standard/Full) applicability predicates read
+// ONLY core fields, so the gating walk is order-independent (enforced by
+// TestPredicatesReadOnlyCoreFields). Enrichment and observation rows are non-gating,
+// so their applicability predicates MAY read parent-block presence (blockPresent and
+// the has* block closures): a sub-field nudge fires only when its parent block is
+// genuinely present, never affecting the achieved level.
 
 func category(r map[string]any) string { return getString(r, "product_family", "primary_category") }
+
+// blockPresent builds an applicability predicate for enrichment sub-field rows:
+// satisfied when the block at keys is present AND a non-empty map. Present-and-empty
+// is deliberately excluded: a schema-valid empty block ({}) has no minProperties, so
+// bare key-presence would spam every sub-field row on a hollow block. Requiring at
+// least one property means an absent or hollow parent draws only the block-level
+// nudge (or none), never sub-field spam. Total on hostile input.
+func blockPresent(keys ...string) predicate {
+	return func(r map[string]any) bool {
+		m, ok := getMap(r, keys...)
+		return ok && len(m) > 0
+	}
+}
 
 // directionalCategories is the set of PrimaryCategory values that throw a defined
 // beam (so a beam angle is meaningful): downlights, track/spot heads, cylinders,
@@ -359,6 +455,49 @@ var analogPhaseDimming = map[string]bool{
 // so grading stays order-independent.
 func requiresDimmingDetail(r map[string]any) bool {
 	return analogPhaseDimming[getString(r, "electrical", "driver_protocol")]
+}
+
+// nonControllableDrivers are the DimmingProtocol tokens for which the fixture cannot be
+// commanded to change output, so a built-in adaptive-lighting-mode capability is not
+// meaningful. Every other protocol is controllable/dimmable. Kept as an explicit set
+// (verified against the DimmingProtocol enum by TestPredicateSetsAreRealEnumMembers) so
+// a future non-controllable token is a conscious add rather than a silent gap.
+var nonControllableDrivers = map[string]bool{
+	"non_dimming": true,
+}
+
+// controllableDriver reports whether the record declares a controllable/dimmable
+// driver_protocol (any protocol other than non_dimming), the precondition for a
+// built-in AdaptiveLightingMode nudge. Reads only the core field driver_protocol, so
+// even as an enrichment applicability predicate it stays order-independent.
+func controllableDriver(r map[string]any) bool {
+	p := getString(r, "electrical", "driver_protocol")
+	return p != "" && !nonControllableDrivers[p]
+}
+
+// photometrySourceFileTypes are the SourceFileType tokens that carry a versioned
+// photometric data format (so a photometry_format is meaningful on the entry).
+var photometrySourceFileTypes = map[string]bool{
+	"ies": true, "ldt": true, "tm33": true,
+}
+
+// hasPhotometrySourceFile reports whether any source_files[] entry is a photometric
+// data file (file_type ies / ldt / tm33), the applicability for the PhotometryFormat
+// enrichment row. Total on hostile input: a non-array source_files, or a non-map entry,
+// reads as absent.
+func hasPhotometrySourceFile(record map[string]any) bool {
+	arr, ok := record["source_files"].([]any)
+	if !ok {
+		return false
+	}
+	for _, e := range arr {
+		if m, ok := e.(map[string]any); ok {
+			if s, ok := m["file_type"].(string); ok && photometrySourceFileTypes[s] {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // wetOrExposed reads only core fields (environment_rating, indoor_outdoor). It
@@ -528,31 +667,94 @@ var rubric = []rule{
 	{LevelFull, "/colorimetry/tm_30/rf", "", "test_report", "TM-30", "", num("colorimetry", "tm_30", "rf"), isWhiteLightPrimary},
 	{LevelFull, "/colorimetry/tm_30/rf_h_per_bin", "", "test_report", "TM-30", "", arr("colorimetry", "tm_30", "rf_h_per_bin"), isWhiteLightPrimary},
 
-	// --- OBSERVATIONS (non-gating; surfaced at core and above) ---
-	{LevelObservation, "/electrical/power_factor", "", "datasheet_pdf", "LM-79", "full records commonly disclose power factor; absent here", num("electrical", "power_factor"), nil},
-	{LevelObservation, "/product_family/shared_warranty/term_years", "", "datasheet_pdf", "identity", "warranty term not disclosed", scalarNum("product_family", "shared_warranty", "term_years"), nil},
-	{LevelObservation, "/photometry/luminous_opening_shape", "LuminousOpeningShape", "ies", "LM-79", "luminous opening shape not disclosed", str("photometry", "luminous_opening_shape"), nil},
-	{LevelObservation, "/photometry/emission_face", "EmissionFace", "ies", "LM-79", "emission face not disclosed", str("photometry", "emission_face"), nil},
-	{LevelObservation, "/colorimetry/duv", "", "test_report", "ANSI C78.377", "Duv (distance from the Planckian locus) not disclosed", num("colorimetry", "duv"), hasWhitePoint},
-	{LevelObservation, "/colorimetry/chromaticity_x", "", "test_report", "ANSI C78.377", "chromaticity x not disclosed", num("colorimetry", "chromaticity_x"), hasWhitePoint},
-	{LevelObservation, "/colorimetry/chromaticity_y", "", "test_report", "ANSI C78.377", "chromaticity y not disclosed", num("colorimetry", "chromaticity_y"), hasWhitePoint},
-	{LevelObservation, "/product_family/shared_mechanical/ambient_operating_range", "", "datasheet_pdf", "identity", "ambient operating range not disclosed", hasAmbientOperatingRange, nil},
-	{LevelObservation, "/compatible_accessories", "AccessoryType", "datasheet_pdf", "identity", "compatible accessories not listed", arr("compatible_accessories"), nil},
-	{LevelObservation, "/thermal_derating", "", "test_report", "LM-82", "thermal derating not disclosed", hasThermalDerating, nil},
-	{LevelObservation, "/flicker_measurements", "", "test_report", "LM-90 / IEEE 1789", "flicker measurements not disclosed", hasFlickerMeasurements, nil},
-	{LevelObservation, "/alpha_opic_metrics", "", "test_report", "CIE S 026", "alpha-opic (circadian) metrics not disclosed", hasAlphaOpicMetrics, nil},
-	{LevelObservation, "/chromaticity_shift_projection", "", "test_report", "TM-35", "chromaticity-shift projection not disclosed", hasChromaticityShiftProjection, nil},
+	// --- ENRICHMENT (non-gating; the enrichment roadmap; surfaced at core and above) ---
+	// Optional dimensions a record could disclose to deepen the datasheet. Messages
+	// are byte-identical to their prior conformance/observation wording; only the
+	// finding code changes (see the 0.9.0 CHANGELOG consumer-migration note).
+	{LevelEnrichment, "/electrical/power_factor", "", "datasheet_pdf", "LM-79", "full records commonly disclose power factor; absent here", num("electrical", "power_factor"), nil},
+	{LevelEnrichment, "/product_family/shared_warranty/term_years", "", "datasheet_pdf", "identity", "warranty term not disclosed", scalarNum("product_family", "shared_warranty", "term_years"), nil},
+	{LevelEnrichment, "/photometry/luminous_opening_shape", "LuminousOpeningShape", "ies", "LM-79", "luminous opening shape not disclosed", str("photometry", "luminous_opening_shape"), nil},
+	{LevelEnrichment, "/photometry/emission_face", "EmissionFace", "ies", "LM-79", "emission face not disclosed", str("photometry", "emission_face"), nil},
+	{LevelEnrichment, "/colorimetry/duv", "", "test_report", "ANSI C78.377", "Duv (distance from the Planckian locus) not disclosed", num("colorimetry", "duv"), hasWhitePoint},
+	{LevelEnrichment, "/colorimetry/chromaticity_x", "", "test_report", "ANSI C78.377", "chromaticity x not disclosed", num("colorimetry", "chromaticity_x"), hasWhitePoint},
+	{LevelEnrichment, "/colorimetry/chromaticity_y", "", "test_report", "ANSI C78.377", "chromaticity y not disclosed", num("colorimetry", "chromaticity_y"), hasWhitePoint},
+	{LevelEnrichment, "/product_family/shared_mechanical/ambient_operating_range", "", "datasheet_pdf", "identity", "ambient operating range not disclosed", hasAmbientOperatingRange, nil},
+	{LevelEnrichment, "/compatible_accessories", "AccessoryType", "datasheet_pdf", "identity", "compatible accessories not listed", arr("compatible_accessories"), nil},
+	{LevelEnrichment, "/thermal_derating", "", "test_report", "LM-82", "thermal derating not disclosed", hasThermalDerating, nil},
+	{LevelEnrichment, "/flicker_measurements", "", "test_report", "LM-90 / IEEE 1789", "flicker measurements not disclosed", hasFlickerMeasurements, nil},
+	{LevelEnrichment, "/alpha_opic_metrics", "", "test_report", "CIE S 026", "alpha-opic (circadian) metrics not disclosed", hasAlphaOpicMetrics, nil},
+	{LevelEnrichment, "/chromaticity_shift_projection", "", "test_report", "TM-35", "chromaticity-shift projection not disclosed", hasChromaticityShiftProjection, nil},
+	{LevelEnrichment, "/photometry/field_angle_deg", "", "ies", "LM-79", "field angle not disclosed", num("photometry", "field_angle_deg"), directional},
+	{LevelEnrichment, "/photometry/cutoff_angle_from_horizontal_deg", "", "ies", "LM-79", "cutoff angle not disclosed", num("photometry", "cutoff_angle_from_horizontal_deg"), nil},
+	{LevelEnrichment, "/photometry/spacing_criterion", "", "ies", "LM-79", "spacing criterion not disclosed", num("photometry", "spacing_criterion"), nil},
+	{LevelEnrichment, "/photometry/ugr_4h_8h", "", "ies", "CIE 117", "UGR not disclosed", num("photometry", "ugr_4h_8h"), nil},
+	{LevelEnrichment, "/outdoor_classification/lcs_zonal_lumens", "", "ies", "TM-15", "LCS zonal lumens not disclosed", arr("outdoor_classification", "lcs_zonal_lumens"), outdoorSite},
+	{LevelEnrichment, "/product_family/shared_mechanical/ik_rating", "", "compliance_documents", "IEC 62262", "impact (IK) rating not disclosed", str("product_family", "shared_mechanical", "ik_rating"), impactPublic},
+	{LevelEnrichment, "/product_family/physical_dimensions/epa", "", "datasheet_pdf", "identity", "EPA (effective projected area) not disclosed", hasEPA, poleMounted},
+
+	// Bucket B: new enrichment rows gated on their parent block being present, so an
+	// absent block draws one block-level nudge (or none), never sub-field spam.
+	// photometry.
+	{LevelEnrichment, "/photometry/beam_family", "BeamFamily", "ies", "LM-79", "beam family not disclosed", str("photometry", "beam_family"), blockPresent("photometry")},
+	// test_conditions.
+	{LevelEnrichment, "/test_conditions/photometry_method", "PhotometryMethod", "ies", "LM-79", "photometry method not disclosed", str("test_conditions", "photometry_method"), blockPresent("test_conditions")},
+	{LevelEnrichment, "/test_conditions/stabilization_method", "StabilizationMethod", "ies", "LM-79", "stabilization method not disclosed", str("test_conditions", "stabilization_method"), blockPresent("test_conditions")},
+	{LevelEnrichment, "/test_conditions/negative_intensity_handling", "NegativeIntensityHandling", "ies", "LM-79", "negative intensity handling not disclosed", str("test_conditions", "negative_intensity_handling"), blockPresent("test_conditions")},
+	{LevelEnrichment, "/test_conditions/file_generation_type", "FileGenerationType", "ies", "LM-63", "file generation type not disclosed", str("test_conditions", "file_generation_type"), blockPresent("test_conditions")},
+	{LevelEnrichment, "/test_conditions/nonstandard_condition_flags", "NonstandardConditionFlag", "ies", "LM-79", "nonstandard condition flags not disclosed", arr("test_conditions", "nonstandard_condition_flags"), blockPresent("test_conditions")},
+	// operating_point (its own qualifiers, gated on a genuinely-present operating point).
+	{LevelEnrichment, "/operating_point/dut_operating_mode", "DutOperatingMode", "test_report", "LM-79", "device-under-test operating mode not disclosed", str("operating_point", "dut_operating_mode"), hasOperatingPoint},
+	{LevelEnrichment, "/operating_point/case_temperature_monitoring_point", "TemperatureMonitoringPoint", "test_report", "LM-79", "case-temperature monitoring point not disclosed", str("operating_point", "case_temperature_monitoring_point"), hasOperatingPoint},
+	// lumen_maintenance_package (per-entry; any entry carrying the field satisfies).
+	{LevelEnrichment, "/lumen_maintenance_package[]/flux_maintenance_quantity", "FluxMaintenanceQuantity", "test_report", "TM-21", "flux maintenance quantity not disclosed", arrItemHas([]string{"lumen_maintenance_package"}, "flux_maintenance_quantity"), hasLumenMaintenancePackage},
+	{LevelEnrichment, "/lumen_maintenance_package[]/tested_product_type", "TestedProductType", "test_report", "LM-80", "tested product type not disclosed", arrItemHas([]string{"lumen_maintenance_package"}, "tested_product_type"), hasLumenMaintenancePackage},
+	{LevelEnrichment, "/lumen_maintenance_package[]/tm_21_interpolation_type", "TM21InterpolationType", "test_report", "TM-21", "TM-21 interpolation type not disclosed", arrItemHas([]string{"lumen_maintenance_package"}, "tm_21_interpolation_type"), hasLumenMaintenancePackage},
+	// FluxMaintenanceThreshold: two legs sharing one taxonomy token (package entry, luminaire claim).
+	{LevelEnrichment, "/lumen_maintenance_package[]/flux_maintenance_threshold", "FluxMaintenanceThreshold", "test_report", "TM-21", "flux maintenance threshold not disclosed", arrItemHas([]string{"lumen_maintenance_package"}, "flux_maintenance_threshold"), hasLumenMaintenancePackage},
+	{LevelEnrichment, "/lumen_maintenance_luminaire/manufacturer_rated_claim/claim_type", "FluxMaintenanceThreshold", "datasheet_pdf", "TM-21", "manufacturer-rated maintenance claim type not disclosed", str("lumen_maintenance_luminaire", "manufacturer_rated_claim", "claim_type"), hasLumenMaintenanceLuminaire},
+	// ProjectionReliability: two legs sharing one taxonomy token (package entry, tm_28 sub-block).
+	{LevelEnrichment, "/lumen_maintenance_package[]/projection_reliability", "ProjectionReliability", "test_report", "TM-21", "projection reliability not disclosed", arrItemHas([]string{"lumen_maintenance_package"}, "projection_reliability"), hasLumenMaintenancePackage},
+	{LevelEnrichment, "/lumen_maintenance_luminaire/tm_28/projection_reliability", "ProjectionReliability", "test_report", "TM-28", "TM-28 projection reliability not disclosed", str("lumen_maintenance_luminaire", "tm_28", "projection_reliability"), hasLumenMaintenanceLuminaire},
+	// lumen_maintenance_luminaire (tm_28 + framework).
+	{LevelEnrichment, "/lumen_maintenance_luminaire/tm_28/projection_basis", "ProjectionBasis", "test_report", "TM-28", "TM-28 projection basis not disclosed", str("lumen_maintenance_luminaire", "tm_28", "projection_basis"), hasLumenMaintenanceLuminaire},
+	{LevelEnrichment, "/lumen_maintenance_luminaire/tm_28/projection_method", "LumenMaintenanceProjectionMethod", "test_report", "TM-28", "lumen-maintenance projection method not disclosed", str("lumen_maintenance_luminaire", "tm_28", "projection_method"), hasLumenMaintenanceLuminaire},
+	{LevelEnrichment, "/lumen_maintenance_luminaire/declaration_framework", "LumenMaintenanceDeclarationFramework", "datasheet_pdf", "TM-21 / TM-28", "lumen-maintenance declaration framework not disclosed", str("lumen_maintenance_luminaire", "declaration_framework"), hasLumenMaintenanceLuminaire},
+	// AmbientCleanliness: block-level (its leaf is required in the CIE 97 table items).
+	{LevelEnrichment, "/lumen_maintenance_luminaire/cie_97_lmf_table", "AmbientCleanliness", "datasheet_pdf", "CIE 97", "CIE 97 luminaire maintenance factor table not disclosed", hasCie97LmfTable, hasLumenMaintenanceLuminaire},
+	// chromaticity_shift_projection sub-fields.
+	{LevelEnrichment, "/chromaticity_shift_projection/shift_metric", "ChromaticityShiftMetric", "test_report", "TM-35", "chromaticity-shift metric not disclosed", str("chromaticity_shift_projection", "shift_metric"), hasChromaticityShiftProjection},
+	{LevelEnrichment, "/chromaticity_shift_projection/shift_threshold", "ChromaticityShiftThreshold", "test_report", "TM-35", "chromaticity-shift threshold not disclosed", str("chromaticity_shift_projection", "shift_threshold"), hasChromaticityShiftProjection},
+	{LevelEnrichment, "/chromaticity_shift_projection/shift_mode", "ChromaticityShiftMode", "test_report", "TM-35", "chromaticity-shift mode not disclosed", str("chromaticity_shift_projection", "shift_mode"), hasChromaticityShiftProjection},
+	{LevelEnrichment, "/chromaticity_shift_projection/tm_35_edition", "TM35Edition", "test_report", "TM-35", "TM-35 edition not disclosed", str("chromaticity_shift_projection", "tm_35_edition"), hasChromaticityShiftProjection},
+	// flicker_measurements qualifiers.
+	{LevelEnrichment, "/flicker_measurements/risk_level", "FlickerRiskLevel", "test_report", "LM-90 / IEEE 1789", "flicker risk level not disclosed", str("flicker_measurements", "risk_level"), hasFlickerMeasurements},
+	{LevelEnrichment, "/flicker_measurements/test_chamber_type", "FlickerTestChamberType", "test_report", "LM-90 / IEEE 1789", "flicker test chamber type not disclosed", str("flicker_measurements", "test_chamber_type"), hasFlickerMeasurements},
+	{LevelEnrichment, "/flicker_measurements/dimming_type_at_test", "FlickerDimmingType", "test_report", "LM-90 / IEEE 1789", "flicker dimming type at test not disclosed", str("flicker_measurements", "dimming_type_at_test"), hasFlickerMeasurements},
+	{LevelEnrichment, "/flicker_measurements/photodetector_correction", "FlickerPhotodetectorSpectralCorrection", "test_report", "LM-90 / IEEE 1789", "flicker photodetector spectral correction not disclosed", str("flicker_measurements", "photodetector_correction"), hasFlickerMeasurements},
+	{LevelEnrichment, "/flicker_measurements/sampling_class", "FlickerSamplingClass", "test_report", "LM-90 / IEEE 1789", "flicker sampling class not disclosed", str("flicker_measurements", "sampling_class"), hasFlickerMeasurements},
+	{LevelEnrichment, "/flicker_measurements/waveform_file_format", "FlickerWaveformFileFormat", "test_report", "LM-90 / IEEE 1789", "flicker waveform file format not disclosed", str("flicker_measurements", "waveform_file_format"), hasFlickerMeasurements},
+	// thermal_derating.
+	{LevelEnrichment, "/thermal_derating/thermal_control_method", "ThermalControlMethod", "test_report", "LM-82", "thermal control method not disclosed", str("thermal_derating", "thermal_control_method"), hasThermalDerating},
+	{LevelEnrichment, "/thermal_derating/curves[]/temperature_axis", "TemperatureAxis", "test_report", "LM-82", "thermal derating temperature axis not disclosed", arrItemHas([]string{"thermal_derating", "curves"}, "temperature_axis"), hasThermalDerating},
+	// electrical.
+	{LevelEnrichment, "/electrical/dimming_curve", "DimmingCurve", "datasheet_pdf", "identity", "dimming curve not disclosed", str("electrical", "dimming_curve"), blockPresent("electrical")},
+
+	// Bucket C: the 5 additive optional fields wired in v0.9.0 Phase D.
+	{LevelEnrichment, "/product_family/orientation", "Orientation", "datasheet_pdf", "identity", "installed orientation not disclosed", str("product_family", "orientation"), nil},
+	{LevelEnrichment, "/photometry/optical_radiation_band", "OpticalRadiationBand", "datasheet_pdf", "LM-80", "optical radiation band not disclosed", str("photometry", "optical_radiation_band"), blockPresent("photometry")},
+	{LevelEnrichment, "/electrical/adaptive_lighting_modes", "AdaptiveLightingMode", "datasheet_pdf", "RP-8", "adaptive lighting modes not disclosed", arr("electrical", "adaptive_lighting_modes"), controllableDriver},
+	{LevelEnrichment, "/source_files[]/photometry_format", "PhotometryFormat", "ies", "LM-63 / TM-33", "photometry file format not disclosed", arrItemHas([]string{"source_files"}, "photometry_format"), hasPhotometrySourceFile},
+	// pvf_code surfaces the TM-30 design-intent ground (TM30DesignIntent/TM30Level stay
+	// staged vocabulary; pvf_code carries the highest-priority achieved designation).
+	{LevelEnrichment, "/colorimetry/tm_30/pvf_code", "", "test_report", "TM-30", "TM-30 PVF designation not disclosed", str("colorimetry", "tm_30", "pvf_code"), both(isWhiteLightPrimary, blockPresent("colorimetry", "tm_30"))},
+
+	// --- OBSERVATIONS (non-gating; residual notes; surfaced at core and above) ---
+	// A tracked declaration whose presence is noted, and a deprecated classification.
+	// Neither is a "disclose Y to deepen the datasheet" nudge, so neither joins the
+	// enrichment roadmap. The two note emitters (emitHeadlineProvenance,
+	// emitAttestationCoverage) are the other two residual observation sources.
 	{LevelObservation, "/sustainability_declaration", "", "datasheet_pdf", "EPD / HPD", "sustainability declaration not disclosed", hasSustainabilityDeclaration, nil},
-	{LevelObservation, "/photometry/field_angle_deg", "", "ies", "LM-79", "field angle not disclosed", num("photometry", "field_angle_deg"), directional},
-	{LevelObservation, "/photometry/cutoff_angle_from_horizontal_deg", "", "ies", "LM-79", "cutoff angle not disclosed", num("photometry", "cutoff_angle_from_horizontal_deg"), nil},
-	{LevelObservation, "/photometry/spacing_criterion", "", "ies", "LM-79", "spacing criterion not disclosed", num("photometry", "spacing_criterion"), nil},
-	{LevelObservation, "/photometry/ugr_4h_8h", "", "ies", "CIE 117", "UGR not disclosed", num("photometry", "ugr_4h_8h"), nil},
-	{LevelObservation, "/outdoor_classification/lcs_zonal_lumens", "", "ies", "TM-15", "LCS zonal lumens not disclosed", arr("outdoor_classification", "lcs_zonal_lumens"), outdoorSite},
 	{LevelObservation, "/outdoor_classification/legacy_cutoff", "LegacyCutoffClassification", "ies", "RP-8", "legacy cutoff classification not disclosed", str("outdoor_classification", "legacy_cutoff"), outdoorSite},
-	{LevelObservation, "/product_family/shared_mechanical/ik_rating", "", "compliance_documents", "IEC 62262", "impact (IK) rating not disclosed", str("product_family", "shared_mechanical", "ik_rating"), impactPublic},
-	{LevelObservation, "/product_family/physical_dimensions/epa", "", "datasheet_pdf", "identity", "EPA (effective projected area) not disclosed", hasEPA, poleMounted},
-	// Provenance: the non-measured-headline note fires from emitHeadlineProvenance
-	// (a present-but-not-measured check), not a present-closure row.
 }
 
 // --- the ladder ---
@@ -613,19 +815,109 @@ func missingAt(record map[string]any, lvl Level) []rule {
 	return out
 }
 
+// --- the structured result ---
+
+// Item is one row of a Result: a tier-roadmap gap, an enrichment suggestion, or an
+// observation note. Document is a SourceFileType token; Standard is the governing
+// standard; Message is the human-readable line. NextLevel is meaningful ONLY on
+// TierRoadmap items (the tier the gap unlocks) and is the zero value elsewhere.
+type Item struct {
+	Path      string
+	Document  string
+	Standard  string
+	Message   string
+	NextLevel Level
+}
+
+// Result is the structured completeness picture Compute returns: the achieved
+// level plus the two-part roadmap (tier gaps and enrichment) and the observation
+// notes. A future achievements package models on this shape by copying, not
+// importing.
+type Result struct {
+	Level       Level
+	TierRoadmap []Item // per-tier hard-rule gaps (render emits as conformance/gap)
+	Enrichment  []Item // LevelEnrichment applicable-and-absent (render emits as conformance/enrichment)
+	// Observations carries the LevelObservation rubric rows ONLY (post-reclassification:
+	// the sustainability and legacy-cutoff notes). The two direct note emitters
+	// (non-measured headline, attestation coverage) are NOT rubric rows and are NOT
+	// included here; render appends them separately inside the same core gate. Do not
+	// treat Observations as the full observation set a validate run emits.
+	Observations []Item
+}
+
+// Compute walks the rubric once and returns the full completeness picture. It is
+// pure and unconditional (no core gate): downstream consumers get every slice even
+// for an incomplete record. Level is set from AchievedLevel, the independent, cheap
+// level ladder the index builder calls, so Compute does not duplicate the ladder.
+// render applies the core gate for the human-facing emission.
+func Compute(record map[string]any) Result {
+	res := Result{Level: AchievedLevel(record)}
+	// Tier roadmap: for each outstanding tier, its applicable-but-absent hard rules.
+	for _, tier := range []Level{LevelCore, LevelStandard, LevelFull} {
+		if tier <= res.Level {
+			continue
+		}
+		for _, ru := range missingAt(record, tier) {
+			res.TierRoadmap = append(res.TierRoadmap, Item{
+				Path: ru.path, Document: ru.document, Standard: ru.standard,
+				Message:   roadmapMessage(tier, ru),
+				NextLevel: tier,
+			})
+		}
+	}
+	res.Enrichment = collectSentinel(record, LevelEnrichment)
+	res.Observations = collectSentinel(record, LevelObservation)
+	return res
+}
+
+// collectSentinel returns the applicable-but-absent rows at a non-gating sentinel
+// level (LevelEnrichment or LevelObservation), in rubric order, as Items carrying
+// each row's message / document / standard.
+func collectSentinel(record map[string]any, level Level) []Item {
+	out := []Item{}
+	for _, ru := range rubric {
+		if ru.level != level {
+			continue
+		}
+		if ru.applicable != nil && !ru.applicable(record) {
+			continue
+		}
+		if ru.present(record) {
+			continue
+		}
+		out = append(out, Item{Path: ru.path, Document: ru.document, Standard: ru.standard, Message: ru.message})
+	}
+	return out
+}
+
 // --- reporting ---
 
 // Report appends the conformance INFO findings to report and returns the achieved
-// grade. It is the human-facing half of grading: the stored index.conformance_level
-// is already verified by the builder-parity step, so this explains what the record
-// achieved and how to climb. It emits the achieved-grade summary; then, for each of
-// the three grades, one of three per-grade states; and, once the record is a real
-// core record, the non-gating depth observations, the non-measured-headline
-// provenance note, and the attestation-coverage note.
+// grade. It is the human-facing half of grading: it computes the structured Result
+// and renders it. The stored index.conformance_level is already verified by the
+// builder-parity step, so this explains what the record achieved and how to climb.
 //
 // Report emits no WARNINGs and no ERRORs: there is no declaration to violate.
 func Report(record map[string]any, report *findings.Report) Level {
-	achieved := AchievedLevel(record)
+	res := Compute(record)
+	render(res, record, report)
+	return res.Level
+}
+
+// noBlockerSeen is the "no outstanding gap seen yet" sentinel for render's blocker
+// tracking. Its String() is never emitted, because the first outstanding tier always
+// carries a real delta and reassigns blocker before any gated grade is rendered. It is
+// LevelIncomplete (the floor) so that if a future refactor ever broke that invariant the
+// fallback would render as the least-surprising "incomplete" rather than leaking a
+// non-gating band token into a grade-unlock message.
+const noBlockerSeen = LevelIncomplete
+
+// render reproduces the human-facing INFO emission from a computed Result: the
+// achieved-grade summary; then, for each of the three grades, one of three per-grade
+// states; and, once the record is a real core record, the enrichment roadmap, the
+// observation notes, and the two direct note emitters.
+func render(res Result, record map[string]any, report *findings.Report) {
+	achieved := res.Level
 
 	report.AddInfo(findings.CodeConformanceLevel, "/index/conformance_level",
 		fmt.Sprintf("this record achieves conformance level %q", achieved.String()))
@@ -642,7 +934,7 @@ func Report(record map[string]any, report *findings.Report) Level {
 	// every lower grade is met too, whereas reaching a lower grade alone is not enough
 	// when an intermediate grade still has a gap. The ascending walk updates blocker on
 	// every roadmap grade, so it holds the last delta grade below any gated grade.
-	blocker := LevelObservation // sentinel: no gap seen yet
+	blocker := noBlockerSeen // no outstanding gap seen yet
 	for _, tier := range []Level{LevelCore, LevelStandard, LevelFull} {
 		if tier <= achieved {
 			report.AddInfo(findings.CodeConformanceGradeSatisfied, "/index/conformance_level",
@@ -664,15 +956,24 @@ func Report(record map[string]any, report *findings.Report) Level {
 		emitRoadmap(tier, delta, report)
 	}
 
-	// Depth observations and attestation coverage, only once the record is a real
-	// core record (an incomplete record's priority is reaching core).
+	// The enrichment roadmap, the observation notes, and the two direct note emitters,
+	// all behind a SINGLE core gate (an incomplete record's priority is reaching core).
+	// The note emitters MUST sit inside this same gate: split them out and an incomplete
+	// record would leak conformance/observation findings.
 	if achieved >= LevelCore {
-		emitObservations(record, report)
+		emitEnrichment(res.Enrichment, report)
+		emitObservations(res.Observations, report)
 		emitHeadlineProvenance(record, report)
 		emitAttestationCoverage(record, report)
 	}
+}
 
-	return achieved
+// roadmapMessage is the single source of truth for a tier-roadmap gap's human-readable
+// message, used by BOTH Compute (building Result.TierRoadmap) and emitRoadmap (emitting
+// the conformance/gap finding), so the structured Result and the emitted finding can
+// never drift on wording.
+func roadmapMessage(next Level, ru rule) string {
+	return fmt.Sprintf("to reach %q, add %s (from %s, per %s)", next.String(), ru.path, ru.document, ru.standard)
 }
 
 // emitRoadmap records one CodeConformanceGap INFO per missing rule, each carrying
@@ -680,31 +981,30 @@ func Report(record map[string]any, report *findings.Report) Level {
 func emitRoadmap(next Level, missing []rule, report *findings.Report) {
 	for _, ru := range missing {
 		report.AddRoadmap(findings.CodeConformanceGap, ru.path, next.String(), ru.document, ru.standard,
-			fmt.Sprintf("to reach %q, add %s (from %s, per %s)", next.String(), ru.path, ru.document, ru.standard))
+			roadmapMessage(next, ru))
 	}
 }
 
-// emitObservations iterates the LevelObservation rows: each applicable-but-absent
-// row emits a CodeConformanceObservation carrying the row's message, document, and
-// standard. These are non-gating "comprehensive data this record could carry" nudges.
-func emitObservations(record map[string]any, report *findings.Report) {
-	for _, ru := range rubric {
-		if ru.level != LevelObservation {
-			continue
-		}
-		if ru.applicable != nil && !ru.applicable(record) {
-			continue
-		}
-		if ru.present(record) {
-			continue
-		}
+// emitEnrichment emits one CodeConformanceEnrichment INFO per enrichment Item: the
+// non-gating "also disclose Y to deepen the datasheet" roadmap.
+func emitEnrichment(items []Item, report *findings.Report) {
+	for _, it := range items {
+		report.AddEnrichment(findings.CodeConformanceEnrichment, it.Path, it.Document, it.Standard, it.Message)
+	}
+}
+
+// emitObservations emits one CodeConformanceObservation INFO per observation Item:
+// the residual data-depth notes the rubric tracks but does not put on the enrichment
+// roadmap (the sustainability declaration, the deprecated legacy-cutoff classification).
+func emitObservations(items []Item, report *findings.Report) {
+	for _, it := range items {
 		report.Add(findings.Finding{
 			Level:          findings.LevelInfo,
 			Code:           findings.CodeConformanceObservation,
-			Path:           ru.path,
-			Message:        ru.message,
-			SourceDocument: ru.document,
-			Standard:       ru.standard,
+			Path:           it.Path,
+			Message:        it.Message,
+			SourceDocument: it.Document,
+			Standard:       it.Standard,
 		})
 	}
 }
@@ -745,6 +1045,9 @@ func emitHeadlineProvenance(record map[string]any, report *findings.Report) {
 func emitAttestationCoverage(record map[string]any, report *findings.Report) {
 	progs := attestationPrograms(record)
 	if len(progs) == 0 {
+		// Defensive: render calls this only inside the core gate, and reaching core
+		// implies a market-safety listing (so progs is non-empty at that call site).
+		// Kept so the helper stays correct if it is ever called outside that gate.
 		report.AddInfo(findings.CodeConformanceObservation, "/attestations",
 			"no compliance or certification programs are listed on this record")
 		return
@@ -994,6 +1297,26 @@ func hasChromaticityShiftProjection(record map[string]any) bool {
 	}
 	for _, k := range []string{"shift_metric", "shift_threshold", "shift_mode", "tm_35_edition"} {
 		if getString(cs, k) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// hasCie97LmfTable reports whether lumen_maintenance_luminaire.cie_97_lmf_table
+// carries a populated grid (a non-empty lmf_by_cleanliness_and_interval or
+// llmf_by_hours array). It backs the AmbientCleanliness enrichment row as a block-level
+// nudge: AmbientCleanliness is a required member of the lmf_by_cleanliness_and_interval
+// items, so a field-level row could never be applicable-and-absent on a valid record;
+// the block row instead says "you have a luminaire framework; also add the CIE 97 LMF
+// table". A hollow table (empty grids, or only unrecognized keys) reads as absent.
+func hasCie97LmfTable(record map[string]any) bool {
+	cie, ok := getMap(record, "lumen_maintenance_luminaire", "cie_97_lmf_table")
+	if !ok {
+		return false
+	}
+	for _, k := range []string{"lmf_by_cleanliness_and_interval", "llmf_by_hours"} {
+		if a, ok := cie[k].([]any); ok && len(a) > 0 {
 			return true
 		}
 	}

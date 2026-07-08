@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
-	"github.com/ulcspec/ULC/tools/validator/internal/grade"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
 	"github.com/ulcspec/ULC/tools/validator/internal/validate"
 )
@@ -223,7 +223,7 @@ func TestConvertFromXLSX(t *testing.T) {
 	if missing := index.MissingRequiredKeys(built); len(missing) > 0 {
 		t.Fatalf("xlsx: MissingRequiredKeys not empty: %v", missing)
 	}
-	if got := grade.AchievedLevel(res.Record); got != grade.LevelStandard {
+	if got := completeness.AchievedLevel(res.Record); got != completeness.LevelStandard {
 		t.Fatalf("xlsx grade = %s, want standard", got)
 	}
 	res.Record["index"] = built

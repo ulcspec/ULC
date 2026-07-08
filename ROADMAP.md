@@ -19,19 +19,32 @@ schema surface. Pre-1.0 releases generally aim for additive changes;
 compatibility-tightening changes may occur when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v0.7.x
+## Active version: v0.9.x
 
-- Patch releases for clarifications, doc fixes, mapping refinements
-- No new normative fields without a v0.8.0 minor bump
-
-## Next minor: v0.8.0
+The current line. v0.9.0 made data completeness fully explicit: the optional
+depth taxonomies are now surfaced as an actionable **enrichment roadmap**
+(`conformance/enrichment` findings) rather than passive `--verbose`-only
+observations, sitting alongside the existing tier roadmap. It also added five
+optional fields (installed orientation, optical radiation band, adaptive
+lighting modes, per-source photometric file format, and the TM-30 reference
+illuminant type) and gave the grading package a structured `Compute()` entry
+point. Every change is additive and non-gating: a v0.8.x record validates and
+grades identically.
 
 - Continued expansion of reference records, real cutsheets only (see
   `CONTRIBUTING.md` for sourcing rules)
 - Additional PIM platform mapping guides as patterns mature
-- Validator improvements informed by reference-record validation findings
+- Patch releases for clarifications, doc fixes, and mapping refinements
+- No new normative fields without a minor bump
 
 ## Toward v1.0.0
+
+v1.0.0 marks the first formal backward-compatibility commitment for the schema
+surface. The direction is a second computed axis alongside data completeness: a
+view of the third-party program achievements a record can demonstrate, computed
+from the attestations a record already carries. This is described at the level
+of direction only; the field shapes are not committed until the work lands with
+real example records.
 
 The criteria for declaring v1.0.0, schema-stable and ecosystem-mature:
 
@@ -86,11 +99,25 @@ revision.
   IP/IK ratings as first-class `AttestationProgram` values (today carried
   on `shared_mechanical.ip_rating` / `ik_rating`). Each is a candidate once
   a second independent record surfaces the same pattern.
-- **Orphaned taxonomy enums.** Some enums (for example TM-30 design-intent
-  vocabulary and alternate `PhotometryFormat` values) are defined in
-  `taxonomy.schema.json` but not yet wired into record fields. They are
-  retained as staged vocabulary, to be wired in when matching cutsheets
-  appear in example records, or pruned in a later revision.
+- **Taxonomy wiring policy and staged vocabulary.** Every taxonomy enum earns
+  its place by gating a tier, feeding the enrichment roadmap, or being
+  structural machinery a graded field is built from; an enum wired to no field
+  is dead weight. v0.9.0 wired the orphaned enums whose fields are simple
+  additive drops (orientation, optical radiation band, adaptive lighting modes,
+  per-source photometry format, and the TM-30 reference illuminant type). Two
+  enums remain staged vocabulary: `TM30DesignIntent` and `TM30Level`. Their
+  ground is partially surfaced today by the `colorimetry.tm_30.pvf_code`
+  enrichment row, but the PVF code cannot express a `none` designator or
+  independent claims against all three design intents, so the two enums stay
+  unwired until a cutsheet needs the fuller shape.
+- **Evidence-gated device enums.** `LEDDeviceClass` and `FailureMode` are
+  defined but unwired. Wiring them may need new sub-structure rather than a
+  simple field drop, so they are held until a real cutsheet or test report
+  surfaces the shape, rather than committing an object design speculatively.
+- **Retirement candidates for v1.0.0.** Two enums carry an open "earns its
+  place?" question for the first backward-compatibility commitment:
+  `LegacyCutoffClassification` (deprecated, kept only for lossless ingestion of
+  legacy datasheets) and `RecordStatus`. Either may be pruned in v1.0.0.
 - **Emergency-lighting operational data.** ULC carries `emergency_luminaire`
   and `exit_sign` categories and a UL 924 attestation, but not the defining
   emergency data: battery chemistry and capacity, rated emergency runtime,

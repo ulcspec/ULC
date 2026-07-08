@@ -3,6 +3,7 @@ package findings
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -71,6 +72,35 @@ func TestAddRoadmapSetsStructuredFields(t *testing.T) {
 	}
 }
 
+// TestAddEnrichmentSetsStructuredFields mirrors TestAddRoadmapSetsStructuredFields
+// for the enrichment carrier: AddEnrichment sets SourceDocument, Standard, and
+// Message on an INFO finding, and leaves NextConformanceLevel empty (an enrichment
+// suggestion unlocks no tier).
+func TestAddEnrichmentSetsStructuredFields(t *testing.T) {
+	r := NewReport()
+	r.AddEnrichment(CodeConformanceEnrichment, "/thermal_derating", "test_report", "LM-82",
+		"thermal derating not disclosed")
+	if len(r.Findings) != 1 {
+		t.Fatalf("expected 1 finding, got %d", len(r.Findings))
+	}
+	f := r.Findings[0]
+	if f.Level != LevelInfo {
+		t.Errorf("enrichment finding level = %q, want INFO", f.Level)
+	}
+	if f.Code != CodeConformanceEnrichment {
+		t.Errorf("code = %q, want %q", f.Code, CodeConformanceEnrichment)
+	}
+	if f.SourceDocument != "test_report" {
+		t.Errorf("SourceDocument = %q, want test_report", f.SourceDocument)
+	}
+	if f.Standard != "LM-82" {
+		t.Errorf("Standard = %q, want LM-82", f.Standard)
+	}
+	if f.NextConformanceLevel != "" {
+		t.Errorf("NextConformanceLevel = %q, want empty (enrichment unlocks no tier)", f.NextConformanceLevel)
+	}
+}
+
 // TestFinalizeStableWithRoadmapFields confirms the deterministic sort is
 // unaffected by (and stable across) the structured roadmap fields: two roadmap
 // findings sharing code and path but differing only in the structured fields keep
@@ -89,51 +119,123 @@ func TestFinalizeStableWithRoadmapFields(t *testing.T) {
 	}
 }
 
-// TestVerboseGatesObservationsInText confirms observation findings are suppressed
-// from WriteText unless Verbose, while the achieved-level summary and roadmap
-// always render and WriteJSON always keeps everything.
-func TestVerboseGatesObservationsInText(t *testing.T) {
-	build := func() *Report {
+// TestVerboseGatesOptionalFindingsInText confirms the optional conformance findings
+// (the enrichment roadmap AND the observation notes) are suppressed from WriteText
+// unless Verbose, while the achieved-level summary and tier roadmap always render and
+// WriteJSON always keeps everything. It exercises all three hidden states (enrichment
+// only, observations only, both) and the merged hidden-count hint.
+func TestVerboseGatesOptionalFindingsInText(t *testing.T) {
+	base := func() *Report {
 		r := NewReport()
 		r.AddInfo(CodeConformanceLevel, "/index/conformance_level", `achieves conformance level "core"`)
 		r.AddRoadmap(CodeConformanceGap, "/colorimetry/sdcm_step", "standard", "datasheet_pdf", "ANSI C78.377", "to reach standard, add sdcm_step")
-		r.AddInfo(CodeConformanceObservation, "/thermal_derating", "thermal derating not disclosed")
-		r.Finalize()
 		return r
 	}
-
-	// Default (Verbose=false): observation suppressed, summary + roadmap shown.
-	quiet := build()
-	buf := &bytes.Buffer{}
-	if err := quiet.WriteText(buf, "rec.ulc"); err != nil {
-		t.Fatalf("WriteText: %v", err)
+	withEnrichment := func(r *Report) {
+		r.AddEnrichment(CodeConformanceEnrichment, "/thermal_derating", "test_report", "LM-82", "thermal derating not disclosed")
 	}
-	out := buf.String()
-	if strings.Contains(out, "/thermal_derating") {
-		t.Errorf("observation should be suppressed without --verbose:\n%s", out)
-	}
-	if !strings.Contains(out, "conformance level") || !strings.Contains(out, "/colorimetry/sdcm_step") {
-		t.Errorf("summary and roadmap must always render:\n%s", out)
+	withObservation := func(r *Report) {
+		r.AddInfo(CodeConformanceObservation, "/sustainability_declaration", "sustainability declaration not disclosed")
 	}
 
-	// Verbose=true: observation shown.
-	loud := build()
-	loud.Verbose = true
-	buf.Reset()
-	if err := loud.WriteText(buf, "rec.ulc"); err != nil {
-		t.Fatalf("WriteText verbose: %v", err)
+	cases := []struct {
+		name    string
+		add     []func(*Report)
+		hidden  int
+		markers []string // paths that must be present verbose, absent quiet
+	}{
+		{"enrichment only", []func(*Report){withEnrichment}, 1, []string{"/thermal_derating"}},
+		{"observations only", []func(*Report){withObservation}, 1, []string{"/sustainability_declaration"}},
+		{"both", []func(*Report){withEnrichment, withObservation}, 2, []string{"/thermal_derating", "/sustainability_declaration"}},
 	}
-	if !strings.Contains(buf.String(), "/thermal_derating") {
-		t.Errorf("observation must render with --verbose:\n%s", buf.String())
-	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			build := func() *Report {
+				r := base()
+				for _, a := range c.add {
+					a(r)
+				}
+				r.Finalize()
+				return r
+			}
 
-	// JSON always includes the observation regardless of Verbose.
-	jbuf := &bytes.Buffer{}
-	if err := build().WriteJSON(jbuf); err != nil {
-		t.Fatalf("WriteJSON: %v", err)
+			// Default (Verbose=false): optional findings suppressed; the summary and
+			// tier roadmap always render; the merged hint names the hidden count.
+			quiet := build()
+			buf := &bytes.Buffer{}
+			if err := quiet.WriteText(buf, "rec.ulc"); err != nil {
+				t.Fatalf("WriteText: %v", err)
+			}
+			out := buf.String()
+			for _, m := range c.markers {
+				if strings.Contains(out, m) {
+					t.Errorf("%s: %q should be suppressed without --verbose:\n%s", c.name, m, out)
+				}
+			}
+			if !strings.Contains(out, "conformance level") || !strings.Contains(out, "/colorimetry/sdcm_step") {
+				t.Errorf("%s: summary and tier roadmap must always render:\n%s", c.name, out)
+			}
+			wantHint := fmt.Sprintf("%d optional findings hidden (enrichment and observations); use --verbose or --json", c.hidden)
+			if !strings.Contains(out, wantHint) {
+				t.Errorf("%s: expected merged hint %q:\n%s", c.name, wantHint, out)
+			}
+
+			// Verbose=true: optional findings shown.
+			loud := build()
+			loud.Verbose = true
+			buf.Reset()
+			if err := loud.WriteText(buf, "rec.ulc"); err != nil {
+				t.Fatalf("WriteText verbose: %v", err)
+			}
+			for _, m := range c.markers {
+				if !strings.Contains(buf.String(), m) {
+					t.Errorf("%s: %q must render with --verbose:\n%s", c.name, m, buf.String())
+				}
+			}
+
+			// JSON always includes the optional findings regardless of Verbose.
+			jbuf := &bytes.Buffer{}
+			if err := build().WriteJSON(jbuf); err != nil {
+				t.Fatalf("WriteJSON: %v", err)
+			}
+			for _, m := range c.markers {
+				if !strings.Contains(jbuf.String(), m) {
+					t.Errorf("%s: JSON must always include %q:\n%s", c.name, m, jbuf.String())
+				}
+			}
+		})
 	}
-	if !strings.Contains(jbuf.String(), "/thermal_derating") {
-		t.Errorf("JSON must always include observations:\n%s", jbuf.String())
+}
+
+// TestOmitFlagHintDropsFlagAdvice confirms a caller without --verbose/--json (like
+// `ulc from-sheet`) can suppress the flag-specific advice while still reporting the
+// hidden-findings count.
+func TestOmitFlagHintDropsFlagAdvice(t *testing.T) {
+	build := func(omit bool) string {
+		r := NewReport()
+		r.AddInfo(CodeConformanceLevel, "/index/conformance_level", `achieves conformance level "core"`)
+		r.AddEnrichment(CodeConformanceEnrichment, "/thermal_derating", "test_report", "LM-82", "thermal derating not disclosed")
+		r.OmitFlagHint = omit
+		r.Finalize()
+		buf := &bytes.Buffer{}
+		if err := r.WriteText(buf, "rec.ulc"); err != nil {
+			t.Fatalf("WriteText: %v", err)
+		}
+		return buf.String()
+	}
+	// Default: the flag advice is present.
+	def := build(false)
+	if !strings.Contains(def, "1 optional findings hidden (enrichment and observations); use --verbose or --json") {
+		t.Errorf("default hint should include the flag advice:\n%s", def)
+	}
+	// OmitFlagHint: the count remains, the flag advice is gone.
+	omit := build(true)
+	if !strings.Contains(omit, "1 optional findings hidden (enrichment and observations)") {
+		t.Errorf("omit hint should still report the count:\n%s", omit)
+	}
+	if strings.Contains(omit, "--verbose") || strings.Contains(omit, "--json") {
+		t.Errorf("omit hint must not mention --verbose/--json:\n%s", omit)
 	}
 }
 

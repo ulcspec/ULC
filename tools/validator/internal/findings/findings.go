@@ -66,10 +66,19 @@ const (
 	// record must add to reach a given grade (conditional predicates applied), each
 	// carrying the structured source-document and standard detail.
 	CodeConformanceGap Code = "conformance/gap"
-	// CodeConformanceObservation is an INFO surfaced at core and above: depth the
-	// rubric does not gate on (thermal, flicker, circadian, sustainability, and
-	// similar comprehensive data) or a provenance-quality note. Suppressed from
-	// text output unless --verbose; always present in JSON.
+	// CodeConformanceEnrichment is an INFO surfaced at core and above: the
+	// enrichment roadmap. Each finding names an optional dimension a record could
+	// disclose to deepen the datasheet (thermal, flicker, circadian, chromaticity
+	// shift, outdoor, and similar depth), carrying its source-document and standard.
+	// Non-gating: it never affects the achieved grade. Suppressed from text output
+	// unless --verbose; always present in JSON.
+	CodeConformanceEnrichment Code = "conformance/enrichment"
+	// CodeConformanceObservation is an INFO surfaced at core and above: a data-quality
+	// note (a non-measured headline value, the attestation-coverage summary) or a
+	// tracked-but-not-nudged disclosure (a sustainability declaration, a deprecated
+	// legacy-cutoff classification). Distinct from the enrichment roadmap, which
+	// suggests new disclosures. Suppressed from text output unless --verbose; always
+	// present in JSON.
 	CodeConformanceObservation Code = "conformance/observation"
 )
 
@@ -81,11 +90,13 @@ type Finding struct {
 	// Path is an optional JSON Pointer into the record that located the problem.
 	Path string `json:"path,omitempty"`
 	// NextConformanceLevel, SourceDocument, and Standard are the structured
-	// roadmap detail set on conformance/gap findings only (via AddRoadmap). They
-	// are the complete, capped machine-readable roadmap contract a future website
-	// consumes: for a missing item, which conformance level it unlocks, which
-	// source document supplies it, and which standard governs it. All three are
-	// static rule-table strings, never echoed record input, so there is no
+	// roadmap detail. NextConformanceLevel is set on conformance/gap findings only
+	// (via AddRoadmap): it names the tier a missing item unlocks. SourceDocument and
+	// Standard are set on both conformance/gap (via AddRoadmap) and
+	// conformance/enrichment (via AddEnrichment) findings: the source document that
+	// supplies the item and the standard that governs it. Together they form the
+	// capped machine-readable roadmap contract a future website consumes. All three
+	// are static rule-table strings, never echoed record input, so there is no
 	// disclosure or injection surface.
 	NextConformanceLevel string `json:"next_conformance_level,omitempty"`
 	SourceDocument       string `json:"source_document,omitempty"` // a SourceFileType token
@@ -99,11 +110,16 @@ type Report struct {
 	// consumers do not have to recompute.
 	Summary Summary `json:"summary"`
 	// Verbose controls text rendering only. When false (the default), WriteText
-	// omits conformance observation findings (the comprehensive-depth nudges) so
-	// the human report stays focused on errors, warnings, the achieved level, and
-	// the roadmap to the next level. WriteJSON always emits every finding
-	// regardless of this flag. Not serialized.
+	// omits the optional conformance findings (the enrichment roadmap and the
+	// observation notes) so the human report stays focused on errors, warnings, the
+	// achieved level, and the roadmap to the next level. WriteJSON always emits every
+	// finding regardless of this flag. Not serialized.
 	Verbose bool `json:"-"`
+	// OmitFlagHint drops the "use --verbose or --json" advice from the hidden-findings
+	// hint in WriteText, for callers that do not expose those flags (for example
+	// `ulc from-sheet`). The count of hidden optional findings is still reported. Not
+	// serialized.
+	OmitFlagHint bool `json:"-"`
 }
 
 // Summary is the counts rollup used by both the text renderer and JSON consumers.
@@ -142,6 +158,15 @@ func (r *Report) AddInfo(code Code, path, msg string) {
 func (r *Report) AddRoadmap(code Code, path, nextLevel, document, standard, msg string) {
 	r.Add(Finding{Level: LevelInfo, Code: code, Path: path, Message: msg,
 		NextConformanceLevel: nextLevel, SourceDocument: document, Standard: standard})
+}
+
+// AddEnrichment appends an INFO enrichment finding carrying the structured
+// source-document and standard detail alongside the human-readable message. It
+// mirrors AddRoadmap without NextConformanceLevel: an enrichment suggestion
+// unlocks no tier (it is non-gating depth), so that field stays zero.
+func (r *Report) AddEnrichment(code Code, path, document, standard, msg string) {
+	r.Add(Finding{Level: LevelInfo, Code: code, Path: path, Message: msg,
+		SourceDocument: document, Standard: standard})
 }
 
 // Finalize sorts findings into deterministic order (Error first, then Warning,
@@ -196,10 +221,11 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 	}
 	hidden := 0
 	for _, f := range r.Findings {
-		// Conformance observations are the comprehensive-depth nudges; suppress
-		// them in text unless Verbose is set. The achieved-level summary and the
-		// roadmap (other conformance codes) always render. WriteJSON keeps them.
-		if !r.Verbose && f.Code == CodeConformanceObservation {
+		// The optional conformance findings (the enrichment roadmap and the
+		// observation notes) are suppressed in text unless Verbose is set. The
+		// achieved-level summary and the tier roadmap (other conformance codes)
+		// always render. WriteJSON keeps them.
+		if !r.Verbose && (f.Code == CodeConformanceEnrichment || f.Code == CodeConformanceObservation) {
 			hidden++
 			continue
 		}
@@ -217,7 +243,12 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 	}
 	hint := ""
 	if hidden > 0 {
-		hint = fmt.Sprintf(" (%d observations hidden, use --verbose)", hidden)
+		hint = fmt.Sprintf(" (%d optional findings hidden (enrichment and observations)", hidden)
+		if r.OmitFlagHint {
+			hint += ")"
+		} else {
+			hint += "; use --verbose or --json)"
+		}
 	}
 	_, err := fmt.Fprintf(w, "\n%s -- %s: %d errors, %d warnings, %d infos%s.\n",
 		status, recordPath, r.Summary.Errors, r.Summary.Warnings, r.Summary.Infos, hint)

@@ -20,6 +20,41 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 0.9.0 (2026-07-07)
+
+Data completeness becomes fully explicit and complete. The optional depth taxonomies that were previously surfaced only as passive `--verbose` observations are now an actionable **enrichment roadmap**, emitted under a new `conformance/enrichment` finding code alongside the existing tier roadmap. Five additional optional fields are wired, and the grading package gains a structured `Compute()` entry point. Every change is additive and non-gating: a v0.8.x record validates and grades identically, and no grade or `index.conformance_level` moves.
+
+### Behavior change (important for consumers)
+
+This release is a finding-code migration, not a pure addition. JSON and `--verbose` consumers of `conformance/observation` must update:
+
+1. **Code migration.** 20 findings previously emitted under `conformance/observation` now emit under the new `conformance/enrichment` code, with byte-identical message text (power factor, warranty term, luminous opening shape, emission face, Duv, chromaticity x and y, ambient operating range, compatible accessories, thermal derating, flicker, alpha-opic metrics, chromaticity-shift projection, field angle, cutoff angle, spacing criterion, UGR, LCS zonal lumens, IK rating, EPA). `conformance/observation` now carries only four residual sources: the sustainability-declaration nudge, the deprecated legacy-cutoff nudge, the non-measured-headline note, and the attestation-coverage summary. A consumer that suppressed or keyed on `conformance/observation` must add `conformance/enrichment` to its lists.
+2. **JSON finding order.** Findings sort by code, and `conformance/enrichment` sorts alphabetically before every other conformance code (`gap`, `grade-gated`, `grade-satisfied`, `level`, `observation`), so the enrichment block now precedes the tier roadmap and the level summary in JSON and `--verbose` output.
+3. **Default-text hint and info counts.** The hidden-findings hint line is reworded to a single merged counter covering both optional codes (`N optional findings hidden (enrichment and observations); use --verbose or --json`), and the per-record INFO count at core and above increases, because the enrichment roadmap now surfaces the optional taxonomies as their own findings.
+4. **From-sheet console counts.** `ulc from-sheet` prints per-record finding counts that rise for the same reason, and newly converted records stamp `ulc_version` `0.9.0` (the from-sheet default; records supplying the `ulc_version` column are unaffected).
+5. **Grades do not move.** Grades and `index.conformance_level` are unchanged, `BuilderVersion` is unchanged, and an `incomplete` record still emits neither observation nor enrichment findings (both are gated behind reaching core).
+
+### Schema (additive, optional)
+
+- Five optional fields, each backed by a taxonomy enum previously defined but unwired: `product_family.orientation` (`Orientation`), `photometry.optical_radiation_band` (`OpticalRadiationBand`), `electrical.adaptive_lighting_modes` (an array of `AdaptiveLightingMode`), `source_files[].photometry_format` (`PhotometryFormat`, per source file, valid only on a photometric `ies`/`ldt`/`tm33` source file), and `colorimetry.tm_30.reference_illuminant_type` (`ReferenceIlluminantType`). All are absent unless declared; no existing record becomes invalid, and none affects the grade.
+- `reference_illuminant_type` is wired for explicitness and TM-33 interop but deliberately kept off the enrichment roadmap: it is derivable by definition from the test-source CCT, so nudging authors to hand-enter it would create an inconsistency surface.
+
+### Grading and enrichment
+
+- A new non-gating `conformance/enrichment` finding code and a `LevelEnrichment` rubric sentinel carry the enrichment roadmap. 57 enrichment rows ship (the 20 reclassified rows plus 37 new), each naming its source document and governing standard. Sub-field suggestions fire only when the parent block is genuinely present, so an absent block draws a single block-level nudge rather than sub-field spam.
+- The four new schema fields get enrichment rows, and a `conformance/enrichment` row on `colorimetry.tm_30.pvf_code` surfaces the TM-30 design-intent ground for white-light fixtures that carry a TM-30 block.
+- The deprecated legacy-cutoff classification stays a quiet `conformance/observation` note (unchanged from prior releases) rather than being promoted to the enrichment roadmap; it is superseded by the BUG rating and LCS zonal lumens and is a drop candidate for a future major version. Its taxonomy description is corrected: it previously claimed the validator emits a diagnostic when the field is populated, which it does not.
+
+### Tooling and internals
+
+- The `internal/grade` package is renamed `internal/completeness` with a structured `Compute()` entry point returning the achieved level plus the tier roadmap, the enrichment roadmap, and the observation notes. `AchievedLevel` is unchanged as the index builder's level ladder, and the rename produces no output change.
+- The from-sheet default `ulc_version` becomes `0.9.0`.
+
+### Examples and docs
+
+- The five reference records are unchanged at `ulc_version` `0.8.0`: an unchanged 0.8.x record validating and grading identically under 0.9.0 is the live proof of the compatibility claim. None populates the new optional fields (no source cutsheet carries one yet).
+- `methodology.md` documents the gating test (what earns a tier versus the enrichment roadmap), the two-part roadmap, and the four residual observation sources; `how-it-works.md` and the README note the enrichment roadmap; `ROADMAP.md` records the taxonomy wiring policy and the remaining staged vocabulary.
+
 ## 0.8.1 (2026-06-23)
 
 Corrects the `source_files` field description in `schema/ulc.schema.json`, which contradicted the rest of the schema. The `source_files` key is a required member of the record envelope (present on every record), while its array may be empty (`minItems` 0) and its entries are neither required nor graded. The description previously said the array was "neither schema-required," disagreeing with the root `required` array and the record-envelope descriptions in the root schema and the `ConformanceLevel` definition. This is a description-only correction: no structural change, no enum or behavior change, and no re-grade. Records continue to declare `ulc_version` `0.8.0`; a 0.8.0 record is unchanged and valid under 0.8.1.

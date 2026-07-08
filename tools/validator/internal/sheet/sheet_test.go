@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
-	"github.com/ulcspec/ULC/tools/validator/internal/grade"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
 	"github.com/ulcspec/ULC/tools/validator/internal/validate"
 )
@@ -49,6 +49,10 @@ func TestConvertPatternA(t *testing.T) {
 	if len(res.Warnings) != 0 {
 		t.Fatalf("expected no warnings (files present on disk), got %v", res.Warnings)
 	}
+	// A converted record with no ulc_version column stamps the current-spec default.
+	if got, _ := res.Record["ulc_version"].(string); got != "0.9.0" {
+		t.Fatalf("converted record ulc_version = %q, want 0.9.0 (from-sheet default)", got)
+	}
 
 	// Build the index: this stamps the index block and grades conformance_level.
 	built := index.Build(res.Record)
@@ -61,7 +65,7 @@ func TestConvertPatternA(t *testing.T) {
 	// listing (core), but a complete standard record additionally needs the SDCM
 	// step, lens material, and the analog dimming method and range. This bundle
 	// authors none of those, so core is the honest grade for its data.
-	if got := grade.AchievedLevel(res.Record); got != grade.LevelCore {
+	if got := completeness.AchievedLevel(res.Record); got != completeness.LevelCore {
 		t.Fatalf("expected conformance level core, got %s", got)
 	}
 	if level, _ := built["conformance_level"].(string); level != "core" {
@@ -176,7 +180,7 @@ func assertMeasuredAttestationRef(t *testing.T, record map[string]any) {
 // achieved conformance level. It returns the assembled record (with index) for
 // pattern-specific structural assertions. It is the shared spine of the B/C/D
 // tests, mirroring TestConvertPatternA.
-func convertOne(t *testing.T, bundle string, wantPattern Pattern, wantLevel grade.Level) map[string]any {
+func convertOne(t *testing.T, bundle string, wantPattern Pattern, wantLevel completeness.Level) map[string]any {
 	t.Helper()
 	results, err := Convert(bundle, Options{})
 	if err != nil {
@@ -194,7 +198,7 @@ func convertOne(t *testing.T, bundle string, wantPattern Pattern, wantLevel grad
 	if missing := index.MissingRequiredKeys(built); len(missing) > 0 {
 		t.Fatalf("%s: MissingRequiredKeys is not empty: %v", bundle, missing)
 	}
-	if got := grade.AchievedLevel(res.Record); got != wantLevel {
+	if got := completeness.AchievedLevel(res.Record); got != wantLevel {
 		t.Fatalf("%s: expected conformance level %s, got %s", bundle, wantLevel, got)
 	}
 	if level, _ := built["conformance_level"].(string); level != wantLevel.String() {
@@ -229,7 +233,7 @@ func convertOne(t *testing.T, bundle string, wantPattern Pattern, wantLevel grad
 // Full would additionally need test-report depth the converter does not synthesize.
 // The multiplier-table and dimming assertions below are the point of this test.
 func TestConvertPatternB(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, grade.LevelStandard)
+	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, completeness.LevelStandard)
 
 	// Structural fact 1: the CCT multiplier table is present on the covered axis.
 	table, ok := getPath(record, "applicability.covered_axes.cct.derivation.multiplier_table")
@@ -330,7 +334,7 @@ func TestDimmingRangeRequiresBothHalves(t *testing.T) {
 // Lumenfacade SKU, so it grades standard: a digital protocol is exempt from the
 // analog/phase dimming detail, and pure RGB waives the white-light color gates.
 func TestConvertPatternC(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, grade.LevelStandard)
+	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, completeness.LevelStandard)
 
 	// Structural fact: a headline photometric value carries
 	// provenance.method=extended_photometry + base_attestation_ref.
@@ -366,7 +370,7 @@ func TestConvertPatternD(t *testing.T) {
 	// standard gaps are the SDCM step and the dimming range, neither authored on
 	// this bundle's sheet. The declared_by_length derivation below is the point of
 	// the test.
-	record := convertOne(t, filepath.Join("testdata", "bundle-d"), PatternD, grade.LevelCore)
+	record := convertOne(t, filepath.Join("testdata", "bundle-d"), PatternD, completeness.LevelCore)
 
 	declared, ok := getPath(record, "photometry.declared_by_length")
 	if !ok {
@@ -442,7 +446,7 @@ func TestConvertPatternDAuthoredLengthSheet(t *testing.T) {
 // method-backed lumen-maintenance package) feed full-tier rules, but they cannot
 // lift the grade alone.
 func TestConvertFullLevelSheets(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, grade.LevelStandard)
+	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, completeness.LevelStandard)
 
 	// alpha_opic_metrics: block scalars + a single melanopic per_channel efficacy,
 	// both rated ProvenancedNumbers (no attestation link).
@@ -726,7 +730,7 @@ func TestConvertCutsheetOptionalGradesIncomplete(t *testing.T) {
 
 	// End to end: build the index and confirm the cutsheet-less record grades the floor.
 	rec["index"] = index.Build(rec)
-	if got := grade.AchievedLevel(rec); got != grade.LevelIncomplete {
+	if got := completeness.AchievedLevel(rec); got != completeness.LevelIncomplete {
 		t.Errorf("cutsheet-less record grades %s, want incomplete", got)
 	}
 }

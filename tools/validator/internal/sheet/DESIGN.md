@@ -70,7 +70,7 @@ safety-listing requirements documented in `docs/methodology.md`. Schema structur
 identity/cutsheet/scenario fields:
 
 ```
-record_id, ulc_version(=0.8.0 default), record_status(=active),
+record_id, ulc_version(=0.9.0 default), record_status(=active),
 family_id, manufacturer_slug, manufacturer_display_name, catalog_model,
 cutsheet_file        (-> sha256 + cutsheet/source_files dual-write),
 primary_category     (indexing anchor),
