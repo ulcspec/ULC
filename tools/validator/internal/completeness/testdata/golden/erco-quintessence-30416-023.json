@@ -1,0 +1,359 @@
+{
+  "findings": [
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "chromaticity-shift projection not disclosed",
+      "path": "/chromaticity_shift_projection",
+      "source_document": "test_report",
+      "standard": "TM-35"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "chromaticity x not disclosed",
+      "path": "/colorimetry/chromaticity_x",
+      "source_document": "test_report",
+      "standard": "ANSI C78.377"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "chromaticity y not disclosed",
+      "path": "/colorimetry/chromaticity_y",
+      "source_document": "test_report",
+      "standard": "ANSI C78.377"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "Duv (distance from the Planckian locus) not disclosed",
+      "path": "/colorimetry/duv",
+      "source_document": "test_report",
+      "standard": "ANSI C78.377"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "adaptive lighting modes not disclosed",
+      "path": "/electrical/adaptive_lighting_modes",
+      "source_document": "datasheet_pdf",
+      "standard": "RP-8"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "dimming curve not disclosed",
+      "path": "/electrical/dimming_curve",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "full records commonly disclose power factor; absent here",
+      "path": "/electrical/power_factor",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "flicker dimming type at test not disclosed",
+      "path": "/flicker_measurements/dimming_type_at_test",
+      "source_document": "test_report",
+      "standard": "LM-90 / IEEE 1789"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "flicker photodetector spectral correction not disclosed",
+      "path": "/flicker_measurements/photodetector_correction",
+      "source_document": "test_report",
+      "standard": "LM-90 / IEEE 1789"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "flicker risk level not disclosed",
+      "path": "/flicker_measurements/risk_level",
+      "source_document": "test_report",
+      "standard": "LM-90 / IEEE 1789"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "flicker sampling class not disclosed",
+      "path": "/flicker_measurements/sampling_class",
+      "source_document": "test_report",
+      "standard": "LM-90 / IEEE 1789"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "flicker test chamber type not disclosed",
+      "path": "/flicker_measurements/test_chamber_type",
+      "source_document": "test_report",
+      "standard": "LM-90 / IEEE 1789"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "flicker waveform file format not disclosed",
+      "path": "/flicker_measurements/waveform_file_format",
+      "source_document": "test_report",
+      "standard": "LM-90 / IEEE 1789"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "TM-28 projection basis not disclosed",
+      "path": "/lumen_maintenance_luminaire/tm_28/projection_basis",
+      "source_document": "test_report",
+      "standard": "TM-28"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "lumen-maintenance projection method not disclosed",
+      "path": "/lumen_maintenance_luminaire/tm_28/projection_method",
+      "source_document": "test_report",
+      "standard": "TM-28"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "TM-28 projection reliability not disclosed",
+      "path": "/lumen_maintenance_luminaire/tm_28/projection_reliability",
+      "source_document": "test_report",
+      "standard": "TM-28"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "projection reliability not disclosed",
+      "path": "/lumen_maintenance_package[]/projection_reliability",
+      "source_document": "test_report",
+      "standard": "TM-21"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "TM-21 interpolation type not disclosed",
+      "path": "/lumen_maintenance_package[]/tm_21_interpolation_type",
+      "source_document": "test_report",
+      "standard": "TM-21"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "case-temperature monitoring point not disclosed",
+      "path": "/operating_point/case_temperature_monitoring_point",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "device-under-test operating mode not disclosed",
+      "path": "/operating_point/dut_operating_mode",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "field angle not disclosed",
+      "path": "/photometry/field_angle_deg",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "optical radiation band not disclosed",
+      "path": "/photometry/optical_radiation_band",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-80"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "spacing criterion not disclosed",
+      "path": "/photometry/spacing_criterion",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "UGR not disclosed",
+      "path": "/photometry/ugr_4h_8h",
+      "source_document": "ies",
+      "standard": "CIE 117"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "installed orientation not disclosed",
+      "path": "/product_family/orientation",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "ambient operating range not disclosed",
+      "path": "/product_family/shared_mechanical/ambient_operating_range",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "warranty term not disclosed",
+      "path": "/product_family/shared_warranty/term_years",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "photometry file format not disclosed",
+      "path": "/source_files[]/photometry_format",
+      "source_document": "ies",
+      "standard": "LM-63 / TM-33"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "negative intensity handling not disclosed",
+      "path": "/test_conditions/negative_intensity_handling",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "nonstandard condition flags not disclosed",
+      "path": "/test_conditions/nonstandard_condition_flags",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "photometry method not disclosed",
+      "path": "/test_conditions/photometry_method",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "stabilization method not disclosed",
+      "path": "/test_conditions/stabilization_method",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "thermal derating not disclosed",
+      "path": "/thermal_derating",
+      "source_document": "test_report",
+      "standard": "LM-82"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /colorimetry/tm_30/rf (from test_report, per TM-30)",
+      "path": "/colorimetry/tm_30/rf",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "TM-30"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /colorimetry/tm_30/rf_h_per_bin (from test_report, per TM-30)",
+      "path": "/colorimetry/tm_30/rf_h_per_bin",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "TM-30"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /corrections_applied (from test_report, per LM-79)",
+      "path": "/corrections_applied",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /photometry/zonal_lumens (from ies, per LM-79)",
+      "path": "/photometry/zonal_lumens",
+      "next_conformance_level": "full",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /uncertainty (from test_report, per LM-79 / GUM)",
+      "path": "/uncertainty",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79 / GUM"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add instrumentation depth (goniometer/lab) (from test_report, per LM-79 / LM-75)",
+      "path": "instrumentation depth (goniometer/lab)",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79 / LM-75"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/grade-satisfied",
+      "message": "conformance grade \"core\" satisfied",
+      "path": "/index/conformance_level"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/grade-satisfied",
+      "message": "conformance grade \"standard\" satisfied",
+      "path": "/index/conformance_level"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/level",
+      "message": "this record achieves conformance level \"standard\"",
+      "path": "/index/conformance_level"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/observation",
+      "message": "compliance programs tracked on this record: c_ul_listed, cie_13, iec_60598, iec_62031, iec_62471, lm_79_08, lm_80_08, ul_1598, ul_8750",
+      "path": "/attestations"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/observation",
+      "message": "sustainability declaration not disclosed",
+      "path": "/sustainability_declaration",
+      "source_document": "datasheet_pdf",
+      "standard": "EPD / HPD"
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 44
+  }
+}

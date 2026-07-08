@@ -191,6 +191,9 @@ func TestAchievedLevel(t *testing.T) {
 		{"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc", LevelCore, "sole standard gap is sdcm_step (no published MacAdam step)"},
 		{"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc", LevelStandard, "DMX exempts the dimming detail; pure RGB waives CCT/CRI/SDCM"},
 		{"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc", LevelStandard, "DMX exempts the dimming detail; RGBW carries CCT, waives CRI/SDCM"},
+		{"cooper-sure-lites-lpx7sd.ulc", LevelCore, "self-powered internally illuminated exit; standard blocked by its two real disclosure gaps (legend height, self-powered wattage)"},
+		{"cooper-sure-lites-es61src.ulc", LevelStandard, "AC-only edge-lit exit; battery trio skips (ac_only); full blocked only by test-report-backed luminance"},
+		{"cooper-atlite-auxswhsd.ulc", LevelStandard, "self-powered edge-lit exit; battery trio met; full blocked only by test-report-backed luminance"},
 	}
 	for _, c := range cases {
 		c := c
@@ -211,6 +214,10 @@ func TestReportEmitsInfoOnly(t *testing.T) {
 		"selux-aya-pole-sr-ho-3000k.ulc",
 		"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc",
 		"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc",
+		"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc",
+		"cooper-sure-lites-lpx7sd.ulc",
+		"cooper-sure-lites-es61src.ulc",
+		"cooper-atlite-auxswhsd.ulc",
 	} {
 		name := name
 		t.Run(name, func(t *testing.T) {
@@ -1368,6 +1375,63 @@ func TestPredicatesReadOnlyCoreFields(t *testing.T) {
 		df := fullBase()
 		df["product_family"].(map[string]any)["primary_category"] = "downlight"
 		check(t, dc, df)
+	})
+
+	// v0.10.0 class pairs (§2.10): the neutral troffer makes every class predicate false
+	// on both sides, so it cannot catch a class predicate that wrongly reads a non-core
+	// field. Each pair below is a §5.2 ladder's own core-vs-full rung, so the full side
+	// carries the class's standard+full fields and a predicate reading one genuinely
+	// flips. The internally-illuminated and emergency-luminaire pairs author the emergency
+	// block (integral_battery) on BOTH sides; the three unpowered-mode sign pairs author
+	// no emergency block. The neutral bases are left untouched (bolting a block on would
+	// fire the enrichment nudges on every neutral-fixture test).
+	t.Run("sign-internally-illuminated", func(t *testing.T) { check(t, comboSignCore(), comboSignFull()) })
+	t.Run("sign-externally-illuminated", func(t *testing.T) { check(t, externalSignCore(), externalSignFull()) })
+	// P1 regression (§2.9): an external sign whose full side ALSO carries a battery block.
+	// power_source is non-core for an external sign, so the battery-trio gate must read only
+	// the power-source-core class. Before the fix, hasIntegralBattery differed across this
+	// pair and the battery-trio gate's applicability flipped, failing this check.
+	t.Run("sign-external-combo-battery", func(t *testing.T) { check(t, externalSignCore(), externalComboSignFull()) })
+	t.Run("sign-photoluminescent", func(t *testing.T) { check(t, photoSignCore(), photoSignFull()) })
+	t.Run("sign-self-luminous", func(t *testing.T) { check(t, tritiumSignCore(), tritiumSignFull()) })
+	t.Run("emergency-luminaire", func(t *testing.T) { check(t, emgLuminaireCore(), emgLuminaireFull()) })
+
+	// Non-vacuity (§2.10 req 3): each new gating predicate must be TRUE on at least one
+	// pair's CORE side. A predicate false on every core side is a silent vacuity bug that
+	// the applicable(core)==applicable(full) equality alone would not catch.
+	t.Run("non-vacuity", func(t *testing.T) {
+		checks := []struct {
+			level Level
+			path  string
+			rec   map[string]any
+		}{
+			{LevelCore, "/emergency/power_source", comboSignCore()},
+			{LevelCore, "/emergency/power_source", emgLuminaireCore()},
+			{LevelStandard, "/emergency/battery_duration_min", comboSignCore()},
+			{LevelStandard, "/emergency/battery_duration_min", emgLuminaireCore()},
+			{LevelStandard, "/electrical/input_power_w", comboSignCore()},
+			{LevelCore, "/exit_sign/illumination_mode", comboSignCore()},
+			{LevelCore, "/exit_sign/legend_color", externalSignCore()},
+			{LevelStandard, "/exit_sign/legend_height", externalSignCore()},
+			{LevelStandard, "/exit_sign/face_illuminance_lx", externalSignCore()},
+			{LevelStandard, "/exit_sign/contrast_ratio", externalSignCore()},
+			{LevelStandard, "/exit_sign/sign_face_luminance_cd_per_m2", photoSignCore()},
+			{LevelStandard, "/exit_sign/min_charging_illuminance_lx", photoSignCore()},
+			{LevelStandard, "/exit_sign/sign_face_luminance_cd_per_m2", tritiumSignCore()},
+			{LevelStandard, "/exit_sign/tritium_rated_life_years", tritiumSignCore()},
+			{LevelFull, "test-report-backed sign-face luminance", comboSignCore()},
+			{LevelFull, "test-report-backed sign-face luminance", photoSignCore()},
+			{LevelFull, "test-report-backed sign-face luminance", tritiumSignCore()},
+			{LevelFull, "test-report-backed face illuminance", externalSignCore()},
+			{LevelCore, "UL 924 listing", comboSignCore()},              // naDedicatedClass on an NA sign
+			{LevelCore, "/photometry/luminaire_efficacy_lm_per_w", coreBase()}, // notDedicatedClass on a troffer
+			{LevelCore, "/product_family/secondary_function", emgLuminaireCore()}, // notExitSign on an emergency luminaire
+		}
+		for _, c := range checks {
+			if !applicableTo(t, c.level, c.path, c.rec) {
+				t.Errorf("non-vacuity: row (level %s, path %q) is NOT applicable to its intended core-side fixture (silent vacuity bug)", c.level, c.path)
+			}
+		}
 	})
 }
 

@@ -148,7 +148,7 @@ Every taxonomy the schema defines therefore earns its place in one of three ways
 | CRI Ra (conditional: primarily white light) | `colorimetry.cri_ra` | `datasheet_pdf` |
 | Market safety listing (region-conditional) | a safety-listing attestation | `compliance_documents` |
 
-The market safety listing is region-aware: a North American record (technical region `120v_60hz_north_america`) must claim a North-American-recognized listing (UL, cUL, ETL, CSA, MET, a generic NRTL claim, or UL 1598); every other technical region, including the cross-market `universal`, accepts any recognized listing, CE, ENEC, or IEC 60598 among them, to satisfy the gate.
+The market safety listing is region-aware: a North American record (technical region `120v_60hz_north_america`) must claim a North-American-recognized listing (UL, cUL, ETL, CSA, MET, a generic NRTL claim, or UL 1598); every other technical region, including the cross-market `universal`, accepts any recognized listing, CE, ENEC, or IEC 60598 among them, to satisfy the gate. The emergency-lighting listing `ul_924` is recognized in every region's accept set, so an exit sign or emergency luminaire whose only safety listing is UL 924 still clears the core gate.
 
 ### Standard requirements
 
@@ -212,7 +212,7 @@ A small residual set stays as plain `conformance/observation` notes rather than 
 
 Not every requirement applies to every fixture. A pure color-mixing fixture has no CRI, an indoor downlight has no BUG rating, a DALI or DMX fixture publishes no analog dim range, and an indoor fixture needs no IP rating. The predicate layer encodes this conditional applicability: each conditional rule carries a predicate, and when the predicate is false for a record the rule is dropped from grading entirely, never reported as a missing field. Without it the grader would demand metrics that are meaningless for a fixture's form and under-grade honest records.
 
-Two invariants keep the layer safe. First, every **gating-row** predicate reads only core fields (primary category, color tunability, indoor or outdoor, environment rating, technical region, driver protocol, mounting types; the market-safety predicate additionally reads the attestations, which are themselves the core safety rule). Grading walks the tiers low to high, so a predicate that decides a standard- or full-tier hard rule must not read a standard- or full-tier field, or adding one field could change which higher-tier rules apply and make the level order-dependent. The enrichment and observation rows are non-gating, so their applicability predicates may read the presence of a parent block (a flicker sub-field is suggested only when a flicker block is present); because they never move the level, reading a non-core block there is harmless. The reference tests assert the core-fields-only invariant behaviorally over the gating rows: stripping every non-core field from a record must leave each gating predicate's value unchanged. Second, each predicate is pure and total, so it never panics on a malformed record, because grading runs before full schema validation on the spreadsheet authoring path.
+Two invariants keep the layer safe. First, every **gating-row** predicate reads only core fields (primary category, color tunability, indoor or outdoor, environment rating, technical region, driver protocol, mounting types; the market-safety predicate additionally reads the attestations, which are themselves the core safety rule). The class profiles extend this to class-core fields: a sign's `illumination_mode` and a powered emergency product's `power_source` are core-required for the class whose gating rows read them (through `signMode` and the battery trio), so those reads stay within that class's core tier; the battery trio gates at standard only for the dedicated-emergency and internally-illuminated classes, where `power_source` is core, and surfaces as enrichment for an externally-illuminated combo sign, where it is not. Grading walks the tiers low to high, so a predicate that decides a standard- or full-tier hard rule must not read a standard- or full-tier field, or adding one field could change which higher-tier rules apply and make the level order-dependent. The enrichment and observation rows are non-gating, so their applicability predicates may read the presence of a parent block and non-core fields within it (a flicker sub-field is suggested only when a flicker block is present; an emergency-mode nudge fires only when `emergency_role` names a dual-mode product); because they never move the level, reading a non-core block or field there is harmless. The reference tests assert the core-fields-only invariant behaviorally over the gating rows: stripping every non-core field from a record must leave each gating predicate's value unchanged. Second, each predicate is pure and total, so it never panics on a malformed record, because grading runs before full schema validation on the spreadsheet authoring path.
 
 This layer replaced an earlier handful of inline conditionals, and three corrections made it right: the single white-light test was split into `hasWhitePoint` (which still gates CCT, because an RGBW white channel has a CCT) and `isWhiteLightPrimary` (which gates CRI, SDCM, and TM-30 and excludes every color-mixing mode); the BUG gate was narrowed from any outdoor fixture to a specific outdoor-site category set, so beam-characterized architectural uplights are not asked for an area distribution they do not have; and `wetOrExposed` stopped reading `ip_rating` (a standard field it was gating) so the core-fields-only invariant holds.
 
@@ -229,8 +229,13 @@ This layer replaced an earlier handful of inline conditionals, and three correct
 | `impactPublic` | `environment_rating` | == `vandal_resistant` | IK rating (enrichment only) |
 | `poleMounted` | `mounting_types` | contains a pole or mast token | EPA (enrichment only) |
 | market safety (`hasMarketSafetyListing`) | `technical_region` + attestation programs | a region-appropriate safety listing is present | the core safety-listing gate (region-conditional accept sets) |
+| `isExitSign`, `isDedicatedEmergency`, `isDedicatedClass` | `product_family.primary_category` | category is `exit_sign`, `emergency_luminaire`, or either | select the exit-sign and dedicated-emergency profiles; `notExitSign` and `notDedicatedClass` are the literal negations that mark the universal rows those profiles exclude |
+| `signMode(mode)` | `exit_sign.illumination_mode` | the sign's illumination mode equals the argument | the mode-conditional sign rows (see Product-class profiles) |
+| `hasIntegralBattery` | `emergency.power_source` | == `integral_battery` | the standard battery trio (within `emergencyPowerCoreClass`) and the battery-nudge enrichment rows (outside it) |
+| `emergencyPowerCoreClass` | `primary_category` + `exit_sign.illumination_mode` | a dedicated emergency luminaire, or an internally illuminated exit sign | the `power_source` core row, and the scope where the battery trio gates at standard rather than nudging as enrichment |
+| `naDedicatedClass` | `primary_category` + `technical_region` | an NA-region dedicated-class product | the UL 924 core listing row (US-first) |
 
-The seven form/driver predicates plus the market-safety check gate hard requirements; `controllableDriver`, `impactPublic`, and `poleMounted` gate enrichment rows only. Enrichment sub-field rows carry an additional family of block-presence predicates, which suggest a sub-field only when its parent block (photometry, test conditions, operating point, flicker, thermal derating, and the like) is already populated.
+The form/driver and product-class predicates plus the market-safety check gate hard requirements; `controllableDriver`, `impactPublic`, `poleMounted`, and the emergency-mode and battery-nudge predicates gate enrichment rows only. Enrichment sub-field rows carry an additional family of block-presence predicates, which suggest a sub-field only when its parent block (photometry, test conditions, operating point, flicker, thermal derating, and the like) is already populated.
 
 Compliance beyond the core safety listing is tracked, never gated: every other listing, certification, energy program, and declaration lives in the attestations array and `index.attestation_programs[]`, and the grader ignores it.
 
@@ -241,6 +246,49 @@ Two categorization choices in the predicates are worth spelling out, because the
 The first is the outdoor-site boundary. An `in_ground_uplight` and a `facade_projector` are graded as directional (beam-characterized), not as outdoor-site, even though both are installed outdoors. They have no Type I-V area distribution, and a BUG rating is undefined for a fixture whose whole architecture is intended uplight, so requiring outdoor distribution type, longitudinal range, and a BUG rating of them would demand metrics that do not exist for the form. Area, roadway, walkway, wall-pack, and sports-flood fixtures do carry a Type I-V distribution and a meaningful BUG rating, so those are the outdoor-site categories that owe the standard-tier outdoor rows.
 
 The second is the white-point versus white-light-primary split. A CCT is meaningful for any fixture with a white point, including the white channel of an RGBW or RGBWW fixture, so `hasWhitePoint` gates nominal CCT broadly. CRI, SDCM, and TM-30 are white-light-quality metrics that a color-mixing fixture does not characterize: an RGBW fixture is specified by its mixing gamut, not a single CRI figure measured against a reference illuminant. So `isWhiteLightPrimary` excludes every color-mixing mode (RGBW included), and those quality metrics are waived for color-mixing fixtures rather than counted against them.
+
+### Product-class profiles: exit signs and emergency luminaires
+
+Two product classes grade against their own dataset rather than the architectural-photometry profile above, so a maker of exit-sign-only or emergency-only products is graded on the evidence its cutsheets actually carry instead of being stranded at incomplete for lacking an LM-79 report it never produces. The class is derived from `product_family.primary_category`, an existing core field: `exit_sign` selects the sign profile, `emergency_luminaire` selects the dedicated-emergency profile, and every other category keeps the normal profile. Keying on a core field means every profile-selecting predicate reads a core field, so the core-fields-only invariant holds by construction and a record cannot select two conflicting profiles.
+
+Four product shapes follow:
+
+- **Exit sign** (`exit_sign`): the sign profile. The architectural-photometry rows (distribution, flux, efficacy, input power and voltage, the LM-79 and lumen-maintenance rows, the accredited-lab full rows) are not-applicable, and the sign dataset gates instead. An internally illuminated sign is also a powered product: it authors the `emergency` block and gates on `power_source` at core. A self-luminous or photoluminescent sign carries its whole power story in `illumination_mode` and does not author the block. An externally illuminated sign has an unpowered face, but a combo variant whose egress heads run on a battery authors the block too; because `power_source` is not core for it, its battery depth surfaces as an enrichment nudge, not a standard gate.
+- **Dedicated emergency luminaire** (`emergency_luminaire`): the normal profile, minus luminaire efficacy (lumens per AC-charging-watt is not a marketed figure for a battery-operated product), plus the emergency gates. Its own photometry block is its emergency-mode dataset, so its total-flux core row already gates the governing egress figure.
+- **Combination exit/emergency unit**: an exit sign that also carries emergency egress heads. An internally illuminated combo gates the battery trio at standard, where its `power_source` is core; an externally illuminated combo is battery-nudged instead, since its face is unpowered.
+- **Normal fixture with an emergency-power option**: the normal profile, unchanged. The `emergency` block is optional and non-gating; it adds only enrichment nudges.
+
+As with the conditional predicates, a row a profile marks not-applicable is dropped from grading entirely, never reported as a gap: an exit sign is never asked for a beam angle or an LM-79 attestation. The sign dataset's conditionals all key on `exit_sign.illumination_mode`, a class-core field, never on the descriptive `illumination_technology`.
+
+The sign rubric, beyond the universal identity and safety rows every record carries:
+
+| Tier | Requirement | Field | Applies to |
+| --- | --- | --- | --- |
+| Core | Illumination mode | `exit_sign.illumination_mode` | every sign |
+| Core | Legend color | `exit_sign.legend_color` | every sign |
+| Core | Emergency power source | `emergency.power_source` | internally illuminated signs (and dedicated emergency luminaires) |
+| Core | UL 924 listing | a `ul_924` attestation | NA-region signs and emergency luminaires |
+| Standard | Legend height | `exit_sign.legend_height` | every sign |
+| Standard | Face count | `exit_sign.face_count` | every sign |
+| Standard | Directional indicator | `exit_sign.directional_indicator` | every sign |
+| Standard | Housing and lens material | `product_family.shared_mechanical.*` | every sign (universal rows) |
+| Standard | Sign-face luminance | `exit_sign.sign_face_luminance_cd_per_m2` | photoluminescent, self-luminous |
+| Standard | Face illuminance | `exit_sign.face_illuminance_lx` | externally illuminated |
+| Standard | Contrast ratio | `exit_sign.contrast_ratio` | externally illuminated |
+| Standard | Input power (re-gate) | `electrical.input_power_w` | internally illuminated |
+| Standard | Tritium rated life | `exit_sign.tritium_rated_life_years` | self-luminous |
+| Standard | Minimum charging illuminance | `exit_sign.min_charging_illuminance_lx` | photoluminescent |
+| Standard | Battery duration, chemistry, self-test | `emergency.battery_duration_min`, `.battery_chemistry`, `.self_test` | dedicated emergency luminaire or internally illuminated sign, with an integral battery (an externally illuminated combo sign is battery-nudged, not gated) |
+| Full | Test-report-backed luminance | `exit_sign.sign_face_luminance_cd_per_m2` with `test_report` provenance | every self-emitting mode (mode other than externally illuminated) |
+| Full | Test-report-backed illuminance | `exit_sign.face_illuminance_lx` with `test_report` provenance | externally illuminated |
+
+Legend height gates at standard rather than core: the letter height is selection-grade data a designer compares (a 6-inch versus 8-inch lens choice), but a flagship commodity sign cutsheet does not always publish it, and a core gate that strands such a record is exactly the failure this profile exists to prevent. The rated viewing distance is an enrichment nudge, not a gate, because no surveyed sign cutsheet publishes it (it is a UL 924 product-face marking, not catalog data).
+
+The sign full tier is anchored on UL 924 test-report depth: a lab-measured luminance or illuminance value carrying `test_report` provenance. Because a standard sign would otherwise have zero applicable full rows and vacuously reach full, two provenance-reading rows partition the sign class by mode so every sign has exactly one applicable full row. This is the one place a provenance object, not just a value, is the evidence: a measured luminance with no authored provenance stays at standard.
+
+UL 924 plays a completeness-gate role here. A `ul_924` attestation satisfies the core safety listing (the program joins the region-conditional accept sets) and, for a North American dedicated-class product, a dedicated UL 924 listing row. It is read from the attestation ledger, never a boolean field, so listings have one home. As with every attestation the grader reads, this is a data-completeness signal, not a safety certification.
+
+These cut points follow the same Division 26 escalation the architectural tiers mirror. MasterSpec section 265213 (Emergency and Exit Lighting) asks first for the product and its listing (core), then for the selection-grade sign geometry and battery data a designer compares (standard), then for independently certified test-report depth (full). The gates are US-first, anchored on UL 924 and the NFPA 101 / IBC evidence base; international emergency standards are not yet gated (see ROADMAP.md).
 
 ## How the standard evolves
 

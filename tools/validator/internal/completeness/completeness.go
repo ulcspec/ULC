@@ -555,6 +555,10 @@ var naRegions = map[string]bool{
 var naSafetyListings = map[string]bool{
 	"ul_listed": true, "c_ul_listed": true, "etl": true, "csa_listed": true,
 	"met_listed": true, "nrtl_osha_recognized": true, "ul_1598": true,
+	// ul_924 is the NRTL product-safety listing for emergency lighting and exit signs.
+	// A dedicated exit sign whose only listing token is ul_924 must satisfy the core
+	// safety gate rather than being stranded (the stranding this release exists to fix).
+	"ul_924": true,
 }
 
 // anySafetyListings accepts any recognized listing, North American or otherwise. The
@@ -568,6 +572,9 @@ var anySafetyListings = map[string]bool{
 	"cb_scheme": true, "ce": true, "ukca": true, "enec": true, "iec_60598": true,
 	"nom": true, "ccc": true, "rcm_australia": true, "saa_australia": true,
 	"kc_korea": true, "pse_japan": true,
+	// ul_924 (emergency lighting / exit sign safety listing), so a non-NA dedicated
+	// product listing only ul_924 also satisfies the general safety gate.
+	"ul_924": true,
 }
 
 // hasMarketSafetyListing checks for the PRESENCE OF A CLAIM, not third-party
@@ -602,6 +609,161 @@ func hasCutsheet(r map[string]any) bool {
 	return getString(m, "sha256") != ""
 }
 
+// --- v0.10.0 emergency & exit-sign class predicates ---
+//
+// Class derivation is primary_category-first (§2.1): every profile selector reads a core
+// field, so a gating row that selects a profile holds the read-only-core invariant by
+// construction. All predicates are total on hostile input (grading runs pre-schema).
+
+// dedicatedCategories is the set of PrimaryCategory tokens that take a dedicated
+// (non-normal) grading profile: the exit sign and the dedicated emergency luminaire.
+var dedicatedCategories = map[string]bool{
+	"exit_sign": true, "emergency_luminaire": true,
+}
+
+// emergencyModeRoles is the set of EmergencyRole tokens whose products have a DISTINCT
+// emergency operating mode (a normal mode plus a different emergency mode). The three
+// emergency-mode enrichment nudges (§4.5) share it; category b
+// (dedicated_emergency_luminaire, whose single mode IS its photometry) and plain signs
+// (exit_sign_only) are excluded, preventing double-reporting (§2.5/§2.9).
+var emergencyModeRoles = map[string]bool{
+	"combo_exit_emergency": true, "emergency_power_option": true,
+}
+
+// isExitSign selects the sign profile (mirrors the directional one-liner).
+func isExitSign(r map[string]any) bool { return category(r) == "exit_sign" }
+
+// isDedicatedEmergency selects the dedicated-emergency-luminaire profile.
+func isDedicatedEmergency(r map[string]any) bool { return category(r) == "emergency_luminaire" }
+
+// isDedicatedClass is the union of the two dedicated classes (exit sign and dedicated
+// emergency luminaire). It scopes the UL 924 core listing row (via naDedicatedClass) and,
+// through notDedicatedClass, waives luminaire efficacy for a battery-operated dedicated
+// product. The battery trio scopes on emergencyPowerCoreClass, not this, so an externally
+// illuminated sign is dedicated-class yet battery-nudged rather than battery-gated.
+func isDedicatedClass(r map[string]any) bool { return dedicatedCategories[category(r)] }
+
+// notExitSign is the LITERAL negation of isExitSign, marking the universal rows the sign
+// profile excludes. Kept as an explicit negation so the input-power single-gap guarantee
+// holds by construction: the core input-power row is notExitSign and the standard re-gate
+// is (isExitSign AND internally illuminated), so at most one applies to any record.
+// TestNotExitSignIsLiteralNegation pins the exclusivity.
+func notExitSign(r map[string]any) bool { return !isExitSign(r) }
+
+// notDedicatedClass is the literal negation of isDedicatedClass: the single applicable
+// slot for the efficacy row (lm per AC-charging-watt is not meaningful for a
+// battery-operated dedicated product, §2.5).
+func notDedicatedClass(r map[string]any) bool { return !isDedicatedClass(r) }
+
+// naDedicatedClass applies the UL 924 core listing row: a dedicated-class product in an
+// NA technical region (US-first, §2.3/§2.11). Non-NA dedicated products face only the
+// general any-recognized-listing safety row.
+func naDedicatedClass(r map[string]any) bool {
+	return isDedicatedClass(r) && naRegions[getString(r, "product_family", "technical_region")]
+}
+
+// hasIntegralBattery is a class-AGNOSTIC leaf check: emergency.power_source ==
+// "integral_battery", nothing else. Class scope (the power-source-core gate versus the
+// battery nudge) is composed per-row. It is NOT block-presence semantics: an ac_only /
+// inverter / generator unit reads false, so a disclosed emergency block never over-gates.
+func hasIntegralBattery(r map[string]any) bool {
+	return getString(r, "emergency", "power_source") == "integral_battery"
+}
+
+// signMode builds a present-style predicate satisfied when exit_sign.illumination_mode
+// equals want. Absent or junk mode returns "" (getString), so signMode is false and its
+// negation true, which is how the "mode != externally_illuminated" arms cover absent and
+// junk modes (§2.2).
+func signMode(want string) predicate {
+	return func(r map[string]any) bool { return getString(r, "exit_sign", "illumination_mode") == want }
+}
+
+// selfEmittingSign is an exit sign in a self-emitting mode: any mode other than
+// externally_illuminated (absent and junk modes included, §2.2). It backs the sign full
+// luminance row and the illumination-technology enrichment nudge, both of which apply to
+// every sign whose own face emits (internally illuminated, photoluminescent, self-luminous)
+// and not to a sign lit by a separate external luminaire.
+func selfEmittingSign(r map[string]any) bool {
+	return isExitSign(r) && !signMode("externally_illuminated")(r)
+}
+
+// emergencyPowerCoreClass is the class for which emergency.power_source is a CORE field: a
+// dedicated emergency luminaire, or an internally illuminated exit sign (both carry a
+// powered-face / dedicated-emergency story). It is exactly the /emergency/power_source core
+// row's scope (§2.4). The battery trio gates WITHIN this class and nudges as enrichment
+// OUTSIDE it, so hasIntegralBattery (which reads power_source) is only ever consulted by a
+// gating row where power_source is core-guaranteed. That keeps the read-only-core invariant
+// by construction: an externally illuminated combo sign, whose power_source is not core, is
+// battery-nudged, not battery-gated, so disclosing its emergency block never lowers its grade.
+func emergencyPowerCoreClass(r map[string]any) bool {
+	return isDedicatedEmergency(r) || (isExitSign(r) && signMode("internally_illuminated")(r))
+}
+
+// hasUL924Listing reports whether the merged attestation program list contains ul_924,
+// reading the same list hasMarketSafetyListing reads (top-level attestations[] plus
+// product_family.shared_attestations, via attestationPrograms).
+func hasUL924Listing(r map[string]any) bool {
+	for _, p := range attestationPrograms(r) {
+		if p == "ul_924" {
+			return true
+		}
+	}
+	return false
+}
+
+// testReportBacked builds a present-closure satisfied only when the field at keys is a
+// present ProvenancedNumber whose provenance.source is "test_report". This is the
+// package's first provenance-reading gate (§2.6): at the sign full tier the authored
+// provenance object IS the evidence, so a measured value with NO provenance object
+// (ProvenancedNumber does not require one) deliberately fails. Total on hostile input:
+// a missing field, a non-map provenance, or a wrong-typed source all read false.
+func testReportBacked(keys ...string) predicate {
+	return func(r map[string]any) bool {
+		if !hasNumberValue(r, keys...) {
+			return false // not a present ProvenancedNumber
+		}
+		field, ok := getMap(r, keys...)
+		if !ok {
+			return false
+		}
+		prov, ok := getMap(field, "provenance")
+		if !ok {
+			return false // no authored provenance object: fails full deliberately (§2.6)
+		}
+		return getString(prov, "source") == "test_report"
+	}
+}
+
+// hasEmergencyModeRole is satisfied when the emergency block carries a role with a
+// DISTINCT emergency operating mode (combo_exit_emergency or emergency_power_option). It
+// backs the three emergency-mode enrichment nudges (§2.9). getString returns "" for an
+// absent block, so a block-absent record reads false. Enrichment rows may read block
+// fields; they never gate.
+func hasEmergencyModeRole(r map[string]any) bool {
+	return emergencyModeRoles[getString(r, "emergency", "emergency_role")]
+}
+
+// batteryNudgeClass surfaces the battery trio as NON-gating enrichment: a record carrying
+// an integral battery whose class does NOT core-gate power_source, namely a category-d
+// fixture with a factory emergency option or an externally illuminated combo sign. Where
+// power_source IS core (emergencyPowerCoreClass) the trio gates at standard instead, so the
+// two scopes partition on the power_source-core boundary and a field is never reported twice
+// (§2.9). hasIntegralBattery already implies the block is present.
+func batteryNudgeClass(r map[string]any) bool {
+	return hasIntegralBattery(r) && !emergencyPowerCoreClass(r)
+}
+
+// hasEmergencyPhotometryReference is satisfied when the emergency-mode photometry file is
+// attached with a content hash, keying on sha256 like hasCutsheet (the cutsheet
+// two-places precedent, §2.5).
+func hasEmergencyPhotometryReference(r map[string]any) bool {
+	m, ok := getMap(r, "emergency", "photometry_reference")
+	if !ok {
+		return false
+	}
+	return getString(m, "sha256") != ""
+}
+
 // --- the rubric table ---
 
 // One row per section-3 item. Gating rows omit message (the roadmap derives it);
@@ -618,33 +780,42 @@ var rubric = []rule{
 	{LevelCore, "/product_family/cutsheet", "", "datasheet_pdf", "identity", "", hasCutsheet, nil},
 	{LevelCore, "/product_family/primary_category", "PrimaryCategory", "datasheet_pdf", "identity", "", str("product_family", "primary_category"), nil},
 	{LevelCore, "/product_family/indoor_outdoor", "IndoorOutdoor", "datasheet_pdf", "identity", "", str("product_family", "indoor_outdoor"), nil},
-	{LevelCore, "/product_family/secondary_function", "SecondaryFunction", "datasheet_pdf", "identity", "", arr("product_family", "secondary_function"), nil},
+	{LevelCore, "/product_family/secondary_function", "SecondaryFunction", "datasheet_pdf", "identity", "", arr("product_family", "secondary_function"), notExitSign},
 	{LevelCore, "/product_family/mounting_types", "MountingType", "datasheet_pdf", "identity", "", arr("product_family", "mounting_types"), nil},
 	{LevelCore, "/product_family/environment_rating", "EnvironmentRating", "datasheet_pdf", "identity", "", str("product_family", "environment_rating"), nil},
 	{LevelCore, "/product_family/shape", "Shape", "datasheet_pdf", "identity", "", str("product_family", "shape"), nil},
 	{LevelCore, "/product_family/technical_region", "TechnicalRegion", "datasheet_pdf", "identity", "", str("product_family", "technical_region"), nil},
-	{LevelCore, "/photometry/distribution_type", "DistributionType", "ies", "LM-79", "", str("photometry", "distribution_type"), nil},
-	{LevelCore, "/configuration/tested_axes/color_tunability", "ColorTunabilityCapability", "datasheet_pdf", "identity", "", str("configuration", "tested_axes", "color_tunability"), nil},
-	{LevelCore, "/electrical/driver_protocol", "DimmingProtocol", "datasheet_pdf", "identity", "", str("electrical", "driver_protocol"), nil},
-	{LevelCore, "/photometry/total_luminous_flux_lm", "", "ies", "LM-79", "", num("photometry", "total_luminous_flux_lm"), nil},
-	{LevelCore, "/electrical/input_power_w", "", "ies", "LM-79", "", num("electrical", "input_power_w"), nil},
-	{LevelCore, "/photometry/luminaire_efficacy_lm_per_w", "", "ies", "LM-79", "", num("photometry", "luminaire_efficacy_lm_per_w"), nil},
-	{LevelCore, "/electrical/input_voltage_v (or input_voltage_class)", "", "datasheet_pdf", "LM-79", "", anyOf(num("electrical", "input_voltage_v"), str("electrical", "input_voltage_class")), nil},
+	{LevelCore, "/photometry/distribution_type", "DistributionType", "ies", "LM-79", "", str("photometry", "distribution_type"), notExitSign},
+	{LevelCore, "/configuration/tested_axes/color_tunability", "ColorTunabilityCapability", "datasheet_pdf", "identity", "", str("configuration", "tested_axes", "color_tunability"), notExitSign},
+	{LevelCore, "/electrical/driver_protocol", "DimmingProtocol", "datasheet_pdf", "identity", "", str("electrical", "driver_protocol"), notExitSign},
+	{LevelCore, "/photometry/total_luminous_flux_lm", "", "ies", "LM-79", "", num("photometry", "total_luminous_flux_lm"), notExitSign},
+	{LevelCore, "/electrical/input_power_w", "", "ies", "LM-79", "", num("electrical", "input_power_w"), notExitSign},
+	{LevelCore, "/photometry/luminaire_efficacy_lm_per_w", "", "ies", "LM-79", "", num("photometry", "luminaire_efficacy_lm_per_w"), notDedicatedClass},
+	{LevelCore, "/electrical/input_voltage_v (or input_voltage_class)", "", "datasheet_pdf", "LM-79", "", anyOf(num("electrical", "input_voltage_v"), str("electrical", "input_voltage_class")), notExitSign},
 	{LevelCore, "/colorimetry/nominal_cct_k", "NominalCCT", "datasheet_pdf", "ANSI C78.377", "", str("colorimetry", "nominal_cct_k"), hasWhitePoint},
 	{LevelCore, "/colorimetry/cri_ra", "", "datasheet_pdf", "CIE 13.3", "", num("colorimetry", "cri_ra"), isWhiteLightPrimary},
 	{LevelCore, "safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)", "AttestationProgram", "compliance_documents", "UL 1598 / IEC 60598", "", hasMarketSafetyListing, nil},
 
+	// v0.10.0 exit-sign & emergency CORE rows (§4.2). illumination_mode is the sign
+	// profile's conditional driver (§2.2); power_source demands the emergency block for
+	// powered signs and dedicated emergency luminaires (§2.4); the UL 924 listing row is
+	// US-first (naDedicatedClass, §2.3/§2.11) and its prose-label path is shape-guard-exempt.
+	{LevelCore, "/exit_sign/illumination_mode", "ExitSignIlluminationMode", "datasheet_pdf", "UL 924", "", str("exit_sign", "illumination_mode"), isExitSign},
+	{LevelCore, "/exit_sign/legend_color", "LegendColor", "datasheet_pdf", "NFPA 101", "", str("exit_sign", "legend_color"), isExitSign},
+	{LevelCore, "/emergency/power_source", "EmergencyPowerSource", "datasheet_pdf", "UL 924", "", str("emergency", "power_source"), emergencyPowerCoreClass},
+	{LevelCore, "UL 924 listing", "AttestationProgram", "compliance_documents", "UL 924", "", hasUL924Listing, naDedicatedClass},
+
 	// --- STANDARD ---
-	{LevelStandard, "/photometry/maximum_intensity_cd", "", "ies", "LM-79", "", num("photometry", "maximum_intensity_cd"), nil},
-	{LevelStandard, "/photometry/symmetry_type", "SymmetryType", "ies", "LM-75", "", str("photometry", "symmetry_type"), nil},
-	{LevelStandard, "/photometry/photometric_coordinate_system", "PhotometricCoordinateSystem", "ies", "LM-75", "", str("photometry", "photometric_coordinate_system"), nil},
-	{LevelStandard, "/electrical/control_gear_type", "ControlGearType", "datasheet_pdf", "LM-79", "", str("electrical", "control_gear_type"), nil},
+	{LevelStandard, "/photometry/maximum_intensity_cd", "", "ies", "LM-79", "", num("photometry", "maximum_intensity_cd"), notExitSign},
+	{LevelStandard, "/photometry/symmetry_type", "SymmetryType", "ies", "LM-75", "", str("photometry", "symmetry_type"), notExitSign},
+	{LevelStandard, "/photometry/photometric_coordinate_system", "PhotometricCoordinateSystem", "ies", "LM-75", "", str("photometry", "photometric_coordinate_system"), notExitSign},
+	{LevelStandard, "/electrical/control_gear_type", "ControlGearType", "datasheet_pdf", "LM-79", "", str("electrical", "control_gear_type"), notExitSign},
 	{LevelStandard, "/product_family/shared_mechanical/housing_material", "HousingMaterial", "datasheet_pdf", "identity", "", str("product_family", "shared_mechanical", "housing_material"), nil},
 	{LevelStandard, "/product_family/shared_mechanical/lens_material", "LensMaterial", "datasheet_pdf", "identity", "", str("product_family", "shared_mechanical", "lens_material"), nil},
-	{LevelStandard, "/test_conditions/photometry_basis", "PhotometryBasis", "ies", "LM-79", "", str("test_conditions", "photometry_basis"), nil},
-	{LevelStandard, "/instrumentation/measurement_regime", "MeasurementRegime", "ies", "LM-79", "", str("instrumentation", "measurement_regime"), nil},
-	{LevelStandard, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasLM79Attestation, nil},
-	{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", "", "datasheet_pdf", "TM-21", "", hasLumenMaintenance, nil},
+	{LevelStandard, "/test_conditions/photometry_basis", "PhotometryBasis", "ies", "LM-79", "", str("test_conditions", "photometry_basis"), notExitSign},
+	{LevelStandard, "/instrumentation/measurement_regime", "MeasurementRegime", "ies", "LM-79", "", str("instrumentation", "measurement_regime"), notExitSign},
+	{LevelStandard, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasLM79Attestation, notExitSign},
+	{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", "", "datasheet_pdf", "TM-21", "", hasLumenMaintenance, notExitSign},
 	{LevelStandard, "/photometry/beam_angle_deg", "", "ies", "LM-79", "", num("photometry", "beam_angle_deg"), directional},
 	{LevelStandard, "/photometry/per_length_normalized", "", "datasheet_pdf", "LM-79", "", hasPerLengthNormalized, linear},
 	{LevelStandard, "/photometry/declared_by_length", "", "datasheet_pdf", "LM-79", "", arr("photometry", "declared_by_length"), linear},
@@ -657,37 +828,68 @@ var rubric = []rule{
 	{LevelStandard, "/outdoor_classification/longitudinal_distribution_range", "LongitudinalDistributionRange", "ies", "RP-8", "", str("outdoor_classification", "longitudinal_distribution_range"), outdoorSite},
 	{LevelStandard, "/outdoor_classification/bug_rating", "", "datasheet_pdf", "TM-15", "", hasBugRating, outdoorSite},
 
+	// v0.10.0 exit-sign & emergency STANDARD rows (§4.2). Mode-partitioned per §2.2/§2.10a:
+	// luminance gates only for photoluminescent/self-luminous (the modes whose datasheets
+	// publish it); face illuminance and contrast for externally illuminated; input power
+	// re-gates for internally illuminated (same path as the notExitSign core row, distinct
+	// (level,path)); the battery trio gates only when the power-source-core class (dedicated
+	// emergency luminaire or internally illuminated sign) carries an integral battery, and an
+	// externally illuminated combo sign's battery depth nudges as enrichment instead (§2.9).
+	// legend_height uses the DualUnitLength mm leaf (§2.6a/§2.7).
+	{LevelStandard, "/exit_sign/legend_height", "", "datasheet_pdf", "NFPA 101 / IBC", "", scalarNum("exit_sign", "legend_height", "mm"), isExitSign},
+	{LevelStandard, "/exit_sign/face_count", "ExitSignFaceCount", "datasheet_pdf", "UL 924", "", str("exit_sign", "face_count"), isExitSign},
+	{LevelStandard, "/exit_sign/directional_indicator", "ExitSignDirectionalIndicator", "datasheet_pdf", "NFPA 101", "", arr("exit_sign", "directional_indicator"), isExitSign},
+	{LevelStandard, "/exit_sign/sign_face_luminance_cd_per_m2", "", "datasheet_pdf", "UL 924", "", num("exit_sign", "sign_face_luminance_cd_per_m2"), both(isExitSign, anyOf(signMode("photoluminescent"), signMode("self_luminous")))},
+	{LevelStandard, "/exit_sign/face_illuminance_lx", "", "datasheet_pdf", "NFPA 101 / IBC", "", num("exit_sign", "face_illuminance_lx"), both(isExitSign, signMode("externally_illuminated"))},
+	{LevelStandard, "/exit_sign/contrast_ratio", "", "datasheet_pdf", "NFPA 101", "", num("exit_sign", "contrast_ratio"), both(isExitSign, signMode("externally_illuminated"))},
+	{LevelStandard, "/electrical/input_power_w", "", "datasheet_pdf", "UL 924", "", num("electrical", "input_power_w"), both(isExitSign, signMode("internally_illuminated"))},
+	{LevelStandard, "/exit_sign/tritium_rated_life_years", "", "datasheet_pdf", "NRC 10 CFR 31.5", "", scalarNum("exit_sign", "tritium_rated_life_years"), both(isExitSign, signMode("self_luminous"))},
+	{LevelStandard, "/exit_sign/min_charging_illuminance_lx", "", "datasheet_pdf", "UL 924", "", num("exit_sign", "min_charging_illuminance_lx"), both(isExitSign, signMode("photoluminescent"))},
+	{LevelStandard, "/emergency/battery_duration_min", "", "datasheet_pdf", "UL 924", "", num("emergency", "battery_duration_min"), both(emergencyPowerCoreClass, hasIntegralBattery)},
+	{LevelStandard, "/emergency/battery_chemistry", "BatteryChemistry", "datasheet_pdf", "UL 924", "", str("emergency", "battery_chemistry"), both(emergencyPowerCoreClass, hasIntegralBattery)},
+	{LevelStandard, "/emergency/self_test", "EmergencySelfTestCapability", "datasheet_pdf", "UL 924", "", str("emergency", "self_test"), both(emergencyPowerCoreClass, hasIntegralBattery)},
+
 	// --- FULL ---
-	{LevelFull, "/photometry/zonal_lumens", "", "ies", "LM-79", "", arr("photometry", "zonal_lumens"), nil},
-	{LevelFull, "/operating_point", "", "test_report", "LM-79", "", hasOperatingPoint, nil},
-	{LevelFull, "/uncertainty", "", "test_report", "LM-79 / GUM", "", hasUncertainty, nil},
-	{LevelFull, "/corrections_applied", "", "test_report", "LM-79", "", hasCorrectionsApplied, nil},
-	{LevelFull, "instrumentation depth (goniometer/lab)", "", "test_report", "LM-79 / LM-75", "", hasInstrumentationDepth, nil},
-	{LevelFull, "method-backed lumen maintenance (TM-21 hours or TM-28)", "", "test_report", "LM-80 / TM-21 / TM-28", "", hasMethodBackedLumenMaintenance, nil},
+	{LevelFull, "/photometry/zonal_lumens", "", "ies", "LM-79", "", arr("photometry", "zonal_lumens"), notExitSign},
+	{LevelFull, "/operating_point", "", "test_report", "LM-79", "", hasOperatingPoint, notExitSign},
+	{LevelFull, "/uncertainty", "", "test_report", "LM-79 / GUM", "", hasUncertainty, notExitSign},
+	{LevelFull, "/corrections_applied", "", "test_report", "LM-79", "", hasCorrectionsApplied, notExitSign},
+	{LevelFull, "instrumentation depth (goniometer/lab)", "", "test_report", "LM-79 / LM-75", "", hasInstrumentationDepth, notExitSign},
+	{LevelFull, "method-backed lumen maintenance (TM-21 hours or TM-28)", "", "test_report", "LM-80 / TM-21 / TM-28", "", hasMethodBackedLumenMaintenance, notExitSign},
 	{LevelFull, "/colorimetry/tm_30/rf", "", "test_report", "TM-30", "", num("colorimetry", "tm_30", "rf"), isWhiteLightPrimary},
 	{LevelFull, "/colorimetry/tm_30/rf_h_per_bin", "", "test_report", "TM-30", "", arr("colorimetry", "tm_30", "rf_h_per_bin"), isWhiteLightPrimary},
+
+	// v0.10.0 exit-sign FULL tier (§2.6): two provenance-reading rows that PARTITION the
+	// sign class by mode, so every sign has exactly one applicable full row and a standard
+	// sign cannot auto-promote to full on zero applicable rows. testReportBacked is the
+	// package's first provenance-reading gate (a measured value with no provenance object
+	// fails full, deliberately). The prose-label paths are shape-guard-exempt. The first
+	// row's mode arm is the literal negation !signMode("externally_illuminated"), which
+	// also covers absent/junk modes (§2.2).
+	{LevelFull, "test-report-backed sign-face luminance", "", "test_report", "UL 924", "", testReportBacked("exit_sign", "sign_face_luminance_cd_per_m2"), selfEmittingSign},
+	{LevelFull, "test-report-backed face illuminance", "", "test_report", "UL 924", "", testReportBacked("exit_sign", "face_illuminance_lx"), both(isExitSign, signMode("externally_illuminated"))},
 
 	// --- ENRICHMENT (non-gating; the enrichment roadmap; surfaced at core and above) ---
 	// Optional dimensions a record could disclose to deepen the datasheet. Messages
 	// are byte-identical to their prior conformance/observation wording; only the
 	// finding code changes (see the 0.9.0 CHANGELOG consumer-migration note).
-	{LevelEnrichment, "/electrical/power_factor", "", "datasheet_pdf", "LM-79", "full records commonly disclose power factor; absent here", num("electrical", "power_factor"), nil},
+	{LevelEnrichment, "/electrical/power_factor", "", "datasheet_pdf", "LM-79", "full records commonly disclose power factor; absent here", num("electrical", "power_factor"), notExitSign},
 	{LevelEnrichment, "/product_family/shared_warranty/term_years", "", "datasheet_pdf", "identity", "warranty term not disclosed", scalarNum("product_family", "shared_warranty", "term_years"), nil},
-	{LevelEnrichment, "/photometry/luminous_opening_shape", "LuminousOpeningShape", "ies", "LM-79", "luminous opening shape not disclosed", str("photometry", "luminous_opening_shape"), nil},
-	{LevelEnrichment, "/photometry/emission_face", "EmissionFace", "ies", "LM-79", "emission face not disclosed", str("photometry", "emission_face"), nil},
+	{LevelEnrichment, "/photometry/luminous_opening_shape", "LuminousOpeningShape", "ies", "LM-79", "luminous opening shape not disclosed", str("photometry", "luminous_opening_shape"), notExitSign},
+	{LevelEnrichment, "/photometry/emission_face", "EmissionFace", "ies", "LM-79", "emission face not disclosed", str("photometry", "emission_face"), notExitSign},
 	{LevelEnrichment, "/colorimetry/duv", "", "test_report", "ANSI C78.377", "Duv (distance from the Planckian locus) not disclosed", num("colorimetry", "duv"), hasWhitePoint},
 	{LevelEnrichment, "/colorimetry/chromaticity_x", "", "test_report", "ANSI C78.377", "chromaticity x not disclosed", num("colorimetry", "chromaticity_x"), hasWhitePoint},
 	{LevelEnrichment, "/colorimetry/chromaticity_y", "", "test_report", "ANSI C78.377", "chromaticity y not disclosed", num("colorimetry", "chromaticity_y"), hasWhitePoint},
 	{LevelEnrichment, "/product_family/shared_mechanical/ambient_operating_range", "", "datasheet_pdf", "identity", "ambient operating range not disclosed", hasAmbientOperatingRange, nil},
 	{LevelEnrichment, "/compatible_accessories", "AccessoryType", "datasheet_pdf", "identity", "compatible accessories not listed", arr("compatible_accessories"), nil},
-	{LevelEnrichment, "/thermal_derating", "", "test_report", "LM-82", "thermal derating not disclosed", hasThermalDerating, nil},
-	{LevelEnrichment, "/flicker_measurements", "", "test_report", "LM-90 / IEEE 1789", "flicker measurements not disclosed", hasFlickerMeasurements, nil},
-	{LevelEnrichment, "/alpha_opic_metrics", "", "test_report", "CIE S 026", "alpha-opic (circadian) metrics not disclosed", hasAlphaOpicMetrics, nil},
-	{LevelEnrichment, "/chromaticity_shift_projection", "", "test_report", "TM-35", "chromaticity-shift projection not disclosed", hasChromaticityShiftProjection, nil},
+	{LevelEnrichment, "/thermal_derating", "", "test_report", "LM-82", "thermal derating not disclosed", hasThermalDerating, notExitSign},
+	{LevelEnrichment, "/flicker_measurements", "", "test_report", "LM-90 / IEEE 1789", "flicker measurements not disclosed", hasFlickerMeasurements, notExitSign},
+	{LevelEnrichment, "/alpha_opic_metrics", "", "test_report", "CIE S 026", "alpha-opic (circadian) metrics not disclosed", hasAlphaOpicMetrics, notExitSign},
+	{LevelEnrichment, "/chromaticity_shift_projection", "", "test_report", "TM-35", "chromaticity-shift projection not disclosed", hasChromaticityShiftProjection, notExitSign},
 	{LevelEnrichment, "/photometry/field_angle_deg", "", "ies", "LM-79", "field angle not disclosed", num("photometry", "field_angle_deg"), directional},
-	{LevelEnrichment, "/photometry/cutoff_angle_from_horizontal_deg", "", "ies", "LM-79", "cutoff angle not disclosed", num("photometry", "cutoff_angle_from_horizontal_deg"), nil},
-	{LevelEnrichment, "/photometry/spacing_criterion", "", "ies", "LM-79", "spacing criterion not disclosed", num("photometry", "spacing_criterion"), nil},
-	{LevelEnrichment, "/photometry/ugr_4h_8h", "", "ies", "CIE 117", "UGR not disclosed", num("photometry", "ugr_4h_8h"), nil},
+	{LevelEnrichment, "/photometry/cutoff_angle_from_horizontal_deg", "", "ies", "LM-79", "cutoff angle not disclosed", num("photometry", "cutoff_angle_from_horizontal_deg"), notExitSign},
+	{LevelEnrichment, "/photometry/spacing_criterion", "", "ies", "LM-79", "spacing criterion not disclosed", num("photometry", "spacing_criterion"), notExitSign},
+	{LevelEnrichment, "/photometry/ugr_4h_8h", "", "ies", "CIE 117", "UGR not disclosed", num("photometry", "ugr_4h_8h"), notExitSign},
 	{LevelEnrichment, "/outdoor_classification/lcs_zonal_lumens", "", "ies", "TM-15", "LCS zonal lumens not disclosed", arr("outdoor_classification", "lcs_zonal_lumens"), outdoorSite},
 	{LevelEnrichment, "/product_family/shared_mechanical/ik_rating", "", "compliance_documents", "IEC 62262", "impact (IK) rating not disclosed", str("product_family", "shared_mechanical", "ik_rating"), impactPublic},
 	{LevelEnrichment, "/product_family/physical_dimensions/epa", "", "datasheet_pdf", "identity", "EPA (effective projected area) not disclosed", hasEPA, poleMounted},
@@ -747,6 +949,29 @@ var rubric = []rule{
 	// pvf_code surfaces the TM-30 design-intent ground (TM30DesignIntent/TM30Level stay
 	// staged vocabulary; pvf_code carries the highest-priority achieved designation).
 	{LevelEnrichment, "/colorimetry/tm_30/pvf_code", "", "test_report", "TM-30", "TM-30 PVF designation not disclosed", str("colorimetry", "tm_30", "pvf_code"), both(isWhiteLightPrimary, blockPresent("colorimetry", "tm_30"))},
+
+	// v0.10.0 exit-sign & emergency ENRICHMENT rows (§4.5; all non-gating). Powered signs
+	// also disclose input voltage; every sign can disclose the UL 924-marked viewing
+	// distance; an internally illuminated sign can disclose measured face luminance (UL 924
+	// governs internal-sign legibility, so this deepens rather than gates, §2.10a);
+	// externally illuminated signs disclose the legend-geometry detail trio; every
+	// self-emitting sign discloses the technology within its mode. The three emergency-mode
+	// nudges fire only for the two dual-mode roles (§2.9); the battery trio nudges any record
+	// whose class does not core-gate power_source (a category-d fixture or an externally
+	// illuminated combo sign), while the power-source-core classes gate those at standard.
+	{LevelEnrichment, "/electrical/input_voltage_v (or input_voltage_class)", "", "datasheet_pdf", "UL 924", "input voltage not disclosed", anyOf(num("electrical", "input_voltage_v"), str("electrical", "input_voltage_class")), both(isExitSign, signMode("internally_illuminated"))},
+	{LevelEnrichment, "/exit_sign/rated_viewing_distance_ft", "RatedViewingDistance", "datasheet_pdf", "UL 924", "UL 924-marked rated viewing distance not disclosed", str("exit_sign", "rated_viewing_distance_ft"), isExitSign},
+	{LevelEnrichment, "/exit_sign/sign_face_luminance_cd_per_m2", "", "datasheet_pdf", "UL 924", "measured sign-face luminance not disclosed", num("exit_sign", "sign_face_luminance_cd_per_m2"), both(isExitSign, signMode("internally_illuminated"))},
+	{LevelEnrichment, "/exit_sign/stroke_width", "", "datasheet_pdf", "IBC 1013.6.1", "legend stroke width not disclosed", scalarNum("exit_sign", "stroke_width", "mm"), both(isExitSign, signMode("externally_illuminated"))},
+	{LevelEnrichment, "/exit_sign/letter_width", "", "datasheet_pdf", "IBC 1013.6.1", "legend letter width not disclosed", scalarNum("exit_sign", "letter_width", "mm"), both(isExitSign, signMode("externally_illuminated"))},
+	{LevelEnrichment, "/exit_sign/letter_spacing", "", "datasheet_pdf", "IBC 1013.6.1", "legend letter spacing not disclosed", scalarNum("exit_sign", "letter_spacing", "mm"), both(isExitSign, signMode("externally_illuminated"))},
+	{LevelEnrichment, "/exit_sign/illumination_technology", "ExitSignIlluminationTechnology", "datasheet_pdf", "UL 924", "illumination technology not disclosed", str("exit_sign", "illumination_technology"), selfEmittingSign},
+	{LevelEnrichment, "/emergency/emergency_lumen_output_lm", "", "datasheet_pdf", "UL 924", "distinct emergency-mode lumen output not disclosed", num("emergency", "emergency_lumen_output_lm"), hasEmergencyModeRole},
+	{LevelEnrichment, "/emergency/photometry_reference", "", "ies", "UL 924", "emergency-mode photometry file not attached", hasEmergencyPhotometryReference, hasEmergencyModeRole},
+	{LevelEnrichment, "/emergency/emergency_input_power_w", "", "datasheet_pdf", "UL 924", "distinct emergency-mode input power not disclosed", num("emergency", "emergency_input_power_w"), hasEmergencyModeRole},
+	{LevelEnrichment, "/emergency/battery_duration_min", "", "datasheet_pdf", "UL 924", "battery run time not disclosed", num("emergency", "battery_duration_min"), batteryNudgeClass},
+	{LevelEnrichment, "/emergency/battery_chemistry", "BatteryChemistry", "datasheet_pdf", "UL 924", "battery chemistry not disclosed", str("emergency", "battery_chemistry"), batteryNudgeClass},
+	{LevelEnrichment, "/emergency/self_test", "EmergencySelfTestCapability", "datasheet_pdf", "UL 924", "self-test capability not disclosed", str("emergency", "self_test"), batteryNudgeClass},
 
 	// --- OBSERVATIONS (non-gating; residual notes; surfaced at core and above) ---
 	// A tracked declaration whose presence is noted, and a deprecated classification.

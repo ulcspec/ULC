@@ -1,0 +1,205 @@
+{
+  "configuration": {
+    "catalog_number": "ES61SRC",
+    "photometric_scenario_id": "cooper-sure-lites-es61src",
+    "scenario_label": "ES Series edge-lit exit, AC only, single face, surface unit, brushed aluminum trim, red letters on clear background, no chevron, ceiling mount, 120/277 VAC"
+  },
+  "electrical": {
+    "input_current_a": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "A",
+      "value": 0.03,
+      "value_type": "rated"
+    },
+    "input_power_w": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "W",
+      "value": 3.8,
+      "value_type": "rated"
+    },
+    "input_voltage_class": "universal_120_277",
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    },
+    "power_factor": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "ratio",
+      "value": 0.93,
+      "value_type": "rated"
+    }
+  },
+  "emergency": {
+    "emergency_role": "exit_sign_only",
+    "power_source": "ac_only"
+  },
+  "exit_sign": {
+    "directional_indicator": [
+      "none"
+    ],
+    "face_count": "single",
+    "illumination_mode": "internally_illuminated",
+    "illumination_technology": "led",
+    "legend_color": "red",
+    "legend_height": {
+      "in": 6,
+      "mm": 152.4,
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "value_type": "rated"
+    },
+    "legend_text": "EXIT"
+  },
+  "index": {
+    "attestation_programs": [
+      "ul_924"
+    ],
+    "builder_version": "0.5.0",
+    "catalog_model": "ES6",
+    "catalog_number": "ES61SRC",
+    "conformance_level": "standard",
+    "display_name": "ES Series edge-lit exit, AC only, single face, surface unit, brushed aluminum trim, red letters on clear background, no chevron, ceiling mount, 120/277 VAC",
+    "environment_rating": "dry",
+    "indoor_outdoor": "indoor",
+    "manufacturer_slug": "cooper-lighting-solutions",
+    "mounting_types": [
+      "end_mount",
+      "pendant",
+      "recessed_ceiling",
+      "recessed_wall",
+      "surface_ceiling",
+      "surface_wall"
+    ],
+    "nominal_input_power_w": 3.8,
+    "primary_category": "exit_sign",
+    "search_keywords": [
+      "ES Series edge-lit exit, AC only, single face, surface unit, brushed aluminum trim, red letters on clear background, no chevron, ceiling mount, 120/277 VAC",
+      "Sure-Lites ES Series",
+      "Sure-Lites ES Series Edge-Lit Exit"
+    ],
+    "source_file_types_present": [
+      "datasheet_pdf",
+      "installation_instructions_pdf",
+      "supplementary_pdf"
+    ],
+    "x-ulc-generated": true
+  },
+  "product_family": {
+    "catalog_line": "Sure-Lites ES Series",
+    "catalog_model": "ES6",
+    "cutsheet": {
+      "filename": "467ca0095d6b4971964ead41007445a9.pdf",
+      "revision_date": "2024-08-13",
+      "revision_label": "TD505151EN",
+      "sha256": "94722f44bf36accf8dc834420734ff59bdcaf21bd6f514b81f059411e6ec7e99"
+    },
+    "environment_rating": "dry",
+    "family_description": "Edge-lit LED exit sign with 6 inch letters and injection-molded high-impact acrylic panel in clear, mirror, or white background. Red or deep green letter colors; NFPA 101 compliant chevron directional indicators when specified. Recessed variant uses an 18-gauge die-formed steel housing with aluminum trim; surface variant is all aluminum. Extruded trim plate secured by torsion springs with no visible mounting hardware. Dual voltage 120/277 VAC 60 Hz. Self-powered (ES7) models add a sealed maintenance-free nickel cadmium battery (10-year life expectancy, 24-hour max recharge) that illuminates the sign face for 90 minutes during a power interruption; this AC-only (ES6) configuration has no battery. UL 924 Listed, Life Safety NFPA 101, NEC/OSHA.",
+    "family_display_name": "Sure-Lites ES Series Edge-Lit Exit",
+    "family_id": "cooper-sure-lites-es",
+    "indoor_outdoor": "indoor",
+    "manufacturer": {
+      "display_name": "Cooper Lighting Solutions",
+      "slug": "cooper-lighting-solutions"
+    },
+    "mounting_types": [
+      "end_mount",
+      "pendant",
+      "recessed_ceiling",
+      "recessed_wall",
+      "surface_ceiling",
+      "surface_wall"
+    ],
+    "physical_dimensions": {
+      "overall_height": {
+        "in": 7.75,
+        "mm": 197,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_width": {
+        "in": 16.75,
+        "mm": 425,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      }
+    },
+    "primary_category": "exit_sign",
+    "shape": "rectangular",
+    "shared_attestations": [
+      {
+        "attestation_id": "ul_924_cooper_es",
+        "program": "ul_924",
+        "standard_revision": "UL 924",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "Cutsheet code compliance: UL 924 Listed; Life Safety NFPA 101; NEC/OSHA; most state and local codes.",
+          "type": "unconditional"
+        }
+      }
+    ],
+    "shared_mechanical": {
+      "housing_material": "aluminum_unspecified",
+      "lens_material": "acrylic"
+    },
+    "shared_warranty": {
+      "scope": "Five-year limited warranty against defects in material and workmanship; battery (self-powered models only) carries a seven-year pro-rata warranty.",
+      "term_years": 5
+    },
+    "technical_region": "120v_60hz_north_america"
+  },
+  "record_id": "cooper-sure-lites-es61src",
+  "record_status": "active",
+  "record_status_as_of": "2026-07-08",
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "467ca0095d6b4971964ead41007445a9.pdf",
+        "revision_date": "2024-08-13",
+        "revision_label": "TD505151EN",
+        "sha256": "94722f44bf36accf8dc834420734ff59bdcaf21bd6f514b81f059411e6ec7e99"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "es1.pdf",
+        "revision_label": "ES Series LED edge-lit exit signs installation instructions",
+        "sha256": "3d8a1fc64258506d5e1d2ad0b9366fc54507fe06961ef5870e3811daf664e396"
+      }
+    },
+    {
+      "file_type": "supplementary_pdf",
+      "reference": {
+        "filename": "Available-ES-EXIT-LEGENDS.pdf",
+        "revision_label": "Available ES exit legends",
+        "sha256": "becd010de62cfbf93ed5f9651d1662a543e5932dcc171db0c1868f2b46311288"
+      }
+    }
+  ],
+  "ulc_version": "0.10.0"
+}

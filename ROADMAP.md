@@ -19,17 +19,17 @@ schema surface. Pre-1.0 releases generally aim for additive changes;
 compatibility-tightening changes may occur when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v0.9.x
+## Active version: v0.10.x
 
-The current line. v0.9.0 made data completeness fully explicit: the optional
-depth taxonomies are now surfaced as an actionable **enrichment roadmap**
-(`conformance/enrichment` findings) rather than passive `--verbose`-only
-observations, sitting alongside the existing tier roadmap. It also added five
-optional fields (installed orientation, optical radiation band, adaptive
-lighting modes, per-source photometric file format, and the TM-30 reference
-illuminant type) and gave the grading package a structured `Compute()` entry
-point. Every change is additive and non-gating: a v0.8.x record validates and
-grades identically.
+The current line. v0.10.0 makes exit signs and emergency luminaires first-class
+gradable product classes. Two optional blocks (`exit_sign` and `emergency`) and
+ten taxonomy vocabularies describe the legend, illumination mode, battery, and
+self-test story, and per-class grading profiles grade a sign or emergency
+luminaire against its own dataset so an exit-sign-only or emergency-only maker
+reaches its honest grade rather than stranding at incomplete. UL 924 now
+satisfies the core safety gate and, for North American dedicated-class products,
+a dedicated listing row. Every change is additive and non-gating: a v0.9.x record
+validates and grades identically.
 
 - Continued expansion of reference records, real cutsheets only (see
   `CONTRIBUTING.md` for sourcing rules)
@@ -44,7 +44,11 @@ surface. The direction is a second computed axis alongside data completeness: a
 view of the third-party program achievements a record can demonstrate, computed
 from the attestations a record already carries. This is described at the level
 of direction only; the field shapes are not committed until the work lands with
-real example records.
+real example records. Emergency capability is part of that axis: a normal fixture
+carrying a factory emergency-power option (the `emergency_power_option` role)
+demonstrates an emergency-lighting achievement rather than gating a completeness
+tier, so emergency-as-achievement waits for v1.0.0 while the v0.10.0 `emergency`
+block records the underlying data today.
 
 The criteria for declaring v1.0.0, schema-stable and ecosystem-mature:
 
@@ -118,13 +122,25 @@ revision.
   place?" question for the first backward-compatibility commitment:
   `LegacyCutoffClassification` (deprecated, kept only for lossless ingestion of
   legacy datasheets) and `RecordStatus`. Either may be pruned in v1.0.0.
-- **Emergency-lighting operational data.** ULC carries `emergency_luminaire`
-  and `exit_sign` categories and a UL 924 attestation, but not the defining
-  emergency data: battery chemistry and capacity, rated emergency runtime,
-  reduced emergency-mode lumen output, self-test capability (manual,
-  status-indicator, remote, or integral automatic), and the normal-power
-  transfer threshold. A future revision may add an `emergency` field group,
-  grounded once an emergency-luminaire example record surfaces.
+- **Normal-power transfer threshold.** The `emergency` block (v0.10.0) carries
+  the defining emergency data (battery chemistry and capacity, rated runtime,
+  emergency-mode lumen output, self-test capability), but not the voltage at
+  which a unit transfers to emergency power. None of the surveyed cutsheets
+  publishes a threshold value (the brownout circuit is described only
+  qualitatively), so the field stays unwired and evidence-gated until a real
+  sheet publishes one.
+- **International emergency standards.** The emergency and exit-sign gates are
+  US-first, anchored on UL 924 and the NFPA 101 / IBC evidence base. EN
+  60598-2-22, EN 1838, and ISO 30061 are deferred until researched: no tokens
+  and no gates are added speculatively. A non-NA dedicated product grades today
+  against the general any-recognized-listing safety row plus the full class
+  dataset.
+- **Static monochromatic color token.** `ColorTunabilityCapability` has no token
+  for a fixed single-color (non-white) output, so an exit sign's color lives in
+  `exit_sign.legend_color` and the universal `color_tunability` core row is
+  not-applicable for signs. The gap is broader than signs (monochrome amber and
+  red architectural fixtures exist); a `static_color` token is a candidate once a
+  second independent record surfaces the need.
 - **Entertainment fixture capabilities.** Moving-head and theatrical fixtures
   expose capabilities not modeled today: pan and tilt range, zoom (variable
   field-angle) range, beam-shaping hardware (framing shutters, gobo wheels,

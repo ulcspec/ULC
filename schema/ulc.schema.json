@@ -85,6 +85,16 @@
       "$ref": "#/$defs/OutdoorClassification"
     },
 
+    "exit_sign": {
+      "description": "Exit-sign dataset, present on records whose `product_family.primary_category` is `exit_sign` (categories a and c). Carries the legend, illumination mode and technology, geometry, directional indicators, and the mode-specific photometrics (face luminance, face illuminance, contrast ratio, tritium rated life, photoluminescent charging illuminance). Optional and additive: an identity-only sign record with an empty `exit_sign` block is schema-valid and grades incomplete. Internally illuminated signs are powered products that also author the `emergency` block; unpowered modes (externally illuminated, self-luminous, photoluminescent) carry their power story in `illumination_mode` alone.",
+      "$ref": "#/$defs/ExitSign"
+    },
+
+    "emergency": {
+      "description": "Emergency-power dataset, authored by every product with an electrical emergency-power story: dedicated emergency luminaires (`primary_category: emergency_luminaire`), internally illuminated exit signs, combo exit/emergency units, and normal fixtures carrying a factory emergency-power option. `emergency_role` and `power_source` are required members. Not for UL 1994 photoluminescent egress-path-marking products, which are a different product class. See `exit_sign` for the sign half of a combo unit.",
+      "$ref": "#/$defs/Emergency"
+    },
+
     "operating_point": {
       "description": "Declared operating conditions at which measured values were taken (input voltage, ambient temperature, drive current).",
       "$ref": "#/$defs/OperatingPoint"
@@ -1373,6 +1383,132 @@
           "additionalProperties": true
         }
       }
+    },
+
+    "ExitSign": {
+      "title": "Exit-sign dataset",
+      "description": "The exit-sign product data for records whose primary_category is exit_sign (categories a and c). Every field is optional; grading, not schema, drives completeness, so an identity-only sign record with an empty exit_sign block is schema-valid. illumination_mode is the conditional driver for the sign profile (see ExitSignIlluminationMode). Legend geometry uses DualUnitLength (SI authoritative); code minimums such as the NFPA 101 / IBC 6-inch letter height live in field descriptions, not schema constraints, because ULC records what a product is and leaves conformance to the authority having jurisdiction.",
+      "type": "object",
+      "properties": {
+        "illumination_mode": {
+          "description": "How the legend is illuminated; the sign profile's conditional driver.",
+          "$ref": "taxonomy.schema.json#/$defs/ExitSignIlluminationMode"
+        },
+        "illumination_technology": {
+          "description": "The self-emitting technology within the illumination mode (descriptive granularity, not gated).",
+          "$ref": "taxonomy.schema.json#/$defs/ExitSignIlluminationTechnology"
+        },
+        "legend_text": {
+          "description": "The legend text, for example \"EXIT\". Free text so non-English legends are representable.",
+          "type": "string"
+        },
+        "legend_color": {
+          "description": "Legend color; NFPA 101 and local codes govern the required color.",
+          "$ref": "taxonomy.schema.json#/$defs/LegendColor"
+        },
+        "legend_height": {
+          "description": "Letter height. Code context: NFPA 101 / IBC set a 6-inch (about 152 mm) minimum for illuminated signs; recorded here as product data, not as a conformance assertion.",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "stroke_width": {
+          "description": "Legend stroke width. Code context: NFPA 101 / IBC set a minimum stroke (for example 3/4 inch, about 19 mm) for externally illuminated signs.",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "letter_width": {
+          "description": "Legend letter width, an externally-illuminated-sign geometry detail (IBC 1013.6.1 context).",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "letter_spacing": {
+          "description": "Spacing between legend letters, an externally-illuminated-sign geometry detail (IBC 1013.6.1 context).",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "face_count": {
+          "description": "How many faces carry a legend.",
+          "$ref": "taxonomy.schema.json#/$defs/ExitSignFaceCount"
+        },
+        "directional_indicator": {
+          "description": "Directional chevrons on the sign face (NFPA 101). Declare [\"none\"] explicitly when the sign carries no chevron; \"none\" is mutually exclusive with any real direction.",
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/ExitSignDirectionalIndicator" },
+          "uniqueItems": true,
+          "if": { "contains": { "const": "none" } },
+          "then": { "maxItems": 1 }
+        },
+        "rated_viewing_distance_ft": {
+          "description": "The UL 924-marked rated viewing distance in feet (string bin, NominalCCT convention). Independent of letter height, never derived from it.",
+          "$ref": "taxonomy.schema.json#/$defs/RatedViewingDistance"
+        },
+        "sign_face_luminance_cd_per_m2": {
+          "description": "Measured luminance of the illuminated legend face, in cd/m2. Primary photometric datum for photoluminescent and self-luminous signs (the study's roughly 0.06 fL floor); fL is not stored (SI authoritative).",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "face_illuminance_lx": {
+          "description": "Illuminance on the legend face for externally illuminated signs, in lux. Code context: the 5 fc figure is about 54 lx (IBC 1013.6.1 / NFPA 101).",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "contrast_ratio": {
+          "description": "Legend-to-background contrast ratio for externally illuminated signs (NFPA 101 context: at least 0.5). Unit \"ratio\".",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "tritium_rated_life_years": {
+          "description": "Rated life of a self-luminous tritium sign, in years (catalog tier such as 10, 15, or 20; NRC 10 CFR 31.5 governs the sealed source and its disposal path). A bare number.",
+          "type": "number",
+          "minimum": 0
+        },
+        "min_charging_illuminance_lx": {
+          "description": "Minimum ambient illuminance required to charge a photoluminescent sign, in lux (UL 924 context).",
+          "$ref": "#/$defs/ProvenancedNumber"
+        }
+      }
+    },
+
+    "Emergency": {
+      "title": "Emergency-power dataset",
+      "description": "The emergency-power data for products with an electrical emergency-power story (UL 924 context). emergency_role and power_source are required members: the block is meaningless without them. Authored by dedicated emergency luminaires, internally illuminated exit signs, combo exit/emergency units, and normal fixtures with a factory emergency-power option. An externally-illuminated combo sign authors the block (its heads are battery-powered) but its face has no powered-face story, so power_source is not a core field for it and its battery depth surfaces as optional enrichment rather than a standard gate. Not for UL 1994 photoluminescent egress-path-marking products, which are a different product class.",
+      "type": "object",
+      "properties": {
+        "emergency_role": {
+          "description": "What emergency function this block describes (required).",
+          "$ref": "taxonomy.schema.json#/$defs/EmergencyRole"
+        },
+        "power_source": {
+          "description": "How the product is energized during a utility power loss (required).",
+          "$ref": "taxonomy.schema.json#/$defs/EmergencyPowerSource"
+        },
+        "battery_duration_min": {
+          "description": "Rated emergency run time on integral battery, in minutes (the code-anchored figure is 90 minutes, a rated value).",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "battery_chemistry": {
+          "description": "Integral battery chemistry.",
+          "$ref": "taxonomy.schema.json#/$defs/BatteryChemistry"
+        },
+        "self_test": {
+          "description": "Self-test capability class (UL 924 defines the required test cadence).",
+          "$ref": "taxonomy.schema.json#/$defs/EmergencySelfTestCapability"
+        },
+        "emergency_lumen_output_lm": {
+          "description": "Distinct emergency-mode luminous output, in lumens, for products whose emergency mode differs from their normal mode (combo and emergency-power-option units).",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "emergency_input_power_w": {
+          "description": "Distinct emergency-mode input power draw, in watts.",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "remote_head_capacity": {
+          "description": "Capacity to drive remote emergency heads: how many heads and the total connected load. Optional and ungated (whether a unit supports remote heads is not derivable from other fields).",
+          "type": "object",
+          "properties": {
+            "heads": { "description": "Number of remote heads supported.", "type": "integer", "minimum": 0 },
+            "total_load_w": { "description": "Total connected remote-head load, in watts.", "type": "number", "minimum": 0 }
+          }
+        },
+        "photometry_reference": {
+          "description": "The emergency-mode photometric file (IES), referenced by hash. May also appear in source_files[].",
+          "$ref": "#/$defs/FileReference"
+        }
+      },
+      "required": ["emergency_role", "power_source"]
     }
   }
 }

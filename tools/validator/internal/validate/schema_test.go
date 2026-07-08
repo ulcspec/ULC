@@ -152,6 +152,148 @@ func TestValidatorConstrainsPhotometryFormatToPhotometricFiles(t *testing.T) {
 	}
 }
 
+// TestValidatorConstrainsDirectionalIndicator asserts the v0.10.0 exit_sign
+// directional_indicator constraint: "none" (no chevron) is mutually exclusive with any real
+// direction, and the array carries no duplicate tokens. ["none"] and a direction-only array
+// validate; the contradictory ["none","left"] and the duplicate ["left","left"] are errors.
+func TestValidatorConstrainsDirectionalIndicator(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "cooper-sure-lites-es61src.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		return m
+	}
+	cases := []struct {
+		name    string
+		vals    []any
+		wantErr bool
+	}{
+		{"none-only", []any{"none"}, false},
+		{"directions-only", []any{"left", "right"}, false},
+		{"none-with-direction", []any{"none", "left"}, true},
+		{"duplicate-direction", []any{"left", "left"}, true},
+	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			m := load()
+			m["exit_sign"].(map[string]any)["directional_indicator"] = append([]any{}, c.vals...)
+			r := findings.NewReport()
+			v.Validate(m, r)
+			if c.wantErr && !r.HasErrors() {
+				t.Errorf("expected a schema error for directional_indicator %v, got none", c.vals)
+			}
+			if !c.wantErr && r.HasErrors() {
+				t.Errorf("directional_indicator %v must validate; got errors: %+v", c.vals, r.Findings)
+			}
+		})
+	}
+}
+
+// TestValidatorEnforcesEmergencyBlockContract asserts the emergency block's required
+// members are schema-enforced (emergency_role and power_source): an empty block, or a
+// block missing either member, is a schema violation whose message names the missing
+// member; a block carrying both validates. The class contract in §2.4 depends on this:
+// the power_source completeness gate keys on the leaf, so block-absent and
+// block-present-but-invalid must both be catchable, and required-ness is what makes a
+// present block always carry its two discriminators.
+func TestValidatorEnforcesEmergencyBlockContract(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		return m
+	}
+	messages := func(r *findings.Report) string {
+		var b strings.Builder
+		for _, f := range r.Findings {
+			b.WriteString(f.Path)
+			b.WriteByte(' ')
+			b.WriteString(f.Message)
+			b.WriteByte('\n')
+		}
+		return b.String()
+	}
+
+	t.Run("empty emergency block fails naming both members", func(t *testing.T) {
+		m := load()
+		m["emergency"] = map[string]any{}
+		r := findings.NewReport()
+		v.Validate(m, r)
+		if !r.HasErrors() {
+			t.Fatalf("expected a schema error for emergency: {}, got none")
+		}
+		msg := messages(r)
+		for _, member := range []string{"emergency_role", "power_source"} {
+			if !strings.Contains(msg, member) {
+				t.Errorf("expected the violation to name %q; findings:\n%s", member, msg)
+			}
+		}
+	})
+
+	t.Run("emergency missing power_source fails naming it", func(t *testing.T) {
+		m := load()
+		m["emergency"] = map[string]any{"emergency_role": "exit_sign_only"}
+		r := findings.NewReport()
+		v.Validate(m, r)
+		if !r.HasErrors() {
+			t.Fatalf("expected a schema error for emergency missing power_source, got none")
+		}
+		if msg := messages(r); !strings.Contains(msg, "power_source") {
+			t.Errorf("expected the violation to name power_source; findings:\n%s", msg)
+		}
+	})
+
+	t.Run("emergency missing emergency_role fails naming it", func(t *testing.T) {
+		m := load()
+		m["emergency"] = map[string]any{"power_source": "ac_only"}
+		r := findings.NewReport()
+		v.Validate(m, r)
+		if !r.HasErrors() {
+			t.Fatalf("expected a schema error for emergency missing emergency_role, got none")
+		}
+		if msg := messages(r); !strings.Contains(msg, "emergency_role") {
+			t.Errorf("expected the violation to name emergency_role; findings:\n%s", msg)
+		}
+	})
+
+	t.Run("complete minimal emergency block validates", func(t *testing.T) {
+		m := load()
+		m["emergency"] = map[string]any{"emergency_role": "exit_sign_only", "power_source": "ac_only"}
+		r := findings.NewReport()
+		v.Validate(m, r)
+		if r.HasErrors() {
+			t.Errorf("a complete minimal emergency block must validate; got: %+v", r.Findings)
+		}
+	})
+
+	t.Run("empty exit_sign block validates", func(t *testing.T) {
+		// Identity-only sign records must remain schema-valid; grading, not schema,
+		// drives completeness, so exit_sign has no required members.
+		m := load()
+		m["exit_sign"] = map[string]any{}
+		r := findings.NewReport()
+		v.Validate(m, r)
+		if r.HasErrors() {
+			t.Errorf("an empty exit_sign block must validate; got: %+v", r.Findings)
+		}
+	})
+}
+
 func TestFindSchemaDirExplicit(t *testing.T) {
 	root := repoRoot(t)
 	schemaDir := filepath.Join(root, "schema")

@@ -1,0 +1,6 @@
+INFO    conformance/gap at test-report-backed sign-face luminance: to reach "full", add test-report-backed sign-face luminance (from test_report, per UL 924)
+INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "core" satisfied
+INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "standard" satisfied
+INFO    conformance/level at /index/conformance_level: this record achieves conformance level "standard"
+
+OK -- cooper-sure-lites-es61src.ulc: 0 errors, 0 warnings, 13 infos (9 optional findings hidden (enrichment and observations); use --verbose or --json).
