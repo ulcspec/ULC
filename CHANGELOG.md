@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## 0.9.0 (2026-07-07)
+## 0.9.0 (2026-07-08)
 
 Data completeness becomes fully explicit and complete. The optional depth taxonomies that were previously surfaced only as passive `--verbose` observations are now an actionable **enrichment roadmap**, emitted under a new `conformance/enrichment` finding code alongside the existing tier roadmap. Five additional optional fields are wired, and the grading package gains a structured `Compute()` entry point. Every change is additive and non-gating: a v0.8.x record validates and grades identically, and no grade or `index.conformance_level` moves.
 
