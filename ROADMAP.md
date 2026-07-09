@@ -29,8 +29,9 @@ The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
 completeness: a per-theme view (embodied carbon, circularity, material health,
 energy, dark sky, emergency) of the third-party program qualifications a record
-demonstrates, each `none`, `claimed`, or `documented` by whether an evidence
-document is attached, computed from the attestations a record already carries and
+demonstrates, each `none`, `claimed`, or `documented` by whether a qualifying
+attestation carries attached, unexpired evidence, computed from the attestations a
+record already carries and
 stamped into `index.achievements` (with the `index.restricted_substances_declared`
 sibling flag). Emergency capability is part of that axis and applies to every
 product carrying a qualifying token, a dedicated exit sign or a normal fixture
