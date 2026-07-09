@@ -52,7 +52,7 @@ This release adds two generated `index` members and three finding codes; a store
 ### Tooling
 
 - `BuilderVersion` `0.5.0` to `0.6.0`: the builder now stamps `index.achievements` and `index.restricted_substances_declared`, emitting them with JSON-normalized types so the stored index round-trips through the drift check without false positives.
-- `ulc validate` and `ulc from-sheet` emit the achievements findings immediately after the conformance findings; emission is not gated on the conformance level, since the axes are orthogonal. `ulc from-sheet` stamps `ulc_version` `1.0.0` by default.
+- `ulc validate` and `ulc from-sheet` add the achievements findings to the report; emission is not gated on the conformance level, since the axes are orthogonal. Text and JSON output is sorted by finding code, so the `achievements/*` lines group by code rather than by emission order. `ulc from-sheet` stamps `ulc_version` `1.0.0` by default.
 
 ### Examples and docs
 

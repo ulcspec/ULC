@@ -35,10 +35,11 @@ record already carries and
 stamped into `index.achievements` (with the `index.restricted_substances_declared`
 sibling flag). Emergency capability is part of that axis and applies to every
 product carrying a qualifying token, a dedicated exit sign or a normal fixture
-with a factory emergency-power option alike. The release is additive: every
-schema change is a new optional field, def, or enum; no field, token, or code was
-removed or narrowed; grades and completeness findings are byte-identical; and each
-stored record re-stamps with `ulc build-index` to gain the two new index members.
+with a factory emergency-power option alike. The release is additive to the authored
+surface: every authored schema change is a new optional field, def, or enum, and no
+field, token, or code is removed or narrowed; grades and completeness findings are
+byte-identical. The two new generated index members are required in the built index,
+so each stored record re-stamps with `ulc build-index` to gain them.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
