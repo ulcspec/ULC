@@ -551,13 +551,10 @@ func collectAttestationPrograms(record Record) []string {
 	}
 	if sd, ok := record["sustainability_declaration"].(map[string]any); ok {
 		if dt, ok := sd["declaration_type"].(string); ok {
-			mapping := map[string]string{
-				"ilfi_declare":      "declare",
-				"red_list_free":     "lbc_red_list_free",
-				"red_list_approved": "lbc_red_list_approved",
-				"red_list_declared": "lbc_red_list_declared",
-			}
-			if mapped, ok := mapping[dt]; ok {
+			// Single source of truth: the achievements package owns this mapping so
+			// index.attestation_programs and index.achievements.themes.material_health
+			// can never disagree about the same declaration.
+			if mapped, ok := achievements.DeclarationProgramToken(dt); ok {
 				set[mapped] = struct{}{}
 			}
 		}

@@ -57,10 +57,12 @@ func Compute(record map[string]any) Result {
 		} else {
 			raise(a, StateClaimed)
 		}
-		// best_metric_ref applies to embodied_carbon and circularity only: a documented
-		// metric-bearing attestation wins over a claimed one; among same-state candidates
-		// the first in ledger order wins.
-		if (theme == ThemeEmbodiedCarbon || theme == ThemeCircularity) && e.metric != nil {
+		// best_metric_ref applies to embodied_carbon and circularity only, and names an
+		// attestation_id: a documented metric-bearing attestation wins over a claimed one,
+		// and among same-state candidates the first in ledger order wins. An id-less metric
+		// attestation is not a candidate (there is nothing to reference), so it neither
+		// claims nor shadows the slot from a later id-bearing metric of the same state.
+		if (theme == ThemeEmbodiedCarbon || theme == ThemeCircularity) && e.metric != nil && e.id != "" {
 			if !a.bestSet || (documented && !a.bestDoc) {
 				a.bestSet = true
 				a.bestDoc = documented
@@ -87,7 +89,7 @@ func Compute(record map[string]any) Result {
 	// rule with no program token.
 	if sd, ok := record["sustainability_declaration"].(map[string]any); ok {
 		if dt, ok := sd["declaration_type"].(string); ok {
-			if tok, mapped := declarationTokens[dt]; mapped {
+			if tok, mapped := declarationProgramTokens[dt]; mapped {
 				a := aggs[ThemeMaterialHealth]
 				a.programs[tok] = true
 				raise(a, StateClaimed)

@@ -39,18 +39,18 @@ func TestThemeSetsAreRealEnumMembers(t *testing.T) {
 func TestDeclarationMapKeysAreRealDeclarationTypes(t *testing.T) {
 	decl := loadTaxonomyEnum(t, "SustainabilityDeclarationType")
 	prog := loadTaxonomyEnum(t, "AttestationProgram")
-	for k, v := range declarationTokens {
+	for k, v := range declarationProgramTokens {
 		if !decl[k] {
-			t.Errorf("declarationTokens key %q is not a SustainabilityDeclarationType member", k)
+			t.Errorf("declarationProgramTokens key %q is not a SustainabilityDeclarationType member", k)
 		}
 		if !prog[v] {
-			t.Errorf("declarationTokens value %q is not an AttestationProgram member", v)
+			t.Errorf("declarationProgramTokens value %q is not an AttestationProgram member", v)
 		}
 	}
 	if !decl["manufacturer_recycle_program"] {
 		t.Error("manufacturer_recycle_program is expected to be a SustainabilityDeclarationType member")
 	}
-	if _, routed := declarationTokens["manufacturer_recycle_program"]; routed {
+	if _, routed := declarationProgramTokens["manufacturer_recycle_program"]; routed {
 		t.Error("manufacturer_recycle_program must NOT be routed through the declaration-to-token map (it has no AttestationProgram token)")
 	}
 }

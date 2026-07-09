@@ -58,15 +58,12 @@ type Theme struct {
 	BestMetricRef        string
 }
 
-// Item is one claimed-to-documented roadmap row. It mirrors completeness.Item without
-// the NextLevel field (an achievement roadmap unlocks no tier). Document and Standard
-// are carried for shape parity with the completeness roadmap; the achievements roadmap
-// leaves them empty (the guidance is generic: attach the certificate).
+// Item is one claimed-to-documented roadmap row. Unlike completeness.Item it carries no
+// NextLevel (an achievement roadmap unlocks no tier) and no Document/Standard (the
+// guidance is generic: attach the evidence document), so it holds just a path and message.
 type Item struct {
-	Path     string
-	Document string
-	Standard string
-	Message  string
+	Path    string
+	Message string
 }
 
 // Result is the structured achievements picture Compute returns. Themes always carries

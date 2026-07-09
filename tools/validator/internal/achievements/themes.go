@@ -108,19 +108,30 @@ var themeSets = map[string]map[string]bool{
 	ThemeEmergency:      emergencyPrograms,
 }
 
-// declarationTokens maps a sustainability_declaration.declaration_type to the
-// AttestationProgram token it implies, mirroring the index builder's
-// collectAttestationPrograms mapping EXACTLY. Every mapped token is a material_health
-// program, and a declaration-derived contribution caps at claimed (a declaration block
-// carries no evidence document). manufacturer_recycle_program is deliberately NOT here:
-// it is a SustainabilityDeclarationType with no AttestationProgram token, so it can
-// never populate the schema-typed programs array; it is handled as a direct
+// declarationProgramTokens maps a sustainability_declaration.declaration_type to the
+// AttestationProgram token it implies. It is the single source of truth for that mapping:
+// the index builder looks it up through DeclarationProgramToken to stamp
+// index.attestation_programs from the same table Compute uses to route material_health, so
+// the two rollups can never drift. Every mapped token is a material_health program, and a
+// declaration-derived contribution caps at claimed (a declaration block carries no evidence
+// document). manufacturer_recycle_program is deliberately NOT here: it is a
+// SustainabilityDeclarationType with no AttestationProgram token, so it can never populate
+// the schema-typed programs array; it is handled as a direct
 // declaration-to-circularity(claimed) rule in Compute.
-var declarationTokens = map[string]string{
+var declarationProgramTokens = map[string]string{
 	"ilfi_declare":      "declare",
 	"red_list_free":     "lbc_red_list_free",
 	"red_list_approved": "lbc_red_list_approved",
 	"red_list_declared": "lbc_red_list_declared",
+}
+
+// DeclarationProgramToken returns the AttestationProgram token a declaration_type implies
+// and whether it is mapped. It is the exported read path into declarationProgramTokens, so
+// the index builder shares this single source without a mutable package map crossing the
+// package boundary.
+func DeclarationProgramToken(dt string) (string, bool) {
+	tok, ok := declarationProgramTokens[dt]
+	return tok, ok
 }
 
 // unthemedPrograms is the deliberately-unthemed residue: AttestationProgram tokens that

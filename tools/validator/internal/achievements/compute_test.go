@@ -70,6 +70,48 @@ func TestBestMetricRefSelection(t *testing.T) {
 	}
 }
 
+// best_metric_ref names an attestation_id, so an id-less metric-bearing attestation is not a
+// candidate: it must not claim the slot nor shadow a later id-bearing metric of the same or a
+// better state, and a metric that also routes to material_health (cradle_to_cradle) never
+// populates that theme's best_metric_ref (the metric guard covers embodied_carbon/circularity only).
+func TestBestMetricRefIdRequired(t *testing.T) {
+	m := func() map[string]any { return metric(map[string]any{"ceam_score": 2.0}) }
+
+	// id-less claimed metric first must not shadow a later id-bearing claimed metric.
+	r := Compute(rec(
+		att("epd_iso_14025", map[string]any{"sustainability_metric": m()}),
+		att("epd_iso_14025", map[string]any{"attestation_id": "has_id", "sustainability_metric": m()}),
+	))
+	if got := r.Themes[ThemeEmbodiedCarbon].BestMetricRef; got != "has_id" {
+		t.Errorf("best_metric_ref=%q want has_id (an id-less first metric must not shadow)", got)
+	}
+
+	// an id-less documented metric must not shadow an id-bearing claimed metric: the
+	// referenceable claimed id wins over the unreferenceable documented one.
+	r = Compute(rec(
+		att("tm66_assured", map[string]any{"attestation_id": "claimed_id", "sustainability_metric": m()}),
+		att("tm66_assured", map[string]any{"source_document_ref": evidence(), "sustainability_metric": m()}),
+	))
+	if got := r.Themes[ThemeCircularity].BestMetricRef; got != "claimed_id" {
+		t.Errorf("best_metric_ref=%q want claimed_id (id-less documented must not shadow a referenceable claimed)", got)
+	}
+
+	// every metric candidate id-less -> best_metric_ref stays empty (builder omits it).
+	r = Compute(rec(att("epd_iso_14025", map[string]any{"sustainability_metric": m()})))
+	if got := r.Themes[ThemeEmbodiedCarbon].BestMetricRef; got != "" {
+		t.Errorf("best_metric_ref=%q want empty when no metric bears an id", got)
+	}
+
+	// theme guard: a cradle_to_cradle metric sets circularity's best_metric_ref only.
+	r = Compute(rec(att("cradle_to_cradle", map[string]any{"attestation_id": "c2c", "source_document_ref": evidence(), "sustainability_metric": m()})))
+	if got := r.Themes[ThemeCircularity].BestMetricRef; got != "c2c" {
+		t.Errorf("circularity best_metric_ref=%q want c2c", got)
+	}
+	if got := r.Themes[ThemeMaterialHealth].BestMetricRef; got != "" {
+		t.Errorf("material_health best_metric_ref=%q want empty (the metric guard excludes material_health)", got)
+	}
+}
+
 // 5.3 Evidence discriminator: source_document_ref present flips claimed to documented;
 // hostile ref shapes contribute claimed at most.
 func TestEvidenceDiscriminator(t *testing.T) {
@@ -242,6 +284,42 @@ func TestDeclarationMapping(t *testing.T) {
 	}
 	if n != 1 {
 		t.Errorf("union should carry lbc_red_list_approved once, got %d", n)
+	}
+}
+
+// Every declarationProgramTokens mapping routes its declaration_type to material_health
+// claimed with the exact program token. Iterating the map itself keeps all four (and any
+// future entry) behaviorally exercised, not just the red_list_approved case above.
+func TestDeclarationTypeContributionsAllMapped(t *testing.T) {
+	if len(declarationProgramTokens) == 0 {
+		t.Fatal("declarationProgramTokens is empty")
+	}
+	for dt, want := range declarationProgramTokens {
+		r := Compute(map[string]any{"sustainability_declaration": map[string]any{"declaration_type": dt}})
+		mh := r.Themes[ThemeMaterialHealth]
+		if mh.State != StateClaimed {
+			t.Errorf("declaration %q: material_health=%s want claimed", dt, mh.State)
+		}
+		if !contains(mh.Programs, want) {
+			t.Errorf("declaration %q: programs %v missing token %q", dt, mh.Programs, want)
+		}
+		if mh.EvidencePresent {
+			t.Errorf("declaration %q: a declaration carries no evidence document", dt)
+		}
+	}
+}
+
+// The restricted-substances rollup applies the same status disqualifier as the themes: a
+// disqualified restricted token is excluded, a clean one is included.
+func TestRestrictedSubstancesDisqualified(t *testing.T) {
+	if got := Compute(rec(att("rohs", nil))).RestrictedSubstances; !contains(got, "rohs") {
+		t.Errorf("clean rohs: restricted=%v want it to include rohs", got)
+	}
+	for _, st := range []string{"withdrawn", "expired", "not_applicable"} {
+		got := Compute(rec(att("rohs", map[string]any{"status": st}))).RestrictedSubstances
+		if contains(got, "rohs") {
+			t.Errorf("status %q: restricted=%v must exclude the disqualified rohs", st, got)
+		}
 	}
 }
 
