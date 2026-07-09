@@ -22,7 +22,7 @@ For emergency manual releases (bypassing the PR flow), trigger the `Release on m
 
 ## 1.0.0 (2026-07-09)
 
-ULC gains its second grading axis and makes its first formal backward-compatibility commitment. **Product Achievements** is a computed view alongside data completeness: per theme (embodied carbon, circularity, material health, energy, dark sky, emergency) it reports whether a record demonstrates a third-party program qualification and with what evidence (`none`, `claimed`, or `documented`), computed from the attestations a record already carries. The release is additive in the strict sense: no field, token, or finding code was removed or narrowed; every conformance grade and completeness finding is byte-identical; and the generated index grows exactly two new members. From 1.0.0 forward the schema surface is additive-only across minors, and any breaking change requires v2.0.0.
+ULC gains its second grading axis and makes its first formal backward-compatibility commitment. **Product Achievements** is a computed view alongside data completeness: per theme (embodied carbon, circularity, material health, energy, dark sky, emergency) it reports whether a record demonstrates a third-party program qualification and with what evidence (`none`, `claimed`, or `documented`), computed from the attestations a record already carries. The release is additive to the authored surface: no field, token, or finding code is removed, and no field type is narrowed; every conformance grade and completeness finding is byte-identical. The one compatibility-affecting change is confined to the generated index, which gains two new always-stamped members that are required in the built index; a stored record picks them up with a one-time `ulc build-index` re-stamp (see the behavior note below). From 1.0.0 forward the schema surface is additive-only across minors, and any breaking change requires v2.0.0.
 
 ### Behavior change (important for consumers)
 
@@ -35,9 +35,9 @@ This release adds two generated `index` members and three finding codes; a store
 5. **From-sheet default.** Newly converted records stamp `ulc_version` `1.0.0` (the from-sheet default; records supplying the `ulc_version` column are unaffected).
 6. **Grades do not move.** Every conformance grade, `index.conformance_level`, and completeness finding is byte-identical; the only golden-output changes are the three new achievements codes and the reworded hint.
 
-### Schema (additive, optional)
+### Schema (additive)
 
-- Two new generated `index` members: `achievements` (a `themes` object carrying all six fixed theme keys, each an `AchievementTheme`, plus a `documented_count` rollup) and `restricted_substances_declared` (a sorted array of restricted-substances program tokens declared in the ledger). The `themes` container is open, so future themes add without breaking.
+- Two new generated `index` members, both required in the built index and always stamped by the builder: `achievements` (a `themes` object carrying all six fixed theme keys, each an `AchievementTheme`, plus a `documented_count` rollup) and `restricted_substances_declared` (a sorted array of restricted-substances program tokens declared in the ledger). The `themes` container is open, so future themes add without breaking.
 - New `AchievementTheme` `$def`: per theme, a `state`, the qualifying `programs`, the contributing `source_attestation_ids`, an `evidence_present` flag, and an optional `best_metric_ref`.
 - `attestations[]` gains two optional fields: `sustainability_metric` (a payload for `ceam_score`, `embodied_carbon_kgco2e` with its required `embodied_carbon_scope` and `embodied_carbon_functional_unit`, `c2c_overall_level`, and `method_variant`) and `issuing_authority`.
 - Three new taxonomy enums: `EmbodiedCarbonScope`, `CircularityTier`, and `AchievementState`.

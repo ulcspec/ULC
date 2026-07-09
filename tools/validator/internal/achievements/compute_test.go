@@ -45,9 +45,9 @@ func TestStateLaddersPerTheme(t *testing.T) {
 func TestBestMetricRefSelection(t *testing.T) {
 	carbonDoc := map[string]any{"embodied_carbon_kgco2e": 10.0, "embodied_carbon_scope": "a1_a3", "embodied_carbon_functional_unit": "one luminaire"}
 
-	// documented wins over an earlier claimed candidate.
+	// documented wins over an earlier claimed candidate (both carry a real embodied-carbon metric).
 	r := Compute(rec(
-		att("epd_iso_14025", map[string]any{"attestation_id": "claimed_one", "sustainability_metric": metric(map[string]any{"ceam_score": 1.0})}),
+		att("epd_iso_14025", map[string]any{"attestation_id": "claimed_one", "sustainability_metric": metric(map[string]any{"embodied_carbon_kgco2e": 8.0})}),
 		att("epd_iso_14025", map[string]any{"attestation_id": "doc_one", "source_document_ref": evidence(), "sustainability_metric": metric(carbonDoc)}),
 	))
 	if got := r.Themes[ThemeEmbodiedCarbon].BestMetricRef; got != "doc_one" {
@@ -75,12 +75,13 @@ func TestBestMetricRefSelection(t *testing.T) {
 // better state, and a metric that also routes to material_health (cradle_to_cradle) never
 // populates that theme's best_metric_ref (the metric guard covers embodied_carbon/circularity only).
 func TestBestMetricRefIdRequired(t *testing.T) {
-	m := func() map[string]any { return metric(map[string]any{"ceam_score": 2.0}) }
+	ec := func() map[string]any { return metric(map[string]any{"embodied_carbon_kgco2e": 12.0}) }
+	ci := func() map[string]any { return metric(map[string]any{"ceam_score": 2.0}) }
 
 	// id-less claimed metric first must not shadow a later id-bearing claimed metric.
 	r := Compute(rec(
-		att("epd_iso_14025", map[string]any{"sustainability_metric": m()}),
-		att("epd_iso_14025", map[string]any{"attestation_id": "has_id", "sustainability_metric": m()}),
+		att("epd_iso_14025", map[string]any{"sustainability_metric": ec()}),
+		att("epd_iso_14025", map[string]any{"attestation_id": "has_id", "sustainability_metric": ec()}),
 	))
 	if got := r.Themes[ThemeEmbodiedCarbon].BestMetricRef; got != "has_id" {
 		t.Errorf("best_metric_ref=%q want has_id (an id-less first metric must not shadow)", got)
@@ -89,26 +90,51 @@ func TestBestMetricRefIdRequired(t *testing.T) {
 	// an id-less documented metric must not shadow an id-bearing claimed metric: the
 	// referenceable claimed id wins over the unreferenceable documented one.
 	r = Compute(rec(
-		att("tm66_assured", map[string]any{"attestation_id": "claimed_id", "sustainability_metric": m()}),
-		att("tm66_assured", map[string]any{"source_document_ref": evidence(), "sustainability_metric": m()}),
+		att("tm66_assured", map[string]any{"attestation_id": "claimed_id", "sustainability_metric": ci()}),
+		att("tm66_assured", map[string]any{"source_document_ref": evidence(), "sustainability_metric": ci()}),
 	))
 	if got := r.Themes[ThemeCircularity].BestMetricRef; got != "claimed_id" {
 		t.Errorf("best_metric_ref=%q want claimed_id (id-less documented must not shadow a referenceable claimed)", got)
 	}
 
 	// every metric candidate id-less -> best_metric_ref stays empty (builder omits it).
-	r = Compute(rec(att("epd_iso_14025", map[string]any{"sustainability_metric": m()})))
+	r = Compute(rec(att("epd_iso_14025", map[string]any{"sustainability_metric": ec()})))
 	if got := r.Themes[ThemeEmbodiedCarbon].BestMetricRef; got != "" {
 		t.Errorf("best_metric_ref=%q want empty when no metric bears an id", got)
 	}
 
 	// theme guard: a cradle_to_cradle metric sets circularity's best_metric_ref only.
-	r = Compute(rec(att("cradle_to_cradle", map[string]any{"attestation_id": "c2c", "source_document_ref": evidence(), "sustainability_metric": m()})))
+	r = Compute(rec(att("cradle_to_cradle", map[string]any{"attestation_id": "c2c", "source_document_ref": evidence(), "sustainability_metric": metric(map[string]any{"c2c_overall_level": "gold"})})))
 	if got := r.Themes[ThemeCircularity].BestMetricRef; got != "c2c" {
 		t.Errorf("circularity best_metric_ref=%q want c2c", got)
 	}
 	if got := r.Themes[ThemeMaterialHealth].BestMetricRef; got != "" {
 		t.Errorf("material_health best_metric_ref=%q want empty (the metric guard excludes material_health)", got)
+	}
+}
+
+// best_metric_ref names the attestation whose metric best represents the theme: a metric
+// whose payload belongs to the other axis (an embodied-carbon attestation carrying only a
+// circularity figure, or vice versa) does not qualify and leaves the ref empty.
+func TestBestMetricRefRejectsMismatchedMetric(t *testing.T) {
+	// epd_iso_14025 (embodied_carbon) whose metric carries only a circularity ceam_score.
+	r := Compute(rec(att("epd_iso_14025", map[string]any{"attestation_id": "ec_mismatch", "sustainability_metric": metric(map[string]any{"ceam_score": 3.0})})))
+	if got := r.Themes[ThemeEmbodiedCarbon].BestMetricRef; got != "" {
+		t.Errorf("embodied_carbon best_metric_ref=%q want empty (metric carries no embodied-carbon figure)", got)
+	}
+	// tm66_assured (circularity) whose metric carries only an embodied-carbon figure.
+	r = Compute(rec(att("tm66_assured", map[string]any{"attestation_id": "ci_mismatch", "sustainability_metric": metric(map[string]any{"embodied_carbon_kgco2e": 5.0})})))
+	if got := r.Themes[ThemeCircularity].BestMetricRef; got != "" {
+		t.Errorf("circularity best_metric_ref=%q want empty (metric carries no circularity figure)", got)
+	}
+	// controls: a matching payload IS selected for each axis.
+	r = Compute(rec(att("epd_iso_14025", map[string]any{"attestation_id": "ec_ok", "sustainability_metric": metric(map[string]any{"embodied_carbon_kgco2e": 9.0})})))
+	if got := r.Themes[ThemeEmbodiedCarbon].BestMetricRef; got != "ec_ok" {
+		t.Errorf("embodied_carbon best_metric_ref=%q want ec_ok", got)
+	}
+	r = Compute(rec(att("tm66_assured", map[string]any{"attestation_id": "ci_ok", "sustainability_metric": metric(map[string]any{"c2c_overall_level": "gold"})})))
+	if got := r.Themes[ThemeCircularity].BestMetricRef; got != "ci_ok" {
+		t.Errorf("circularity best_metric_ref=%q want ci_ok", got)
 	}
 }
 
@@ -124,6 +150,11 @@ func TestEvidenceDiscriminator(t *testing.T) {
 		map[string]any{"filename": "x.pdf", "sha256": ""},
 		map[string]any{"filename": "x.pdf"},
 		map[string]any{"sha256": 123},
+		map[string]any{"filename": "x.pdf", "sha256": "abc"},                   // too short
+		map[string]any{"filename": "x.pdf", "sha256": strings.Repeat("A", 64)}, // uppercase, not lowercase hex
+		map[string]any{"filename": "x.pdf", "sha256": strings.Repeat("g", 64)}, // non-hex character
+		map[string]any{"sha256": strings.Repeat("a", 64)},                      // missing filename
+		map[string]any{"filename": "", "sha256": strings.Repeat("a", 64)},      // empty filename
 	}
 	for i, ref := range hostile {
 		th := Compute(rec(att("ul_924", map[string]any{"source_document_ref": ref}))).Themes[ThemeEmergency]

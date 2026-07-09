@@ -2,6 +2,7 @@ package achievements
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"time"
 )
@@ -57,12 +58,14 @@ func Compute(record map[string]any) Result {
 		} else {
 			raise(a, StateClaimed)
 		}
-		// best_metric_ref applies to embodied_carbon and circularity only, and names an
-		// attestation_id: a documented metric-bearing attestation wins over a claimed one,
-		// and among same-state candidates the first in ledger order wins. An id-less metric
-		// attestation is not a candidate (there is nothing to reference), so it neither
-		// claims nor shadows the slot from a later id-bearing metric of the same state.
-		if (theme == ThemeEmbodiedCarbon || theme == ThemeCircularity) && e.metric != nil && e.id != "" {
+		// best_metric_ref names the attestation_id whose sustainability_metric best represents
+		// the theme (embodied_carbon or circularity only): a documented metric-bearing
+		// attestation wins over a claimed one, and among same-state candidates the first in
+		// ledger order wins. A candidate must carry an attestation_id (there is nothing to
+		// reference otherwise) and a metric that actually represents the theme, so an id-less
+		// metric and a mismatched-payload metric (an embodied-carbon attestation whose metric
+		// holds only a circularity figure, say) neither claim nor shadow the slot.
+		if e.metric != nil && e.id != "" && metricRepresentsTheme(theme, e.metric) {
 			if !a.bestSet || (documented && !a.bestDoc) {
 				a.bestSet = true
 				a.bestDoc = documented
@@ -189,18 +192,49 @@ func restrictedSubstances(entries []ledgerEntry) []string {
 	return sortedKeys(set)
 }
 
+// metricRepresentsTheme reports whether a sustainability_metric carries a figure that
+// belongs to the theme, so best_metric_ref names an attestation whose metric actually
+// represents the theme (the schema: "the attestation_id whose sustainability_metric best
+// represents the theme"). embodied_carbon needs a kg CO2e figure; circularity needs a TM66
+// CEAM score or a Cradle to Cradle level. A mismatched payload (an embodied-carbon
+// attestation whose metric holds only a ceam_score, say) does not qualify. Any non-metric
+// theme is never a best_metric_ref candidate.
+func metricRepresentsTheme(theme string, metric map[string]any) bool {
+	switch theme {
+	case ThemeEmbodiedCarbon:
+		_, ok := metric["embodied_carbon_kgco2e"]
+		return ok
+	case ThemeCircularity:
+		if _, ok := metric["ceam_score"]; ok {
+			return true
+		}
+		_, ok := metric["c2c_overall_level"]
+		return ok
+	}
+	return false
+}
+
+// sha256Pattern matches a FileReference sha256: exactly 64 lowercase hex characters.
+var sha256Pattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
 // hasEvidence reports whether an attestation carries an attached evidence document: a
-// source_document_ref that is an object with a non-empty sha256. Hostile shapes (a
-// non-map ref, or a missing/empty sha256) are not evidence, so they support claimed at
-// most. The schema guarantees filename + sha256 on a valid FileReference; this stays
-// total for hostile fixtures.
+// source_document_ref that is a well-formed FileReference, meaning a non-empty filename and
+// a 64-character lowercase-hex sha256 (the schema's own FileReference contract). Presence is
+// the gate; the document bytes are never fetched or re-hashed. A non-map ref, a missing or
+// ill-formed sha256, or a missing filename is not evidence, so build-index cannot stamp a
+// theme documented from a ref that schema validation would later reject. Stays total on
+// hostile fixtures.
 func hasEvidence(att map[string]any) bool {
 	ref, ok := att["source_document_ref"].(map[string]any)
 	if !ok {
 		return false
 	}
+	filename, ok := ref["filename"].(string)
+	if !ok || filename == "" {
+		return false
+	}
 	sha, ok := ref["sha256"].(string)
-	return ok && sha != ""
+	return ok && sha256Pattern.MatchString(sha)
 }
 
 // isoDateOrEmpty returns v as a full ISO date string (YYYY-MM-DD) if it is one, else "".
