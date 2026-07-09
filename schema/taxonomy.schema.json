@@ -1249,7 +1249,7 @@
 
     "AchievementState": {
       "title": "Product achievement state",
-      "description": "Per-theme state in the computed `index.achievements` view. `none` means no qualifying attestation or declaration contributes to the theme. `claimed` means a qualifying contribution exists but no attached, non-disqualified, unexpired evidence document supports `documented`: the contribution may carry no evidence document, or its only evidence is disqualified by status or by record-relative expiry. `documented` means at least one qualifying, non-disqualified attestation carries an attached evidence document that is unexpired as of the record's `record_status_as_of`. `documented` is a record fact (a current evidence document is attached), never a verification performed by ULC.",
+      "description": "Per-theme state in the computed `index.achievements` view. `none` means no qualifying attestation or declaration contributes to the theme. `claimed` means a qualifying, non-disqualified contribution exists but no unexpired attached evidence document supports `documented`: the contribution carries no evidence document, or its only attached evidence is past its `valid_until` as of the record's `record_status_as_of` (a status of `expired`, `withdrawn`, or `not_applicable` instead removes the attestation entirely, contributing nothing). `documented` means at least one qualifying, non-disqualified attestation carries an attached evidence document that is unexpired as of the record's `record_status_as_of`. `documented` is a record fact (a current evidence document is attached), never a verification performed by ULC.",
       "type": "string",
       "enum": [
         "none",

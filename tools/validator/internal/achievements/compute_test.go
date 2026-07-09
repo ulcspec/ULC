@@ -153,6 +153,8 @@ func TestEvidenceDiscriminator(t *testing.T) {
 		map[string]any{"filename": "x.pdf", "sha256": "abc"},                   // too short
 		map[string]any{"filename": "x.pdf", "sha256": strings.Repeat("A", 64)}, // uppercase, not lowercase hex
 		map[string]any{"filename": "x.pdf", "sha256": strings.Repeat("g", 64)}, // non-hex character
+		map[string]any{"sha256": strings.Repeat("a", 64)},                      // filename key absent (schema requires it)
+		map[string]any{"filename": 123, "sha256": strings.Repeat("a", 64)},     // filename present but not a string
 	}
 	for i, ref := range hostile {
 		th := Compute(rec(att("ul_924", map[string]any{"source_document_ref": ref}))).Themes[ThemeEmergency]
@@ -164,18 +166,12 @@ func TestEvidenceDiscriminator(t *testing.T) {
 		}
 	}
 
-	// The sha256 is the integrity anchor, not the filename: a valid hash with an empty or
-	// absent filename still documents (the schema requires the filename key but does not
-	// constrain it non-empty, so an empty label must not defeat the hash).
-	labelOnly := []any{
-		map[string]any{"sha256": strings.Repeat("a", 64)},                 // filename absent
-		map[string]any{"filename": "", "sha256": strings.Repeat("a", 64)}, // filename empty
-	}
-	for i, ref := range labelOnly {
-		th := Compute(rec(att("ul_924", map[string]any{"source_document_ref": ref}))).Themes[ThemeEmergency]
-		if th.State != StateDocumented {
-			t.Errorf("label-only ref %d: state=%s want documented (sha256 is the anchor)", i, th.State)
-		}
+	// An empty filename does not defeat the hash: the schema requires the filename key but
+	// does not constrain its length, so a present-but-empty filename with a valid sha256 is a
+	// schema-valid FileReference and documents. (A missing filename key is rejected above.)
+	th := Compute(rec(att("ul_924", map[string]any{"source_document_ref": map[string]any{"filename": "", "sha256": strings.Repeat("a", 64)}}))).Themes[ThemeEmergency]
+	if th.State != StateDocumented {
+		t.Errorf("empty-filename ref: state=%s want documented (schema allows an empty filename)", th.State)
 	}
 }
 

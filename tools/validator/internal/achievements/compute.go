@@ -218,16 +218,20 @@ func metricRepresentsTheme(theme string, metric map[string]any) bool {
 var sha256Pattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 // hasEvidence reports whether an attestation carries an attached evidence document: a
-// source_document_ref whose sha256 is a 64-character lowercase-hex string, the FileReference
-// integrity anchor the schema constrains with the same pattern. Presence is the gate; the
-// document bytes are never fetched or re-hashed. A non-map ref or a missing or ill-formed
-// sha256 is not evidence, so build-index cannot stamp a theme documented from a ref that
-// schema validation would later reject. The filename is the FileReference's human label, not
-// the integrity anchor, so it is not part of the gate (the schema does not constrain it to be
-// non-empty). Stays total on hostile fixtures.
+// source_document_ref shaped like a schema-valid FileReference, meaning both keys are present
+// with the right types (a filename string and a 64-character lowercase-hex sha256), mirroring
+// the schema's required [filename, sha256] and its sha256 pattern. Presence is the gate; the
+// document bytes are never fetched or re-hashed, and the filename may be empty (the schema does
+// not constrain its length) but it must be present as a string. A ref missing either key, with
+// a non-string filename, or with an ill-formed sha256 is not evidence, so build-index cannot
+// stamp a theme documented from a ref that schema validation would reject. Stays total on
+// hostile fixtures.
 func hasEvidence(att map[string]any) bool {
 	ref, ok := att["source_document_ref"].(map[string]any)
 	if !ok {
+		return false
+	}
+	if _, ok := ref["filename"].(string); !ok {
 		return false
 	}
 	sha, ok := ref["sha256"].(string)
