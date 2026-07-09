@@ -1421,7 +1421,7 @@
           "type": "object",
           "properties": {
             "ceam_score": { "type": "number", "minimum": 0, "maximum": 4 },
-            "embodied_carbon_kgco2e": { "type": "number" },
+            "embodied_carbon_kgco2e": { "type": "number", "description": "Declared embodied-carbon figure in kilograms of CO2 equivalent (kg CO2e). Standards-native single-unit exception to the dual-unit rule: EPD / ISO 14025, TM65, and TM66 publish embodied carbon in kg CO2e only, with no Imperial companion used in life-cycle-assessment practice, so ULC records it SI-native (the same treatment as the cd/m2 luminance and LM-82 Celsius exceptions). The required embodied_carbon_scope and embodied_carbon_functional_unit fix the life-cycle boundary and the declared unit basis, so the single number is unambiguous." },
             "embodied_carbon_scope": { "$ref": "taxonomy.schema.json#/$defs/EmbodiedCarbonScope" },
             "embodied_carbon_functional_unit": { "type": "string" },
             "c2c_overall_level": { "$ref": "taxonomy.schema.json#/$defs/CircularityTier" },

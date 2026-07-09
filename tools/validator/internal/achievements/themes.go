@@ -41,14 +41,15 @@ var circularityPrograms = map[string]bool{
 }
 
 // materialHealthPrograms: ingredient / red-list disclosure. cradle_to_cradle appears
-// here too, the one deliberate dual-route.
+// here too, the one deliberate dual-route. just_label is deliberately NOT here: ILFI JUST
+// is an organization-level social-equity label, not a product ingredient disclosure, so it
+// lives in the unthemed residue below.
 var materialHealthPrograms = map[string]bool{
 	"declare":               true,
 	"lbc_red_list_free":     true,
 	"lbc_red_list_approved": true,
 	"lbc_red_list_declared": true,
 	"hpd":                   true,
-	"just_label":            true,
 	"cradle_to_cradle":      true,
 }
 
@@ -139,20 +140,24 @@ func DeclarationProgramToken(dt string) (string, bool) {
 // descriptiveAllowlist) so the exhaustiveness guard forces a conscious triage when a new
 // token joins the enum, rather than silently defaulting it to unthemed.
 var unthemedPrograms = map[string]bool{
-	// Project- and company-level programs (LEED, WELL, Living Building Challenge): whole-building or
-	// whole-company, not luminaire qualifications.
+	// Project- and company-level programs (LEED, WELL, Living Building/Community Challenge):
+	// whole-building or whole-community, not luminaire qualifications.
 	"leed_v4":                    true,
 	"leed_v4_1":                  true,
 	"leed_v5":                    true,
 	"living_building_challenge":  true,
 	"living_community_challenge": true,
-	"living_product_challenge":   true,
 	"well_building_standard":     true,
-	// Multi-attribute environmental ecolabels: span energy, materials, packaging, and end-of-life,
-	// not single-theme luminaire qualifications.
-	"epeat":                 true,
-	"greencircle_certified": true,
-	"ul_ecologo":            true,
+	// Multi-attribute certifications that span several themes at once (energy, materials,
+	// packaging, end-of-life), so they map to no single theme: environmental ecolabels plus the
+	// Living Product Challenge, a product-level net-positive certification.
+	"epeat":                    true,
+	"greencircle_certified":    true,
+	"living_product_challenge": true,
+	"ul_ecologo":               true,
+	// Organization-level social-equity label (ILFI JUST): about the manufacturing organization,
+	// not the product's ingredients (social-responsibility theme candidate).
+	"just_label": true,
 	// Mandatory or discontinued disclosure labels, not qualifications.
 	"doe_led_lighting_facts": true,
 	"ftc_lighting_facts":     true,

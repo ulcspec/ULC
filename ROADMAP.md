@@ -171,9 +171,10 @@ detail, is foreclosed to the next major, v2.0.0; minors stay additive-only.
 - **Future achievement themes.** The achievements axis ships six themes under an
   open theme container, so new themes add without breaking. Controls and
   domestic-content themes are planned for v1.1; hazardous-location and
-  regional-market-access-consolidation themes, and a disposition for the
-  project-level programs (LEED, WELL) beyond their current unthemed-tracked
-  state, are candidates for v1.2.
+  regional-market-access-consolidation themes, a social-responsibility theme
+  (the organization-level ILFI JUST label, `just_label`, is unthemed-tracked
+  toward it), and a disposition for the project-level programs (LEED, WELL)
+  beyond their current unthemed-tracked state, are candidates for v1.2.
 - **Attestation-document byte-verification.** `VerifyHashes` byte-checks
   `source_files[].reference` hashes today; the evidence documents the achievements
   axis reads (`attestations[].source_document_ref`) are checked for presence, not

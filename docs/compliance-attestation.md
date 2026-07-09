@@ -178,7 +178,7 @@ Each theme is one of three states. `none` means no qualifying attestation contri
 | --- | --- | --- |
 | `embodied_carbon` | A declared cradle-to-gate (or wider) carbon figure. | `epd_iso_14025`, `tm65_2` |
 | `circularity` | A design or lifecycle circularity rating. | `tm66_assured`, `cradle_to_cradle` |
-| `material_health` | Ingredient and red-list disclosure. | `declare`, `lbc_red_list_free`, `lbc_red_list_approved`, `lbc_red_list_declared`, `hpd`, `just_label`, `cradle_to_cradle` |
+| `material_health` | Ingredient and red-list disclosure. | `declare`, `lbc_red_list_free`, `lbc_red_list_approved`, `lbc_red_list_declared`, `hpd`, `cradle_to_cradle` |
 | `energy` | Energy and efficiency qualification. | `dlc_standard`, `dlc_premium`, `dlc_qpl`, `dlc_horticultural`, `energy_star`, `energy_star_downlights_v1`, `ja8_title_24`, `ca_title_20`, `eu_ecodesign_2019_2020`, `eu_energy_label_2019_2015`, `nrcan_ee_regulations` |
 | `dark_sky` | Light-pollution qualification. | `darksky_approved`, `dlc_luna` |
 | `emergency` | Emergency-lighting product conformity. | `ul_924`, `ul_1994`, `icel` |
@@ -191,8 +191,9 @@ The `restricted_substances_declared` sibling flag, surfaced beside the themes ra
 
 Every remaining `AttestationProgram` token is deliberately left unthemed, so a new token added to the enum forces a conscious classification rather than silently defaulting into "all none". The reasons group cleanly:
 
-- **Project- and company-level programs**: `leed_v4`, `leed_v4_1`, `leed_v5`, `well_building_standard`, `living_building_challenge`, `living_product_challenge`, `living_community_challenge`. These qualify a building or an organization, not a luminaire.
-- **Multi-attribute environmental ecolabels**: `greencircle_certified`, `epeat`, `ul_ecologo`. These span energy, materials, packaging, and end-of-life at once, so they map to no single theme.
+- **Project- and company-level programs**: `leed_v4`, `leed_v4_1`, `leed_v5`, `well_building_standard`, `living_building_challenge`, `living_community_challenge`. These qualify a building or a community, not a luminaire.
+- **Multi-attribute certifications**: `greencircle_certified`, `epeat`, `ul_ecologo`, and `living_product_challenge` (a product-level net-positive certification). These span energy, materials, packaging, and end-of-life at once, so they map to no single theme.
+- **Organization-level social equity**: `just_label`. The ILFI JUST label describes the manufacturing organization's social-justice and equity practices, not the product's ingredients, so it is not a material-health achievement (a social-responsibility theme candidate).
 - **Mandatory or discontinued disclosure labels**: `ftc_lighting_facts`, `doe_led_lighting_facts`. These are labels, not qualifications.
 - **Domestic content** (`baa`, `baba`, `taa`, `american_iron_and_steel`, `country_of_origin`) and **controls** (`dlc_nlc`, `ntcip_1213`) are held for future themes.
 - **Hazardous location** (`atex`, `iecex`) and **regional market-access marks** (`ce`, `ukca`, `ccc`, `rcm_australia`, `saa_australia`, `saso_saudi`, `kc_korea`, `pse_japan`, `vcci_japan`, `bis_india`, `eac_eaeu`, `inmetro_brazil`, `nom`, `ices_canada`, `fcc`, `enec`, `cb_scheme`, `csa_c653`, `csa_c811`) are held for future consolidation.
