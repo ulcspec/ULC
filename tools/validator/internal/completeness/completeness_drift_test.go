@@ -127,6 +127,11 @@ func classifyLeaf(node, ulcDefs, taxDefs map[string]any) string {
 		if !isTax && name == "ProvenancedNumber" {
 			return "provnumber"
 		}
+		// Match DualUnitLength specifically (not a DualUnit* prefix) so a future shapeTestable
+		// DualUnitArea / DualUnitTemperature path is never mis-shaped as a DualUnitLength.
+		if !isTax && name == "DualUnitLength" {
+			return "dualunit"
+		}
 		defs := ulcDefs
 		if isTax {
 			defs = taxDefs
@@ -158,6 +163,11 @@ func representativeValue(kind string) any {
 	switch kind {
 	case "provnumber":
 		return map[string]any{"value": float64(1)}
+	case "dualunit":
+		// DualUnitLength requires mm + in; representativeValue takes only the kind string
+		// and cannot read the def, so it hardcodes the two required unit members. The mm
+		// leaf satisfies the scalarNum(..., "mm") present-closures on the DualUnitLength rows.
+		return map[string]any{"mm": float64(1), "in": float64(1)}
 	case "array":
 		return []any{float64(1)}
 	case "object":
@@ -205,6 +215,7 @@ func setDataPath(rec map[string]any, comps []string, val any) {
 // covered by the behavioral tests instead.
 var predicateBackedPaths = map[string]bool{
 	"/product_family/cutsheet":           true, // hasCutsheet: needs an attached cutsheet with a content hash
+	"/emergency/photometry_reference":    true, // hasEmergencyPhotometryReference: FileReference needing a content hash (like cutsheet)
 	"/operating_point":                   true, // hasOperatingPoint: needs a recognized qualifier
 	"/uncertainty":                       true, // hasUncertainty: needs coverage_factor_k + an expanded_*
 	"/corrections_applied":               true, // hasCorrectionsApplied: needs a recognized correction leaf
@@ -280,6 +291,20 @@ func TestReferenceIlluminantTypePathResolves(t *testing.T) {
 	}
 }
 
+// TestEmergencyPhotometryReferencePathResolves guards a predicate-backed field: because
+// /emergency/photometry_reference is in predicateBackedPaths, TestRubricPathsResolve skips
+// its schema-resolution check, so a renamed or removed schema field would silently make
+// hasEmergencyPhotometryReference always-false and fire the "not attached" nudge on every
+// dual-mode record, undetected. Assert the path resolves. Mirrors the reference-illuminant guard.
+func TestEmergencyPhotometryReferencePathResolves(t *testing.T) {
+	ulc := loadJSONSchema(t, "ulc.schema.json")
+	ulcDefs, _ := mapOf(ulc["$defs"])
+	comps := []string{"emergency", "photometry_reference"}
+	if _, ok := resolveDataPath(ulc, comps, ulcDefs); !ok {
+		t.Error("emergency.photometry_reference does not resolve in ulc.schema.json (a forgotten wire)")
+	}
+}
+
 // rubricTaxonomies is the set of taxonomy enum $defs the rubric maps (via each
 // row's taxonomy field).
 func rubricTaxonomies() map[string]bool {
@@ -332,6 +357,16 @@ var descriptiveAllowlist = map[string]bool{
 	// observation (empty taxonomy token), so these sub-enums stay descriptive.
 	"SustainabilityDeclarationType": true,
 	"IngredientRedListStatus":       true,
+
+	// --- v0.10.0 emergency & exit-sign class ---
+	// The 9 exit-sign / emergency enums that back rubric rows (7 gating in Phase B, plus
+	// ExitSignIlluminationTechnology and RatedViewingDistance on Phase C enrichment rows)
+	// are rubric-covered and NOT allowlisted. EmergencyRole stays permanently: it is
+	// schema-required within the emergency block, so it can never be applicable-and-absent
+	// on a valid record and gets no rubric row (§2.4). Its two dual-mode tokens are read by
+	// the emergency-mode enrichment predicates (emergencyModeRoles) but carried as no row's
+	// taxonomy, so the disjointness guard stays clean.
+	"EmergencyRole": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from
@@ -454,6 +489,20 @@ func TestPredicateSetsAreRealEnumMembers(t *testing.T) {
 		{"anySafetyListings", anySafetyListings, "AttestationProgram"},
 		{"naRegions", naRegions, "TechnicalRegion"},
 		{"poleMountedTypes", poleMountedTypes, "MountingType"},
+		{"dedicatedCategories", dedicatedCategories, "PrimaryCategory"},
+		{"emergencyModeRoles", emergencyModeRoles, "EmergencyRole"},
+		// v0.10.0: the rubric's signMode rows, hasIntegralBattery, and testReportBacked compare
+		// against bare string literals rather than a shared set, so they are invisible to the
+		// row-level exhaustiveness guard (ProvenanceSource is also allowlisted). Pin the exact
+		// tokens the grader relies on against their enums: a taxonomy rename would otherwise
+		// silently make the comparison always-false and waive the mode-conditional sign gates,
+		// the battery trio, or the entire sign full tier, with no test going red.
+		{"signMode tokens", map[string]bool{
+			"internally_illuminated": true, "externally_illuminated": true,
+			"photoluminescent": true, "self_luminous": true,
+		}, "ExitSignIlluminationMode"},
+		{"hasIntegralBattery token", map[string]bool{"integral_battery": true}, "EmergencyPowerSource"},
+		{"testReportBacked source token", map[string]bool{"test_report": true}, "ProvenanceSource"},
 	}
 	for _, c := range cases {
 		members := loadEnumMembers(t, taxDefs, c.enum)

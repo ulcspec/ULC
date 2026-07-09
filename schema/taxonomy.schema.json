@@ -129,7 +129,8 @@
         "mast_arm_bracket",
         "high_mast",
         "utility_pole_mount",
-        "canopy"
+        "canopy",
+        "end_mount"
       ]
     },
 
@@ -1319,6 +1320,127 @@
         "cri_80",
         "cri_90",
         "cri_95"
+      ]
+    },
+
+    "ExitSignIlluminationMode": {
+      "title": "Exit sign illumination mode",
+      "description": "How an exit sign's legend is illuminated. This is the sign profile's conditional driver: it determines which sign-dataset rows apply (UL 924 governs the product listing; NFPA 101 and the IBC govern illuminated-sign visibility). `internally_illuminated` means the sign carries its own powered source behind or within the legend, so it is a powered product that also authors the `emergency` block. `externally_illuminated` means a separate luminaire lights the legend face, so the sign itself is unpowered. `self_luminous` means the legend emits light with no external power, typically sealed tritium gas tubes (NRC 10 CFR 31.5 governs the sealed source). `photoluminescent` means the legend charges from ambient light and glows after a power loss, again with no electrical source.",
+      "type": "string",
+      "enum": [
+        "internally_illuminated",
+        "externally_illuminated",
+        "self_luminous",
+        "photoluminescent"
+      ]
+    },
+
+    "ExitSignIlluminationTechnology": {
+      "title": "Exit sign illumination technology",
+      "description": "The self-emitting technology within an exit sign's illumination mode, one level of granularity below ExitSignIlluminationMode. `led` is the modern internally illuminated source. `electroluminescent` is a thin powered light-emitting panel. `photoluminescent` is a non-powered light-storing legend. `tritium` is a self-luminous sealed radioluminescent source. `incandescent_legacy` covers older filament-lit signs still in the installed base. Descriptive granularity only: no grading conditional keys on it.",
+      "type": "string",
+      "enum": [
+        "led",
+        "electroluminescent",
+        "photoluminescent",
+        "tritium",
+        "incandescent_legacy"
+      ]
+    },
+
+    "LegendColor": {
+      "title": "Exit sign legend color",
+      "description": "The color of an exit sign's legend. NFPA 101 and local codes govern which color a jurisdiction requires (red is common across much of the United States; green is required in some jurisdictions and internationally). `other` covers legends outside the red/green convention.",
+      "type": "string",
+      "enum": [
+        "red",
+        "green",
+        "other"
+      ]
+    },
+
+    "ExitSignFaceCount": {
+      "title": "Exit sign face count",
+      "description": "How many faces of an exit sign carry a legend. `single` is a one-sided sign for wall or end mounting; `double` is a two-sided sign for ceiling, pendant, or projecting mounting where the legend must read from both directions.",
+      "type": "string",
+      "enum": [
+        "single",
+        "double"
+      ]
+    },
+
+    "ExitSignDirectionalIndicator": {
+      "title": "Exit sign directional indicator",
+      "description": "A directional chevron applied to an exit sign face, per NFPA 101 directional-marking requirements. Recorded as an array because a sign can carry more than one indicator (for example left and right). `none` is declared explicitly when the sign carries no chevron, so an intentionally chevron-free sign is distinguishable from an undisclosed field.",
+      "type": "string",
+      "enum": [
+        "none",
+        "left",
+        "right",
+        "up",
+        "down"
+      ]
+    },
+
+    "RatedViewingDistance": {
+      "title": "Exit sign rated viewing distance (feet)",
+      "description": "The UL 924-marked rated viewing distance of an exit sign, in feet, stored as a string bin following the NominalCCT convention (the unit lives in the field-name suffix, `rated_viewing_distance_ft`). This is a UL 924-tested product rating marked on the sign; it is independent of letter height and is never derived from it. The four bins are the recognized ratings.",
+      "type": "string",
+      "enum": [
+        "50",
+        "75",
+        "100",
+        "125"
+      ]
+    },
+
+    "EmergencyRole": {
+      "title": "Emergency role",
+      "description": "What emergency function the `emergency` block describes: the discriminator for a product's emergency story. `exit_sign_only` is an internally illuminated exit sign whose only emergency function is lighting its own legend. `combo_exit_emergency` is an exit sign that also carries emergency egress-illumination heads. `dedicated_emergency_luminaire` is an emergency-only luminaire (a bug-eye or emergency downlight) with no normal-mode output. `emergency_power_option` is a normal fixture carrying a factory emergency-power add-on, whatever the source (battery, inverter, or generator). Every product that authors the `emergency` block carries exactly one role.",
+      "type": "string",
+      "enum": [
+        "exit_sign_only",
+        "combo_exit_emergency",
+        "dedicated_emergency_luminaire",
+        "emergency_power_option"
+      ]
+    },
+
+    "EmergencyPowerSource": {
+      "title": "Emergency power source",
+      "description": "How a powered emergency product is energized during a utility power loss (UL 924 context). `ac_only` means no emergency power source: the product runs only on normal AC (for example an AC-only exit sign). `integral_battery` means a battery inside the unit. `central_inverter` means a building central inverter supplies emergency power. `generator` means an on-site generator. Unpowered exit-sign modes (self-luminous, photoluminescent) carry their whole power story in ExitSignIlluminationMode and do not author this field.",
+      "type": "string",
+      "enum": [
+        "ac_only",
+        "integral_battery",
+        "central_inverter",
+        "generator"
+      ]
+    },
+
+    "BatteryChemistry": {
+      "title": "Battery chemistry",
+      "description": "The battery chemistry of an integral-battery emergency product. `ni_cd` is nickel cadmium, the long-standing emergency-lighting default. `ni_mh` is nickel metal hydride. `li_ion` is lithium ion. `lifepo4` is lithium iron phosphate, distinguished from generic lithium ion on manufacturer selection guides. `sla` is sealed lead acid, typical of higher-capacity central and remote-head units.",
+      "type": "string",
+      "enum": [
+        "ni_cd",
+        "ni_mh",
+        "li_ion",
+        "lifepo4",
+        "sla"
+      ]
+    },
+
+    "EmergencySelfTestCapability": {
+      "title": "Emergency self-test capability",
+      "description": "The self-test capability class of an integral-battery emergency product (the capability, not the test cadence; UL 924 defines the required 30-second monthly and 90-minute annual tests). `none` has no self-test. `manual` requires a person to press a test switch. `self_test` runs the UL 924 tests automatically. `self_diagnostic` runs them automatically and reports status via an indicator. `networked` reports status to a central monitoring system.",
+      "type": "string",
+      "enum": [
+        "none",
+        "manual",
+        "self_test",
+        "self_diagnostic",
+        "networked"
       ]
     }
   }

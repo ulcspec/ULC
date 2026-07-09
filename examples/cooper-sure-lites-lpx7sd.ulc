@@ -1,0 +1,261 @@
+{
+  "configuration": {
+    "catalog_number": "LPX7SD",
+    "photometric_scenario_id": "cooper-sure-lites-lpx7sd",
+    "scenario_label": "LPX Series self-powered LED polycarbonate exit, self-diagnostics, white housing, single-face as configured (field selectable single or double), red legend as shipped (field convertible to green), 120/277 VAC"
+  },
+  "electrical": {
+    "input_current_a": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "A",
+      "value": 0.07,
+      "value_type": "rated"
+    },
+    "input_voltage_class": "universal_120_277",
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    }
+  },
+  "emergency": {
+    "battery_chemistry": "ni_cd",
+    "battery_duration_min": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "min",
+      "value": 90,
+      "value_type": "rated"
+    },
+    "emergency_role": "exit_sign_only",
+    "power_source": "integral_battery",
+    "self_test": "self_diagnostic"
+  },
+  "exit_sign": {
+    "directional_indicator": [
+      "none"
+    ],
+    "face_count": "single",
+    "illumination_mode": "internally_illuminated",
+    "illumination_technology": "led",
+    "legend_color": "red",
+    "legend_text": "EXIT"
+  },
+  "index": {
+    "attestation_programs": [
+      "ca_title_20",
+      "damp_location_ul",
+      "ul_924"
+    ],
+    "builder_version": "0.5.0",
+    "catalog_model": "LPX7",
+    "catalog_number": "LPX7SD",
+    "conformance_level": "core",
+    "display_name": "LPX Series self-powered LED polycarbonate exit, self-diagnostics, white housing, single-face as configured (field selectable single or double), red legend as shipped (field convertible to green), 120/277 VAC",
+    "environment_rating": "damp",
+    "indoor_outdoor": "indoor",
+    "manufacturer_slug": "cooper-lighting-solutions",
+    "mounting_types": [
+      "end_mount",
+      "pendant",
+      "surface_ceiling",
+      "surface_wall"
+    ],
+    "primary_category": "exit_sign",
+    "search_keywords": [
+      "LPX Series self-powered LED polycarbonate exit, self-diagnostics, white housing, single-face as configured (field selectable single or double), red legend as shipped (field convertible to green), 120/277 VAC",
+      "Sure-Lites LPX Series",
+      "Sure-Lites LPX Series LED Polycarbonate Exit"
+    ],
+    "source_file_types_present": [
+      "datasheet_pdf",
+      "installation_instructions_pdf",
+      "supplementary_pdf"
+    ],
+    "x-ulc-generated": true
+  },
+  "product_family": {
+    "catalog_line": "Sure-Lites LPX Series",
+    "catalog_model": "LPX7",
+    "cutsheet": {
+      "filename": "sure-lites-lpx-series-spec-sheet.pdf",
+      "revision_date": "2023-03-09",
+      "revision_label": "TD505167EN",
+      "sha256": "079b5724d7f11a5273c8ebd3e3dd909d695a9fbe750517e4c23bc0f31de7f263"
+    },
+    "environment_rating": "damp",
+    "family_description": "LED polycarbonate exit sign with 90 minutes of emergency run time on self-powered (battery backup) models. UL 924 damp location certified, 0 to 40 C operating range. Field selectable for red or green illumination and single or double faces; ships with red lenses installed and green lenses included. Snap-out or snap-in chevron directional indicators with full 3/4 inch stroke. Injection molded UV-stabilized polycarbonate housing in white or black. Sealed maintenance-free nickel cadmium battery with 10-year typical life expectancy. Self-diagnostics (SD models) automatically perform all tests required by UL 924 and NFPA 101: a 90-minute emergency-mode simulation once every 12 months and a 30-second test every 30 days.",
+    "family_display_name": "Sure-Lites LPX Series LED Polycarbonate Exit",
+    "family_id": "cooper-sure-lites-lpx",
+    "indoor_outdoor": "indoor",
+    "manufacturer": {
+      "display_name": "Cooper Lighting Solutions",
+      "slug": "cooper-lighting-solutions"
+    },
+    "mounting_types": [
+      "end_mount",
+      "pendant",
+      "surface_ceiling",
+      "surface_wall"
+    ],
+    "physical_dimensions": {
+      "overall_height": {
+        "in": 7.5,
+        "mm": 190,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      },
+      "overall_width": {
+        "in": 13,
+        "mm": 330,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      }
+    },
+    "primary_category": "exit_sign",
+    "shape": "rectangular",
+    "shared_attestations": [
+      {
+        "attestation_id": "ul_924_cooper_lpx",
+        "program": "ul_924",
+        "standard_revision": "UL 924",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "Cutsheet code compliance: UL 924 Listed; Life Safety NFPA 101; NEC/OSHA; suitable for floor proximity installation; UL Listed for 2C (FTBR) with the SL2CPK kit on AC-only models.",
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "damp_location_ul_cooper_lpx",
+        "program": "damp_location_ul",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "UL Damp Location certified, 0 to 40 C operating temperature range.",
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "ca_title_20_cooper_lpx",
+        "program": "ca_title_20",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "Certified to California Title 20 Appliance Database (T20 mark on cutsheet).",
+          "type": "unconditional"
+        }
+      }
+    ],
+    "shared_mechanical": {
+      "ambient_operating_range": {
+        "max": {
+          "c": 40,
+          "f": 104,
+          "provenance": {
+            "method": "extracted",
+            "source": "datasheet_pdf"
+          },
+          "value_type": "rated"
+        },
+        "min": {
+          "c": 0,
+          "f": 32,
+          "provenance": {
+            "method": "extracted",
+            "source": "datasheet_pdf"
+          },
+          "value_type": "rated"
+        }
+      },
+      "housing_material": "polycarbonate",
+      "lens_material": "polycarbonate"
+    },
+    "shared_warranty": {
+      "scope": "Five-year warranty against defects in material and workmanship; nickel cadmium battery carries a seven-year prorated warranty.",
+      "term_years": 5
+    },
+    "technical_region": "120v_60hz_north_america"
+  },
+  "record_id": "cooper-sure-lites-lpx7sd",
+  "record_status": "active",
+  "record_status_as_of": "2026-07-08",
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "sure-lites-lpx-series-spec-sheet.pdf",
+        "revision_date": "2023-03-09",
+        "revision_label": "TD505167EN",
+        "sha256": "079b5724d7f11a5273c8ebd3e3dd909d695a9fbe750517e4c23bc0f31de7f263"
+      }
+    },
+    {
+      "file_type": "supplementary_pdf",
+      "reference": {
+        "filename": "97625ef9c16e4775a1aaad40014a0e67.pdf",
+        "revision_label": "SA505026EN Sure-Lites product selection guide",
+        "sha256": "ae14d18d2342d1fdff9dbd255985bf7a1d1863a7b336595ab2caf51d99368e8f"
+      }
+    },
+    {
+      "file_type": "supplementary_pdf",
+      "reference": {
+        "filename": "ac23a148a38540e4a8e9ad3f014cf57a.pdf",
+        "revision_label": "BR505013EN Sure-Lites industrial exit and emergency brochure",
+        "sha256": "68df61376e51a7f63863ebafc5e8e325a1da699b5112427485ab445db076fddc"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "024_75b_lpx_inst_sheet.pdf",
+        "sha256": "61062df7da31bac2f8b7cf194de8d5447e0aef4c7bcbe98b37027b99c37b1b13"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "071196_024_74d_single.pdf",
+        "sha256": "1820870d43e167030d13dcd77abf563c333b138f5828dd656589da8df851ed20"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "049_205_color_change_inst_sheet.pdf",
+        "sha256": "6acab7ad025b516194dc9b932b73b8f6bdfbd089c3c750cfad0958beb09a5793"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "049_204_ez_key_inst_sheet.pdf",
+        "sha256": "09ddd7cd4093c489a7a19e7faa76fb07fb46d7b916d7ba5245f3a3c8f961b592"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "sure-lites-049-278-universal-stencil-2C-instruction-sheet.pdf",
+        "sha256": "781eae0a404a51d45126d52487532f930fc45700355fc4fe05e603cf2553da6d"
+      }
+    }
+  ],
+  "ulc_version": "0.10.0"
+}

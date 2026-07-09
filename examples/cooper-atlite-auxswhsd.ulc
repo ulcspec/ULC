@@ -1,0 +1,277 @@
+{
+  "configuration": {
+    "catalog_number": "AUXSWHSD",
+    "photometric_scenario_id": "cooper-atlite-auxswhsd",
+    "scenario_label": "AUX Series universal edge-lit exit, self-powered LED, white finish, Eagle Eye self-diagnostics, 8 inch NYC-compliant letters, single face as configured (single and double sided lenses included), red letters on clear insert as configured, no chevron as shipped, 120/277 VAC"
+  },
+  "electrical": {
+    "input_current_a": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "A",
+      "value": 0.08,
+      "value_type": "rated"
+    },
+    "input_power_w": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "W",
+      "value": 0.9,
+      "value_type": "rated"
+    },
+    "input_voltage_class": "universal_120_277",
+    "input_voltage_v": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "V",
+      "value": 120,
+      "value_type": "rated"
+    },
+    "power_factor": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "ratio",
+      "value": 0.11,
+      "value_type": "rated"
+    }
+  },
+  "emergency": {
+    "battery_chemistry": "ni_cd",
+    "battery_duration_min": {
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "unit": "min",
+      "value": 90,
+      "value_type": "rated"
+    },
+    "emergency_role": "exit_sign_only",
+    "power_source": "integral_battery",
+    "self_test": "self_diagnostic"
+  },
+  "exit_sign": {
+    "directional_indicator": [
+      "none"
+    ],
+    "face_count": "single",
+    "illumination_mode": "internally_illuminated",
+    "illumination_technology": "led",
+    "legend_color": "red",
+    "legend_height": {
+      "in": 8,
+      "mm": 203.2,
+      "provenance": {
+        "method": "extracted",
+        "source": "datasheet_pdf"
+      },
+      "value_type": "rated"
+    },
+    "legend_text": "EXIT"
+  },
+  "index": {
+    "attestation_programs": [
+      "damp_location_ul",
+      "ul_924"
+    ],
+    "builder_version": "0.5.0",
+    "catalog_model": "AUXS",
+    "catalog_number": "AUXSWHSD",
+    "conformance_level": "standard",
+    "display_name": "AUX Series universal edge-lit exit, self-powered LED, white finish, Eagle Eye self-diagnostics, 8 inch NYC-compliant letters, single face as configured (single and double sided lenses included), red letters on clear insert as configured, no chevron as shipped, 120/277 VAC",
+    "environment_rating": "damp",
+    "indoor_outdoor": "indoor",
+    "manufacturer_slug": "cooper-lighting-solutions",
+    "mounting_types": [
+      "end_mount",
+      "pendant",
+      "recessed_ceiling",
+      "recessed_wall",
+      "surface_ceiling",
+      "surface_wall"
+    ],
+    "nominal_input_power_w": 0.9,
+    "primary_category": "exit_sign",
+    "search_keywords": [
+      "AUX Series universal edge-lit exit, self-powered LED, white finish, Eagle Eye self-diagnostics, 8 inch NYC-compliant letters, single face as configured (single and double sided lenses included), red letters on clear insert as configured, no chevron as shipped, 120/277 VAC",
+      "AtLite AUX Series",
+      "AtLite AUX Series Universal Edge-Lit Exit"
+    ],
+    "source_file_types_present": [
+      "compliance_documents",
+      "datasheet_pdf",
+      "installation_instructions_pdf",
+      "supplementary_pdf"
+    ],
+    "x-ulc-generated": true
+  },
+  "product_family": {
+    "catalog_line": "AtLite AUX Series",
+    "catalog_model": "AUXS",
+    "cutsheet": {
+      "filename": "at-aux-ada140468-sss.pdf",
+      "revision_date": "2021-07-19",
+      "revision_label": "ADA140468",
+      "sha256": "74ac9fe4daca866fcf020437780f6358a2d4377a1f6c46ffc96752366f875641"
+    },
+    "environment_rating": "damp",
+    "family_description": "NYC-compliant universal edge-lit exit sign with die cast and extruded aluminum housing. All mounting options included with the base unit: surface ceiling, surface wall, end, recessed wall, recessed ceiling; Halo Got Nail hangar bars for recessed or T-grid installations. All panel options included as standard: single or double sided high-impact acrylic lens, clear, mirror or white background inserts, field-installed NFPA 101 compliant chevron arrows. 8 inch (NYC compliant) letters standard, 6 inch letters available. Eagle Eye self-diagnostics standard on self-powered units, automatically performing all tests required by UL 924 and NFPA 101: a 90-minute battery-power emergency-mode simulation once every 12 months and a 30-second test every 30 days. Sealed maintenance-free nickel cadmium battery with 15-year life expectancy and 24-hour full recharge; EZ Key external battery disconnect; brownout circuit; low-voltage disconnect; overload and short circuit protection; photocell laser test switch. UL 924 Damp Location Listed, 10 to 40 C operating range; fire alarm interface available as an accessory (AUXFAI); 2C two-circuit option on AC-only versions.",
+    "family_display_name": "AtLite AUX Series Universal Edge-Lit Exit",
+    "family_id": "cooper-atlite-aux",
+    "indoor_outdoor": "indoor",
+    "manufacturer": {
+      "display_name": "Cooper Lighting Solutions",
+      "slug": "cooper-lighting-solutions"
+    },
+    "mounting_types": [
+      "end_mount",
+      "pendant",
+      "recessed_ceiling",
+      "recessed_wall",
+      "surface_ceiling",
+      "surface_wall"
+    ],
+    "physical_dimensions": {
+      "overall_width": {
+        "in": 18.1875,
+        "mm": 462,
+        "provenance": {
+          "method": "extracted",
+          "source": "datasheet_pdf"
+        },
+        "value_type": "rated"
+      }
+    },
+    "primary_category": "exit_sign",
+    "shape": "rectangular",
+    "shared_attestations": [
+      {
+        "attestation_id": "ul_924_cooper_aux_e69466",
+        "listing_number": "E69466",
+        "program": "ul_924",
+        "source_document_ref": {
+          "filename": "e69466-8-1-coc.pdf",
+          "sha256": "7cd1116b9ab791f2baa0215f594d03d2ae77412eaf54b035174aae1a7d9bfc43"
+        },
+        "standard_revision": "UL 924",
+        "status": "listed",
+        "test_laboratory": "UL LLC",
+        "value_type": "rated",
+        "verification": {
+          "notes": "UL Certificate of Compliance 20180419-E69466 (Exit Fixtures, Exit Fixture Series AUX, issued to Cooper Lighting Div of Cooper Industries Inc, 2018-04-19) attached. A second certificate, 20140305-E65048 (Emergency Lighting and Power Equipment, USL Exit Light Series AUX, 2014-03-05), is attached as a compliance document.",
+          "type": "unconditional"
+        }
+      },
+      {
+        "attestation_id": "damp_location_ul_cooper_aux",
+        "program": "damp_location_ul",
+        "status": "listed",
+        "value_type": "rated",
+        "verification": {
+          "notes": "UL 924 Damp Location Listed, 10 to 40 C (50 to 104 F) operating range.",
+          "type": "unconditional"
+        }
+      }
+    ],
+    "shared_mechanical": {
+      "ambient_operating_range": {
+        "max": {
+          "c": 40,
+          "f": 104,
+          "provenance": {
+            "method": "extracted",
+            "source": "datasheet_pdf"
+          },
+          "value_type": "rated"
+        },
+        "min": {
+          "c": 10,
+          "f": 50,
+          "provenance": {
+            "method": "extracted",
+            "source": "datasheet_pdf"
+          },
+          "value_type": "rated"
+        }
+      },
+      "housing_material": "die_cast_aluminum",
+      "lens_material": "acrylic"
+    },
+    "shared_warranty": {
+      "scope": "Five-year fixture warranty; sealed nickel cadmium battery carries a fifteen-year pro-rata warranty.",
+      "term_years": 5
+    },
+    "technical_region": "120v_60hz_north_america"
+  },
+  "record_id": "cooper-atlite-auxswhsd",
+  "record_status": "active",
+  "record_status_as_of": "2026-07-08",
+  "source_files": [
+    {
+      "file_type": "datasheet_pdf",
+      "reference": {
+        "filename": "at-aux-ada140468-sss.pdf",
+        "revision_date": "2021-07-19",
+        "revision_label": "ADA140468",
+        "sha256": "74ac9fe4daca866fcf020437780f6358a2d4377a1f6c46ffc96752366f875641"
+      }
+    },
+    {
+      "file_type": "compliance_documents",
+      "reference": {
+        "filename": "e69466-8-1-coc.pdf",
+        "revision_date": "2018-04-19",
+        "revision_label": "UL Certificate of Compliance 20180419-E69466",
+        "sha256": "7cd1116b9ab791f2baa0215f594d03d2ae77412eaf54b035174aae1a7d9bfc43"
+      }
+    },
+    {
+      "file_type": "compliance_documents",
+      "reference": {
+        "filename": "e65048-29-2-coc.pdf",
+        "revision_date": "2014-03-05",
+        "revision_label": "UL Certificate of Compliance 20140305-E65048",
+        "sha256": "02db72a13c66aab2895e9ae81c9e0dd3889571df0f6d9a4f13dabcfde5e1921b"
+      }
+    },
+    {
+      "file_type": "supplementary_pdf",
+      "reference": {
+        "filename": "atlite-aux-universal-edgelit-nyc-brochure.pdf",
+        "revision_date": "2021-02-12",
+        "revision_label": "ADX140134",
+        "sha256": "45a451215a85f79e2e0484bb59a065676100e8a40664c5e1d735ed8fa17b31dc"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "at-auxsd-049-245-ada140172-ins.pdf",
+        "sha256": "745a581f6febed29b7f49c323a2c9131396eb8b5ef09a80a5712a455e4e45d80"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "at-auxac-049-244-ada140171-ins.pdf",
+        "sha256": "546be07cf50a6c407244e5f7decc821dc38e43ed121818d048bbb5eaa1592781"
+      }
+    },
+    {
+      "file_type": "installation_instructions_pdf",
+      "reference": {
+        "filename": "at-auxlens-049-239-ada140170-ins.pdf",
+        "sha256": "a5bc615132524be71286348a58c216531c6a7a3d4a811823b5fff393f32adeed"
+      }
+    }
+  ],
+  "ulc_version": "0.10.0"
+}

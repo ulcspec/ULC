@@ -33,7 +33,7 @@ Two columns carry the load. **Category** sorts each badge into one governance fa
 | `pse_japan` | PSE mark | Product Safety Electrical Appliance and Material mark required for electrical products sold in Japan. | PSE / DENAN (Japan) | safety-listing / market-access | `core-eligible safety listing (outside North America)` |
 | `ul_1574` | UL 1574 | Safety standard for track lighting systems. | UL 1574 (Track Lighting) | safety-listing | `tracked` |
 | `ul_8750` | UL 8750 | Safety standard for LED equipment used in lighting products (the LED-component safety standard). | UL 8750 | safety-listing | `tracked` |
-| `ul_924` | UL 924 | Safety standard for emergency lighting and power equipment. | UL 924 | safety-listing | `tracked` |
+| `ul_924` | UL 924 | Safety standard for emergency lighting and power equipment. | UL 924 | safety-listing | `core-eligible safety listing` |
 | `ul_2108` | UL 2108 | Safety standard for low-voltage lighting systems. | UL 2108 | safety-listing | `tracked` |
 | `ul_1994` | UL 1994 | Safety standard for luminous egress-path marking systems. | UL 1994 | safety-listing | `tracked` |
 | `iec_62031` | IEC 62031 | Safety standard for LED modules for general lighting. | IEC 62031 | safety-listing | `tracked` |

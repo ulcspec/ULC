@@ -1,0 +1,104 @@
+{
+  "findings": [
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "compatible accessories not listed",
+      "path": "/compatible_accessories",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "dimming curve not disclosed",
+      "path": "/electrical/dimming_curve",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "UL 924-marked rated viewing distance not disclosed",
+      "path": "/exit_sign/rated_viewing_distance_ft",
+      "source_document": "datasheet_pdf",
+      "standard": "UL 924"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "measured sign-face luminance not disclosed",
+      "path": "/exit_sign/sign_face_luminance_cd_per_m2",
+      "source_document": "datasheet_pdf",
+      "standard": "UL 924"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "installed orientation not disclosed",
+      "path": "/product_family/orientation",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
+      "message": "ambient operating range not disclosed",
+      "path": "/product_family/shared_mechanical/ambient_operating_range",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add test-report-backed sign-face luminance (from test_report, per UL 924)",
+      "path": "test-report-backed sign-face luminance",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "UL 924"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/grade-satisfied",
+      "message": "conformance grade \"core\" satisfied",
+      "path": "/index/conformance_level"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/grade-satisfied",
+      "message": "conformance grade \"standard\" satisfied",
+      "path": "/index/conformance_level"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/level",
+      "message": "this record achieves conformance level \"standard\"",
+      "path": "/index/conformance_level"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/observation",
+      "message": "compliance programs tracked on this record: ul_924",
+      "path": "/attestations"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/observation",
+      "message": "headline photometric value electrical.input_power_w carries value_type \"rated\" rather than \"measured\"",
+      "path": "/electrical/input_power_w/value_type"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/observation",
+      "message": "sustainability declaration not disclosed",
+      "path": "/sustainability_declaration",
+      "source_document": "datasheet_pdf",
+      "standard": "EPD / HPD"
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 13
+  }
+}

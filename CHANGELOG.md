@@ -20,6 +20,31 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 0.10.0 (2026-07-08)
+
+Exit signs and emergency luminaires become first-class, gradable product classes. Two new optional blocks (`exit_sign` and `emergency`), ten new taxonomy vocabularies, and per-class grading profiles let an exit-sign-only or emergency-only manufacturer reach the grade its cutsheets actually support rather than being stranded at `incomplete` for lacking an LM-79 report it never produces. Every change is additive and non-gating: a v0.9.x record validates and grades identically, and no existing grade or `index.conformance_level` moves.
+
+### For consumers
+
+Unlike 0.9.0, this release changes no finding codes and needs no migration. The new class-gated `conformance/gap` and `conformance/enrichment` rows appear only on records whose `primary_category` is `exit_sign` or `emergency_luminaire`, or that author the new `emergency` block; no existing record can trigger them, because the two blocks did not exist before this version. `BuilderVersion` is unchanged, and the `index` schema and its projections are unchanged: a sign record's index simply carries its category and whatever sparse photometric fields it has.
+
+### Schema (additive, optional)
+
+- Two new optional top-level blocks. `exit_sign` carries the legend (text, color, height, and the externally-illuminated stroke/letter geometry), illumination mode and technology, face count, directional indicators, rated viewing distance, and the mode-specific photometrics (face luminance, face illuminance, contrast ratio, tritium rated life, photoluminescent charging illuminance). `emergency` carries `emergency_role` and `power_source` (both required within the block), battery duration, chemistry, and self-test, the distinct emergency-mode lumen output and input power, remote-head capacity, and an emergency-mode photometry-file reference. Both blocks are absent unless authored; an empty `exit_sign` block is valid, and an `emergency` block requires its two discriminators.
+- Ten new taxonomy vocabularies: `ExitSignIlluminationMode`, `ExitSignIlluminationTechnology`, `LegendColor`, `ExitSignFaceCount`, `ExitSignDirectionalIndicator`, `RatedViewingDistance`, `EmergencyRole`, `EmergencyPowerSource`, `BatteryChemistry`, and `EmergencySelfTestCapability`.
+- An `end_mount` token added to `MountingType` (end mounting is a standard ordering option on the reference exit-sign series).
+
+### Grading
+
+- Per-class profiles, derived from the existing core field `product_family.primary_category`. An `exit_sign` grades against the sign dataset (the architectural-photometry rows are not-applicable); an `emergency_luminaire` grades against the normal profile minus luminaire efficacy, plus the emergency gates; every other category is unchanged. 18 new class-gated rubric rows (4 core, 12 standard, 2 full) and 13 new non-gating enrichment rows carry the sign and emergency data.
+- The sign full tier is anchored on UL 924 test-report depth: a lab-measured face luminance or illuminance carrying `test_report` provenance, partitioned by illumination mode so every sign has exactly one applicable full row.
+- `ul_924` now satisfies the core safety-listing gate (it joins both the North-American and the general acceptance sets) and, for a North American dedicated-class product, a dedicated UL 924 listing core row. This can only turn a fail into a pass and moves no existing record, since none carries `ul_924`. UL 924 is read from the attestation ledger; there is no `ul_924_listed` boolean.
+- The gates are US-first, anchored on UL 924 and the NFPA 101 / IBC evidence base. International emergency standards are deferred (see ROADMAP.md).
+
+### Examples
+
+- Three new real exit-sign reference records from published Cooper Sure-Lites and AtLite series: `cooper-sure-lites-lpx7sd` (self-powered polycarbonate exit, grades `core`), `cooper-sure-lites-es61src` (AC-only edge-lit exit, grades `standard`), and `cooper-atlite-auxswhsd` (self-powered NYC-compliant edge-lit exit, grades `standard`, its `ul_924` attestation backed by two attached UL Certificates of Compliance). As with every reference record, source files are referenced by content hash and not committed.
+
 ## 0.9.0 (2026-07-08)
 
 Data completeness becomes fully explicit and complete. The optional depth taxonomies that were previously surfaced only as passive `--verbose` observations are now an actionable **enrichment roadmap**, emitted under a new `conformance/enrichment` finding code alongside the existing tier roadmap. Five additional optional fields are wired, and the grading package gains a structured `Compute()` entry point. Every change is additive and non-gating: a v0.8.x record validates and grades identically, and no grade or `index.conformance_level` moves.
