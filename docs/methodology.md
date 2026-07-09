@@ -304,8 +304,8 @@ The two axes are orthogonal by construction: the achievements view never touches
 Product Achievements computes a state for each of six themes: `embodied_carbon`, `circularity`, `material_health`, `energy`, `dark_sky`, and `emergency`. Each theme is one of three states:
 
 - **`none`**: no qualifying attestation or declaration contributes to the theme.
-- **`claimed`**: a qualifying contribution exists, but no evidence document is attached.
-- **`documented`**: at least one qualifying, non-disqualified attestation carries an attached evidence document.
+- **`claimed`**: a qualifying contribution exists, but no attached, non-disqualified, unexpired evidence document supports `documented` (there may be no evidence document, or its only evidence is disqualified by status or by record-relative expiry, which caps the theme at `claimed` even with a document attached).
+- **`documented`**: at least one qualifying, non-disqualified attestation carries an attached evidence document that is unexpired as of the record's `record_status_as_of`.
 
 A theme is routed by the program tokens on the ledger's attestations: a UL 924 listing feeds `emergency`, an EPD feeds `embodied_carbon`, a Declare label feeds `material_health`, and so on. The full program-to-theme map, and the list of programs deliberately left unthemed (project-level programs like LEED, multi-attribute ecolabels, domestic-content and controls programs held for future themes), is published as a versioned appendix in the [compliance and attestation program glossary](compliance-attestation.md). There is no weighted or overall achievement grade: the only rollup is `documented_count`, a factual count of themes at `documented`. Weighting embodied carbon against material health has no accepted method, and inventing one would be ULC editorializing.
 
