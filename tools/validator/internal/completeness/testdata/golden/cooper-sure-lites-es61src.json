@@ -2,6 +2,24 @@
   "findings": [
     {
       "level": "INFO",
+      "code": "achievements/roadmap",
+      "message": "to document the emergency achievement, attach the certificate document to the ul_924 attestation",
+      "path": "/index/achievements/themes/emergency"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
+      "message": "emergency achievement: claimed (ul_924)",
+      "path": "/index/achievements/themes/emergency"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/summary",
+      "message": "achievements: 0 documented, 1 claimed",
+      "path": "/index/achievements"
+    },
+    {
+      "level": "INFO",
       "code": "conformance/enrichment",
       "message": "compatible accessories not listed",
       "path": "/compatible_accessories",
@@ -99,6 +117,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 13
+    "infos": 16
   }
 }

@@ -334,6 +334,47 @@
     ]
   },
   "index": {
+    "achievements": {
+      "documented_count": 0,
+      "themes": {
+        "circularity": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "dark_sky": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "embodied_carbon": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "emergency": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "energy": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "material_health": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        }
+      }
+    },
     "attestation_programs": [
       "c_ul_listed",
       "cie_13",
@@ -346,7 +387,7 @@
       "ul_8750"
     ],
     "beam_family": "wide_flood",
-    "builder_version": "0.5.0",
+    "builder_version": "0.6.0",
     "catalog_model": "Quintessence Downlight 30416",
     "catalog_number": "30416.023",
     "color_tunability": "static_white",
@@ -368,6 +409,7 @@
     "nominal_total_lumens": 1301,
     "primary_category": "downlight",
     "primary_distribution": "direct",
+    "restricted_substances_declared": [],
     "search_keywords": [
       "Quintessence",
       "Quintessence Downlight",

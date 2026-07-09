@@ -357,6 +357,13 @@ var descriptiveAllowlist = map[string]bool{
 	// observation (empty taxonomy token), so these sub-enums stay descriptive.
 	"SustainabilityDeclarationType": true,
 	"IngredientRedListStatus":       true,
+	// sustainability_metric sub-structure on Attestation: the AttestationProgram itself
+	// is graded and these enums qualify the metric payload (a carbon scope, a C2C level),
+	// so they stay descriptive, mirroring the AttestationStatus/AttestationVerificationType
+	// treatment above. AchievementState is not listed here: it is referenced only from the
+	// generated /index subtree (AchievementTheme), which the exhaustiveness walk skips.
+	"EmbodiedCarbonScope": true,
+	"CircularityTier":     true,
 
 	// --- v0.10.0 emergency & exit-sign class ---
 	// The 9 exit-sign / emergency enums that back rubric rows (7 gating in Phase B, plus

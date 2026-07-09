@@ -1,6 +1,7 @@
+INFO    achievements/summary at /index/achievements: achievements: 1 documented, 0 claimed
 INFO    conformance/gap at test-report-backed sign-face luminance: to reach "full", add test-report-backed sign-face luminance (from test_report, per UL 924)
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "core" satisfied
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "standard" satisfied
 INFO    conformance/level at /index/conformance_level: this record achieves conformance level "standard"
 
-OK -- cooper-atlite-auxswhsd.ulc: 0 errors, 0 warnings, 12 infos (8 optional findings hidden (enrichment and observations); use --verbose or --json).
+OK -- cooper-atlite-auxswhsd.ulc: 0 errors, 0 warnings, 14 infos (9 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).

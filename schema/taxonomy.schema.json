@@ -869,7 +869,7 @@
 
     "AttestationProgram": {
       "title": "Compliance or certification program",
-      "description": "An external program, listing, certification, or test-method standard that a product may claim. Programs are referenced by identifier only; ULC does not redistribute the text of any paid or restricted standard. For IES test-method standards, both a family label (for example `lm_79`, `tm_30`, `lm_80`) and version-specific values (for example `lm_79_24`, `tm_30_24`, `lm_80_21`) are provided. Claim records should use the version-specific value whenever the revision is known, because numeric results may not be comparable across revisions (for example the TM-30 fidelity scaling factor changed between -15 and -18). The family label is a coarse filter for cases where the revision is genuinely unknown. When an errata changes normative content, the errata-corrected version is encoded as a distinct enum value with a numeric suffix (for example `lm_84_20_e1` for LM-84-20 with Errata 1). Legacy versions are retained so that datasheets published before the current revision can be ingested without data loss; the reference validator emits a WARNING when a legacy version is used to encourage migration to current revisions. Programs span several categories: trade-body and lab accreditation (LIA, ICEL, ISO 9001, NRTL), product-safety listings and marks (UL, ETL, TUV, CE, UKCA, CCC, NOM, CB Scheme, IEC 60598 / 62031 / 62471, UL 1598 / 1574 / 8750), energy and efficiency programs (DLC Standard / Premium / QPL, ENERGY STAR, California Title 24 JA8), U.S. domestic-procurement compliance (BAA, BABA), specialty building-code compliance (Chicago Plenum for plenum-rated installations), sustainability and green-building (Declare and its three LBC Red List tiers, Living Building Challenge, Living Product Challenge, Living Community Challenge, Just Label, Well Building Standard, LEED v4 / v4.1 / v5), color-rendition method references (CIE 13), and IES/ANSI test-method standards across photometry, maintenance, color, chromaticity, flicker, and melanopic metrics (LM-75, LM-78, LM-79, LM-80, LM-82, LM-84, LM-85, LM-90, TM-15, TM-21, TM-27, TM-28, TM-30, TM-35, RP-46, ANSI C78.377, ANSI C136.25/31, CSA C653/C811, NTCIP 1213, IEEE 1789, NEMA 77). Beyond these, the enum covers regional market-access marks (RCM/SAA Australia, KC Korea, PSE/VCCI Japan, BIS India, EAC EAEU, INMETRO Brazil, SASO Saudi Arabia), additional North American safety listings (CSA, MET, UL 924 emergency lighting, UL 2108 low-voltage systems, UL 1994 luminous egress-path marking, IEC 61347 lamp-control-gear safety), EMC declarations (ICES Canada, CISPR 15), food-zone safety (NSF/ANSI 2), further energy and efficiency programs (ENERGY STAR Downlights v1, DLC Networked Lighting Controls, DLC LUNA, DLC Horticultural, California Title 20, EU Ecodesign and Energy Label, FTC Lighting Facts, DOE LED Lighting Facts, NRCan Energy Efficiency Regulations), environmental and material declarations (REACH SVHC, WEEE, California Prop 65, conflict-minerals 3TG, POPs, TSCA, EPD per ISO 14025, HPD, Cradle to Cradle, GreenCircle, EPEAT, UL ECOLOGO), and domestic-origin and procurement marks (TAA, American Iron and Steel, country of origin). Only a small subset of safety listings is read by the reference grader's core safety gate; the remainder are presence-tracked for catalog and search and never affect the conformance level.",
+      "description": "An external program, listing, certification, or test-method standard that a product may claim. Programs are referenced by identifier only; ULC does not redistribute the text of any paid or restricted standard. For IES test-method standards, both a family label (for example `lm_79`, `tm_30`, `lm_80`) and version-specific values (for example `lm_79_24`, `tm_30_24`, `lm_80_21`) are provided. Claim records should use the version-specific value whenever the revision is known, because numeric results may not be comparable across revisions (for example the TM-30 fidelity scaling factor changed between -15 and -18). The family label is a coarse filter for cases where the revision is genuinely unknown. When an errata changes normative content, the errata-corrected version is encoded as a distinct enum value with a numeric suffix (for example `lm_84_20_e1` for LM-84-20 with Errata 1). Legacy versions are retained so that datasheets published before the current revision can be ingested without data loss; the reference validator emits a WARNING when a legacy version is used to encourage migration to current revisions. Programs span several categories: trade-body and lab accreditation (LIA, ISO 9001, NRTL; ICEL is instead the ICEL emergency-lighting product-conformity scheme, a genuine emergency qualification rather than trade-body membership), product-safety listings and marks (UL, ETL, TUV, CE, UKCA, CCC, NOM, CB Scheme, IEC 60598 / 62031 / 62471, UL 1598 / 1574 / 8750), energy and efficiency programs (DLC Standard / Premium / QPL, ENERGY STAR, California Title 24 JA8), U.S. domestic-procurement compliance (BAA, BABA), specialty building-code compliance (Chicago Plenum for plenum-rated installations), sustainability and green-building (Declare and its three LBC Red List tiers, Living Building Challenge, Living Product Challenge, Living Community Challenge, Just Label, Well Building Standard, LEED v4 / v4.1 / v5), color-rendition method references (CIE 13), and IES/ANSI test-method standards across photometry, maintenance, color, chromaticity, flicker, and melanopic metrics (LM-75, LM-78, LM-79, LM-80, LM-82, LM-84, LM-85, LM-90, TM-15, TM-21, TM-27, TM-28, TM-30, TM-35, RP-46, ANSI C78.377, ANSI C136.25/31, CSA C653/C811, NTCIP 1213, IEEE 1789, NEMA 77). Beyond these, the enum covers regional market-access marks (RCM/SAA Australia, KC Korea, PSE/VCCI Japan, BIS India, EAC EAEU, INMETRO Brazil, SASO Saudi Arabia), additional North American safety listings (CSA, MET, UL 924 emergency lighting, UL 2108 low-voltage systems, UL 1994 luminous egress-path marking, IEC 61347 lamp-control-gear safety), EMC declarations (ICES Canada, CISPR 15), food-zone safety (NSF/ANSI 2), further energy and efficiency programs (ENERGY STAR Downlights v1, DLC Networked Lighting Controls, DLC LUNA, DLC Horticultural, California Title 20, EU Ecodesign and Energy Label, FTC Lighting Facts, DOE LED Lighting Facts, NRCan Energy Efficiency Regulations), environmental and material declarations (REACH SVHC, WEEE, California Prop 65, conflict-minerals 3TG, POPs, TSCA, EPD per ISO 14025, HPD, Cradle to Cradle, GreenCircle, EPEAT, UL ECOLOGO), and domestic-origin and procurement marks (TAA, American Iron and Steel, country of origin). Only a small subset of safety listings is read by the reference grader's core safety gate; the remainder are presence-tracked for catalog and search and never affect the conformance level.",
       "type": "string",
       "enum": [
         "lia_member",
@@ -1220,6 +1220,41 @@
         "declared",
         "approved_exception",
         "red_list_item"
+      ]
+    },
+
+    "EmbodiedCarbonScope": {
+      "title": "Embodied carbon life-cycle scope",
+      "description": "Life-cycle stages a declared embodied-carbon figure (`sustainability_metric.embodied_carbon_kgco2e`) covers, following EN 15804 module boundaries. `a1_a3` is cradle-to-gate (raw material supply, transport, and manufacturing). `a1_a4` extends to delivery to site. `a1_c4` adds the end-of-life stages to the cradle-to-gate figure. `cradle_to_grave` covers the full life cycle. The scope must accompany any kgCO2e figure so consumers never compare numbers declared against different boundaries.",
+      "type": "string",
+      "enum": [
+        "a1_a3",
+        "a1_a4",
+        "a1_c4",
+        "cradle_to_grave"
+      ]
+    },
+
+    "CircularityTier": {
+      "title": "Cradle to Cradle circularity tier",
+      "description": "Cradle to Cradle Certified overall achievement level, used on `sustainability_metric.c2c_overall_level`. The overall rating is the lowest level achieved across the five C2C categories. This enum encodes C2C levels only; TM66 CEAM star bands are carried as a bare `ceam_score` number (0 to 4) because their published cutoffs are not freely verifiable.",
+      "type": "string",
+      "enum": [
+        "bronze",
+        "silver",
+        "gold",
+        "platinum"
+      ]
+    },
+
+    "AchievementState": {
+      "title": "Product achievement state",
+      "description": "Per-theme state in the computed `index.achievements` view. `none` means no qualifying attestation or declaration contributes to the theme. `claimed` means a qualifying contribution exists but carries no attached evidence document. `documented` means at least one qualifying, non-disqualified attestation carries an attached evidence document. `documented` is a record fact (an evidence document is attached), never a verification performed by ULC.",
+      "type": "string",
+      "enum": [
+        "none",
+        "claimed",
+        "documented"
       ]
     },
 

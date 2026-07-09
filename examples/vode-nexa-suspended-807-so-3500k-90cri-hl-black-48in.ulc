@@ -364,6 +364,53 @@
     }
   },
   "index": {
+    "achievements": {
+      "documented_count": 0,
+      "themes": {
+        "circularity": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "dark_sky": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "embodied_carbon": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "emergency": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "energy": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "material_health": {
+          "evidence_present": false,
+          "programs": [
+            "declare",
+            "lbc_red_list_approved"
+          ],
+          "source_attestation_ids": [
+            "declare_vode_nexa_807",
+            "lbc_red_list_approved_vode_nexa_807"
+          ],
+          "state": "claimed"
+        }
+      }
+    },
     "attestation_programs": [
       "baa",
       "baba",
@@ -381,7 +428,7 @@
       "ul_1598"
     ],
     "beam_family": "medium_flood",
-    "builder_version": "0.5.0",
+    "builder_version": "0.6.0",
     "catalog_model": "Nexa Suspended 807",
     "catalog_number": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
     "color_tunability": "static_white",
@@ -403,6 +450,7 @@
     "nominal_total_lumens": 1276,
     "primary_category": "linear",
     "primary_distribution": "symmetric",
+    "restricted_substances_declared": [],
     "search_keywords": [
       "Nexa",
       "Nexa Suspended 807, NX3 rail, 48\" tested length, Standard Output, 3500K 90+ CRI, Honeycomb Louver, Black Anodized, 120V-277V universal",

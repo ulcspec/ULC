@@ -2,6 +2,12 @@
   "findings": [
     {
       "level": "INFO",
+      "code": "achievements/summary",
+      "message": "achievements: 0 documented, 0 claimed",
+      "path": "/index/achievements"
+    },
+    {
+      "level": "INFO",
       "code": "conformance/enrichment",
       "message": "chromaticity-shift projection not disclosed",
       "path": "/chromaticity_shift_projection",
@@ -354,6 +360,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 44
+    "infos": 45
   }
 }

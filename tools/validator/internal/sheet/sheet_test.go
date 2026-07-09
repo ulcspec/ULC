@@ -50,8 +50,8 @@ func TestConvertPatternA(t *testing.T) {
 		t.Fatalf("expected no warnings (files present on disk), got %v", res.Warnings)
 	}
 	// A converted record with no ulc_version column stamps the current-spec default.
-	if got, _ := res.Record["ulc_version"].(string); got != "0.10.0" {
-		t.Fatalf("converted record ulc_version = %q, want 0.10.0 (from-sheet default)", got)
+	if got, _ := res.Record["ulc_version"].(string); got != "1.0.0" {
+		t.Fatalf("converted record ulc_version = %q, want 1.0.0 (from-sheet default)", got)
 	}
 
 	// Build the index: this stamps the index block and grades conformance_level.

@@ -1,3 +1,4 @@
+INFO    achievements/summary at /index/achievements: achievements: 0 documented, 0 claimed
 INFO    conformance/gap at /corrections_applied: to reach "full", add /corrections_applied (from test_report, per LM-79)
 INFO    conformance/gap at /photometry/zonal_lumens: to reach "full", add /photometry/zonal_lumens (from ies, per LM-79)
 INFO    conformance/gap at /uncertainty: to reach "full", add /uncertainty (from test_report, per LM-79 / GUM)
@@ -6,4 +7,4 @@ INFO    conformance/grade-satisfied at /index/conformance_level: conformance gra
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "standard" satisfied
 INFO    conformance/level at /index/conformance_level: this record achieves conformance level "standard"
 
-OK -- lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc: 0 errors, 0 warnings, 36 infos (29 optional findings hidden (enrichment and observations); use --verbose or --json).
+OK -- lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc: 0 errors, 0 warnings, 37 infos (29 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).

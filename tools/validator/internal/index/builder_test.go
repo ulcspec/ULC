@@ -85,8 +85,11 @@ func TestMissingRequiredKeysSorted(t *testing.T) {
 		"catalog_model":    "FOO",
 		"primary_category": "downlight",
 	}
+	// achievements and restricted_substances_declared are required keys too (they mirror
+	// schema Index.required). Build() always emits them, so a real record never misses
+	// them; this hand-built partial index omits them, so they surface here, sorted.
 	missing := MissingRequiredKeys(built)
-	want := []string{"conformance_level", "manufacturer_slug"}
+	want := []string{"achievements", "conformance_level", "manufacturer_slug", "restricted_substances_declared"}
 	if len(missing) != len(want) {
 		t.Fatalf("got %v, want %v", missing, want)
 	}

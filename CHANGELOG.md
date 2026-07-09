@@ -20,6 +20,45 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.0.0 (2026-07-09)
+
+ULC gains its second grading axis and makes its first formal backward-compatibility commitment. **Product Achievements** is a computed view alongside data completeness: per theme (embodied carbon, circularity, material health, energy, dark sky, emergency) it reports whether a record demonstrates a third-party program qualification and with what evidence (`none`, `claimed`, or `documented`), computed from the attestations a record already carries. The release is additive in the strict sense: no field, token, or finding code was removed or narrowed; every conformance grade and completeness finding is byte-identical; and the generated index grows exactly two new members. From 1.0.0 forward the schema surface is additive-only across minors, and any breaking change requires v2.0.0.
+
+### Behavior change (important for consumers)
+
+This release adds two generated `index` members and three finding codes; a stored record needs one re-stamp. What changes:
+
+1. **Re-stamp required.** The generated index gains `index.achievements` and `index.restricted_substances_declared`, both now schema-required, and `builder_version` bumps to `0.6.0`. A record stored under a previous version fails `build-index --check` (and the index-parity step in `validate`) until re-stamped with `ulc build-index`; the re-stamp adds only the two new members and the builder version and moves nothing else.
+2. **One new default-visible line.** `ulc validate` emits a single `achievements/summary` INFO per record (`achievements: N documented, M claimed`), always shown. Per-record INFO counts rise accordingly.
+3. **Two verbose-only codes.** `achievements/state` (one per non-none theme) and `achievements/roadmap` (attach the certificate to raise a claimed theme to documented) are hidden from text output unless `--verbose` and always present in JSON, exactly like the enrichment and observation codes.
+4. **Hidden-count hint reworded.** The merged hidden-findings hint now reads `N optional findings hidden (enrichment, observations, and achievements); use --verbose or --json`.
+5. **From-sheet default.** Newly converted records stamp `ulc_version` `1.0.0` (the from-sheet default; records supplying the `ulc_version` column are unaffected).
+6. **Grades do not move.** Every conformance grade, `index.conformance_level`, and completeness finding is byte-identical; the only golden-output changes are the three new achievements codes and the reworded hint.
+
+### Schema (additive, optional)
+
+- Two new generated `index` members: `achievements` (a `themes` object carrying all six fixed theme keys, each an `AchievementTheme`, plus a `documented_count` rollup) and `restricted_substances_declared` (a sorted array of restricted-substances program tokens declared in the ledger). The `themes` container is open, so future themes add without breaking.
+- New `AchievementTheme` `$def`: per theme, a `state`, the qualifying `programs`, the contributing `source_attestation_ids`, an `evidence_present` flag, and an optional `best_metric_ref`.
+- `attestations[]` gains two optional fields: `sustainability_metric` (a payload for `ceam_score`, `embodied_carbon_kgco2e` with its required `embodied_carbon_scope` and `embodied_carbon_functional_unit`, `c2c_overall_level`, and `method_variant`) and `issuing_authority`.
+- Three new taxonomy enums: `EmbodiedCarbonScope`, `CircularityTier`, and `AchievementState`.
+
+### Grading and achievements
+
+- A new `internal/achievements` package computes the Product Achievements axis as a pure function of one record, modeled on the completeness package's shapes by copying, not importing (a package-level import guard enforces the boundary in both directions). It reads three inputs only: the merged attestation ledger (`attestations[]` and `product_family.shared_attestations[]`), `sustainability_declaration.declaration_type`, and `record_status_as_of` (for the record-relative expiry comparison). The wall clock never enters, so `index.achievements` is reproducible and `build-index --check` is stable across time.
+- A theme is `documented` when a qualifying, non-disqualified attestation carries an attached `source_document_ref` (a file reference the schema guarantees to have a filename and a SHA-256 hash); `claimed` when a qualifying contribution carries none; `none` otherwise. A `status` of `expired`, `withdrawn`, or `not_applicable` removes an attestation from every theme, and an attestation whose `valid_until` precedes the record's `record_status_as_of` cannot support `documented`. `documented` is a record fact, never a verification by ULC.
+- The emergency theme is ledger-only (`ul_924`, `ul_1994`, `icel`), with no product-role or category gate, so a dedicated exit sign and a normal fixture with an emergency-power option earn it identically.
+- The program-to-theme map is published as a versioned appendix in the compliance-attestation glossary; `documented_count` is the only rollup, and there is no weighted or overall achievement grade. `restricted_substances_declared` is a sibling legal-floor flag, never a theme.
+
+### Tooling
+
+- `BuilderVersion` `0.5.0` to `0.6.0`: the builder now stamps `index.achievements` and `index.restricted_substances_declared`, emitting them with JSON-normalized types so the stored index round-trips through the drift check without false positives.
+- `ulc validate` and `ulc from-sheet` emit the achievements findings immediately after the conformance findings; emission is not gated on the conformance level, since the axes are orthogonal. `ulc from-sheet` stamps `ulc_version` `1.0.0` by default.
+
+### Examples and docs
+
+- All eight reference records re-stamped to `builder_version` `0.6.0` with their new `index.achievements` and `index.restricted_substances_declared` members; each record's authored `ulc_version` is unchanged (five at `0.8.0`, three at `0.10.0`), which is the live backward-compatibility proof. The Cooper AtLite AUX record is the corpus's one `documented` case (its UL 924 attestation carries an attached UL Certificate of Compliance), so its emergency theme is `documented`; the Sure-Lites ES and LPX signs are `claimed` on emergency, the LPX also `claimed` on energy (California Title 20), Selux Aya `claimed` on dark sky and material health, Vode Nexa `claimed` on material health, and both Lumenpulse records declare `rohs`.
+- `methodology.md` gains a two-grading-axes section covering the Master Ledger, the reproducible-inputs invariant, and the expiry and status rules; `compliance-attestation.md` gains the achievement-themes appendix and refines the ICEL classification to the emergency-lighting conformity scheme; `how-it-works.md` and `README.md` present both axes; `ROADMAP.md` records v1.0.0 as the two-axis and compatibility-commitment milestone and foreclosing every deferred breaking change to v2.0.0.
+
 ## 0.10.0 (2026-07-08)
 
 Exit signs and emergency luminaires become first-class, gradable product classes. Two new optional blocks (`exit_sign` and `emergency`), ten new taxonomy vocabularies, and per-class grading profiles let an exit-sign-only or emergency-only manufacturer reach the grade its cutsheets actually support rather than being stranded at `incomplete` for lacking an LM-79 report it never produces. Every change is additive and non-gating: a v0.9.x record validates and grades identically, and no existing grade or `index.conformance_level` moves.

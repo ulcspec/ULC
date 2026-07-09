@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/achievements"
 	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
@@ -203,6 +204,11 @@ USAGE
 	// defect). A record is whatever level its data achieves; there is nothing to
 	// fall short of, so conformance produces no WARNINGs.
 	completeness.Report(recordMap, report)
+
+	// 5. Product Achievements report: the second, orthogonal grading axis. Emits the
+	// achievements headline plus the verbose-only per-theme states and roadmap. Not
+	// gated on the conformance level (the axes are independent).
+	achievements.Report(recordMap, report)
 
 	report.Finalize()
 
@@ -433,6 +439,7 @@ USAGE
 		}
 		v.Validate(rawTree, report)
 		completeness.Report(res.Record, report)
+		achievements.Report(res.Record, report)
 		report.Finalize()
 
 		// conformance_level is always stamped now (the grader floors at `incomplete`),

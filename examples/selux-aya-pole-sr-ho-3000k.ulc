@@ -416,6 +416,57 @@
     }
   },
   "index": {
+    "achievements": {
+      "documented_count": 0,
+      "themes": {
+        "circularity": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "dark_sky": {
+          "evidence_present": false,
+          "programs": [
+            "darksky_approved"
+          ],
+          "source_attestation_ids": [
+            "darksky_selux_aya_sr_ho_3000k"
+          ],
+          "state": "claimed"
+        },
+        "embodied_carbon": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "emergency": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "energy": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "material_health": {
+          "evidence_present": false,
+          "programs": [
+            "declare",
+            "lbc_red_list_approved"
+          ],
+          "source_attestation_ids": [
+            "declare_selux_aya",
+            "lbc_red_list_approved_selux_aya"
+          ],
+          "state": "claimed"
+        }
+      }
+    },
     "attestation_programs": [
       "baa",
       "cie_13",
@@ -429,7 +480,7 @@
       "rohs"
     ],
     "bug_rating": "B2-U0-G1",
-    "builder_version": "0.5.0",
+    "builder_version": "0.6.0",
     "catalog_model": "Aya Pole or Pendant (AYAP)",
     "catalog_number": "selux-aya-pole-sr-ho-3000k",
     "color_tunability": "static_white",
@@ -455,6 +506,9 @@
     "outdoor_distribution": "type_v",
     "primary_category": "flood_area_site",
     "primary_distribution": "symmetric",
+    "restricted_substances_declared": [
+      "rohs"
+    ],
     "search_keywords": [
       "Aya",
       "Aya Pole AYAP-SR-1-HO-30-BL-UNV: Symmetric Round (Type V) optic, Single Post Top, High Output, 3000K DarkSky-compliant, Black Semi-Matte, 120-277V universal",

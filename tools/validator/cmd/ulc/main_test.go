@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/ulcspec/ULC/tools/validator/internal/index"
 )
 
 // copyFlatDir copies a flat directory of files (the sheet bundle fixtures are flat)
@@ -208,5 +210,113 @@ func TestCLIFromSheetWritesIncompleteRecord(t *testing.T) {
 	idx, _ := rec["index"].(map[string]any)
 	if got := idx["conformance_level"]; got != "incomplete" {
 		t.Errorf("written record conformance_level = %v, want \"incomplete\"", got)
+	}
+}
+
+// TestAchievementsIndexRoundTrip is the P1 guard for the nested achievements subtree.
+// A freshly built index, marshaled and re-read through the exact validate pipeline
+// (decodeStrict + normalizeNumbers), must diff against the fresh build with ZERO drift.
+// This exercises the stored(int64 / []any / map[string]any) vs built comparison that
+// index.Diff actually performs (a nested map value falls to type-strict reflect.DeepEqual),
+// and confirms every always-present empty array serializes as [] not null. valuesEqual is
+// deliberately untouched: any drift here is a builder-side emission-type bug, not a
+// comparator gap.
+func TestAchievementsIndexRoundTrip(t *testing.T) {
+	root := repoRoot(t)
+	matches, err := filepath.Glob(filepath.Join(root, "examples", "*.ulc"))
+	if err != nil {
+		t.Fatalf("glob examples: %v", err)
+	}
+	if len(matches) == 0 {
+		t.Fatal("no examples/*.ulc found")
+	}
+	for _, path := range matches {
+		name := filepath.Base(path)
+		t.Run(name, func(t *testing.T) {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read: %v", err)
+			}
+			raw, err := decodeStrict(data)
+			if err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			normalized, err := normalizeNumbers(raw)
+			if err != nil {
+				t.Fatalf("normalize: %v", err)
+			}
+			record := normalized.(map[string]any)
+			freshBuild := index.Build(record)
+
+			buf, err := json.Marshal(freshBuild)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			// Every always-present array must serialize as [] not null (a nil slice from
+			// dedupeSortedStrings would fail here and fail the Diff below).
+			for _, key := range []string{`"programs":null`, `"source_attestation_ids":null`, `"restricted_substances_declared":null`} {
+				if strings.Contains(string(buf), key) {
+					t.Fatalf("%s: an always-present array serialized as null (%s):\n%s", name, key, string(buf))
+				}
+			}
+
+			reRaw, err := decodeStrict(buf)
+			if err != nil {
+				t.Fatalf("re-decode: %v", err)
+			}
+			reNorm, err := normalizeNumbers(reRaw)
+			if err != nil {
+				t.Fatalf("re-normalize: %v", err)
+			}
+			reread := reNorm.(map[string]any)
+
+			if diffs := index.Diff(reread, freshBuild); len(diffs) > 0 {
+				t.Errorf("%s: nested-index Diff round-trip drift (fix builder emission types, never valuesEqual):\n%s",
+					name, strings.Join(diffs, "\n"))
+			}
+		})
+	}
+}
+
+// TestManufacturerRecycleProgramIndexValidates pins the 5.7 sub-point the corpus cannot:
+// a record whose only sustainability signal is a manufacturer_recycle_program declaration
+// builds an index with circularity claimed and an EMPTY programs array, and that built
+// index schema-validates (an empty AttestationProgram array, never a non-enum string).
+func TestManufacturerRecycleProgramIndexValidates(t *testing.T) {
+	var rec map[string]any
+	if err := json.Unmarshal([]byte(identityOnlyRecord), &rec); err != nil {
+		t.Fatalf("parse base record: %v", err)
+	}
+	rec["sustainability_declaration"] = map[string]any{"declaration_type": "manufacturer_recycle_program"}
+	rec["index"] = index.Build(rec)
+
+	ach, _ := rec["index"].(map[string]any)["achievements"].(map[string]any)
+	themes, _ := ach["themes"].(map[string]any)
+	circ, _ := themes["circularity"].(map[string]any)
+	if circ["state"] != "claimed" {
+		t.Errorf("circularity state = %v, want claimed", circ["state"])
+	}
+	programs, ok := circ["programs"].([]any)
+	if !ok {
+		t.Fatalf("circularity programs is %T, want []any", circ["programs"])
+	}
+	if len(programs) != 0 {
+		t.Errorf("circularity programs = %v, want empty (no AttestationProgram token)", programs)
+	}
+
+	// The built record must schema-validate: an empty enum array is valid; a non-enum
+	// string (the bug this guards against) would be a schema error.
+	dir := t.TempDir()
+	recordPath := filepath.Join(dir, "recycle.ulc")
+	data, err := json.Marshal(rec)
+	if err != nil {
+		t.Fatalf("marshal record: %v", err)
+	}
+	if err := os.WriteFile(recordPath, data, 0o644); err != nil {
+		t.Fatalf("write record: %v", err)
+	}
+	schemaDir := filepath.Join(repoRoot(t), "schema")
+	if rc := runValidate([]string{"--schema-dir", schemaDir, recordPath}); rc != 0 {
+		t.Errorf("validate exit = %d, want 0 (a manufacturer_recycle_program built index must schema-validate)", rc)
 	}
 }

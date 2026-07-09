@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/achievements"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	"github.com/ulcspec/ULC/tools/validator/internal/validate"
 )
@@ -115,6 +116,9 @@ func renderGolden(t *testing.T, v *validate.Validator, path, name string) (txt, 
 		t.Fatalf("%s: top-level JSON is not an object", path)
 	}
 	Report(rec, report)
+	// The Product Achievements axis, emitted exactly as runValidate does (immediately
+	// after completeness.Report), so the goldens capture the second axis too.
+	achievements.Report(rec, report)
 	report.Finalize()
 
 	var txtBuf, jsBuf bytes.Buffer

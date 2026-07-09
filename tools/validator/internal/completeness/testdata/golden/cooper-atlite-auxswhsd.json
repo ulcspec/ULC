@@ -2,6 +2,18 @@
   "findings": [
     {
       "level": "INFO",
+      "code": "achievements/state",
+      "message": "emergency achievement: documented (ul_924)",
+      "path": "/index/achievements/themes/emergency"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/summary",
+      "message": "achievements: 1 documented, 0 claimed",
+      "path": "/index/achievements"
+    },
+    {
+      "level": "INFO",
       "code": "conformance/enrichment",
       "message": "compatible accessories not listed",
       "path": "/compatible_accessories",
@@ -91,6 +103,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 12
+    "infos": 14
   }
 }

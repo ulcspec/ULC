@@ -2,6 +2,36 @@
   "findings": [
     {
       "level": "INFO",
+      "code": "achievements/roadmap",
+      "message": "to document the emergency achievement, attach the certificate document to the ul_924 attestation",
+      "path": "/index/achievements/themes/emergency"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/roadmap",
+      "message": "to document the energy achievement, attach the certificate document to the ca_title_20 attestation",
+      "path": "/index/achievements/themes/energy"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
+      "message": "emergency achievement: claimed (ul_924)",
+      "path": "/index/achievements/themes/emergency"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
+      "message": "energy achievement: claimed (ca_title_20)",
+      "path": "/index/achievements/themes/energy"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/summary",
+      "message": "achievements: 0 documented, 2 claimed",
+      "path": "/index/achievements"
+    },
+    {
+      "level": "INFO",
       "code": "conformance/enrichment",
       "message": "compatible accessories not listed",
       "path": "/compatible_accessories",
@@ -97,6 +127,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 12
+    "infos": 17
   }
 }

@@ -252,6 +252,32 @@
           "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, ULD, GLDF) exist for this record without walking the full `source_files` array.",
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" }
+        },
+        "achievements": {
+          "description": "Product Achievements view: per-theme third-party program qualifications computed from the record's Master Ledger, orthogonal to `conformance_level`. GENERATED, NOT HAND-AUTHORED. `themes` always carries the six fixed theme keys, each an AchievementTheme; the container is open (no `additionalProperties` bar) so future themes add without breaking consumers. `documented_count` is the factual count of themes at the `documented` state; it is the only sanctioned rollup, and there is deliberately no weighted or overall achievement grade.",
+          "type": "object",
+          "properties": {
+            "themes": {
+              "description": "The six fixed achievement themes, always all present.",
+              "type": "object",
+              "properties": {
+                "embodied_carbon": { "$ref": "#/$defs/AchievementTheme" },
+                "circularity": { "$ref": "#/$defs/AchievementTheme" },
+                "material_health": { "$ref": "#/$defs/AchievementTheme" },
+                "energy": { "$ref": "#/$defs/AchievementTheme" },
+                "dark_sky": { "$ref": "#/$defs/AchievementTheme" },
+                "emergency": { "$ref": "#/$defs/AchievementTheme" }
+              },
+              "required": ["embodied_carbon", "circularity", "material_health", "energy", "dark_sky", "emergency"]
+            },
+            "documented_count": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["themes", "documented_count"]
+        },
+        "restricted_substances_declared": {
+          "description": "Restricted-substances programs declared anywhere in the record's Master Ledger (RoHS, REACH, Prop 65, and similar). GENERATED, NOT HAND-AUTHORED. Deduplicated and sorted. Surfaced as a compliance flag beside achievements, never inside them: restricted-substances compliance is a legal floor, not a prestige achievement. An empty array means nothing was declared.",
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/AttestationProgram" }
         }
       },
       "required": [
@@ -259,8 +285,30 @@
         "builder_version",
         "conformance_level",
         "manufacturer_slug",
-        "catalog_model"
+        "catalog_model",
+        "achievements",
+        "restricted_substances_declared"
       ]
+    },
+
+    "AchievementTheme": {
+      "title": "Achievement theme state",
+      "description": "One theme's computed state inside `index.achievements.themes`. GENERATED, NOT HAND-AUTHORED. `state` is the theme's achievement state. `programs` lists the qualifying AttestationProgram tokens found in the ledger for this theme, deduplicated and sorted. `source_attestation_ids` lists the `attestation_id` values of contributing attestations (best-effort, since `attestation_id` is optional on an attestation). `evidence_present` is true when at least one contributing attestation carries an attached, non-disqualified evidence document. `best_metric_ref` names the `attestation_id` whose `sustainability_metric` best represents the theme; it is omitted when no qualifying metric exists.",
+      "type": "object",
+      "properties": {
+        "state": { "$ref": "taxonomy.schema.json#/$defs/AchievementState" },
+        "programs": {
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/AttestationProgram" }
+        },
+        "source_attestation_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidence_present": { "type": "boolean" },
+        "best_metric_ref": { "type": "string" }
+      },
+      "required": ["state", "programs", "source_attestation_ids", "evidence_present"]
     },
 
     "Provenance": {
@@ -1362,7 +1410,26 @@
           },
           "required": ["type"]
         },
-        "source_document_ref": { "$ref": "#/$defs/FileReference" }
+        "source_document_ref": { "$ref": "#/$defs/FileReference" },
+        "issuing_authority": {
+          "description": "Named operator of the program, for programs run by more than one operator (for example the several EPD program operators). Optional descriptive data; it never affects the computed achievement state.",
+          "type": "string"
+        },
+        "sustainability_metric": {
+          "title": "Sustainability metric payload",
+          "description": "Optional quantitative payload for a sustainability attestation, hanging off the attestation so the numbers inherit its status, evidence, and expiry. `ceam_score` is the TM66 CEAM design score (0 to 4). `embodied_carbon_kgco2e` is a declared embodied-carbon figure; when it is present, `embodied_carbon_scope` and `embodied_carbon_functional_unit` are required so the number is never ambiguous about its life-cycle boundary or its declared unit. `c2c_overall_level` carries a Cradle to Cradle overall rating. `method_variant` records a regional or method sub-variant (for example a TM65 national annex such as TM65NA).",
+          "type": "object",
+          "properties": {
+            "ceam_score": { "type": "number", "minimum": 0, "maximum": 4 },
+            "embodied_carbon_kgco2e": { "type": "number" },
+            "embodied_carbon_scope": { "$ref": "taxonomy.schema.json#/$defs/EmbodiedCarbonScope" },
+            "embodied_carbon_functional_unit": { "type": "string" },
+            "c2c_overall_level": { "$ref": "taxonomy.schema.json#/$defs/CircularityTier" },
+            "method_variant": { "type": "string" }
+          },
+          "if": { "required": ["embodied_carbon_kgco2e"] },
+          "then": { "required": ["embodied_carbon_scope", "embodied_carbon_functional_unit"] }
+        }
       },
       "required": ["program", "value_type"]
     },

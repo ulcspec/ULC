@@ -176,7 +176,7 @@ func TestVerboseGatesOptionalFindingsInText(t *testing.T) {
 			if !strings.Contains(out, "conformance level") || !strings.Contains(out, "/colorimetry/sdcm_step") {
 				t.Errorf("%s: summary and tier roadmap must always render:\n%s", c.name, out)
 			}
-			wantHint := fmt.Sprintf("%d optional findings hidden (enrichment and observations); use --verbose or --json", c.hidden)
+			wantHint := fmt.Sprintf("%d optional findings hidden (enrichment, observations, and achievements); use --verbose or --json", c.hidden)
 			if !strings.Contains(out, wantHint) {
 				t.Errorf("%s: expected merged hint %q:\n%s", c.name, wantHint, out)
 			}
@@ -226,12 +226,12 @@ func TestOmitFlagHintDropsFlagAdvice(t *testing.T) {
 	}
 	// Default: the flag advice is present.
 	def := build(false)
-	if !strings.Contains(def, "1 optional findings hidden (enrichment and observations); use --verbose or --json") {
+	if !strings.Contains(def, "1 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json") {
 		t.Errorf("default hint should include the flag advice:\n%s", def)
 	}
 	// OmitFlagHint: the count remains, the flag advice is gone.
 	omit := build(true)
-	if !strings.Contains(omit, "1 optional findings hidden (enrichment and observations)") {
+	if !strings.Contains(omit, "1 optional findings hidden (enrichment, observations, and achievements)") {
 		t.Errorf("omit hint should still report the count:\n%s", omit)
 	}
 	if strings.Contains(omit, "--verbose") || strings.Contains(omit, "--json") {
@@ -259,5 +259,66 @@ func TestWriteJSONRoundTrip(t *testing.T) {
 	}
 	if round.Findings[0].Code != CodeIndexDrift {
 		t.Errorf("code lost in round-trip: got %q", round.Findings[0].Code)
+	}
+}
+
+// TestAchievementsFindingSuppression pins the 2.10 suppression policy: in non-verbose
+// text the achievements headline (achievements/summary) always renders, while the
+// per-theme states (achievements/state) and the claimed-to-documented roadmap
+// (achievements/roadmap) are hidden and counted; JSON always carries all three; verbose
+// text shows all three.
+func TestAchievementsFindingSuppression(t *testing.T) {
+	build := func() *Report {
+		r := NewReport()
+		r.AddInfo(CodeAchievementsSummary, "/index/achievements", "achievements: 1 documented, 1 claimed")
+		r.Add(Finding{Level: LevelInfo, Code: CodeAchievementsState, Path: "/index/achievements/themes/emergency",
+			Message: "emergency achievement: documented (ul_924)"})
+		r.Add(Finding{Level: LevelInfo, Code: CodeAchievementsRoadmap, Path: "/index/achievements/themes/energy",
+			Message: "to document the energy achievement, attach the certificate document to the dlc_qpl attestation"})
+		r.Finalize()
+		return r
+	}
+
+	// Non-verbose text: summary shown; state and roadmap hidden and counted.
+	quiet := build()
+	buf := &bytes.Buffer{}
+	if err := quiet.WriteText(buf, "rec.ulc"); err != nil {
+		t.Fatalf("WriteText: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "achievements/summary") {
+		t.Errorf("achievements/summary must render by default:\n%s", out)
+	}
+	if strings.Contains(out, "achievements/state") || strings.Contains(out, "achievements/roadmap") {
+		t.Errorf("achievements/state and /roadmap must be hidden without --verbose:\n%s", out)
+	}
+	if !strings.Contains(out, "2 optional findings hidden (enrichment, observations, and achievements)") {
+		t.Errorf("expected two hidden achievements findings named in the hint:\n%s", out)
+	}
+
+	// JSON: all three present regardless of verbosity.
+	jbuf := &bytes.Buffer{}
+	if err := build().WriteJSON(jbuf); err != nil {
+		t.Fatalf("WriteJSON: %v", err)
+	}
+	js := jbuf.String()
+	for _, code := range []string{"achievements/summary", "achievements/state", "achievements/roadmap"} {
+		if !strings.Contains(js, string(code)) {
+			t.Errorf("JSON must always carry %q:\n%s", code, js)
+		}
+	}
+
+	// Verbose text: all three render.
+	loud := build()
+	loud.Verbose = true
+	buf.Reset()
+	if err := loud.WriteText(buf, "rec.ulc"); err != nil {
+		t.Fatalf("WriteText verbose: %v", err)
+	}
+	lout := buf.String()
+	for _, code := range []string{"achievements/summary", "achievements/state", "achievements/roadmap"} {
+		if !strings.Contains(lout, string(code)) {
+			t.Errorf("verbose text must render %q:\n%s", code, lout)
+		}
 	}
 }
