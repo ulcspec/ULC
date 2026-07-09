@@ -9,62 +9,68 @@ ships when batches are ready, not on a calendar.
 ULC uses [SemVer](https://semver.org/). The version a record conforms to is
 declared in its `ulc_version` field.
 
-- **Major**: breaking schema changes (removed fields, narrowed types, removed
-  enum values, changed `required[]`).
+- **Major**: either a breaking schema change (a removed field, a narrowed type,
+  a removed enum value, a changed `required[]`), or a milestone that marks a
+  backward-compatibility commitment with an additive-only surface. v1.0.0 is the
+  second kind: it adds a whole grading axis and removes nothing.
 - **Minor**: backward-compatible additions and clarifications.
 - **Patch**: corrections and non-structural edits.
 
-v1.0.0 marks the first formal backward-compatibility commitment for the
-schema surface. Pre-1.0 releases generally aim for additive changes;
-compatibility-tightening changes may occur when documented in the changelog
-(as with the v0.3.0 `cri_tier` enum tightening).
+v1.0.0 is the first formal backward-compatibility commitment for the schema
+surface. From v1.0.0 forward the schema surface is additive-only across minors;
+any breaking change (a removed field, a narrowed type, a removed enum value, a
+changed `required[]`) requires the next major, v2.0.0. Pre-1.0 releases generally
+aimed for additive changes; compatibility-tightening changes occurred only when
+documented in the changelog (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v0.10.x
+## Active version: v1.0.x
 
-The current line. v0.10.0 makes exit signs and emergency luminaires first-class
-gradable product classes. Two optional blocks (`exit_sign` and `emergency`) and
-ten taxonomy vocabularies describe the legend, illumination mode, battery, and
-self-test story, and per-class grading profiles grade a sign or emergency
-luminaire against its own dataset so an exit-sign-only or emergency-only maker
-reaches its honest grade rather than stranding at incomplete. UL 924 now
-satisfies the core safety gate and, for North American dedicated-class products,
-a dedicated listing row. Every change is additive and non-gating: a v0.9.x record
-validates and grades identically.
+The current line, and ULC's first formal backward-compatibility commitment.
+v1.0.0 adds **Product Achievements**, a second computed axis alongside data
+completeness: a per-theme view (embodied carbon, circularity, material health,
+energy, dark sky, emergency) of the third-party program qualifications a record
+demonstrates, each `none`, `claimed`, or `documented` by whether a qualifying
+attestation carries attached, unexpired evidence, computed from the attestations a
+record already carries and
+stamped into `index.achievements` (with the `index.restricted_substances_declared`
+sibling flag). Emergency capability is part of that axis and applies to every
+product carrying a qualifying token, a dedicated exit sign or a normal fixture
+with a factory emergency-power option alike. The release is additive to the authored
+surface: every authored schema change is a new optional field, def, or enum, and no
+field, token, or code is removed or narrowed; grades and completeness findings are
+byte-identical. The two new generated index members are required in the built index,
+so each stored record re-stamps with `ulc build-index` to gain them.
+
+The 1.0 milestone is defined by the two computed axes and the compatibility
+commitment, justified by the additive-only release history and a validator
+hardened against real cutsheets. Two items that earlier drafts framed as 1.0
+gates, a completed end-to-end manufacturer pilot and drafted adjacent-standard
+mappings, are not release gates: the 1.0 milestone is itself what enables the
+pilots and the public-site rewrite, not the reverse. They are tracked as
+post-1.0 adoption work below.
 
 - Continued expansion of reference records, real cutsheets only (see
   `CONTRIBUTING.md` for sourcing rules)
+- A real EPD-backed or Cradle to Cradle-backed example, added when a manufacturer
+  supplies a real cutsheet with its source documents (real-data rule; the
+  embodied-carbon and circularity ladders are fixture-tested until then, never
+  fabricated on an example)
+- A selected-manufacturer pilot carried through end-to-end (adoption, not a gate)
+- Adjacent-standard mappings (GLDF, ETIM, IES LM-63, EULUMDAT) drafted (adoption,
+  not a gate)
 - Additional PIM platform mapping guides as patterns mature
 - Patch releases for clarifications, doc fixes, and mapping refinements
 - No new normative fields without a minor bump
-
-## Toward v1.0.0
-
-v1.0.0 marks the first formal backward-compatibility commitment for the schema
-surface. The direction is a second computed axis alongside data completeness: a
-view of the third-party program achievements a record can demonstrate, computed
-from the attestations a record already carries. This is described at the level
-of direction only; the field shapes are not committed until the work lands with
-real example records. Emergency capability is part of that axis: a normal fixture
-carrying a factory emergency-power option (the `emergency_power_option` role)
-demonstrates an emergency-lighting achievement rather than gating a completeness
-tier, so emergency-as-achievement waits for v1.0.0 while the v0.10.0 `emergency`
-block records the underlying data today.
-
-The criteria for declaring v1.0.0, schema-stable and ecosystem-mature:
-
-- Reference records covering each declared category
-- Validator hardened against malformed real-world cutsheets
-- Stable PIM mapping guidance for the documented platforms
-- At least one selected-manufacturer pilot completed end-to-end
-- Adjacent-standard mappings (GLDF, ETIM, IES LM-63, EULUMDAT) drafted
 
 ## Deferred schema work
 
 Patterns observed in real cutsheets that the current schema does not yet
 model natively. Each is expected to land when a second independent example
 record surfaces the same need, so the change stays grounded rather than
-speculative. Breaking changes among these are held for a future major
-revision.
+speculative. With v1.0.0's compatibility commitment now in force, every
+breaking item among these, the plural attestation references, the multi-claim
+and multi-framework lumen-maintenance arrays, and the structured safety-listing
+detail, is foreclosed to the next major, v2.0.0; minors stay additive-only.
 
 - **Accessory photometric records.** When a mechanical accessory genuinely
   changes photometry (louver, snoot, distribution-altering lens), the
@@ -118,10 +124,14 @@ revision.
   defined but unwired. Wiring them may need new sub-structure rather than a
   simple field drop, so they are held until a real cutsheet or test report
   surfaces the shape, rather than committing an object design speculatively.
-- **Retirement candidates for v1.0.0.** Two enums carry an open "earns its
-  place?" question for the first backward-compatibility commitment:
-  `LegacyCutoffClassification` (deprecated, kept only for lossless ingestion of
-  legacy datasheets) and `RecordStatus`. Either may be pruned in v1.0.0.
+- **Retirement candidates resolved as KEEP.** Two enums carried an open "earns
+  its place?" question for the first backward-compatibility commitment.
+  `LegacyCutoffClassification` is kept: it is the lossless-ingestion path for
+  legacy datasheets and the substrate the dark-sky achievement theme reads.
+  `RecordStatus` is kept: it is confirmed pure envelope metadata that the
+  required envelope, the sheet converter default, every example record, and the
+  PIM mapping guides depend on. v1.0.0 ships zero breaking changes, so neither is
+  pruned; any future removal is a v2.0.0 change.
 - **Normal-power transfer threshold.** The `emergency` block (v0.10.0) carries
   the defining emergency data (battery chemistry and capacity, rated runtime,
   emergency-mode lumen output, self-test capability), but not the voltage at
@@ -160,11 +170,27 @@ revision.
   when it differs from the seller. A future revision may add a structured
   listing-detail object alongside the token. Relates to the `New
   AttestationProgram values` item above.
+- **Future achievement themes.** The achievements axis ships six themes under an
+  open theme container, so new themes add without breaking. Controls and
+  domestic-content themes are planned for v1.1; hazardous-location and
+  regional-market-access-consolidation themes, a social-responsibility theme
+  (the organization-level ILFI JUST label, `just_label`, is unthemed-tracked
+  toward it), and a disposition for the project-level programs (LEED, WELL)
+  beyond their current unthemed-tracked state, are candidates for v1.2.
+- **Attestation-document byte-verification.** `VerifyHashes` byte-checks
+  `source_files[].reference` hashes today; the evidence documents the achievements
+  axis reads (`attestations[].source_document_ref`) are checked for presence, not
+  byte-verified, consistent with the cutsheet treatment. Byte-verifying attachment
+  documents is future work.
+- **DarkSky as a sustainability facet, and C2C per-category levels.** The dark-sky
+  theme stands alone today; folding it under a broader sustainability grouping,
+  and recording Cradle to Cradle per-category levels (the `sustainability_metric`
+  carries the overall level only), are non-breaking additions held for a real need.
 
-## Explicitly NOT in v1.0.0
+## Explicitly out of scope
 
 These items are deferred or out of scope. Listed explicitly so contributors
-do not propose them for v1.0.0:
+do not propose them:
 
 - **Site, design, or installation context**. Lighting design data belongs in
   design tools, not in fixture metadata. This is the scope rule from

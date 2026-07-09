@@ -107,7 +107,7 @@ Two columns carry the load. **Category** sorts each badge into one governance fa
 | `performance_verified` | Performance Verified | A LIA Performance Verified claim (independently checked headline performance). | LIA Performance Verified | trade-body | `tracked` |
 | `tm66_assured` | TM66 Assured | Conformity with TM-66 circular-economy assessment for luminaires (the CIBSE/SLL/LIA TM66 framework), an LIA-administered assurance. | CIBSE TM-66 / LIA TM66 Assured | sustainability / trade-body | `tracked` |
 | `tm65_2` | TM65.2 | Embodied-carbon assessment of building services equipment per CIBSE TM65 (the 2.x lighting-relevant edition). | CIBSE TM65 | sustainability / trade-body | `tracked` |
-| `icel` | ICEL | Industry Committee for Emergency Lighting registration (UK emergency-lighting trade scheme). | ICEL (UK) | trade-body / safety-listing | `tracked` |
+| `icel` | ICEL | Registration under the Industry Committee for Emergency Lighting conformity scheme: an emergency-lighting product declared to conform to the ICEL and BS EN emergency-lighting requirements. A product-level emergency-lighting qualification, distinct from LIA-style trade-body membership, which is why the achievement axis themes it under `emergency` while the LIA membership tokens stay unthemed. | ICEL (UK) | emergency-lighting | `tracked` |
 | `iso_9001` | ISO 9001 | Quality management system certification of the manufacturing organization. | ISO 9001 | trade-body | `tracked` |
 
 ### Subtable B: test-method attestations
@@ -165,3 +165,36 @@ These tokens reference measurement and method standards rather than safety listi
 | `csa_c653` | CSA C653 | Photometric performance (unit power density / energy performance) of roadway and street lighting luminaires. | CSA C653 | test-method (roadway) | `tracked` |
 | `csa_c811` | CSA C811 | Performance (unit power density) of highmast luminaires for roadway lighting. | CSA C811 | test-method (roadway) | `tracked` |
 | `ntcip_1213` | NTCIP 1213 | Object definitions for Electrical and Lighting Management Systems (ELMS): NTCIP data elements for monitoring and controlling roadway electrical and lighting systems. | NTCIP 1213 | test-method (roadway / controls) | `tracked` |
+
+## Achievement themes
+
+The Product Achievements axis (see [methodology.md](methodology.md)) computes a per-theme picture over the same attestation ledger this glossary enumerates. It is orthogonal to conformance grading: the `Conformance role` column above is unchanged, and no token gains a third role. This appendix is the published, versioned map from `AttestationProgram` tokens to achievement themes.
+
+Each theme is one of three states. `none` means no qualifying attestation contributes. `claimed` means a qualifying, non-disqualified attestation is present but no unexpired attached evidence supports `documented`: either no evidence document is attached, or its only attached evidence is past its `valid_until` relative to the record's `record_status_as_of`. `documented` means a qualifying, non-disqualified attestation carries an attached, unexpired `source_document_ref` (a file reference whose SHA-256 content hash is the integrity anchor). The `claimed`-to-`documented` discriminator is evidence that currently supports it, never the `AttestationStatus` token; a status of `expired`, `withdrawn`, or `not_applicable` removes an attestation from every theme, and an attestation whose `valid_until` precedes the record's `record_status_as_of` cannot support `documented` and so caps at `claimed` even with a document attached. `documented` is a record fact, never a verification by ULC.
+
+### Program-to-theme map
+
+| Theme | What it recognizes | Program tokens |
+| --- | --- | --- |
+| `embodied_carbon` | A declared cradle-to-gate (or wider) carbon figure. | `epd_iso_14025`, `tm65_2` |
+| `circularity` | A design or lifecycle circularity rating. | `tm66_assured`, `cradle_to_cradle` |
+| `material_health` | Ingredient and red-list disclosure. | `declare`, `lbc_red_list_free`, `lbc_red_list_approved`, `lbc_red_list_declared`, `hpd`, `cradle_to_cradle` |
+| `energy` | Energy and efficiency qualification. | `dlc_standard`, `dlc_premium`, `dlc_qpl`, `dlc_horticultural`, `energy_star`, `energy_star_downlights_v1`, `ja8_title_24`, `ca_title_20`, `eu_ecodesign_2019_2020`, `eu_energy_label_2019_2015`, `nrcan_ee_regulations` |
+| `dark_sky` | Light-pollution qualification. | `darksky_approved`, `dlc_luna` |
+| `emergency` | Emergency-lighting product conformity. | `ul_924`, `ul_1994`, `icel` |
+
+`cradle_to_cradle` dual-routes: it is the primary circularity qualification and also contributes to `material_health`. `icel` is themed to `emergency` as the ICEL emergency-lighting product-conformity scheme, distinct from LIA trade-body membership. A `sustainability_declaration.declaration_type` also contributes: `ilfi_declare` and the three `red_list_*` types map to their `material_health` tokens (capped at `claimed`, since a declaration carries no evidence document), and `manufacturer_recycle_program` contributes `circularity = claimed` with no program token.
+
+The `restricted_substances_declared` sibling flag, surfaced beside the themes rather than inside one, records the restricted-substances programs declared in the ledger: `rohs`, `reach`, `reach_svhc`, `weee`, `prop_65`, `tsca`, `pops`, `conflict_minerals_3tg`. Restricted-substances compliance is a legal floor, not a prestige achievement, which is why it is a flag and not a theme.
+
+### Deliberately unthemed programs
+
+Every remaining `AttestationProgram` token is deliberately left unthemed, so a new token added to the enum forces a conscious classification rather than silently defaulting into "all none". The reasons group cleanly:
+
+- **Project- and company-level programs**: `leed_v4`, `leed_v4_1`, `leed_v5`, `well_building_standard`, `living_building_challenge`, `living_community_challenge`. These qualify a building or a community, not a luminaire.
+- **Multi-attribute certifications**: `greencircle_certified`, `epeat`, `ul_ecologo`, and `living_product_challenge` (a product-level net-positive certification). These span energy, materials, packaging, and end-of-life at once, so they map to no single theme.
+- **Organization-level social equity**: `just_label`. The ILFI JUST label describes the manufacturing organization's social-justice and equity practices, not the product's ingredients, so it is not a material-health achievement (a social-responsibility theme candidate).
+- **Mandatory or discontinued disclosure labels**: `ftc_lighting_facts`, `doe_led_lighting_facts`. These are labels, not qualifications.
+- **Domestic content** (`baa`, `baba`, `taa`, `american_iron_and_steel`, `country_of_origin`) and **controls** (`dlc_nlc`, `ntcip_1213`) are held for future themes.
+- **Hazardous location** (`atex`, `iecex`) and **regional market-access marks** (`ce`, `ukca`, `ccc`, `rcm_australia`, `saa_australia`, `saso_saudi`, `kc_korea`, `pse_japan`, `vcci_japan`, `bis_india`, `eac_eaeu`, `inmetro_brazil`, `nom`, `ices_canada`, `fcc`, `enec`, `cb_scheme`, `csa_c653`, `csa_c811`) are held for future consolidation.
+- **Safety, EMC, and component listings**, **lab accreditation and trade-body membership** (LIA tokens, `iso_9001`, `performance_verified`), and **test-method and provenance standards** (the LM, TM, RP, CIE, and ANSI measurement tokens) are never product achievements: a safety listing is a legal floor, a membership is a company credential, and a measurement standard is provenance, not a qualification.

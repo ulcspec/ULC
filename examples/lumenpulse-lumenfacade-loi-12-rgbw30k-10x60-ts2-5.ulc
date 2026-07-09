@@ -272,6 +272,47 @@
     }
   },
   "index": {
+    "achievements": {
+      "documented_count": 0,
+      "themes": {
+        "circularity": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "dark_sky": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "embodied_carbon": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "emergency": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "energy": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "material_health": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        }
+      }
+    },
     "attestation_programs": [
       "baa",
       "c_ul_listed",
@@ -281,7 +322,7 @@
       "rohs"
     ],
     "beam_family": "asymmetric",
-    "builder_version": "0.5.0",
+    "builder_version": "0.6.0",
     "catalog_model": "Lumenfacade Inground LOI Color Changing",
     "catalog_number": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX",
     "color_tunability": "rgbw",
@@ -304,6 +345,9 @@
     "nominal_total_lumens": 546,
     "primary_category": "in_ground_uplight",
     "primary_distribution": "asymmetric",
+    "restricted_substances_declared": [
+      "rohs"
+    ],
     "search_keywords": [
       "Lumenfacade Inground",
       "Lumenfacade Inground LOI Color Changing",

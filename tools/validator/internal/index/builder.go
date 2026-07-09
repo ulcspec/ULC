@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/achievements"
 	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 )
 
@@ -40,7 +41,13 @@ import (
 // RequiredKeys shrinks to identity plus the always-generated keys; the cutsheet
 // moved from schema-required to a graded core item; the roadmap is per-grade to
 // full. Computed levels recompute, so every stored index re-stamps on build-index.
-const BuilderVersion = "0.5.0"
+// 0.6.0: the index gains the Product Achievements axis. `achievements` (a per-theme
+// none / claimed / documented view over the Master Ledger, plus a documented_count
+// rollup) and `restricted_substances_declared` (the sibling legal-floor flag) are now
+// always-stamped generated members, computed by the achievements package. Additive:
+// conformance_level and every other projection are byte-identical. Stored records
+// re-stamp on the next ulc build-index to gain the two new members.
+const BuilderVersion = "0.6.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard
@@ -51,6 +58,8 @@ var RequiredKeys = []string{
 	"conformance_level",
 	"manufacturer_slug",
 	"catalog_model",
+	"achievements",
+	"restricted_substances_declared",
 }
 
 // RequiredKeySources gives the source path for each required key, used when
@@ -227,7 +236,42 @@ func Build(record Record) Index {
 		idx["source_file_types_present"] = stringsToAny(types)
 	}
 
+	// Product Achievements axis, orthogonal to conformance_level. Both members are
+	// ALWAYS stamped (deterministic shape, stable build-index --check). Emitted with
+	// JSON-normalized types (int64 via numberToJSON, non-nil []any via stringsToAny,
+	// map[string]any nesting) so the stored index round-trips through Diff without
+	// false drift: Diff falls to type-strict reflect.DeepEqual for these nested values,
+	// and dedupeSortedStrings would return nil (an invalid JSON array, and unequal to
+	// the stored []any{}) for the always-present empty arrays.
+	ach := achievements.Compute(record)
+	idx["achievements"] = achievementsIndex(ach)
+	idx["restricted_substances_declared"] = stringsToAny(ach.RestrictedSubstances)
+
 	return idx
+}
+
+// achievementsIndex converts an achievements.Result into the JSON-normalized index
+// subtree: every theme a map[string]any with a string state, non-nil []any program and
+// id arrays, a bool evidence flag, and best_metric_ref present only when non-empty; the
+// documented_count an int64.
+func achievementsIndex(res achievements.Result) map[string]any {
+	themes := make(map[string]any, len(res.Themes))
+	for name, th := range res.Themes {
+		entry := map[string]any{
+			"state":                  th.State.String(),
+			"programs":               stringsToAny(th.Programs),
+			"source_attestation_ids": stringsToAny(th.SourceAttestationIDs),
+			"evidence_present":       th.EvidencePresent,
+		}
+		if th.BestMetricRef != "" {
+			entry["best_metric_ref"] = th.BestMetricRef
+		}
+		themes[name] = entry
+	}
+	return map[string]any{
+		"themes":           themes,
+		"documented_count": numberToJSON(float64(res.DocumentedCount)),
+	}
 }
 
 // MissingRequiredKeys returns the sorted list of RequiredKeys absent from a
@@ -507,13 +551,10 @@ func collectAttestationPrograms(record Record) []string {
 	}
 	if sd, ok := record["sustainability_declaration"].(map[string]any); ok {
 		if dt, ok := sd["declaration_type"].(string); ok {
-			mapping := map[string]string{
-				"ilfi_declare":      "declare",
-				"red_list_free":     "lbc_red_list_free",
-				"red_list_approved": "lbc_red_list_approved",
-				"red_list_declared": "lbc_red_list_declared",
-			}
-			if mapped, ok := mapping[dt]; ok {
+			// Single source of truth: the achievements package owns this mapping so
+			// index.attestation_programs and index.achievements.themes.material_health
+			// can never disagree about the same declaration.
+			if mapped, ok := achievements.DeclarationProgramToken(dt); ok {
 				set[mapped] = struct{}{}
 			}
 		}

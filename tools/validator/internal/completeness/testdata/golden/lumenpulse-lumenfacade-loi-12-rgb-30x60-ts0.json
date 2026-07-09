@@ -2,6 +2,12 @@
   "findings": [
     {
       "level": "INFO",
+      "code": "achievements/summary",
+      "message": "achievements: 0 documented, 0 claimed",
+      "path": "/index/achievements"
+    },
+    {
+      "level": "INFO",
       "code": "conformance/enrichment",
       "message": "alpha-opic (circadian) metrics not disclosed",
       "path": "/alpha_opic_metrics",
@@ -282,6 +288,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 36
+    "infos": 37
   }
 }

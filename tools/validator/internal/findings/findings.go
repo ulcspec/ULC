@@ -80,6 +80,23 @@ const (
 	// suggests new disclosures. Suppressed from text output unless --verbose; always
 	// present in JSON.
 	CodeConformanceObservation Code = "conformance/observation"
+
+	// Product achievements. The achievements axis is computed by the builder into
+	// index.achievements (guarded by the build-parity check) and surfaced here as
+	// INFO findings, orthogonal to conformance grading and never a defect. It reports
+	// per-theme third-party program qualifications and the evidence attached to them.
+	//
+	// CodeAchievementsSummary is the one default-visible headline per record: how many
+	// themes are documented and how many are claimed.
+	CodeAchievementsSummary Code = "achievements/summary"
+	// CodeAchievementsState is emitted once per non-none theme, carrying the theme, its
+	// state, and the qualifying programs. Suppressed from text output unless --verbose;
+	// always present in JSON.
+	CodeAchievementsState Code = "achievements/state"
+	// CodeAchievementsRoadmap is the claimed-to-documented roadmap: for each claimed theme
+	// that names at least one program, how to raise it to documented (attach the
+	// certificate). Suppressed from text output unless --verbose; always present in JSON.
+	CodeAchievementsRoadmap Code = "achievements/roadmap"
 )
 
 // Finding is a single diagnostic.
@@ -221,11 +238,13 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 	}
 	hidden := 0
 	for _, f := range r.Findings {
-		// The optional conformance findings (the enrichment roadmap and the
-		// observation notes) are suppressed in text unless Verbose is set. The
-		// achieved-level summary and the tier roadmap (other conformance codes)
-		// always render. WriteJSON keeps them.
-		if !r.Verbose && (f.Code == CodeConformanceEnrichment || f.Code == CodeConformanceObservation) {
+		// The optional findings are suppressed in text unless Verbose is set: the
+		// enrichment roadmap and observation notes, plus the verbose-only achievements
+		// detail (per-theme states and the claimed-to-documented roadmap). The
+		// achieved-level summary, the tier roadmap, and the achievements headline (other
+		// conformance and achievements codes) always render. WriteJSON keeps them all.
+		if !r.Verbose && (f.Code == CodeConformanceEnrichment || f.Code == CodeConformanceObservation ||
+			f.Code == CodeAchievementsState || f.Code == CodeAchievementsRoadmap) {
 			hidden++
 			continue
 		}
@@ -243,7 +262,7 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 	}
 	hint := ""
 	if hidden > 0 {
-		hint = fmt.Sprintf(" (%d optional findings hidden (enrichment and observations)", hidden)
+		hint = fmt.Sprintf(" (%d optional findings hidden (enrichment, observations, and achievements)", hidden)
 		if r.OmitFlagHint {
 			hint += ")"
 		} else {

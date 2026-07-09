@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/achievements"
 	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
@@ -84,17 +85,19 @@ func runValidate(args []string) int {
 	var verbose bool
 	var schemaDir string
 	fs.BoolVar(&jsonOut, "json", false, "Emit findings as machine-readable JSON instead of human-readable text.")
-	fs.BoolVar(&verbose, "verbose", false, "Include the optional conformance findings (the enrichment roadmap and observation notes) in text output. JSON always includes them.")
+	fs.BoolVar(&verbose, "verbose", false, "Include the optional conformance and achievement findings (the enrichment roadmap, observation notes, and per-theme achievement state and roadmap) in text output. JSON always includes them.")
 	fs.StringVar(&schemaDir, "schema-dir", "", "Directory containing ulc.schema.json and taxonomy.schema.json. Auto-detected when omitted.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc validate -- validate a ULC record against the ULC schema.
 
-Runs four checks and emits a findings report:
+Runs the following checks and emits a findings report:
   1. JSON Schema Draft 2020-12 structural validation
   2. Builder parity (stored index matches the deterministic projection,
      including the computed index.conformance_level)
   3. Source-file SHA-256 hash verification (when files are reachable locally)
   4. Conformance report (INFO: the computed grade plus a per-grade roadmap to full)
+  5. Product Achievements report (INFO: the per-theme achievement summary; the
+     per-theme state and roadmap show under --verbose or --json)
 
 Exit codes:
   0   no ERROR findings (WARNING and INFO do not fail validation)
@@ -203,6 +206,11 @@ USAGE
 	// defect). A record is whatever level its data achieves; there is nothing to
 	// fall short of, so conformance produces no WARNINGs.
 	completeness.Report(recordMap, report)
+
+	// 5. Product Achievements report: the second, orthogonal grading axis. Emits the
+	// achievements headline plus the verbose-only per-theme states and roadmap. Not
+	// gated on the conformance level (the axes are independent).
+	achievements.Report(recordMap, report)
 
 	report.Finalize()
 
@@ -433,6 +441,7 @@ USAGE
 		}
 		v.Validate(rawTree, report)
 		completeness.Report(res.Record, report)
+		achievements.Report(res.Record, report)
 		report.Finalize()
 
 		// conformance_level is always stamped now (the grader floors at `incomplete`),

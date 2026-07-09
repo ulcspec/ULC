@@ -51,12 +51,61 @@
     "legend_text": "EXIT"
   },
   "index": {
+    "achievements": {
+      "documented_count": 0,
+      "themes": {
+        "circularity": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "dark_sky": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "embodied_carbon": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "emergency": {
+          "evidence_present": false,
+          "programs": [
+            "ul_924"
+          ],
+          "source_attestation_ids": [
+            "ul_924_cooper_lpx"
+          ],
+          "state": "claimed"
+        },
+        "energy": {
+          "evidence_present": false,
+          "programs": [
+            "ca_title_20"
+          ],
+          "source_attestation_ids": [
+            "ca_title_20_cooper_lpx"
+          ],
+          "state": "claimed"
+        },
+        "material_health": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        }
+      }
+    },
     "attestation_programs": [
       "ca_title_20",
       "damp_location_ul",
       "ul_924"
     ],
-    "builder_version": "0.5.0",
+    "builder_version": "0.6.0",
     "catalog_model": "LPX7",
     "catalog_number": "LPX7SD",
     "conformance_level": "core",
@@ -71,6 +120,7 @@
       "surface_wall"
     ],
     "primary_category": "exit_sign",
+    "restricted_substances_declared": [],
     "search_keywords": [
       "LPX Series self-powered LED polycarbonate exit, self-diagnostics, white housing, single-face as configured (field selectable single or double), red legend as shipped (field convertible to green), 120/277 VAC",
       "Sure-Lites LPX Series",

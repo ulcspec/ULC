@@ -294,6 +294,169 @@ func TestValidatorEnforcesEmergencyBlockContract(t *testing.T) {
 	})
 }
 
+// TestValidatorConstrainsSustainabilityMetricCarbonScope asserts the sustainability_metric
+// conditional (the SourceFile photometry_format precedent): a declared embodied_carbon_kgco2e
+// requires both embodied_carbon_scope and embodied_carbon_functional_unit, so a bare kgCO2e
+// figure can never be ambiguous about its life-cycle boundary or its declared unit. A metric
+// with the kgCO2e alone is a schema error; a metric with all three, and a metric that carries
+// no kgCO2e at all, validate.
+func TestValidatorConstrainsSustainabilityMetricCarbonScope(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		return m
+	}
+	setMetric := func(m map[string]any, metric map[string]any) {
+		atts, _ := m["attestations"].([]any)
+		if len(atts) == 0 {
+			t.Fatalf("erco record has no attestations to mutate")
+		}
+		first, ok := atts[0].(map[string]any)
+		if !ok {
+			t.Fatalf("first attestation is not an object")
+		}
+		first["sustainability_metric"] = metric
+	}
+
+	// Bad: kgCO2e without scope and functional unit.
+	bad := load()
+	setMetric(bad, map[string]any{"embodied_carbon_kgco2e": 42.0})
+	rBad := findings.NewReport()
+	v.Validate(bad, rBad)
+	if !rBad.HasErrors() {
+		t.Error("expected a schema error for embodied_carbon_kgco2e without scope and functional unit, got none")
+	}
+
+	// Good: kgCO2e with both required companions.
+	good := load()
+	setMetric(good, map[string]any{
+		"embodied_carbon_kgco2e":          42.0,
+		"embodied_carbon_scope":           "a1_a3",
+		"embodied_carbon_functional_unit": "one luminaire",
+	})
+	rGood := findings.NewReport()
+	v.Validate(good, rGood)
+	if rGood.HasErrors() {
+		t.Errorf("a complete embodied-carbon metric must validate; got: %+v", rGood.Findings)
+	}
+
+	// Good: a metric with no kgCO2e (ceam_score plus C2C level) has no scope requirement.
+	noCarbon := load()
+	setMetric(noCarbon, map[string]any{"ceam_score": 3.5, "c2c_overall_level": "gold"})
+	rNo := findings.NewReport()
+	v.Validate(noCarbon, rNo)
+	if rNo.HasErrors() {
+		t.Errorf("a non-carbon sustainability_metric must validate; got: %+v", rNo.Findings)
+	}
+}
+
+// TestValidatorAcceptsIssuingAuthority asserts the additive descriptive field on Attestation
+// takes a string and never affects validity.
+func TestValidatorAcceptsIssuingAuthority(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+	m, ok := doc.(map[string]any)
+	if !ok {
+		t.Fatalf("record is not an object")
+	}
+	atts, _ := m["attestations"].([]any)
+	if len(atts) == 0 {
+		t.Fatalf("erco record has no attestations to mutate")
+	}
+	first, ok := atts[0].(map[string]any)
+	if !ok {
+		t.Fatalf("first attestation is not an object")
+	}
+	first["issuing_authority"] = "EPD International"
+	r := findings.NewReport()
+	v.Validate(m, r)
+	if r.HasErrors() {
+		t.Errorf("issuing_authority on an attestation must validate; got: %+v", r.Findings)
+	}
+}
+
+// TestValidatorConstrainsAchievementThemeShape asserts the index.achievements member shape:
+// a well-formed achievements block (six themes, each a valid AchievementTheme, plus
+// documented_count) validates when injected into a record's generated index, and an
+// AchievementTheme missing its required `state` is a schema error. The builder emits this
+// block from Phase C; this test pins the shape independently of the builder.
+func TestValidatorConstrainsAchievementThemeShape(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	theme := func(state string) map[string]any {
+		return map[string]any{
+			"state":                  state,
+			"programs":               []any{},
+			"source_attestation_ids": []any{},
+			"evidence_present":       false,
+		}
+	}
+	allThemes := func() map[string]any {
+		return map[string]any{
+			"embodied_carbon": theme("none"),
+			"circularity":     theme("none"),
+			"material_health": theme("none"),
+			"energy":          theme("none"),
+			"dark_sky":        theme("none"),
+			"emergency":       theme("none"),
+		}
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		return m
+	}
+
+	// Good: a well-formed achievements block plus the restricted-substances sibling validate.
+	good := load()
+	gidx, ok := good["index"].(map[string]any)
+	if !ok {
+		t.Fatalf("record has no index object")
+	}
+	gidx["achievements"] = map[string]any{"themes": allThemes(), "documented_count": float64(0)}
+	gidx["restricted_substances_declared"] = []any{}
+	rGood := findings.NewReport()
+	v.Validate(good, rGood)
+	if rGood.HasErrors() {
+		t.Errorf("a well-formed achievements index block must validate; got: %+v", rGood.Findings)
+	}
+
+	// Bad: a theme missing its required state.
+	bad := load()
+	bidx, ok := bad["index"].(map[string]any)
+	if !ok {
+		t.Fatalf("record has no index object")
+	}
+	themes := allThemes()
+	broken := theme("none")
+	delete(broken, "state")
+	themes["emergency"] = broken
+	bidx["achievements"] = map[string]any{"themes": themes, "documented_count": float64(0)}
+	rBad := findings.NewReport()
+	v.Validate(bad, rBad)
+	if !rBad.HasErrors() {
+		t.Error("expected a schema error for an AchievementTheme missing its required state, got none")
+	}
+}
+
 func TestFindSchemaDirExplicit(t *testing.T) {
 	root := repoRoot(t)
 	schemaDir := filepath.Join(root, "schema")

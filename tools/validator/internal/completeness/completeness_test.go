@@ -1423,8 +1423,8 @@ func TestPredicatesReadOnlyCoreFields(t *testing.T) {
 			{LevelFull, "test-report-backed sign-face luminance", photoSignCore()},
 			{LevelFull, "test-report-backed sign-face luminance", tritiumSignCore()},
 			{LevelFull, "test-report-backed face illuminance", externalSignCore()},
-			{LevelCore, "UL 924 listing", comboSignCore()},              // naDedicatedClass on an NA sign
-			{LevelCore, "/photometry/luminaire_efficacy_lm_per_w", coreBase()}, // notDedicatedClass on a troffer
+			{LevelCore, "UL 924 listing", comboSignCore()},                        // naDedicatedClass on an NA sign
+			{LevelCore, "/photometry/luminaire_efficacy_lm_per_w", coreBase()},    // notDedicatedClass on a troffer
 			{LevelCore, "/product_family/secondary_function", emgLuminaireCore()}, // notExitSign on an emergency luminaire
 		}
 		for _, c := range checks {

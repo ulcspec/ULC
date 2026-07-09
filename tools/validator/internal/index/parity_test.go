@@ -146,6 +146,21 @@ func maximalFixture() map[string]any {
 		},
 		"attestations": []any{
 			map[string]any{"program": "lm_79_24"},
+			// A themed, evidence-bearing, metric-carrying attestation so the maximal
+			// fixture exercises the achievements documented path and best_metric_ref.
+			map[string]any{
+				"program":        "epd_iso_14025",
+				"attestation_id": "epd-max",
+				"source_document_ref": map[string]any{
+					"filename": "epd.pdf",
+					"sha256":   "2222222222222222222222222222222222222222222222222222222222222222",
+				},
+				"sustainability_metric": map[string]any{
+					"embodied_carbon_kgco2e":          int64(42),
+					"embodied_carbon_scope":           "a1_a3",
+					"embodied_carbon_functional_unit": "one luminaire",
+				},
+			},
 		},
 		"sustainability_declaration": map[string]any{
 			"declaration_type": "ilfi_declare",

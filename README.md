@@ -48,6 +48,8 @@ ULC does not embed source files. It identifies them. A consumer who obtains a so
 
 Every record also carries a computed **conformance grade** (`core`, `standard`, or `full`, above an `incomplete` floor), graded by the reference builder from the fields the record populates and stamped into the generated index, never declared by the author. The grading rubric applies its requirements conditionally through a layer of applicability predicates, so a fixture is only ever asked for the data its form actually has: a pure color-mixing fixture is not graded on CRI, and an indoor downlight is not graded on a BUG rating. The tiers are not arbitrary: they mirror the way a construction specification escalates what it asks of a manufacturer, from the mandatory product data and safety listing every fixture must provide, through the selection-grade performance specifications used to compare products, to the independently-certified test reports demanded of the most rigorous fixtures. Alongside the grade, the validator emits a two-part roadmap: the tier gaps a record must close to climb, and a non-gating enrichment roadmap of optional dimensions it could disclose to deepen the datasheet. The three grades above an incomplete floor, the per-grade requirement tables, the predicate layer, and the rationale behind the grade cut points are documented in [the conformance rubric](docs/methodology.md#the-conformance-rubric).
 
+A second, orthogonal axis, **Product Achievements**, is computed from the same record and stamped into `index.achievements`. Where the conformance grade measures how complete the datasheet is, achievements report what third-party program qualifications the product demonstrates: per theme (embodied carbon, circularity, material health, energy, dark sky, emergency) the record is `none`, `claimed`, or `documented`, the last when a qualifying attestation carries an attached, unexpired evidence document. The two axes never cross; both are documented in [the two grading axes](docs/methodology.md#the-two-grading-axes-completeness-and-achievements).
+
 ## Source inputs
 
 ULC is designed around the three source types realistically available across the industry today:
@@ -91,7 +93,7 @@ This repository defines the standard. It does not ship an application.
 
 ## Getting started
 
-The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, five canonical reference records covering the four manufacturer authoring patterns, the reference command-line validator and compiler (`ulc`) at `tools/validator/` with schema validation, builder parity, source-file hash verification, and the deterministic `from-sheet` converter, the fill-in workbook template under `templates/workbook/`, and PIM platform mapping guides under `mappings/pim/`. The [ulcspec.org](https://ulcspec.org) narrative docs site is the public-facing companion to this repository.
+The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, eight canonical reference records covering the four manufacturer authoring patterns and the exit-sign and emergency product classes, the reference command-line validator and compiler (`ulc`) at `tools/validator/` with schema validation, builder parity, source-file hash verification, and the deterministic `from-sheet` converter, the fill-in workbook template under `templates/workbook/`, and PIM platform mapping guides under `mappings/pim/`. The [ulcspec.org](https://ulcspec.org) narrative docs site is the public-facing companion to this repository.
 
 - To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
 - To see those patterns in real data, read the records in `examples/`, which exercise the four authoring patterns against real manufacturer spec sheets.
@@ -113,20 +115,23 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 
 ## Adoption status
 
-Adoption is in its early days. Five canonical reference records are published in `examples/`, each derived from a real manufacturer spec sheet:
+Adoption is in its early days. Eight canonical reference records are published in `examples/`, each derived from a real manufacturer spec sheet:
 
 - ERCO Quintessence: recessed downlight
 - Vode Nexa: suspended linear pendant
 - Selux Aya: exterior pole
 - Lumenpulse Lumenfacade: RGB and RGBW inground façade (two records)
+- Cooper AtLite AUX: universal edge-lit exit sign
+- Cooper Sure-Lites ES: edge-lit exit sign
+- Cooper Sure-Lites LPX: polycarbonate LED exit sign
 
-Each exercises a distinct manufacturer authoring pattern (A/B/C/D).
+The first five exercise the four manufacturer authoring patterns (A/B/C/D); the three Cooper records exercise the exit-sign and emergency product classes.
 
 To check the current state of manufacturer adoption (which manufacturers have published ULC files for which products), visit **[ulcspec.org](https://ulcspec.org)**, the public adoption registry and documentation surface.
 
 ## Project status
 
-The current release is `0.10.0`. Conformance is computed rather than declared: the reference builder grades each record against three grades (`core`, `standard`, `full`) above an `incomplete` floor and stamps the result into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
+The current release is `1.0.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
 
 The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 

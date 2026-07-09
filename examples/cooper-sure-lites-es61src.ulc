@@ -67,10 +67,55 @@
     "legend_text": "EXIT"
   },
   "index": {
+    "achievements": {
+      "documented_count": 0,
+      "themes": {
+        "circularity": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "dark_sky": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "embodied_carbon": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "emergency": {
+          "evidence_present": false,
+          "programs": [
+            "ul_924"
+          ],
+          "source_attestation_ids": [
+            "ul_924_cooper_es"
+          ],
+          "state": "claimed"
+        },
+        "energy": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
+        "material_health": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        }
+      }
+    },
     "attestation_programs": [
       "ul_924"
     ],
-    "builder_version": "0.5.0",
+    "builder_version": "0.6.0",
     "catalog_model": "ES6",
     "catalog_number": "ES61SRC",
     "conformance_level": "standard",
@@ -88,6 +133,7 @@
     ],
     "nominal_input_power_w": 3.8,
     "primary_category": "exit_sign",
+    "restricted_substances_declared": [],
     "search_keywords": [
       "ES Series edge-lit exit, AC only, single face, surface unit, brushed aluminum trim, red letters on clear background, no chevron, ceiling mount, 120/277 VAC",
       "Sure-Lites ES Series",

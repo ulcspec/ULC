@@ -2,6 +2,36 @@
   "findings": [
     {
       "level": "INFO",
+      "code": "achievements/roadmap",
+      "message": "to document the dark_sky achievement, attach the certificate document to the darksky_approved attestation",
+      "path": "/index/achievements/themes/dark_sky"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/roadmap",
+      "message": "to document the material_health achievement, attach the certificate document to the declare attestation",
+      "path": "/index/achievements/themes/material_health"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
+      "message": "dark_sky achievement: claimed (darksky_approved)",
+      "path": "/index/achievements/themes/dark_sky"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
+      "message": "material_health achievement: claimed (declare, lbc_red_list_approved)",
+      "path": "/index/achievements/themes/material_health"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/summary",
+      "message": "achievements: 0 documented, 2 claimed",
+      "path": "/index/achievements"
+    },
+    {
+      "level": "INFO",
       "code": "conformance/enrichment",
       "message": "alpha-opic (circadian) metrics not disclosed",
       "path": "/alpha_opic_metrics",
@@ -313,6 +343,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 39
+    "infos": 44
   }
 }
