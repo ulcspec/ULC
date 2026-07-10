@@ -1,28 +1,28 @@
-# `ulc` — reference validator for ULC
+# `ulc`: reference validator for ULC
 
-The `ulc` command-line tool is the reference implementation of the ULC specification's validation and index-building logic. It is the authoritative check that a ULC record (files with a `.ulc` or `.ulc.json` extension — both are accepted by all subcommands) is well-formed, conforms to the schema, and has a correctly-computed `index` block.
+The `ulc` command-line tool is the reference implementation of the ULC specification's validation and index-building logic. It is the authoritative check that a ULC record (files with a `.ulc` or `.ulc.json` extension, both accepted by all subcommands) is well-formed, conforms to the schema, and has a correctly-computed `index` block.
 
 ## Shipped features
 
-As of the next release:
+The `ulc` CLI provides:
 
-- [x] `ulc build-index <record>` — deterministic index projection (`<record>` is any `.ulc` or `.ulc.json` file)
-- [x] `ulc build-index <record> --check` — verify stored index matches the builder; exit 1 on drift
-- [x] `ulc build-index <record> --stdout` — print computed index without modifying the record
-- [x] `ulc validate <record>` — JSON Schema Draft 2020-12 structural validation via [`santhosh-tekuri/jsonschema/v6`](https://github.com/santhosh-tekuri/jsonschema) with cross-file `$ref` resolution
-- [x] `ulc from-sheet <bundle-dir|workbook.xlsx>` — deterministic, offline converter from a manufacturer workbook (CSV bundle or native `.xlsx`) to validated ULC records (`--out`, `--assets`, `--allow-missing-files`)
+- [x] `ulc build-index <record>`: deterministic index projection (`<record>` is any `.ulc` or `.ulc.json` file)
+- [x] `ulc build-index <record> --check`: verify stored index matches the builder; exit 1 on drift
+- [x] `ulc build-index <record> --stdout`: print computed index without modifying the record
+- [x] `ulc validate <record>`: JSON Schema Draft 2020-12 structural validation via [`santhosh-tekuri/jsonschema/v6`](https://github.com/santhosh-tekuri/jsonschema) with cross-file `$ref` resolution
+- [x] `ulc from-sheet <bundle-dir|workbook.xlsx>`: deterministic, offline converter from a manufacturer workbook (CSV bundle or native `.xlsx`) to validated ULC records (`--out`, `--assets`, `--allow-missing-files`)
 - [x] Builder parity is included in `ulc validate` (stored `index` vs. computed)
 - [x] Source-file SHA-256 hash verification when referenced files are reachable on the local filesystem
 - [x] Structured `ERROR` / `WARNING` / `INFO` findings, each with a JSON Pointer into the record
-- [x] Conformance grading: the conformance level (`incomplete` / `core` / `standard` / `full`) is computed by the builder from the record's populated fields and stamped into the generated index as `index.conformance_level`, so it is authoritative rather than self-claimed (a hand-tampered value fails the builder-parity check like any other index field). `ulc validate` reports the computed level as `INFO`, plus an `INFO` per-grade roadmap through `full`: the grades the record already satisfies (`conformance/grade-satisfied`) and, for each grade not yet reached, only that grade's own remaining fields, each naming its source document and governing standard (and, at core and above, observations for comprehensive items the record omits, suppressed from text unless `--verbose`). A grade whose own requirements are met while a lower grade is not yet reached is reported as gated (`conformance/grade-gated`). Because there is no declared level to fall short of, conformance grading emits no `WARNING`. Inapplicable fields are skipped by predicate: a downlight (directional, not an outdoor-site category) has no BUG gate; a pure RGB fixture with no white point waives the CCT and CRI gates; an RGBW fixture keeps the CCT gate but waives the CRI / SDCM gates (those are primarily-white-light metrics); a static-white fixture keeps all of them.
+- [x] Conformance grading and Product Achievements: the builder computes both the conformance level (`incomplete` / `core` / `standard` / `full`, stamped into `index.conformance_level`) and the Product Achievements axis (per theme `none` / `claimed` / `documented`, stamped into `index.achievements`) from the record's populated fields, so both are authoritative rather than self-claimed (a hand-tampered value fails the builder-parity check like any other index field). Grading is class-aware: exit signs and emergency luminaires grade against their own dataset (legend, illumination mode, battery, UL 924) rather than the architectural-photometry profile. `ulc validate` reports the computed level as `INFO`, a per-grade tier roadmap to `full` (`conformance/gap`, each field naming its source document and governing standard), a non-gating enrichment roadmap of optional datasheet depth (`conformance/enrichment`), and a one-line achievements summary (`achievements/summary`); the tier, enrichment, and per-theme achievement detail is suppressed from text output unless `--verbose` and always present in JSON. Conformance grading emits no `WARNING` (there is no declared level to fall short of), and inapplicable fields are skipped by predicate. See `docs/methodology.md` and `docs/how-it-works.md` for the grading model.
 - [x] `--json` machine-readable output
 - [x] Single-file binaries via GoReleaser for Linux / macOS / Windows × x64 / arm64, cut on tag push
 - [x] Embedded schemas via `go:embed` so the binary runs outside the source repository
 - [x] `--schema-dir PATH` override for pointing the binary at an alternate schema copy
 
-Deferred to a follow-up CLI release (scope for post-pilot feedback):
+Not yet implemented:
 
-- [ ] Promoting selected observations to graded requirements. The `full` tier now hard-gates accredited-laboratory depth: zonal lumens, measurement uncertainty, applied corrections, method-backed lumen-maintenance projections, deeper instrumentation metadata, and (for primarily-white-light fixtures) TM-30 fidelity. A separate band of comprehensive items is still surfaced as non-gating observations (sustainability declarations, power factor, flicker, alpha-opic metrics, and similar); manufacturer pilot feedback may promote some of these to graded requirements in a future rubric revision.
+- [ ] Promoting selected observations to graded requirements. The `full` tier hard-gates accredited-laboratory depth: zonal lumens, measurement uncertainty, applied corrections, method-backed lumen-maintenance projections, deeper instrumentation metadata, and (for primarily-white-light fixtures) TM-30 fidelity. The remaining comprehensive items stay non-gating across two channels: the enrichment roadmap carries the optional datasheet depth (power factor, flicker, alpha-opic and circadian metrics, and similar), while a sustainability declaration and a small residual set stay plain `conformance/observation` notes.
 
 ## Language
 
@@ -46,10 +46,10 @@ go test -race ./...
 
 The load-bearing tests are:
 
-- `internal/index.TestBuilderMatchesStoredIndex` — runs `Build()` over every `.ulc` file in `examples/` and asserts the computed index block matches the stored one byte-for-byte. Pins the builder against the committed canonical records.
-- `internal/index.TestBuilderSchemaParity` — loads `Index.properties` and `Index.required` from `schema/ulc.schema.json`, runs `Build()` over a maximal synthetic fixture that triggers every emit path, and confirms no unknown keys are emitted and every required key is produced. Replaces the retired `tools/builder-parity-guard.py`.
-- `internal/validate.TestValidatorAcceptsExampleRecords` / `TestValidatorRejectsBrokenRecord` — schema validation accept + reject cases.
-- `internal/validate.TestVerifyHashesAllOutcomes` — hash verification on valid, mismatching, and missing-local files against the real schema-shaped `source_files[].reference` wrapper.
+- `internal/index.TestBuilderMatchesStoredIndex`: runs `Build()` over every `.ulc` file in `examples/` and asserts the computed index block matches the stored one byte-for-byte. Pins the builder against the committed canonical records.
+- `internal/index.TestBuilderSchemaParity`: loads `Index.properties` and `Index.required` from `schema/ulc.schema.json`, runs `Build()` over a maximal synthetic fixture that triggers every emit path, and confirms no unknown keys are emitted and every required key is produced. Replaces the retired `tools/builder-parity-guard.py`.
+- `internal/validate.TestValidatorAcceptsExampleRecords` / `TestValidatorRejectsBrokenRecord`: schema validation accept + reject cases.
+- `internal/validate.TestVerifyHashesAllOutcomes`: hash verification on valid, mismatching, and missing-local files against the real schema-shaped `source_files[].reference` wrapper.
 
 ## Relationship to the canonical schemas
 

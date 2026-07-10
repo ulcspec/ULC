@@ -35,14 +35,12 @@ artifacts in this repository.
 
 ## Supported versions
 
-ULC is in the pre-1.0 phase. Only the latest tagged version receives security
-fixes. Pin to a specific tag and upgrade promptly when a patch ships.
+The latest tagged release receives security fixes, as does the most recent
+minor version. Pin to a specific tag and upgrade promptly when a patch ships.
 
 | Version | Security fixes |
 |---------|----------------|
 | Latest tagged release | Yes |
+| Most recent minor version | Yes |
 | Older tagged releases | No |
 | Untagged commits on `main` | Best-effort, not guaranteed |
-
-After v1.0.0, this policy will be revised to support the most recent minor
-version in addition to the latest tag.

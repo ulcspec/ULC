@@ -130,6 +130,6 @@ so author with that in mind:
 
 - `tools/validator/internal/sheet/DESIGN.md` for the full column-to-field
   contract and the resolved implementer decisions.
-- `examples/` for five complete `.ulc` records across the patterns.
+- `examples/` for eight complete `.ulc` records across the four authoring patterns and the exit-sign/emergency product class.
 - The filled fixtures under `tools/validator/internal/sheet/testdata/` for a
   working bundle per pattern.
