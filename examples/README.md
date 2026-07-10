@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains canonical reference ULC records: at least one record per manufacturer authoring pattern, drafted from real manufacturer spec sheets and IES files. Each record is a single `.ulc` file that validates against `schema/ulc.schema.json` and round-trips cleanly through the reference `ulc` CLI.
+This directory contains canonical reference ULC records covering the four manufacturer authoring patterns and the exit-sign/emergency product class, drafted from real manufacturer spec sheets and IES files. Each record is a single `.ulc` file that validates against `schema/ulc.schema.json` and round-trips cleanly through the reference `ulc` CLI.
 
 Source files (the original PDF datasheets, IES photometric files, and related documents) are NOT committed to this repository. The ULC record references them by filename, optional URL, and SHA-256 content hash. Any consumer who obtains a source file through the manufacturer's own distribution channel can verify it matches the record by comparing hashes.
 
@@ -19,7 +19,7 @@ Source files (the original PDF datasheets, IES photometric files, and related do
 
 ## Conformance grades and roadmap
 
-Each record is graded by the reference validator, which computes a conformance grade from the fields actually present and emits a per-grade roadmap to full: the grades the record already satisfies and, for each grade not yet reached, only that grade's own remaining fields. The grade is stamped into `index.conformance_level` and is never hand-declared. The table below is the machine output of `ulc validate --verbose <record>`; every gap names the field, the source document it comes from, and the governing standard, grouped per grade to full.
+Each record is graded by the reference validator, which computes a conformance grade from the fields actually present and emits a per-grade roadmap to full: the grades the record already satisfies and, for each grade not yet reached, only that grade's own remaining fields. The grade is stamped into `index.conformance_level` and is never hand-declared. The table below is the machine output of `ulc validate --verbose <record>`; every gap names the field, the source document it comes from, and the governing standard, grouped per grade to full. Beyond completeness, every record also carries the second grading axis, Product Achievements (`index.achievements`), computed from its attestations and reported alongside the grade; see [the two grading axes in docs/methodology.md](../docs/methodology.md#the-two-grading-axes-completeness-and-achievements).
 
 | File | Grade | Remaining grades to full |
 |---|---|---|

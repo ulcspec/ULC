@@ -44,11 +44,11 @@ A ULC record is a single JSON document that conforms to the ULC schema. It carri
 - Provenance for every extracted value, so the source of each field is always traceable
 - References to the original source files (datasheet PDF, IES, LDT) including filename, optional URL, and a SHA-256 content hash for integrity verification
 
-ULC does not embed source files. It identifies them. A consumer who obtains a source file through any channel can verify it matches the ULC record by comparing hashes.
+The record references source files by hash rather than embedding them, so any copy a consumer obtains can be verified against the record; see the [verification procedure in how-it-works.md](docs/how-it-works.md#provenance-and-integrity).
 
-Every record also carries a computed **conformance grade** (`core`, `standard`, or `full`, above an `incomplete` floor), graded by the reference builder from the fields the record populates and stamped into the generated index, never declared by the author. The grading rubric applies its requirements conditionally through a layer of applicability predicates, so a fixture is only ever asked for the data its form actually has: a pure color-mixing fixture is not graded on CRI, and an indoor downlight is not graded on a BUG rating. The tiers are not arbitrary: they mirror the way a construction specification escalates what it asks of a manufacturer, from the mandatory product data and safety listing every fixture must provide, through the selection-grade performance specifications used to compare products, to the independently-certified test reports demanded of the most rigorous fixtures. Alongside the grade, the validator emits a two-part roadmap: the tier gaps a record must close to climb, and a non-gating enrichment roadmap of optional dimensions it could disclose to deepen the datasheet. The three grades above an incomplete floor, the per-grade requirement tables, the predicate layer, and the rationale behind the grade cut points are documented in [the conformance rubric](docs/methodology.md#the-conformance-rubric).
+Every record also carries a computed **conformance grade** (`core`, `standard`, or `full`, above an `incomplete` floor), graded by the reference builder from the fields the record populates and stamped into the generated index, never declared by the author. The grading rubric applies its requirements conditionally through a layer of applicability predicates, so a fixture is only ever asked for the data its form actually has: a pure color-mixing fixture is not graded on CRI, and an indoor downlight is not graded on a BUG rating. The tiers are not arbitrary; they mirror how a construction specification escalates the evidence it asks of a manufacturer, from mandatory product data to independently-certified test reports. Alongside the grade, the validator emits a two-part roadmap: the tier gaps a record must close to climb, and a non-gating enrichment roadmap of optional dimensions it could disclose to deepen the datasheet. The three grades above an incomplete floor, the per-grade requirement tables, the predicate layer, and the rationale behind the grade cut points are documented in [the conformance rubric](docs/methodology.md#the-conformance-rubric).
 
-A second, orthogonal axis, **Product Achievements**, is computed from the same record and stamped into `index.achievements`. Where the conformance grade measures how complete the datasheet is, achievements report what third-party program qualifications the product demonstrates: per theme (embodied carbon, circularity, material health, energy, dark sky, emergency) the record is `none`, `claimed`, or `documented`, the last when a qualifying attestation carries an attached, unexpired evidence document. The two axes never cross; both are documented in [the two grading axes](docs/methodology.md#the-two-grading-axes-completeness-and-achievements).
+A second, orthogonal axis, **Product Achievements**, is computed from the same record and stamped into `index.achievements`: per theme (embodied carbon, circularity, material health, energy, dark sky, emergency) it reports what third-party program qualifications the product demonstrates. The two axes never cross; both are documented in [the two grading axes](docs/methodology.md#the-two-grading-axes-completeness-and-achievements).
 
 ## Source inputs
 
@@ -70,12 +70,7 @@ Additional source types and fields may be supported in future versions.
 
 ## How to consume ULC today
 
-ULC files work with the tools designers already use, today, without waiting for ecosystem maturity:
-
-- **Generic LLMs (ChatGPT, Claude, Gemini)** parse a ULC file natively. Drag a `.ulc` record from `examples/` into the chat and ask "what is this product?" or "compare this to [another ULC file]." The LLM produces a useful spec-sheet rendering, cross-product comparison, and attribute lookup. No setup required.
-- **Lighting-domain specialty consumption tools** like LightingAgent.AI (under development today) add on-demand fetching of the linked IES / LDT photometric files and built-in resolution for industry-shorthand glossary (L90, TM-21, CCR, SVM, melanopic DER, IES-C, CIE 97 maintenance-factor tables).
-
-Both tiers work. The difference is depth of lighting-domain support, not whether ULC is consumable. ULC is the substrate that both read.
+ULC files work with the tools designers already use, today. Generic LLMs (ChatGPT, Claude, Gemini) parse a `.ulc` record natively: drag one from `examples/` into the chat and ask it to render a spec sheet, compare two records, or look up an attribute, no setup required. Lighting-domain specialty tools like LightingAgent.AI (under development) add on-demand fetching of the linked IES / LDT files and resolution of industry shorthand on top of the same record. Both tiers read the same substrate; the [consumption walkthrough in how-it-works.md](docs/how-it-works.md#how-records-are-consumed-today) has the detail.
 
 This repository defines the standard. It does not ship an application.
 
@@ -84,8 +79,8 @@ This repository defines the standard. It does not ship an application.
 | Path | Contents |
 |---|---|
 | `schema/` | Two JSON Schema files (Draft 2020-12): `ulc.schema.json` defines the record structure; `taxonomy.schema.json` defines the closed-enum vocabulary. They are split so the taxonomy can be loaded independently by search and classification tools. Cross-file references are validated in CI. |
-| `docs/` | Narrative documentation: `how-it-works.md` (end-to-end overview), `methodology.md` (design rationale), and `authoring-patterns.md` (the four manufacturer authoring patterns and architectural primitives). |
-| `examples/` | Canonical reference ULC records, one per manufacturer authoring pattern (A/B/C/D), drafted from real spec sheets and IES files. Source files are referenced by required SHA-256 hash and optional URL, not committed. Reserved for vetted canonical records; authors writing new records should keep their in-progress files out of this directory. |
+| `docs/` | Narrative documentation: `how-it-works.md` (end-to-end overview), `methodology.md` (design rationale), `authoring-patterns.md` (the manufacturer authoring patterns, the exit-sign/emergency product class, and architectural primitives), and `compliance-attestation.md` (the attestation-program glossary and achievement-themes appendix). |
+| `examples/` | Canonical reference ULC records covering the four manufacturer authoring patterns (A/B/C/D) and the exit-sign/emergency product class, drafted from real spec sheets and IES files. Source files are referenced by required SHA-256 hash and optional URL, not committed. Reserved for vetted canonical records; authors writing new records should keep their in-progress files out of this directory. |
 | `templates/` | The fill-in workbook template (`workbook/`: a `records.csv` plus related sheets) for the deterministic `ulc from-sheet` converter. See [How records are authored](docs/how-it-works.md#how-records-are-authored). |
 | `mappings/` | Two kinds. Adjacent standards: planned crosswalks to GLDF and ETIM plus guidance for parsing IES and LDT sources. PIM platforms: how to emit ULC records at catalog scale from Salsify, Akeneo, SAP, or an in-house PIM (`mappings/pim/`). |
 | `tools/` | Reference utilities: the schema drift guard (`schema-drift-guard.py`, Python) and the `ulc` reference command-line validator at `tools/validator/` (Go, ships as a single-file binary via GoReleaser). |
@@ -95,13 +90,12 @@ This repository defines the standard. It does not ship an application.
 
 The current working state ships the schema, taxonomy, drift-guard tooling, the authoring-patterns document, eight canonical reference records covering the four manufacturer authoring patterns and the exit-sign and emergency product classes, the reference command-line validator and compiler (`ulc`) at `tools/validator/` with schema validation, builder parity, source-file hash verification, and the deterministic `from-sheet` converter, the fill-in workbook template under `templates/workbook/`, and PIM platform mapping guides under `mappings/pim/`. The [ulcspec.org](https://ulcspec.org) narrative docs site is the public-facing companion to this repository.
 
-- To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
-- To see those patterns in real data, read the records in `examples/`, which exercise the four authoring patterns against real manufacturer spec sheets.
+- To understand the data model, read `docs/authoring-patterns.md`. It describes the four manufacturer authoring patterns ULC supports, how to author the exit-sign/emergency product class, and the architectural primitives (product family, configuration, applicability, generated index, provenance classes, conditional attestations).
+- To see those patterns in real data, read the records in `examples/`, which exercise the four authoring patterns and the exit-sign/emergency product class against real manufacturer spec sheets.
 - **To try ULC right now**, drag any `.ulc` record from `examples/` into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. No setup required.
 - To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
 - To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
-- To validate a record end-to-end (schema, index-builder parity, source-file hashes), run `ulc validate <record>` using the reference CLI. `<record>` is the path to any `.ulc` or `.ulc.json` file; both extensions are accepted. Download a release binary from the GitHub Releases page, or build from source with `cd tools/validator && go build -o bin/ulc ./cmd/ulc`.
-- To regenerate a record's `index` block, run `ulc build-index <record>`. The index is always generated, never hand-authored.
+- To validate a record end-to-end (schema, index-builder parity, source-file hashes), run `ulc validate <record>` on any `.ulc` or `.ulc.json` file; the [CLI how-to in how-it-works.md](docs/how-it-works.md#how-to-try-it-today) covers `ulc build-index`, the release-binary download, and building from source.
 
 ## Relationship to adjacent standards
 
@@ -111,7 +105,7 @@ ULC is designed to cooperate with, not replace, existing work in the lighting da
 - **ETIM** (ElectroTechnical Information Model) provides a widely adopted classification vocabulary for product attributes in electrotechnical wholesale. The ULC taxonomy's enum descriptions cite the relevant ETIM feature identifiers inline where a direct correspondence exists (for example `EF001596` on housing material); a compiled crosswalk at `mappings/etim-crosswalk.md` is planned.
 - **IES LM-63** and **EULUMDAT** remain the photometric data formats that feed ULC. ULC does not duplicate or replace their content. A guide for extracting ULC field values from IES and LDT files is planned at `mappings/photometric-source-parsing.md`.
 
-ULC does not redistribute the text of any paid or restricted standards. It references them by identifier.
+ULC references external standards by identifier, never redistributing their text (the [metadata-only principle](docs/methodology.md#design-principles-that-shape-the-schema)).
 
 ## Adoption status
 
@@ -131,7 +125,7 @@ To check the current state of manufacturer adoption (which manufacturers have pu
 
 ## Project status
 
-The current release is `1.0.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
+The current release is `1.0.1`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
 
 The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 

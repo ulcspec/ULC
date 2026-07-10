@@ -20,6 +20,21 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.0.1 (2026-07-10)
+
+Documentation cleanup. This release changes only prose: no schema, taxonomy, example record, grade, index, or CLI behavior changed, and every conformance grade and finding is byte-identical to 1.0.0.
+
+### For consumers
+
+Nothing to do. Records, grades, the generated index, and the `ulc` CLI are unchanged, so no re-stamp or migration is needed, and `ulc_version` is untouched.
+
+### Docs
+
+- `docs/authoring-patterns.md` gains a product-class authoring section for exit-sign and emergency-class records and an achievement-attestation authoring section (evidence via `source_document_ref`, record-relative expiry, status disqualifiers, and the `sustainability_metric` fields); its stale planned-validator-checks list is removed.
+- `docs/how-it-works.md`, `docs/methodology.md`, `README.md`, and the directory and CLI READMEs are brought current with the two grading axes (data completeness and Product Achievements) and the exit-sign/emergency product class.
+- Cross-doc duplication is collapsed to a single canonical home per datum, with a short gloss and a link from every other doc.
+- One section in `docs/how-it-works.md` was retitled from "Validation and the computed conformance level" to "Validation and the two computed views", so an external deep link to the old `#validation-and-the-computed-conformance-level` anchor will break.
+
 ## 1.0.0 (2026-07-09)
 
 ULC gains its second grading axis and makes its first formal backward-compatibility commitment. **Product Achievements** is a computed view alongside data completeness: per theme (embodied carbon, circularity, material health, energy, dark sky, emergency) it reports whether a record demonstrates a third-party program qualification and with what evidence (`none`, `claimed`, or `documented`), computed from the attestations a record already carries. The release is additive to the authored surface: no field, token, or finding code is removed, and no field type is narrowed; every conformance grade and completeness finding is byte-identical. The one compatibility-affecting change is confined to the generated index, which gains two new always-stamped members that are required in the built index; a stored record picks them up with a one-time `ulc build-index` re-stamp (see the behavior note below). From 1.0.0 forward the schema surface is additive-only across minors, and any breaking change requires v2.0.0.
