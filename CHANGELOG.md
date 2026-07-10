@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## 1.0.1 (2026-07-09)
+## 1.0.1 (2026-07-10)
 
 Documentation cleanup. This release changes only prose: no schema, taxonomy, example record, grade, index, or CLI behavior changed, and every conformance grade and finding is byte-identical to 1.0.0.
 

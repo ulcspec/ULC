@@ -35,12 +35,13 @@ artifacts in this repository.
 
 ## Supported versions
 
-The latest tagged release receives security fixes, as does the most recent
-minor version. Pin to a specific tag and upgrade promptly when a patch ships.
+Security fixes land on the latest tagged release, and on the newest patch of the
+previous minor line once a newer minor ships (an upgrade window). Pin to a
+specific tag and upgrade promptly when a patch ships.
 
 | Version | Security fixes |
 |---------|----------------|
 | Latest tagged release | Yes |
-| Most recent minor version | Yes |
-| Older tagged releases | No |
+| Newest patch of the previous minor line (for example the latest `1.0.x` once `1.1.0` ships) | Yes |
+| All other releases | No |
 | Untagged commits on `main` | Best-effort, not guaranteed |
