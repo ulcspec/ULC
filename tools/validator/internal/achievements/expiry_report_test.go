@@ -102,3 +102,30 @@ func TestReportExpiryRenders(t *testing.T) {
 		}
 	}
 }
+
+// TestReportExpiryUpcomingDeclaration pins the one rendered message body the other tests leave
+// unasserted: the upcoming-declaration variant (a contributing declaration whose expiration_date
+// falls within the window). The attestation-upcoming variant is pinned in TestReportExpiryRenders.
+func TestReportExpiryUpcomingDeclaration(t *testing.T) {
+	asOf := "2026-07-13"
+	record := map[string]any{
+		"sustainability_declaration": map[string]any{
+			"declaration_type": "ilfi_declare",
+			"expiration_date":  plusDays(asOf, 45),
+		},
+	}
+	rep := findings.NewReport()
+	ReportExpiry(record, asOf, 90, rep)
+
+	if f, ok := findFinding(rep, findings.CodeExpiryUpcoming, "/sustainability_declaration/expiration_date"); !ok {
+		t.Error("missing expiry/upcoming at /sustainability_declaration/expiration_date")
+	} else {
+		if f.Level != findings.LevelInfo {
+			t.Errorf("upcoming declaration level = %s, want INFO", f.Level)
+		}
+		want := "sustainability_declaration expires " + plusDays(asOf, 45) + " (in 45 days)"
+		if f.Message != want {
+			t.Errorf("upcoming declaration message = %q, want %q", f.Message, want)
+		}
+	}
+}

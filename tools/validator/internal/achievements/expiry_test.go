@@ -178,9 +178,9 @@ func TestExpiryDeclarationRoute(t *testing.T) {
 // TestDeclarationExpiryMirrorsCompute is the machine guard that the declaration expiry surface
 // stays in lockstep with the compute's declaration route: for every SustainabilityDeclarationType
 // enum value, EvaluateExpiry surfaces a lapsed declaration if and only if the compute derives a
-// non-none theme from it. Any future enum value that routes to no theme (or is wired into the
-// compute but not the advisory) then breaks this test rather than shipping a false "still
-// contributes claimed" message.
+// non-none theme from it. A future enum value wired into one path but not the other (the real
+// drift vector) then breaks this test rather than shipping a false "still contributes claimed"
+// message.
 func TestDeclarationExpiryMirrorsCompute(t *testing.T) {
 	asOf := "2026-07-13"
 	types := loadTaxonomyEnum(t, "SustainabilityDeclarationType")
