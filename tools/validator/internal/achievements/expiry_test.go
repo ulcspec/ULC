@@ -142,8 +142,8 @@ func TestExpiryDeclarationRoute(t *testing.T) {
 		t.Errorf("declaration lapsed: lapsed=%+v, want declaration entry at %s", res.Lapsed, ptr)
 	}
 
-	// Declaration upcoming, including a manufacturer_recycle_program type (present as a
-	// string, so the surface is evaluated regardless of which type it is).
+	// Declaration upcoming, including a manufacturer_recycle_program type (a contributing
+	// type via the circularity route, so its dated surface is evaluated).
 	res = EvaluateExpiry(map[string]any{
 		"sustainability_declaration": map[string]any{
 			"declaration_type": "manufacturer_recycle_program",
@@ -160,6 +160,51 @@ func TestExpiryDeclarationRoute(t *testing.T) {
 	}, asOf, 90)
 	if len(res.Lapsed) != 0 || len(res.Upcoming) != 0 {
 		t.Errorf("typeless declaration: lapsed=%d upcoming=%d, want 0/0", len(res.Lapsed), len(res.Upcoming))
+	}
+
+	// A declaration_type that contributes nothing to the compute is not surfaced, so the
+	// lapsed "still contributes claimed" message is never emitted for a non-contributing type.
+	res = EvaluateExpiry(map[string]any{
+		"sustainability_declaration": map[string]any{
+			"declaration_type": "not_a_contributing_type",
+			"expiration_date":  "2026-01-01",
+		},
+	}, asOf, 90)
+	if len(res.Lapsed) != 0 || len(res.Upcoming) != 0 {
+		t.Errorf("non-contributing declaration: lapsed=%d upcoming=%d, want 0/0", len(res.Lapsed), len(res.Upcoming))
+	}
+}
+
+// TestDeclarationExpiryMirrorsCompute is the machine guard that the declaration expiry surface
+// stays in lockstep with the compute's declaration route: for every SustainabilityDeclarationType
+// enum value, EvaluateExpiry surfaces a lapsed declaration if and only if the compute derives a
+// non-none theme from it. Any future enum value that routes to no theme (or is wired into the
+// compute but not the advisory) then breaks this test rather than shipping a false "still
+// contributes claimed" message.
+func TestDeclarationExpiryMirrorsCompute(t *testing.T) {
+	asOf := "2026-07-13"
+	types := loadTaxonomyEnum(t, "SustainabilityDeclarationType")
+	if len(types) == 0 {
+		t.Fatal("no SustainabilityDeclarationType enum values loaded")
+	}
+	for dt := range types {
+		rec := map[string]any{
+			"sustainability_declaration": map[string]any{
+				"declaration_type": dt,
+				"expiration_date":  "2026-01-01", // lapsed relative to asOf
+			},
+		}
+		computeContributes := false
+		for _, th := range themeOrder {
+			if Compute(rec).Themes[th].State != StateNone {
+				computeContributes = true
+				break
+			}
+		}
+		_, surfaced := findEntry(EvaluateExpiry(rec, asOf, 90).Lapsed, "/sustainability_declaration/expiration_date")
+		if surfaced != computeContributes {
+			t.Errorf("declaration_type %q: expiry surfaced=%v but compute contributes=%v (must match)", dt, surfaced, computeContributes)
+		}
 	}
 }
 

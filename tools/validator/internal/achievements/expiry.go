@@ -45,7 +45,7 @@ func EvaluateExpiry(record map[string]any, asOf string, windowDays int) ExpiryRe
 
 	classify := func(e ExpiryEntry) {
 		switch {
-		case lapsed(e.ValidUntil, asOf):
+		case expired(e.ValidUntil, asOf):
 			res.Lapsed = append(res.Lapsed, e)
 		case upcoming(e.ValidUntil, asOf, windowDays):
 			e.DaysUntil = daysBetween(asOf, e.ValidUntil)
@@ -66,11 +66,13 @@ func EvaluateExpiry(record map[string]any, asOf string, windowDays int) ExpiryRe
 		classify(ExpiryEntry{Pointer: entry.pointer, Program: entry.program, ValidUntil: entry.validUntil})
 	}
 
-	// Declaration surface: mergeLedger does not cover it. Evaluated only when
-	// declaration_type is present as a string (a typeless declaration has no achievements
-	// effect, so its dated expiration_date is nothing to surface).
+	// Declaration surface: mergeLedger does not cover it. Evaluated only when the
+	// declaration_type actually contributes a claim in the compute (declarationContributes),
+	// so a declaration whose type has no achievements effect (including a typeless one) has
+	// nothing to surface, and the lapsed message's "still contributes claimed" clause is
+	// accurate for every type this reaches.
 	if sd, ok := record["sustainability_declaration"].(map[string]any); ok {
-		if _, hasType := sd["declaration_type"].(string); hasType {
+		if dt, ok := sd["declaration_type"].(string); ok && declarationContributes(dt) {
 			if vu := isoDateOrEmpty(sd["expiration_date"]); vu != "" {
 				classify(ExpiryEntry{
 					Pointer:       "/sustainability_declaration/expiration_date",
@@ -95,13 +97,6 @@ func EvaluateExpiry(record map[string]any, asOf string, windowDays int) ExpiryRe
 	}
 
 	return res
-}
-
-// lapsed reports whether validUntil is strictly earlier than asOf: a date equal to as-of is
-// still valid. Both are valid ISO dates, so the lexicographic compare equals chronological,
-// matching the compute's expired() semantics exactly.
-func lapsed(validUntil, asOf string) bool {
-	return validUntil < asOf
 }
 
 // upcoming reports whether validUntil falls within [asOf, asOf+windowDays], both ends

@@ -135,6 +135,20 @@ func DeclarationProgramToken(dt string) (string, bool) {
 	return tok, ok
 }
 
+// declarationContributes reports whether a sustainability_declaration.declaration_type
+// contributes an achievements claim, mirroring the declaration route in computeAsOf: a type
+// mapped to a material_health program token, or manufacturer_recycle_program (circularity).
+// The expiry advisory gates the declaration's expiration_date surface on this predicate, so it
+// surfaces the declaration only when the compute actually reads it, keeping the "still
+// contributes claimed" lapsed message accurate for every type. It must stay in lockstep with
+// computeAsOf's declaration route; TestDeclarationExpiryMirrorsCompute is the machine guard.
+func declarationContributes(dt string) bool {
+	if _, mapped := declarationProgramTokens[dt]; mapped {
+		return true
+	}
+	return dt == "manufacturer_recycle_program"
+}
+
 // unthemedPrograms is the deliberately-unthemed residue: AttestationProgram tokens that
 // are not a single-theme luminaire qualification. Named explicitly (like the completeness
 // descriptiveAllowlist) so the exhaustiveness guard forces a conscious triage when a new

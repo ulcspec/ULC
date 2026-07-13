@@ -120,6 +120,35 @@ func TestCLIExpiryJSON(t *testing.T) {
 	}
 }
 
+// TestCLIExpiryAbsentByDefault pins the release contract that the advisory is opt-in: a default
+// run (no --expiry) on the record that lapses hardest emits no expiry/ codes at all, in both
+// text and JSON. This guards the add-time gate in runValidate, which the in-process golden test
+// (which never calls runValidate) does not exercise.
+func TestCLIExpiryAbsentByDefault(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	for _, args := range [][]string{{vode}, {vode, "--json"}} {
+		out, code := captureStdout(t, func() int { return runValidate(args) })
+		if code != 0 {
+			t.Fatalf("args %v: exit = %d, want 0", args, code)
+		}
+		if strings.Contains(out, "expiry/") {
+			t.Errorf("args %v: default run emitted an expiry finding (advisory must be opt-in); got:\n%s", args, out)
+		}
+	}
+}
+
+// TestCLIExpiryWindowBoundsAccepted pins that the inclusive window bounds (0 and 36500) are
+// accepted, complementing TestCLIExpiryUsageErrors' rejection of -1 and 99999: a regression
+// flipping the range check to exclusive at either edge would be caught here.
+func TestCLIExpiryWindowBoundsAccepted(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	for _, w := range []string{"0", "36500"} {
+		if rc := runValidate([]string{vode, "--expiry", "--as-of", "2026-07-13", "--expiry-window", w}); rc != 0 {
+			t.Errorf("--expiry-window %s: exit = %d, want 0 (inclusive bound accepted)", w, rc)
+		}
+	}
+}
+
 // copyFlatDir copies a flat directory of files (the sheet bundle fixtures are flat)
 // from src into dst, which must already exist.
 func copyFlatDir(t *testing.T, src, dst string) {
