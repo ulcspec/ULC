@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +11,114 @@ import (
 
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
 )
+
+// captureStdout runs fn with os.Stdout redirected to a pipe and returns what it wrote plus
+// the exit code, so a test can assert on rendered validate output.
+func captureStdout(t *testing.T, fn func() int) (string, int) {
+	t.Helper()
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = w
+	code := fn()
+	if err := w.Close(); err != nil {
+		t.Fatalf("close pipe: %v", err)
+	}
+	os.Stdout = old
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, r); err != nil {
+		t.Fatalf("read pipe: %v", err)
+	}
+	return buf.String(), code
+}
+
+// exampleRecord returns the absolute path of an example record by filename.
+func exampleRecord(t *testing.T, name string) string {
+	t.Helper()
+	return filepath.Join(repoRoot(t), "examples", name)
+}
+
+const vodeRecord = "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc"
+const seluxRecord = "selux-aya-pole-sr-ho-3000k.ulc"
+
+// T3: the expiry advisory at the CLI layer. Exercises the section-4 corpus expectations, the
+// flag-after-positional partitioning of both value flags, the usage-error exit codes, and JSON
+// emission. as-of is always pinned so assertions stay deterministic (never wall-clock today).
+func TestCLIExpiryVodeLapsed(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	// --as-of after the positional record path proves --as-of rides through valueFlags.
+	out, code := captureStdout(t, func() int {
+		return runValidate([]string{vode, "--expiry", "--as-of", "2026-07-13"})
+	})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (lapsed WARNINGs never fail validation)", code)
+	}
+	if !strings.Contains(out, "expiry (advisory): 3 lapsed, 0 expiring within 90 days (as of 2026-07-13)") {
+		t.Errorf("missing expected summary line; got:\n%s", out)
+	}
+	for _, ptr := range []string{"/attestations/1", "/attestations/2", "/sustainability_declaration/expiration_date"} {
+		if !strings.Contains(out, "expiry/lapsed at "+ptr) {
+			t.Errorf("missing expiry/lapsed at %s; got:\n%s", ptr, out)
+		}
+	}
+	if strings.Contains(out, "expiry/downgrade") {
+		t.Errorf("unexpected expiry/downgrade on vode (both entries evidence-free); got:\n%s", out)
+	}
+}
+
+func TestCLIExpirySeluxWindow120(t *testing.T) {
+	selux := exampleRecord(t, seluxRecord)
+	// --expiry-window after the positional record path proves it rides through valueFlags;
+	// --as-of pinned so the window assertion is deterministic.
+	out, code := captureStdout(t, func() int {
+		return runValidate([]string{selux, "--expiry", "--as-of", "2026-07-13", "--expiry-window", "120"})
+	})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "expiry (advisory): 0 lapsed, 3 expiring within 120 days (as of 2026-07-13)") {
+		t.Errorf("missing expected summary line; got:\n%s", out)
+	}
+	for _, ptr := range []string{"/attestations/4", "/attestations/5", "/sustainability_declaration/expiration_date"} {
+		if !strings.Contains(out, "expiry/upcoming at "+ptr) {
+			t.Errorf("missing expiry/upcoming at %s; got:\n%s", ptr, out)
+		}
+	}
+}
+
+func TestCLIExpiryUsageErrors(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{"as-of without expiry", []string{vode, "--as-of", "2026-07-13"}},
+		{"expiry-window without expiry", []string{vode, "--expiry-window", "120"}},
+		{"malformed as-of", []string{vode, "--expiry", "--as-of", "2026-13-99"}},
+		{"out-of-range window", []string{vode, "--expiry", "--expiry-window", "99999"}},
+		{"negative window", []string{vode, "--expiry", "--expiry-window", "-1"}},
+	}
+	for _, c := range cases {
+		if rc := runValidate(c.args); rc != 2 {
+			t.Errorf("%s: exit = %d, want 2", c.name, rc)
+		}
+	}
+}
+
+func TestCLIExpiryJSON(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	out, code := captureStdout(t, func() int {
+		return runValidate([]string{vode, "--json", "--expiry", "--as-of", "2026-07-13"})
+	})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "expiry/summary") || !strings.Contains(out, "expiry/lapsed") {
+		t.Errorf("JSON output missing expiry findings; got:\n%s", out)
+	}
+}
 
 // copyFlatDir copies a flat directory of files (the sheet bundle fixtures are flat)
 // from src into dst, which must already exist.

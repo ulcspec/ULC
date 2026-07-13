@@ -43,6 +43,10 @@ SAP's classification system holds luminaire attributes as **characteristics** (C
 | `LUM_HIGHBAY_IND` | `high_bay` |
 | `LUM_BOLLARD_OUT` | `bollard` |
 | `LUM_SCONCE_INT` | `sconce` |
+| `LUM_EXIT_SIGN` | `exit_sign` |
+| `LUM_EMERG_LUM` | `emergency_luminaire` |
+
+An `exit_sign` or `emergency_luminaire` class grades against the exit-sign or emergency-power dataset, not architectural photometry, so route those classes to their own ULC product class rather than a general luminaire category. The emergency-products segment is exactly the SAP-shaped enterprise landscape, so this class-aware routing matters here in practice.
 
 ### Characteristics (classification attributes)
 
@@ -110,6 +114,8 @@ Listings, certifications, and test-method conformance typically live as characte
 }
 ```
 
+These `attestations[]` entries feed the computed `index.achievements` (the second grading axis, orthogonal to conformance). An entry contributes `claimed` on its `program` token alone and reaches `documented` only when it carries a `source_document_ref` (filename plus a 64-hex SHA-256) attaching the scanned certificate, so walk the DMS certificate into `source_document_ref`, not just `source_files[]`. DMS certificates commonly expire, so carry the certificate's `valid_until` on the attestation and let `ulc validate --expiry` preview it; a `sustainability_declaration`'s dated `expiration_date` lives on that block, never on an attestation. RoHS and REACH classification characteristics map to their own `attestations[]` entries too, and populate the computed `index.restricted_substances_declared` legal-floor flag.
+
 ### Variants and SKU expansion
 
 SAP's configurable materials (class-type 300) describe a material with variant characteristics (voltage, CCT, finish). Each variant configuration (`VBAP` → variant) produces one ULC scenario record. The `applicability` block carries the variant axes:
@@ -121,8 +127,8 @@ SAP's configurable materials (class-type 300) describe a material with variant c
 
 1. **IDoc vs OData.** Legacy ECC landscapes without S/4HANA expose data via IDocs (MATMAS, CLFMAS, DOCMAS). The mapping is conceptually identical to OData; the integration engineer just handles XML instead of JSON. Modern landscapes should prefer OData.
 2. **Language keys.** SAP descriptions are per-language (SPRAS). The emitter chooses a canonical language key (typically `EN` or the manufacturer's primary market language). Record this choice in the integration config.
-3. **Change-document tracking.** Materials with active change documents (ECR/ECO in progress) should be skipped from the ULC export until the change closes and the data becomes authoritative. Gate that draft state in the PIM by holding the export, not by shipping a thin record: there is no level to lower, since `ulc build-index` computes the achieved completeness level from whatever you populate.
-4. **Classification sparseness.** Not every luminaire in the material master will have every expected characteristic populated. Skip or fail the export when a characteristic a record should carry is missing, so the absence shows up as a gap to close in the material master rather than silently shipping as an under-populated record (which simply grades to a lower computed level on its own).
+3. **Change-document tracking.** Materials with active change documents (ECR/ECO in progress) should be skipped from the ULC export until the change closes and the data becomes authoritative. Gate that draft state in the PIM by holding the export, not by shipping a thin record: there is no level to lower, since `ulc build-index` computes all three index members from whatever you populate: the `conformance_level` on the four-level ladder `incomplete` < `core` < `standard` < `full`, the per-theme `achievements` picture, and the `restricted_substances_declared` flag.
+4. **Classification sparseness.** Not every luminaire in the material master will have every expected characteristic populated. Skip or fail the export when a characteristic a record should carry is missing, so the absence shows up as a gap to close in the material master rather than silently shipping as an under-populated record (which simply grades to a lower computed `conformance_level` on its own).
 5. **Unit rounding errors.** SAP often stores dimensions at coarse precision (integers of mm). When converting mm → in, preserve decimal precision in the computed Imperial value.
 6. **Localized currency and format**. SAP stores numbers with locale formatting rules (decimal comma vs period). The OData / IDoc layer typically normalizes, but the emitter should defensively parse.
 
@@ -141,6 +147,8 @@ SAP's configurable materials (class-type 300) describe a material with variant c
      - Assemble scenario record
      - Stream DMS originals, compute SHA-256
      - Walk attestation-referenced DMS (lab reports)
+     - Stamp record_status_as_of to the emit date (re-run on any later edit so
+       the projected index and the as-of date never go stale)
      - ulc build-index + validate
      - Publish on success
 4. Push failures to the integration monitoring channel
@@ -155,7 +163,7 @@ In practice, ABAP handles data extraction (CDS views or SAP CAP/RAP) and a Pytho
 def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
     primary_category = CLASS_TO_ULC_CATEGORY[material['class']]
     record = {
-        "ulc_version": "0.8.0",
+        "ulc_version": "1.0.0",
         "record_id": slug(f"{material['brand_slug']}-{material['matnr']}-{variant['scenario_slug']}"),
         "record_status": "active",
         "product_family": build_family(material, primary_category),

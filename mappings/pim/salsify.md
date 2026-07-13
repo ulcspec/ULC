@@ -41,6 +41,10 @@ Salsify's category taxonomy is typically a hierarchical property (for example `l
 | `.../exterior/wall-pack` | `bulkhead_wall_pack` | `["surface_wall"]` |
 | `.../industrial/high-bay` | `high_bay` | `["pendant", "surface_ceiling"]` |
 | `.../outdoor/bollard` | `bollard` | `["surface_floor"]` |
+| `.../egress/exit-sign` | `exit_sign` | `["surface_wall", "surface_ceiling"]` |
+| `.../egress/emergency` | `emergency_luminaire` | `["surface_wall"]` |
+
+An `exit_sign` or `emergency_luminaire` record grades against the exit-sign or emergency-power dataset, not architectural photometry, so route those categories to their own ULC class rather than a general luminaire category.
 
 ### Dimensional properties
 
@@ -86,6 +90,8 @@ The emitter streams each asset by its Salsify asset ID, computes SHA-256, and po
 
 **The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `product_family.cutsheet` is a graded core requirement, so an emitter that writes only the `source_files[]` entry produces a record that grades `incomplete` rather than `core` (it still validates and carries a roadmap naming the cutsheet). When the Salsify `cutsheet_pdf` asset is streamed and hashed, copy the computed `{filename, sha256, url, revision_label, revision_date}` into `product_family.cutsheet` as well. The same bytes live in one place on disk; the record references them twice with different consumer semantics.
 
+**Certificate and disclosure assets feed `index.achievements`.** A UL, DLC, EPD, or Declare asset is more than a source file: map it to an `attestations[]` entry with its `program` token. The entry contributes `claimed` on the token alone and reaches `documented` only when you attach the certificate as `source_document_ref` (the streamed asset's `{filename, sha256}`). Carry `valid_until` on any dated program so `ulc validate --expiry` can preview its expiry; a `sustainability_declaration`'s dated `expiration_date` belongs on that block, never on an attestation. RoHS/REACH-class programs also populate the computed `index.restricted_substances_declared` flag.
+
 ### Relationships to accessories
 
 Salsify models compatible accessories as typed product references:
@@ -115,7 +121,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 2. **Localization**. Salsify properties support per-locale values. ULC is locale-neutral at the schema level but accepts display-name fields that look best in the manufacturer's primary locale. The emitter chooses a canonical locale (typically en-US or the manufacturer's home market).
 3. **Property type mismatches.** Salsify's "number" type is a double. ULC distinguishes `integer` in some fields (minItems counts, step counts). Coerce at emit time; do not emit `1.0` where the schema expects an integer.
 4. **Asset digest caching.** Computing SHA-256 on every asset for every record on every run is expensive. Cache by Salsify asset ID + version and invalidate on `updated_at` change.
-5. **Missing required values.** If a Salsify property a record should carry is blank for a given SKU, skip or fail the export for that SKU rather than shipping a thin record as if it were complete. There is no level to downgrade: `ulc build-index` computes the achieved completeness level from whatever you populate, so an under-populated record simply grades lower on its own. The point is to gate the export on completeness **in the PIM** so you don't publish thin records that look indistinguishable from complete ones downstream. Workflow state (draft, pending-review, waiting-for-lab) belongs in the Salsify channel's completeness rules, not in the ULC record.
+5. **Missing required values.** If a Salsify property a record should carry is blank for a given SKU, skip or fail the export for that SKU rather than shipping a thin record as if it were complete. There is no level to downgrade: `ulc build-index` computes all three index members from whatever you populate: the `conformance_level` on the four-level ladder `incomplete` < `core` < `standard` < `full`, the per-theme `achievements` picture, and the `restricted_substances_declared` flag. An under-populated record simply grades lower on its own. The point is to gate the export on completeness **in the PIM** so you don't publish thin records that look indistinguishable from complete ones downstream. Workflow state (draft, pending-review, waiting-for-lab) belongs in the Salsify channel's completeness rules, not in the ULC record.
 
 ## Emit flow
 
@@ -129,6 +135,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
    - Pull optical properties from the scenario's property group
    - Stream assets, compute SHA-256
    - Walk accessory references, populate compatible_accessories
+   - Stamp record_status_as_of to the emit date (re-run on any later edit so the projected index and the as-of date never go stale)
    - Assemble JSON record and write to a temp file (the CLI is file-based, not stdin-based)
    - Shell out: `ulc build-index <tmpfile>`, writes the computed index back into the file
    - Shell out: `ulc validate <tmpfile>`, exits 1 on ERROR findings
@@ -142,7 +149,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 # Illustrative pseudocode, not a working implementation.
 def emit_ulc_from_salsify(product, scenario):
     record = {
-        "ulc_version": "0.8.0",
+        "ulc_version": "1.0.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
         "product_family": build_family_from_salsify(product),
