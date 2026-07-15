@@ -145,6 +145,7 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         'ulc_version' => '1.0.0',
         'record_id' => slug("{$product->getBrand()}-{$product->getIdentifier()}-{$variant->getScenarioSlug()}"),
         'record_status' => 'active',
+        'record_status_as_of' => date('Y-m-d'), // the emit/edit date; drives record-relative expiry
         'product_family' => buildFamily($product, $primaryCategory),
         'configuration' => buildConfiguration($variant),
         'electrical' => mapElectrical($variant),

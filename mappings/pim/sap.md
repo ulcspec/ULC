@@ -166,6 +166,7 @@ def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
         "ulc_version": "1.0.0",
         "record_id": slug(f"{material['brand_slug']}-{material['matnr']}-{variant['scenario_slug']}"),
         "record_status": "active",
+        "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
         "product_family": build_family(material, primary_category),
         "configuration": build_configuration(variant, characteristics),
         "electrical": map_electrical(characteristics),

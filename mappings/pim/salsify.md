@@ -152,6 +152,7 @@ def emit_ulc_from_salsify(product, scenario):
         "ulc_version": "1.0.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
+        "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
         "product_family": build_family_from_salsify(product),
         "configuration": build_configuration_from_scenario(scenario),
         "electrical": map_electrical(scenario),

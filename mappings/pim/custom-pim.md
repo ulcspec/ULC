@@ -163,7 +163,7 @@ These `attestations[]` entries feed the computed `index.achievements`. An entry 
 
 For a manufacturer moving from in-house PIM → commercial PIM (Salsify, Akeneo, SAP) in the future, the ULC emitter pattern remains the same; only the input-side query changes. The transform logic (category enum mapping, dual-unit conversion, SHA-256 hashing, attestation mapping, `ulc build-index` + `validate` shell-out) is portable.
 
-Design the emitter to take a normalized "flattened product record" as input and return a ULC JSON. The input-side adapter (SQL queries, ORM calls) becomes a thin layer that future migrations can replace. Whichever PIM feeds it, one rule is invariant: any edit to a deep block requires re-running `ulc build-index` and re-stamping `record_status_as_of` in the same publish, or the parity check fails on a stale index and the record silently mis-dates its evidence expiry.
+Design the emitter to take a normalized "flattened product record" as input and return a ULC JSON. The input-side adapter (SQL queries, ORM calls) becomes a thin layer that future migrations can replace. Whichever PIM feeds it, one rule is invariant: after any deep-block edit, re-run `ulc build-index` so the stored index stays parity-valid, and re-stamp `record_status_as_of` to the edit date so record-relative expiry is evaluated against the current review rather than a stale one (re-stamping only moves the index when the new date crosses an expiry boundary; its job is accurate expiry dating, not parity).
 
 ## Index generation
 
@@ -205,6 +205,7 @@ def emit_ulc(session: Session):
                 "ulc_version": "1.0.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
+                "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
                 "product_family": family,
                 "configuration": build_configuration(scenario),
                 "electrical": build_electrical(scenario),
