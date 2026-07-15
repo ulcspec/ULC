@@ -20,6 +20,28 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.0.2 (2026-07-15)
+
+An opt-in validator advisory plus a documentation refresh. This release adds a report-only attestation-expiry check to `ulc validate` and brings the PIM mapping guides current with the two-axis model. The advisory contract is strict: no conformance grade, no computed `index`, no exit code, and no default `ulc validate` output changes; every golden file is byte-identical; and the schema, taxonomy, example records, and `ulc_version` are untouched.
+
+### For consumers
+
+Nothing to do. Default `ulc validate` behavior, exit codes, and the generated index are unchanged, so no re-stamp or migration is needed. Opt in to the expiry preview with `ulc validate --expiry` when you want it.
+
+### Validator
+
+- `ulc validate --expiry` enables an opt-in, report-only expiry advisory. It never changes the exit code (its `WARNING` findings do not fail validation), never touches `index.achievements`, and is absent from default runs, so default output and the goldens stay byte-identical.
+- `--as-of YYYY-MM-DD` sets the evaluation date (default: today, the validator's only wall-clock read). `--expiry-window N` sets the upcoming window in days (`0..36500`, default 90). Both require `--expiry`; a malformed date or an out-of-range window is a usage error (exit 2).
+- Four finding codes: `expiry/summary` (INFO, always one per run, labeled "advisory" in its message), `expiry/lapsed` (WARNING per already-lapsed surface), `expiry/downgrade` (WARNING per theme a re-stamp on or after the date would drop from `documented` to `claimed`), and `expiry/upcoming` (INFO per surface expiring within the window, carrying its actual day count).
+- Lapse is a strict inequality: a `valid_until` equal to the as-of date is still valid, and only an earlier date is lapsed, matching the record-relative expiry rule the compute already applies.
+- Two dated surfaces are evaluated: each qualifying attestation's `valid_until` (an attestation with a disqualifying status, `expired`, `withdrawn`, or `not_applicable`, is skipped, matching the compute), and a `sustainability_declaration`'s `expiration_date` (which the compute never reads, so a lapsed declaration otherwise contributes `claimed` on every re-stamp).
+
+### Docs
+
+- The five `mappings/pim/` guides (README plus the Akeneo, Salsify, SAP, and custom-PIM guides) are brought current with the two-axis model: the generated index's three computed grading rollups (`conformance_level` on the `incomplete` < `core` < `standard` < `full` ladder, `achievements`, and `restricted_substances_declared`), the achievements evidence-and-expiry bridge (`source_document_ref`, `valid_until`), the re-stamp-after-edit rule, exit-sign and emergency-luminaire class rows, and `ulc_version` `1.0.0` skeletons.
+- `tools/validator/README.md`, `docs/methodology.md`, `docs/how-it-works.md`, and `docs/authoring-patterns.md` document the opt-in expiry advisory and its report-time-only, non-normative contract.
+- `ROADMAP.md` records that patch releases may carry advisory validator additions that change no normative surface, no computed value, and no default output, and adds the `FileReference.filename` minimum-length item to the deferred schema work.
+
 ## 1.0.1 (2026-07-10)
 
 Documentation cleanup. This release changes only prose: no schema, taxonomy, example record, grade, index, or CLI behavior changed, and every conformance grade and finding is byte-identical to 1.0.0.

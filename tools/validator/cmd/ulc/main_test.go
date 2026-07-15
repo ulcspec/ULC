@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +11,155 @@ import (
 
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
 )
+
+// captureStdout runs fn with os.Stdout redirected to a pipe and returns what it wrote plus
+// the exit code, so a test can assert on rendered validate output.
+func captureStdout(t *testing.T, fn func() int) (string, int) {
+	t.Helper()
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	defer r.Close()
+	os.Stdout = w
+	// Restore via defer so an early t.Fatalf below cannot leave os.Stdout pointing at a
+	// closed pipe for subsequent tests in the same binary.
+	defer func() { os.Stdout = old }()
+
+	// Drain the pipe concurrently: fn writes to the pipe while it runs, and a write that
+	// fills the OS pipe buffer (verbose JSON can exceed it) would block fn forever if we only
+	// read after it returns. The reader runs until w is closed, then delivers the captured
+	// output. io.Copy from a pipe read end returns only at EOF, so its error is not surfaced
+	// (and t.Fatalf must not be called off the test goroutine anyway).
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
+
+	code := fn()
+	if err := w.Close(); err != nil {
+		t.Fatalf("close pipe: %v", err)
+	}
+	return <-done, code
+}
+
+// exampleRecord returns the absolute path of an example record by filename.
+func exampleRecord(t *testing.T, name string) string {
+	t.Helper()
+	return filepath.Join(repoRoot(t), "examples", name)
+}
+
+const vodeRecord = "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc"
+const seluxRecord = "selux-aya-pole-sr-ho-3000k.ulc"
+
+// T3: the expiry advisory at the CLI layer. Exercises the section-4 corpus expectations, the
+// flag-after-positional partitioning of both value flags, the usage-error exit codes, and JSON
+// emission. as-of is always pinned so assertions stay deterministic (never wall-clock today).
+func TestCLIExpiryVodeLapsed(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	// --as-of after the positional record path proves --as-of rides through valueFlags.
+	out, code := captureStdout(t, func() int {
+		return runValidate([]string{vode, "--expiry", "--as-of", "2026-07-13"})
+	})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (lapsed WARNINGs never fail validation)", code)
+	}
+	if !strings.Contains(out, "expiry (advisory): 3 lapsed, 0 expiring within 90 days (as of 2026-07-13)") {
+		t.Errorf("missing expected summary line; got:\n%s", out)
+	}
+	for _, ptr := range []string{"/attestations/1", "/attestations/2", "/sustainability_declaration/expiration_date"} {
+		if !strings.Contains(out, "expiry/lapsed at "+ptr) {
+			t.Errorf("missing expiry/lapsed at %s; got:\n%s", ptr, out)
+		}
+	}
+	if strings.Contains(out, "expiry/downgrade") {
+		t.Errorf("unexpected expiry/downgrade on vode (both entries evidence-free); got:\n%s", out)
+	}
+}
+
+func TestCLIExpirySeluxWindow120(t *testing.T) {
+	selux := exampleRecord(t, seluxRecord)
+	// --expiry-window after the positional record path proves it rides through valueFlags;
+	// --as-of pinned so the window assertion is deterministic.
+	out, code := captureStdout(t, func() int {
+		return runValidate([]string{selux, "--expiry", "--as-of", "2026-07-13", "--expiry-window", "120"})
+	})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "expiry (advisory): 0 lapsed, 3 expiring within 120 days (as of 2026-07-13)") {
+		t.Errorf("missing expected summary line; got:\n%s", out)
+	}
+	for _, ptr := range []string{"/attestations/4", "/attestations/5", "/sustainability_declaration/expiration_date"} {
+		if !strings.Contains(out, "expiry/upcoming at "+ptr) {
+			t.Errorf("missing expiry/upcoming at %s; got:\n%s", ptr, out)
+		}
+	}
+}
+
+func TestCLIExpiryUsageErrors(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{"as-of without expiry", []string{vode, "--as-of", "2026-07-13"}},
+		{"expiry-window without expiry", []string{vode, "--expiry-window", "120"}},
+		{"malformed as-of", []string{vode, "--expiry", "--as-of", "2026-13-99"}},
+		{"out-of-range window", []string{vode, "--expiry", "--expiry-window", "99999"}},
+		{"negative window", []string{vode, "--expiry", "--expiry-window", "-1"}},
+	}
+	for _, c := range cases {
+		if rc := runValidate(c.args); rc != 2 {
+			t.Errorf("%s: exit = %d, want 2", c.name, rc)
+		}
+	}
+}
+
+func TestCLIExpiryJSON(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	out, code := captureStdout(t, func() int {
+		return runValidate([]string{vode, "--json", "--expiry", "--as-of", "2026-07-13"})
+	})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "expiry/summary") || !strings.Contains(out, "expiry/lapsed") {
+		t.Errorf("JSON output missing expiry findings; got:\n%s", out)
+	}
+}
+
+// TestCLIExpiryAbsentByDefault pins the release contract that the advisory is opt-in: a default
+// run (no --expiry) on the record that lapses hardest emits no expiry/ codes at all, in both
+// text and JSON. This guards the add-time gate in runValidate, which the in-process golden test
+// (which never calls runValidate) does not exercise.
+func TestCLIExpiryAbsentByDefault(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	for _, args := range [][]string{{vode}, {vode, "--json"}} {
+		out, code := captureStdout(t, func() int { return runValidate(args) })
+		if code != 0 {
+			t.Fatalf("args %v: exit = %d, want 0", args, code)
+		}
+		if strings.Contains(out, "expiry/") {
+			t.Errorf("args %v: default run emitted an expiry finding (advisory must be opt-in); got:\n%s", args, out)
+		}
+	}
+}
+
+// TestCLIExpiryWindowBoundsAccepted pins that the inclusive window bounds (0 and 36500) are
+// accepted, complementing TestCLIExpiryUsageErrors' rejection of -1 and 99999: a regression
+// flipping the range check to exclusive at either edge would be caught here.
+func TestCLIExpiryWindowBoundsAccepted(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	for _, w := range []string{"0", "36500"} {
+		if rc := runValidate([]string{vode, "--expiry", "--as-of", "2026-07-13", "--expiry-window", w}); rc != 0 {
+			t.Errorf("--expiry-window %s: exit = %d, want 0 (inclusive bound accepted)", w, rc)
+		}
+	}
+}
 
 // copyFlatDir copies a flat directory of files (the sheet bundle fixtures are flat)
 // from src into dst, which must already exist.

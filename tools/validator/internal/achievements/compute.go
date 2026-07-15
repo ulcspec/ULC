@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -16,12 +17,31 @@ type ledgerEntry struct {
 	validUntil string         // ISO date, "" if absent or malformed
 	evidence   bool           // source_document_ref present with a non-empty sha256
 	metric     map[string]any // sustainability_metric, nil if absent
+	// pointer is the entry's JSON Pointer in the record (/attestations/<i> or
+	// /product_family/shared_attestations/<i>, raw array index), filled by mergeLedger
+	// during its single walk. Compute never reads it; it exists so expiry.go can consume
+	// mergeLedger's output directly and report each entry's location without a second walk.
+	pointer string
 }
 
 // Compute walks the merged ledger once and returns the full achievements picture. It is
-// pure, total on hostile input, and never mutates record.
+// pure, total on hostile input, and never mutates record. It reports the record-relative
+// picture, comparing evidence expiry against record_status_as_of.
 func Compute(record map[string]any) Result {
+	return computeAsOf(record, "")
+}
+
+// computeAsOf is Compute's implementation with an optional as-of override. An empty
+// override reproduces Compute's exact behavior (evidence expiry compared against
+// record_status_as_of); a non-empty override substitutes that ISO date for
+// record_status_as_of in the expiry comparison (including when the record carries none),
+// which the expiry advisory uses to preview the picture at a caller-chosen date. The
+// override is trusted to be a valid ISO date (the CLI parses it before calling).
+func computeAsOf(record map[string]any, asOfOverride string) Result {
 	recordAsOf := isoDateOrEmpty(record["record_status_as_of"])
+	if asOfOverride != "" {
+		recordAsOf = asOfOverride
+	}
 	entries := mergeLedger(record)
 
 	// Per-theme accumulator.
@@ -141,12 +161,12 @@ func Compute(record map[string]any) Result {
 // entries and entries with an empty program token are skipped.
 func mergeLedger(record map[string]any) []ledgerEntry {
 	var out []ledgerEntry
-	collect := func(v any) {
+	collect := func(v any, prefix string) {
 		arr, ok := v.([]any)
 		if !ok {
 			return
 		}
-		for _, a := range arr {
+		for i, a := range arr {
 			m, ok := a.(map[string]any)
 			if !ok {
 				continue
@@ -155,7 +175,9 @@ func mergeLedger(record map[string]any) []ledgerEntry {
 			if !ok || p == "" {
 				continue
 			}
-			e := ledgerEntry{program: p}
+			// pointer uses the raw array index i, so a skipped non-map or program-less entry
+			// does not shift the location of the entries that follow it.
+			e := ledgerEntry{program: p, pointer: prefix + "/" + strconv.Itoa(i)}
 			if id, ok := m["attestation_id"].(string); ok {
 				e.id = id
 			}
@@ -170,9 +192,9 @@ func mergeLedger(record map[string]any) []ledgerEntry {
 			out = append(out, e)
 		}
 	}
-	collect(record["attestations"])
+	collect(record["attestations"], "/attestations")
 	if pf, ok := record["product_family"].(map[string]any); ok {
-		collect(pf["shared_attestations"])
+		collect(pf["shared_attestations"], "/product_family/shared_attestations")
 	}
 	return out
 }

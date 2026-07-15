@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ulcspec/ULC/tools/validator/internal/achievements"
 	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
@@ -84,9 +85,15 @@ func runValidate(args []string) int {
 	var jsonOut bool
 	var verbose bool
 	var schemaDir string
+	var expiry bool
+	var asOf string
+	var expiryWindow int
 	fs.BoolVar(&jsonOut, "json", false, "Emit findings as machine-readable JSON instead of human-readable text.")
 	fs.BoolVar(&verbose, "verbose", false, "Include the optional conformance and achievement findings (the enrichment roadmap, observation notes, and per-theme achievement state and roadmap) in text output. JSON always includes them.")
 	fs.StringVar(&schemaDir, "schema-dir", "", "Directory containing ulc.schema.json and taxonomy.schema.json. Auto-detected when omitted.")
+	fs.BoolVar(&expiry, "expiry", false, "Opt in to the advisory attestation-expiry check. Advisory: never changes the exit code or the computed index.")
+	fs.StringVar(&asOf, "as-of", "", "Evaluation date for --expiry as YYYY-MM-DD (default: today). Requires --expiry.")
+	fs.IntVar(&expiryWindow, "expiry-window", 90, "Days ahead to flag upcoming expiry for --expiry (0..36500). Requires --expiry.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc validate -- validate a ULC record against the ULC schema.
 
@@ -99,13 +106,21 @@ Runs the following checks and emits a findings report:
   5. Product Achievements report (INFO: the per-theme achievement summary; the
      per-theme state and roadmap show under --verbose or --json)
 
+Optional expiry advisory (opt in with --expiry):
+  --expiry            Preview attestation and declaration expiry against a date.
+                      Advisory: never changes the exit code or the computed index.
+  --as-of DATE        Evaluation date as YYYY-MM-DD (default: today). Requires --expiry.
+  --expiry-window N   Days ahead to flag upcoming expiry, 0..36500 (default: 90).
+                      Requires --expiry.
+
 Exit codes:
   0   no ERROR findings (WARNING and INFO do not fail validation)
   1   at least one ERROR finding
   2   usage error
 
 USAGE
-    ulc validate [--json] [--verbose] [--schema-dir PATH] <record.ulc>
+    ulc validate [--json] [--verbose] [--schema-dir PATH]
+                 [--expiry [--as-of DATE] [--expiry-window N]] <record.ulc>
 `)
 	}
 	_ = fs.Parse(reorderFlagsFirst(args))
@@ -114,6 +129,28 @@ USAGE
 		return 2
 	}
 	recordPath := fs.Arg(0)
+
+	// The expiry flags are meaningful only with --expiry. Resolve the as-of default and
+	// validate the flag values here so a usage error exits 2 before any work is done. The
+	// wall clock is read here and nowhere below the CLI, only when --as-of is absent.
+	setFlags := map[string]bool{}
+	fs.Visit(func(f *flag.Flag) { setFlags[f.Name] = true })
+	if (setFlags["as-of"] || setFlags["expiry-window"]) && !expiry {
+		fmt.Fprintln(os.Stderr, "ulc validate: --as-of and --expiry-window require --expiry")
+		return 2
+	}
+	if expiry {
+		if asOf == "" {
+			asOf = time.Now().Format("2006-01-02")
+		} else if _, perr := time.Parse("2006-01-02", asOf); perr != nil {
+			fmt.Fprintf(os.Stderr, "ulc validate: --as-of %q is not a valid YYYY-MM-DD date\n", asOf)
+			return 2
+		}
+		if expiryWindow < 0 || expiryWindow > 36500 {
+			fmt.Fprintf(os.Stderr, "ulc validate: --expiry-window %d out of range (0..36500)\n", expiryWindow)
+			return 2
+		}
+	}
 
 	data, err := os.ReadFile(recordPath)
 	if err != nil {
@@ -211,6 +248,13 @@ USAGE
 	// achievements headline plus the verbose-only per-theme states and roadmap. Not
 	// gated on the conformance level (the axes are independent).
 	achievements.Report(recordMap, report)
+
+	// 6. Optional expiry advisory, opt in with --expiry. Gated at add time (only emitted
+	// when the flag is set), so a default run's findings, footer, and exit code are
+	// untouched. WARNING findings here never trip HasErrors, so the exit code stays advisory.
+	if expiry {
+		achievements.ReportExpiry(recordMap, asOf, expiryWindow, report)
+	}
 
 	report.Finalize()
 
@@ -502,6 +546,8 @@ var valueFlags = map[string]bool{
 	"-schema-dir": true, "--schema-dir": true,
 	"-out": true, "--out": true,
 	"-assets": true, "--assets": true,
+	"-as-of": true, "--as-of": true,
+	"-expiry-window": true, "--expiry-window": true,
 }
 
 // reorderFlagsFirst lets users write either `ulc sub <file> --check` or

@@ -42,8 +42,10 @@ Akeneo's family codes map to ULC primary categories one-to-one in a well-designe
 | `high_bay_industrial` | `high_bay` | `["pendant", "surface_ceiling"]` |
 | `bollard_outdoor` | `bollard` | `["surface_floor"]` |
 | `sconce_interior` | `sconce` | `["surface_wall"]` |
+| `exit_sign_internal` | `exit_sign` | `["surface_wall", "surface_ceiling"]` |
+| `emergency_luminaire_bug_eye` | `emergency_luminaire` | `["surface_wall"]` |
 
-If the manufacturer's family taxonomy differs from this pattern, the mapping table is the bridge between their convention and ULC's closed enum.
+If the manufacturer's family taxonomy differs from this pattern, the mapping table is the bridge between their convention and ULC's closed enum. An `exit_sign` or `emergency_luminaire` family maps to a product class that grades against the exit-sign or emergency-power dataset, not architectural photometry, so route those families to their own ULC class rather than a general luminaire category.
 
 ### Dimensional attributes
 
@@ -96,14 +98,14 @@ The cutsheet asset populates **both** `source_files[]` (as the entry with `file_
 
 Akeneo's localized attributes deliver per-language values. ULC is locale-neutral at the schema level. The emitter chooses the canonical locale (typically `en_US` for North American markets, `en_GB` for Europe, or the manufacturer's primary locale).
 
-The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own completeness rule: a product is not ULC-exportable until the attributes a record should carry are populated. There is no level to set on the record; `ulc build-index` computes the achieved completeness level from whatever you populate, so the channel rule exists to gate the export and keep thin records out of the feed, not to manage a declared level.
+The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own completeness rule: a product is not ULC-exportable until the attributes a record should carry are populated. There is no level to set on the record. `ulc build-index` computes three grading rollups from whatever you populate (beside the index's denormalized projections of manufacturer, category, and photometry): the `conformance_level` on the four-level ladder `incomplete` < `core` < `standard` < `full`, the per-theme `achievements` picture (the orthogonal second grading axis), and the `restricted_substances_declared` legal-floor flag. All three are parity-guarded and never hand-authored, so the channel rule exists to gate the export and keep thin records out of the feed, not to manage a declared level.
 
 ## Gotchas
 
 1. **Product-model vs variant split.** Akeneo's 2-level model (parent product-model holding shared attributes, variants holding per-SKU) maps exactly onto ULC's `product_family` (shared) vs `configuration` (per-scenario) split. Families with 3+ levels of variation (rare) require a chained emit.
 2. **Attribute completeness.** Akeneo tracks per-channel-and-locale completeness. Tie the ULC emit to the `ulc_export` channel's completeness so partially-populated SKUs don't ship as broken ULC records.
 3. **METRIC unit drift.** If different variants store the same attribute in different units (unusual but possible), normalize to the canonical unit before computing the companion.
-4. **Reference entity depth.** In PIM Enterprise, an attestation (UL-listed, DLC-qualified) can be modeled as a reference entity with its own structured attributes. Deep-walk these into ULC `attestations[]` entries with `program`, `status`, `value_type`, and `verification` populated.
+4. **Reference entity depth.** In PIM Enterprise, an attestation (UL-listed, DLC-qualified) can be modeled as a reference entity with its own structured attributes. Deep-walk these into ULC `attestations[]` entries with `program`, `status`, `value_type`, and `verification` populated. Every entry lands in `index.attestation_programs`, and those whose program is assigned to an achievement theme (a DLC energy qualification, an EPD, a Declare label) additionally feed the computed `index.achievements`: such an attestation reaches `documented` only when it carries a `source_document_ref` (filename plus a 64-hex SHA-256) attaching its certificate, so deep-walk the reference entity's attached file too. An unthemed listing such as `ul_1598` contributes to no achievement theme. Carry `valid_until` on any dated attestation so `ulc validate --expiry` can preview its expiry; a `sustainability_declaration`'s dated `expiration_date` belongs on that block, never on an attestation.
 5. **Published vs draft.** Akeneo's workflow distinguishes products in draft state from published products. Never emit ULC from a draft product; wait for the workflow to publish.
 
 ## Emit flow
@@ -122,6 +124,8 @@ The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own com
      - Pull enum attributes, map via code table
      - Stream assets, compute SHA-256
      - Assemble JSON
+     - Stamp record_status_as_of to the emit date (re-run on any later edit so
+       the projected index and the as-of date never go stale)
      - ulc build-index + validate
      - Publish on success
 4. Log failures with SKU + validation output for integration-engineer review
@@ -138,9 +142,10 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         return null;
     }
     $record = [
-        'ulc_version' => '0.8.0',
+        'ulc_version' => '1.0.0',
         'record_id' => slug("{$product->getBrand()}-{$product->getIdentifier()}-{$variant->getScenarioSlug()}"),
         'record_status' => 'active',
+        'record_status_as_of' => date('Y-m-d'), // the emit/edit date; drives record-relative expiry
         'product_family' => buildFamily($product, $primaryCategory),
         'configuration' => buildConfiguration($variant),
         'electrical' => mapElectrical($variant),

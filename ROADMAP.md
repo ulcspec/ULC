@@ -59,7 +59,7 @@ post-1.0 adoption work below.
 - Adjacent-standard mappings (GLDF, ETIM, IES LM-63, EULUMDAT) drafted (adoption,
   not a gate)
 - Additional PIM platform mapping guides as patterns mature
-- Patch releases for clarifications, doc fixes, and mapping refinements
+- Patch releases for clarifications, doc fixes, mapping refinements, and advisory validator additions that change no normative surface, no computed value, and no default output
 - No new normative fields without a minor bump
 
 ## Deferred schema work
@@ -186,6 +186,7 @@ detail, is foreclosed to the next major, v2.0.0; minors stay additive-only.
   theme stands alone today; folding it under a broader sustainability grouping,
   and recording Cradle to Cradle per-category levels (the `sustainability_metric`
   carries the overall level only), are non-breaking additions held for a real need.
+- **Filename minimum length.** `FileReference.filename` has no `minLength`, so an empty-string filename is schema-valid and can still back a `documented` achievement. Tightening to `minLength: 1` touches every `FileReference` site across the schema, so it is held for a future schema minor.
 
 ## Explicitly out of scope
 

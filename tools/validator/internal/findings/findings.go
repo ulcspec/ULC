@@ -97,6 +97,31 @@ const (
 	// that names at least one program, how to raise it to documented (attach the
 	// certificate). Suppressed from text output unless --verbose; always present in JSON.
 	CodeAchievementsRoadmap Code = "achievements/roadmap"
+
+	// Attestation expiry advisory. Emitted ONLY on `ulc validate --expiry`, an opt-in,
+	// report-only preview of attestation and declaration expiry against a caller-chosen
+	// as-of date. Advisory: it never changes the exit code (its WARNINGs do not trip
+	// HasErrors), never mutates the stamped index.achievements, and is absent from default
+	// runs, so goldens and default output stay byte-identical. None of these codes joins the
+	// WriteText verbose-hidden set: they are add-time gated on the flag, not render-time
+	// suppressed, so an added expiry finding never shifts a default run's footer.
+	//
+	// CodeExpirySummary is the one always-emitted INFO headline per --expiry run: how many
+	// dated surfaces are lapsed and how many expire within the window, as of the check date.
+	// The word "advisory" in its message marks the whole surface non-normative in output.
+	CodeExpirySummary Code = "expiry/summary"
+	// CodeExpiryLapsed is a WARNING per dated surface (an attestation or the sustainability
+	// declaration) whose date is already past the check date. Its Path is the entry's JSON
+	// Pointer.
+	CodeExpiryLapsed Code = "expiry/lapsed"
+	// CodeExpiryDowngrade is a WARNING per theme that is documented record-relatively but
+	// would drop to claimed if the record were re-stamped on or after the check date (an
+	// evidence-bearing attestation lapses and no other documented entry survives). Its Path
+	// is the theme's index pointer.
+	CodeExpiryDowngrade Code = "expiry/downgrade"
+	// CodeExpiryUpcoming is an INFO per dated surface expiring within the window, carrying the
+	// actual day count from the check date. Its Path is the entry's JSON Pointer.
+	CodeExpiryUpcoming Code = "expiry/upcoming"
 )
 
 // Finding is a single diagnostic.

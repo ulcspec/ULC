@@ -4,9 +4,9 @@ How to emit ULC records from a Product Information Management (PIM) system or eq
 
 ## Why this exists
 
-Manufacturers with catalog-scale output — hundreds or thousands of SKUs across multiple product lines — do not hand-author ULC records. They emit them programmatically from the PIM that already holds their product data. The question is how to translate PIM-shaped data (products, attributes, categories, assets, relationships) into ULC-shaped records without losing provenance or conformance.
+Manufacturers with catalog-scale output (hundreds or thousands of SKUs across multiple product lines) do not hand-author ULC records. They emit them programmatically from the PIM that already holds their product data. The question is how to translate PIM-shaped data (products, attributes, categories, assets, relationships) into ULC-shaped records without losing provenance or conformance.
 
-These guides describe, per PIM platform, how the typical PIM data model maps into the ULC schema. They are architectural and pragmatic, not prescriptive — every manufacturer's PIM implementation differs. Treat them as starting points that an integration engineer adapts to the actual attribute taxonomy in use.
+These guides describe, per PIM platform, how the typical PIM data model maps into the ULC schema. They are architectural and pragmatic, not prescriptive; every manufacturer's PIM implementation differs. Treat them as starting points that an integration engineer adapts to the actual attribute taxonomy in use.
 
 ## Guides
 
@@ -30,7 +30,7 @@ ULC separates **product family** (a cutsheet, shared across all SKUs in a family
 
 The `applicability` block expresses which PIM SKUs each scenario record applies to. See `docs/authoring-patterns.md` for the four patterns (A/B/C/D) this maps into.
 
-**Pattern-specific handling of `configuration.catalog_number`** (important — an emitter built without this distinction produces structurally wrong records for Pattern B and D):
+**Pattern-specific handling of `configuration.catalog_number`** (important: an emitter built without this distinction produces structurally wrong records for Pattern B and D):
 
 - **Pattern A** (one record per SKU): `configuration.catalog_number` equals the variant SKU. `applicability.fixed_axes.catalog_number` equals the same value, and `applicable_sku_count_estimate: 1`. This is the default shape the per-platform identity mapping tables describe.
 - **Pattern B** (one record per photometric scenario covering many SKUs via multiplier table): `configuration.catalog_number` carries only the tested-baseline SKU. The covered range of order codes lives in `applicability.covered_axes.<axis>` with a `derivation` rule containing a `multiplier_table`.
@@ -87,13 +87,17 @@ PIM "Recessed Downlight"     → primary_category: "downlight", mounting_types: 
 PIM "Pendant Linear"         → primary_category: "linear", mounting_types: ["pendant"]
 PIM "Exterior Wall Pack"     → primary_category: "bulkhead_wall_pack", mounting_types: ["surface_wall"]
 PIM "Industrial High Bay"    → primary_category: "high_bay", mounting_types: ["pendant", "surface_ceiling"]
+PIM "Exit Sign"              → primary_category: "exit_sign", mounting_types: ["surface_wall", "surface_ceiling"]
+PIM "Emergency Bug-Eye"      → primary_category: "emergency_luminaire", mounting_types: ["surface_wall"]
 ```
 
 The mapping table lives in the integration code, version-controlled, and reviewed with every new ULC schema release (new enum values may land that expand the mapping options).
 
+An `exit_sign` record grades against the exit-sign dataset (legend, illumination mode, face luminance) and an `emergency_luminaire` against the emergency-power dataset, not against architectural photometry. Map those PIM categories to their own ULC classes rather than forcing them into a general luminaire category, or the grader measures the record against the wrong requirements.
+
 ### 6. Index generation
 
-ULC's `index` block is a denormalized projection of values from the deep blocks. It must NOT be hand-authored — the reference `ulc build-index` CLI produces it deterministically. The PIM emitter pipeline looks like:
+ULC's `index` block is a denormalized projection of values from the deep blocks. It must NOT be hand-authored; the reference `ulc build-index` CLI produces it deterministically. The PIM emitter pipeline looks like:
 
 ```
 PIM data → transform to deep blocks → write record to a temp .ulc.json file
@@ -102,9 +106,15 @@ PIM data → transform to deep blocks → write record to a temp .ulc.json file
          → on success, publish the file
 ```
 
-Both `ulc build-index` and `ulc validate` are file-path CLIs — they read from and write to files on disk, they do not read from stdin. `ulc build-index --stdout` emits only the computed index object (not a full merged record), so most emitters use the default in-place mode and then call `ulc validate` on the same file. The transform code emits the deep blocks; the CLI handles the index plus validation. Shell out to the Go `ulc` binary from the emitter (Python, Java, Node, whatever).
+Both `ulc build-index` and `ulc validate` are file-path CLIs: they read from and write to files on disk, they do not read from stdin. `ulc build-index --stdout` emits only the computed index object (not a full merged record), so most emitters use the default in-place mode and then call `ulc validate` on the same file. The transform code emits the deep blocks; the CLI handles the index plus validation. Shell out to the Go `ulc` binary from the emitter (Python, Java, Node, whatever).
 
-`ulc build-index` also computes and stamps `index.conformance_level` (the achieved completeness level) from the populated fields, so PIMs get the level for free and never set it: a record reaches whatever level its data supports, and the value is parity-guarded like every other index value.
+`ulc build-index` stamps three computed grading rollups into the index (alongside its denormalized projections of manufacturer, category, photometry, and source files), all derived from the deep blocks, all parity-guarded, none hand-authored:
+
+- `index.conformance_level`: the achieved data-completeness grade on the four-level ladder `incomplete` < `core` < `standard` < `full`. A record reaches whatever level its data supports; PIMs get the level for free and never set it.
+- `index.achievements`: the per-theme Product Achievements picture, the second grading axis, orthogonal to conformance. An attestation whose program is assigned to an achievement theme contributes `claimed` on that token alone, and reaches `documented` only when it carries a `source_document_ref` (a filename plus a 64-hex SHA-256) that attaches evidence. Only theme-assigned programs feed a theme here; an unthemed program (a safety listing, a test method, a market-access mark) is still projected into `index.attestation_programs` but contributes to no achievement state. Carry `valid_until` on any dated attestation so its expiry is evaluable, and put a `sustainability_declaration`'s dated `expiration_date` on that block, never on an attestation. See `docs/methodology.md` for the achievement themes and the documented-vs-claimed rule.
+- `index.restricted_substances_declared`: the sibling legal-floor flag listing the restricted-substances programs (RoHS, REACH, and similar) the ledger declares. Table-stakes legality, never a prestige achievement, so it sits beside the themes rather than inside one.
+
+Because the index is a projection, re-run `ulc build-index` after any deep-block edit so the stored index stays parity-valid, and re-stamp `record_status_as_of` to the edit date so record-relative expiry is evaluated against the current review rather than a stale one. (Re-stamping only changes the index when the new date crosses an attestation's expiry boundary; its own job is accurate expiry dating, not parity.) Schedule a periodic `ulc validate --expiry` over the published corpus to preview attestation and declaration expiry before a re-stamp makes a downgrade normative.
 
 ## Out of scope
 
@@ -117,6 +127,6 @@ These guides describe the PIM-to-ULC transformation. They do not cover:
 ## See also
 
 - `templates/workbook/`: the fill-in workbook for the `ulc from-sheet` converter, the path for authoring records without a PIM.
-- `schema/ulc.schema.json` — the target schema the emitter produces.
-- `docs/authoring-patterns.md` — the four manufacturer authoring patterns and how to pick which one applies per SKU family.
-- `tools/validator/README.md` — CLI reference for `ulc build-index` and `ulc validate`.
+- `schema/ulc.schema.json`: the target schema the emitter produces.
+- `docs/authoring-patterns.md`: the four manufacturer authoring patterns and how to pick which one applies per SKU family.
+- `tools/validator/README.md`: CLI reference for `ulc build-index` and `ulc validate`.

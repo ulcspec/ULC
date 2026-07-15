@@ -59,6 +59,8 @@ CATEGORY_TO_ULC = {
     "highbay_industrial": ("high_bay", ["pendant", "surface_ceiling"]),
     "bollard_outdoor": ("bollard", ["surface_floor"]),
     "sconce_interior": ("sconce", ["surface_wall"]),
+    "exit_sign_internal": ("exit_sign", ["surface_wall", "surface_ceiling"]),
+    "emergency_bugeye": ("emergency_luminaire", ["surface_wall"]),
 }
 ```
 
@@ -89,6 +91,8 @@ Common columns to mappings:
 | `weight_kg` | `product_family.physical_dimensions.luminaire_mass` |
 
 ### Scenario expansion
+
+An `exit_sign` or `emergency_luminaire` product grades against the exit-sign or emergency-power dataset, not architectural photometry, so a sign record's scenarios come from the sign dataset (legend, illumination mode, face luminance), not from architectural IES files.
 
 In-house schemas often have a single product row with multiple test reports or IES files linked, one per scenario (CCT, distribution). The emit pattern:
 
@@ -144,6 +148,8 @@ WHERE product_id = :product_id
 
 Enum mapping for `program` values comes from a config table (similar to category mapping), tracking in-house codes (`UL1598`, `DLC_PREMIUM`) to ULC enum values (`ul_1598`, `dlc_premium`).
 
+These `attestations[]` entries all land in `index.attestation_programs`, and those whose program is assigned to an achievement theme also feed the computed `index.achievements` (`DLC_PREMIUM` routes to the energy theme; a `UL1598` safety listing is unthemed). A themed entry contributes `claimed` on its `program` token alone and reaches `documented` only when it carries a `source_document_ref` (filename plus a 64-hex SHA-256) attaching the test report, so hash the linked report file (as in `build_source_file_entry`) into `source_document_ref`, not just `source_files[]`. Carry the certificate's `valid_until` on any dated attestation so `ulc validate --expiry` can preview its expiry; a `sustainability_declaration`'s dated `expiration_date` belongs on that block, never on an attestation.
+
 ## Gotchas
 
 1. **Schemas without scenarios.** If the in-house PIM has one row per SKU without a concept of "test scenario," the emitter must synthesize scenarios from available photometric data (one scenario per IES file). If there's only one IES file per SKU and no CCT-variation metadata, that's Pattern A (simplest).
@@ -157,7 +163,17 @@ Enum mapping for `program` values comes from a config table (similar to category
 
 For a manufacturer moving from in-house PIM → commercial PIM (Salsify, Akeneo, SAP) in the future, the ULC emitter pattern remains the same; only the input-side query changes. The transform logic (category enum mapping, dual-unit conversion, SHA-256 hashing, attestation mapping, `ulc build-index` + `validate` shell-out) is portable.
 
-Design the emitter to take a normalized "flattened product record" as input and return a ULC JSON. The input-side adapter (SQL queries, ORM calls) becomes a thin layer that future migrations can replace.
+Design the emitter to take a normalized "flattened product record" as input and return a ULC JSON. The input-side adapter (SQL queries, ORM calls) becomes a thin layer that future migrations can replace. Whichever PIM feeds it, one rule is invariant: after any deep-block edit, re-run `ulc build-index` so the stored index stays parity-valid, and re-stamp `record_status_as_of` to the edit date so record-relative expiry is evaluated against the current review rather than a stale one (re-stamping only moves the index when the new date crosses an expiry boundary; its job is accurate expiry dating, not parity).
+
+## Index generation
+
+The `index` block is a generated projection of the deep blocks. It is forbidden by spec to hand-author, and an in-house pipeline is the most tempted to write its own projection: do not. Run `ulc build-index`, which stamps three parity-guarded grading rollups (beside the index's denormalized manufacturer, category, photometry, and source-file projections) from whatever you populate:
+
+- `index.conformance_level`: the achieved data-completeness grade on the four-level ladder `incomplete` < `core` < `standard` < `full`.
+- `index.achievements`: the per-theme Product Achievements picture (the orthogonal second grading axis), `claimed` on a program token and `documented` when the attestation attaches evidence.
+- `index.restricted_substances_declared`: the sibling legal-floor flag for the restricted-substances programs (RoHS, REACH, and similar) the ledger declares.
+
+Schedule a periodic `ulc validate --expiry` over the published corpus to preview attestation and declaration expiry before a re-stamp makes a downgrade normative.
 
 ## Emit flow
 
@@ -186,9 +202,10 @@ def emit_ulc(session: Session):
         family = build_family(product, primary_category, mounting)
         for scenario in product.photometric_scenarios:
             record = {
-                "ulc_version": "0.8.0",
+                "ulc_version": "1.0.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
+                "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
                 "product_family": family,
                 "configuration": build_configuration(scenario),
                 "electrical": build_electrical(scenario),
