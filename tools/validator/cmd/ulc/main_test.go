@@ -21,12 +21,15 @@ func captureStdout(t *testing.T, fn func() int) (string, int) {
 	if err != nil {
 		t.Fatalf("pipe: %v", err)
 	}
+	defer r.Close()
 	os.Stdout = w
+	// Restore via defer so an early t.Fatalf below cannot leave os.Stdout pointing at a
+	// closed pipe for subsequent tests in the same binary.
+	defer func() { os.Stdout = old }()
 	code := fn()
 	if err := w.Close(); err != nil {
 		t.Fatalf("close pipe: %v", err)
 	}
-	os.Stdout = old
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, r); err != nil {
 		t.Fatalf("read pipe: %v", err)
