@@ -148,7 +148,7 @@ WHERE product_id = :product_id
 
 Enum mapping for `program` values comes from a config table (similar to category mapping), tracking in-house codes (`UL1598`, `DLC_PREMIUM`) to ULC enum values (`ul_1598`, `dlc_premium`).
 
-These `attestations[]` entries feed the computed `index.achievements`. An entry contributes `claimed` on its `program` token alone and reaches `documented` only when it carries a `source_document_ref` (filename plus a 64-hex SHA-256) attaching the test report, so hash the linked report file (as in `build_source_file_entry`) into `source_document_ref`, not just `source_files[]`. Carry the certificate's `valid_until` on any dated attestation so `ulc validate --expiry` can preview its expiry; a `sustainability_declaration`'s dated `expiration_date` belongs on that block, never on an attestation.
+These `attestations[]` entries all land in `index.attestation_programs`, and those whose program is assigned to an achievement theme also feed the computed `index.achievements` (`DLC_PREMIUM` routes to the energy theme; a `UL1598` safety listing is unthemed). A themed entry contributes `claimed` on its `program` token alone and reaches `documented` only when it carries a `source_document_ref` (filename plus a 64-hex SHA-256) attaching the test report, so hash the linked report file (as in `build_source_file_entry`) into `source_document_ref`, not just `source_files[]`. Carry the certificate's `valid_until` on any dated attestation so `ulc validate --expiry` can preview its expiry; a `sustainability_declaration`'s dated `expiration_date` belongs on that block, never on an attestation.
 
 ## Gotchas
 
@@ -167,7 +167,7 @@ Design the emitter to take a normalized "flattened product record" as input and 
 
 ## Index generation
 
-The `index` block is a generated projection of the deep blocks. It is forbidden by spec to hand-author, and an in-house pipeline is the most tempted to write its own projection: do not. Run `ulc build-index`, which stamps three parity-guarded members from whatever you populate:
+The `index` block is a generated projection of the deep blocks. It is forbidden by spec to hand-author, and an in-house pipeline is the most tempted to write its own projection: do not. Run `ulc build-index`, which stamps three parity-guarded grading rollups (beside the index's denormalized manufacturer, category, photometry, and source-file projections) from whatever you populate:
 
 - `index.conformance_level`: the achieved data-completeness grade on the four-level ladder `incomplete` < `core` < `standard` < `full`.
 - `index.achievements`: the per-theme Product Achievements picture (the orthogonal second grading axis), `claimed` on a program token and `documented` when the attestation attaches evidence.
