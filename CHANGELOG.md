@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## 1.0.2 (2026-07-12)
+## 1.0.2 (2026-07-15)
 
 An opt-in validator advisory plus a documentation refresh. This release adds a report-only attestation-expiry check to `ulc validate` and brings the PIM mapping guides current with the two-axis model. The advisory contract is strict: no conformance grade, no computed `index`, no exit code, and no default `ulc validate` output changes; every golden file is byte-identical; and the schema, taxonomy, example records, and `ulc_version` are untouched.
 
