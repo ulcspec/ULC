@@ -26,15 +26,24 @@ func captureStdout(t *testing.T, fn func() int) (string, int) {
 	// Restore via defer so an early t.Fatalf below cannot leave os.Stdout pointing at a
 	// closed pipe for subsequent tests in the same binary.
 	defer func() { os.Stdout = old }()
+
+	// Drain the pipe concurrently: fn writes to the pipe while it runs, and a write that
+	// fills the OS pipe buffer (verbose JSON can exceed it) would block fn forever if we only
+	// read after it returns. The reader runs until w is closed, then delivers the captured
+	// output. io.Copy from a pipe read end returns only at EOF, so its error is not surfaced
+	// (and t.Fatalf must not be called off the test goroutine anyway).
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
+
 	code := fn()
 	if err := w.Close(); err != nil {
 		t.Fatalf("close pipe: %v", err)
 	}
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		t.Fatalf("read pipe: %v", err)
-	}
-	return buf.String(), code
+	return <-done, code
 }
 
 // exampleRecord returns the absolute path of an example record by filename.
