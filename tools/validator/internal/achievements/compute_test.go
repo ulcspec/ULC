@@ -9,15 +9,16 @@ import (
 )
 
 // 5.2 State ladders per theme: none, then claimed (program, no doc), then documented
-// (add source_document_ref) for each of the six themes.
+// (add source_document_ref) for each of the seven themes.
 func TestStateLaddersPerTheme(t *testing.T) {
 	rep := map[string]string{
-		ThemeEmbodiedCarbon: "epd_iso_14025",
-		ThemeCircularity:    "tm66_assured",
-		ThemeMaterialHealth: "hpd",
-		ThemeEnergy:         "dlc_qpl",
-		ThemeDarkSky:        "darksky_approved",
-		ThemeEmergency:      "ul_924",
+		ThemeEmbodiedCarbon:  "epd_iso_14025",
+		ThemeCircularity:     "tm66_assured",
+		ThemeMaterialHealth:  "hpd",
+		ThemeEnergy:          "dlc_qpl",
+		ThemeDarkSky:         "darksky_approved",
+		ThemeEmergency:       "ul_924",
+		ThemeDomesticContent: "baa",
 	}
 	for theme, prog := range rep {
 		if got := Compute(map[string]any{}).Themes[theme].State; got != StateNone {
@@ -36,6 +37,54 @@ func TestStateLaddersPerTheme(t *testing.T) {
 		if !contains(doc.Programs, prog) {
 			t.Errorf("%s: programs %v missing %q", theme, doc.Programs, prog)
 		}
+	}
+}
+
+// T1 domestic_content UNIT SEMANTICS (pins D2 and the token routing the corpus cannot fully
+// supply: baba and american_iron_and_steel have zero example coverage, so these are the only
+// pins that they route into the theme at all). All three mapped tokens land in domestic_content;
+// the two deliberately-excluded origin tokens do not; documented needs attached, unexpired
+// evidence with no accidental state cap; and a multi-program record aggregates a sorted slice.
+func TestDomesticContentSemantics(t *testing.T) {
+	// D2 no-cap: a baa attestation with a well-formed, unexpired source_document_ref documents,
+	// and that documented theme flows through the shared, theme-agnostic documented_count rollup.
+	doc := Compute(rec(att("baa", map[string]any{"source_document_ref": evidence()})))
+	if got := doc.Themes[ThemeDomesticContent].State; got != StateDocumented {
+		t.Errorf("baa + evidence: state=%s want documented (no state cap on domestic_content)", got)
+	}
+	if doc.DocumentedCount != 1 {
+		t.Errorf("baa + evidence: documented_count=%d want 1 (domestic_content counts like every theme)", doc.DocumentedCount)
+	}
+
+	// The same evidence, but expired relative to record_status_as_of, caps at claimed.
+	expired := rec(att("baa", map[string]any{"source_document_ref": evidence(), "valid_until": "2026-01-01"}))
+	expired["record_status_as_of"] = "2026-07-01"
+	if got := Compute(expired).Themes[ThemeDomesticContent].State; got != StateClaimed {
+		t.Errorf("baa + expired evidence: state=%s want claimed (record-relative expiry caps to claimed)", got)
+	}
+
+	// Every mapped token routes to domestic_content claimed on its own.
+	for _, prog := range []string{"baa", "baba", "american_iron_and_steel"} {
+		if got := Compute(rec(att(prog, nil))).Themes[ThemeDomesticContent].State; got != StateClaimed {
+			t.Errorf("%s alone: domestic_content=%s want claimed", prog, got)
+		}
+	}
+
+	// The two deliberately-excluded origin tokens never enter the theme.
+	for _, prog := range []string{"taa", "country_of_origin"} {
+		if got := Compute(rec(att(prog, nil))).Themes[ThemeDomesticContent].State; got != StateNone {
+			t.Errorf("%s alone: domestic_content=%s want none (deliberately unthemed)", prog, got)
+		}
+	}
+
+	// The flagship vode case: baa and baba in one theme aggregate to a sorted two-program
+	// slice at claimed, pinned here independent of the regenerated golden.
+	multi := Compute(rec(att("baa", nil), att("baba", nil))).Themes[ThemeDomesticContent]
+	if multi.State != StateClaimed {
+		t.Errorf("baa+baba: state=%s want claimed", multi.State)
+	}
+	if len(multi.Programs) != 2 || multi.Programs[0] != "baa" || multi.Programs[1] != "baba" {
+		t.Errorf("baa+baba: programs=%v want [baa baba] (sorted)", multi.Programs)
 	}
 }
 

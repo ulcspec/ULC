@@ -1,13 +1,14 @@
 package achievements
 
-// The six achievement theme keys. Always all emitted (deterministic index shape).
+// The seven achievement theme keys. Always all emitted (deterministic index shape).
 const (
-	ThemeEmbodiedCarbon = "embodied_carbon"
-	ThemeCircularity    = "circularity"
-	ThemeMaterialHealth = "material_health"
-	ThemeEnergy         = "energy"
-	ThemeDarkSky        = "dark_sky"
-	ThemeEmergency      = "emergency"
+	ThemeEmbodiedCarbon  = "embodied_carbon"
+	ThemeCircularity     = "circularity"
+	ThemeMaterialHealth  = "material_health"
+	ThemeEnergy          = "energy"
+	ThemeDarkSky         = "dark_sky"
+	ThemeEmergency       = "emergency"
+	ThemeDomesticContent = "domestic_content"
 )
 
 // themeOrder is the canonical iteration order for deterministic emission. Findings are
@@ -19,11 +20,12 @@ var themeOrder = []string{
 	ThemeEnergy,
 	ThemeDarkSky,
 	ThemeEmergency,
+	ThemeDomesticContent,
 }
 
 // The program-to-theme map (the published, versioned classification). Each set is a
 // named package var so the achievements drift guard can assert the AttestationProgram
-// enum partitions exactly into {six themes} + {restricted} + {unthemed residue}: a new
+// enum partitions exactly into {seven themes} + {restricted} + {unthemed residue}: a new
 // enum token then fails the guard until it is consciously triaged rather than silently
 // badged all-none.
 
@@ -85,6 +87,16 @@ var emergencyPrograms = map[string]bool{
 	"icel":    true,
 }
 
+// domesticContentPrograms: US domestic-content procurement eligibility (BAA, BABA, and the
+// American Iron and Steel requirement). taa and country_of_origin are deliberately NOT here
+// (see the unthemed residue): TAA can be satisfied by non-US manufacture, and country of
+// origin is a neutral provenance fact, so neither is a domestic-content claim.
+var domesticContentPrograms = map[string]bool{
+	"american_iron_and_steel": true,
+	"baa":                     true,
+	"baba":                    true,
+}
+
 // restrictedSubstancePrograms feeds index.restricted_substances_declared, the sibling
 // legal-floor flag. A restricted-substances declaration is table-stakes legality, never
 // a prestige achievement, so these are surfaced beside the themes, never inside one.
@@ -101,12 +113,13 @@ var restrictedSubstancePrograms = map[string]bool{
 
 // themeSets maps each theme key to its program set, for iteration.
 var themeSets = map[string]map[string]bool{
-	ThemeEmbodiedCarbon: embodiedCarbonPrograms,
-	ThemeCircularity:    circularityPrograms,
-	ThemeMaterialHealth: materialHealthPrograms,
-	ThemeEnergy:         energyPrograms,
-	ThemeDarkSky:        darkSkyPrograms,
-	ThemeEmergency:      emergencyPrograms,
+	ThemeEmbodiedCarbon:  embodiedCarbonPrograms,
+	ThemeCircularity:     circularityPrograms,
+	ThemeMaterialHealth:  materialHealthPrograms,
+	ThemeEnergy:          energyPrograms,
+	ThemeDarkSky:         darkSkyPrograms,
+	ThemeEmergency:       emergencyPrograms,
+	ThemeDomesticContent: domesticContentPrograms,
 }
 
 // declarationProgramTokens maps a sustainability_declaration.declaration_type to the
@@ -175,13 +188,10 @@ var unthemedPrograms = map[string]bool{
 	// Mandatory or discontinued disclosure labels, not qualifications.
 	"doe_led_lighting_facts": true,
 	"ftc_lighting_facts":     true,
-	// Domestic content (v1.1 theme candidate).
-	"american_iron_and_steel": true,
-	"baa":                     true,
-	"baba":                    true,
-	"country_of_origin":       true,
-	"taa":                     true,
-	// Controls (v1.1 theme candidate).
+	// Deliberately unthemed: country_of_origin is a neutral provenance fact; taa (Trade Agreements Act) can be satisfied by non-US manufacture, so neither is a domestic-content claim.
+	"country_of_origin": true,
+	"taa":               true,
+	// Controls (unscheduled future theme).
 	"dlc_nlc":    true,
 	"ntcip_1213": true,
 	// Hazardous location (v1.2 theme candidate).

@@ -67,7 +67,7 @@ type Item struct {
 }
 
 // Result is the structured achievements picture Compute returns. Themes always carries
-// all six fixed theme keys. RestrictedSubstances is the sibling legal-floor flag (the
+// all seven fixed theme keys. RestrictedSubstances is the sibling legal-floor flag (the
 // restricted-substances programs declared in the ledger), computed here for the builder
 // but never an achievement theme. Roadmap holds the claimed-to-documented items.
 type Result struct {

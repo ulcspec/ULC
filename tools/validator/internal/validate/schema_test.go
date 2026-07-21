@@ -457,6 +457,76 @@ func TestValidatorConstrainsAchievementThemeShape(t *testing.T) {
 	}
 }
 
+// T3 SCHEMA SHAPE (D3 Option A): the domestic_content property $ref is enforced even though
+// domestic_content is deliberately not in `required`. A malformed domestic_content
+// AchievementTheme is a schema error; a valid seven-theme index and a valid six-theme index
+// (domestic_content absent, since it is optional) both validate, so the additive-minor
+// property holds: adding the property rejects malformed shapes without invalidating older
+// six-theme indices.
+func TestValidatorConstrainsDomesticContentTheme(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	theme := func(state string) map[string]any {
+		return map[string]any{
+			"state":                  state,
+			"programs":               []any{},
+			"source_attestation_ids": []any{},
+			"evidence_present":       false,
+		}
+	}
+	sixThemes := func() map[string]any {
+		return map[string]any{
+			"embodied_carbon": theme("none"),
+			"circularity":     theme("none"),
+			"material_health": theme("none"),
+			"energy":          theme("none"),
+			"dark_sky":        theme("none"),
+			"emergency":       theme("none"),
+		}
+	}
+	validate := func(themes map[string]any) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		idx, ok := m["index"].(map[string]any)
+		if !ok {
+			t.Fatalf("record has no index object")
+		}
+		idx["achievements"] = map[string]any{"themes": themes, "documented_count": float64(0)}
+		idx["restricted_substances_declared"] = []any{}
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+
+	// A valid six-theme index still validates: domestic_content is optional (not in required).
+	if r := validate(sixThemes()); r.HasErrors() {
+		t.Errorf("a six-theme index must validate under Option A (domestic_content optional); got: %+v", r.Findings)
+	}
+
+	// A valid seven-theme index validates: the added property accepts a well-formed theme.
+	seven := sixThemes()
+	seven["domestic_content"] = theme("claimed")
+	if r := validate(seven); r.HasErrors() {
+		t.Errorf("a valid seven-theme index must validate; got: %+v", r.Findings)
+	}
+
+	// A malformed domestic_content theme (missing its required state) is rejected: the property
+	// $ref is enforced even though domestic_content is not in `required`.
+	broken := sixThemes()
+	badTheme := theme("none")
+	delete(badTheme, "state")
+	broken["domestic_content"] = badTheme
+	if r := validate(broken); !r.HasErrors() {
+		t.Error("expected a schema error for a malformed domestic_content AchievementTheme, got none")
+	}
+}
+
 func TestFindSchemaDirExplicit(t *testing.T) {
 	root := repoRoot(t)
 	schemaDir := filepath.Join(root, "schema")

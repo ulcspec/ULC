@@ -1,4 +1,4 @@
-INFO    achievements/summary at /index/achievements: achievements: 0 documented, 2 claimed
+INFO    achievements/summary at /index/achievements: achievements: 0 documented, 3 claimed
 INFO    conformance/gap at /colorimetry/tm_30/rf: to reach "full", add /colorimetry/tm_30/rf (from test_report, per TM-30)
 INFO    conformance/gap at /colorimetry/tm_30/rf_h_per_bin: to reach "full", add /colorimetry/tm_30/rf_h_per_bin (from test_report, per TM-30)
 INFO    conformance/gap at /corrections_applied: to reach "full", add /corrections_applied (from test_report, per LM-79)
@@ -8,4 +8,4 @@ INFO    conformance/grade-satisfied at /index/conformance_level: conformance gra
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "standard" satisfied
 INFO    conformance/level at /index/conformance_level: this record achieves conformance level "standard"
 
-OK -- selux-aya-pole-sr-ho-3000k.ulc: 0 errors, 0 warnings, 44 infos (35 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).
+OK -- selux-aya-pole-sr-ho-3000k.ulc: 0 errors, 0 warnings, 46 infos (37 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).

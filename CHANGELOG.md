@@ -20,6 +20,31 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.1.0 (2026-07-21)
+
+A seventh Product Achievements theme, `domestic_content`. This additive-minor release maps the three US domestic-content procurement programs already in the taxonomy (`baa`, `baba`, `american_iron_and_steel`) into a new achievement theme alongside the existing six. The achievements engine is table-driven, so the theme computes with no new grading logic: a record earns `domestic_content` from the same ledger, evidence, and record-relative expiry rules every other theme uses. Conformance grades, `documented_count`, and `restricted_substances_declared` are byte-identical on every example; only the new theme entry and the builder-version stamp change in the generated index.
+
+### For consumers
+
+Re-stamp each record with `ulc build-index` to gain the `domestic_content` theme entry and the `0.7.0` builder version; nothing else in the index moves. Stored six-theme indices from earlier releases stay schema-valid: `domestic_content` is an added optional property, not a new `required` key, so no record is invalidated. `ulc_version` is unchanged, and `1.0.0` records remain valid.
+
+### Achievements
+
+- The Product Achievements axis gains a seventh theme, `domestic_content`, recognizing US domestic-content procurement eligibility. It maps three programs already in the taxonomy: `baa` (Buy American Act), `baba` (Build America, Buy America), and `american_iron_and_steel` (American Iron and Steel).
+- The theme follows the standard state ladder with no special-case cap: `claimed` when a qualifying attestation is present, `documented` when that attestation carries an attached, unexpired evidence document, and `none` otherwise. For `domestic_content`, `documented` means a certificate document is attached; it does not discharge the per-project `requires_manufacturer_confirmation` obligation carried in the attestation's `verification` block, which stays a project-by-project determination.
+- `taa` (Trade Agreements Act) and `country_of_origin` stay deliberately unthemed, permanently by design: TAA eligibility can be satisfied by non-US manufacture in a designated country, so it is not a domestic-content claim, and country of origin is a neutral provenance fact rather than an achievement.
+
+### Schema
+
+- `index.achievements.themes` gains an optional `domestic_content` property that references the existing `AchievementTheme` definition. The `themes` `required` set is unchanged (still the original six themes), which keeps this an additive-minor change: older six-theme indices stay valid, while a malformed `domestic_content` theme is still rejected by the property's shape constraint. The theme container was already open, so consumers that ignore unknown themes are unaffected.
+- The builder version is bumped from `0.6.0` to `0.7.0` because the index projection gained a theme. No taxonomy tokens were added: all three programs were already `AttestationProgram` members.
+
+### Docs
+
+- `docs/compliance-attestation.md` adds the `domestic_content` row to the program-to-theme map, records that `documented` does not discharge the per-project manufacturer-confirmation obligation, and splits the former combined unthemed bullet so `taa` and `country_of_origin` are documented as permanently unthemed by design.
+- `README.md`, `docs/methodology.md`, `docs/how-it-works.md`, `docs/README.md`, and `docs/authoring-patterns.md` are brought current with the seven-theme axis.
+- `ROADMAP.md` records that the achievements axis ships seven themes under the open theme container and that a controls theme is deliberately unscheduled.
+
 ## 1.0.2 (2026-07-15)
 
 An opt-in validator advisory plus a documentation refresh. This release adds a report-only attestation-expiry check to `ulc validate` and brings the PIM mapping guides current with the two-axis model. The advisory contract is strict: no conformance grade, no computed `index`, no exit code, and no default `ulc validate` output changes; every golden file is byte-identical; and the schema, taxonomy, example records, and `ulc_version` are untouched.

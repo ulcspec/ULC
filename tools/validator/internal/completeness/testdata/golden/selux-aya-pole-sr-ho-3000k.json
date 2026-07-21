@@ -9,6 +9,12 @@
     {
       "level": "INFO",
       "code": "achievements/roadmap",
+      "message": "to document the domestic_content achievement, attach the certificate document to the baa attestation",
+      "path": "/index/achievements/themes/domestic_content"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/roadmap",
       "message": "to document the material_health achievement, attach the certificate document to the declare attestation",
       "path": "/index/achievements/themes/material_health"
     },
@@ -21,13 +27,19 @@
     {
       "level": "INFO",
       "code": "achievements/state",
+      "message": "domestic_content achievement: claimed (baa)",
+      "path": "/index/achievements/themes/domestic_content"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
       "message": "material_health achievement: claimed (declare, lbc_red_list_approved)",
       "path": "/index/achievements/themes/material_health"
     },
     {
       "level": "INFO",
       "code": "achievements/summary",
-      "message": "achievements: 0 documented, 2 claimed",
+      "message": "achievements: 0 documented, 3 claimed",
       "path": "/index/achievements"
     },
     {
@@ -343,6 +355,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 44
+    "infos": 46
   }
 }

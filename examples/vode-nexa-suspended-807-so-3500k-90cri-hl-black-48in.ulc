@@ -379,6 +379,18 @@
           "source_attestation_ids": [],
           "state": "none"
         },
+        "domestic_content": {
+          "evidence_present": false,
+          "programs": [
+            "baa",
+            "baba"
+          ],
+          "source_attestation_ids": [
+            "baa_vode_nexa_807",
+            "baba_vode_nexa_807"
+          ],
+          "state": "claimed"
+        },
         "embodied_carbon": {
           "evidence_present": false,
           "programs": [],
@@ -428,7 +440,7 @@
       "ul_1598"
     ],
     "beam_family": "medium_flood",
-    "builder_version": "0.6.0",
+    "builder_version": "0.7.0",
     "catalog_model": "Nexa Suspended 807",
     "catalog_number": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
     "color_tunability": "static_white",

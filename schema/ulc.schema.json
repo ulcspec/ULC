@@ -254,11 +254,11 @@
           "items": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" }
         },
         "achievements": {
-          "description": "Product Achievements view: per-theme third-party program qualifications computed from the record's Master Ledger, orthogonal to `conformance_level`. GENERATED, NOT HAND-AUTHORED. `themes` always carries the six fixed theme keys, each an AchievementTheme; the container is open (no `additionalProperties` bar) so future themes add without breaking consumers. `documented_count` is the factual count of themes at the `documented` state; it is the only sanctioned rollup, and there is deliberately no weighted or overall achievement grade.",
+          "description": "Product Achievements view: per-theme third-party program qualifications computed from the record's Master Ledger, orthogonal to `conformance_level`. GENERATED, NOT HAND-AUTHORED. `themes` carries seven fixed theme keys, of which six are `required`, each an AchievementTheme; the container is open (no `additionalProperties` bar) so future themes add without breaking consumers. `documented_count` is the factual count of themes at the `documented` state; it is the only sanctioned rollup, and there is deliberately no weighted or overall achievement grade.",
           "type": "object",
           "properties": {
             "themes": {
-              "description": "The six fixed achievement themes, always all present.",
+              "description": "The seven fixed achievement themes, all emitted by the reference builder.",
               "type": "object",
               "properties": {
                 "embodied_carbon": { "$ref": "#/$defs/AchievementTheme" },
@@ -266,7 +266,8 @@
                 "material_health": { "$ref": "#/$defs/AchievementTheme" },
                 "energy": { "$ref": "#/$defs/AchievementTheme" },
                 "dark_sky": { "$ref": "#/$defs/AchievementTheme" },
-                "emergency": { "$ref": "#/$defs/AchievementTheme" }
+                "emergency": { "$ref": "#/$defs/AchievementTheme" },
+                "domestic_content": { "$ref": "#/$defs/AchievementTheme" }
               },
               "required": ["embodied_carbon", "circularity", "material_health", "energy", "dark_sky", "emergency"]
             },

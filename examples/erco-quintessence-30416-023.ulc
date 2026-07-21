@@ -349,6 +349,12 @@
           "source_attestation_ids": [],
           "state": "none"
         },
+        "domestic_content": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
         "embodied_carbon": {
           "evidence_present": false,
           "programs": [],
@@ -387,7 +393,7 @@
       "ul_8750"
     ],
     "beam_family": "wide_flood",
-    "builder_version": "0.6.0",
+    "builder_version": "0.7.0",
     "catalog_model": "Quintessence Downlight 30416",
     "catalog_number": "30416.023",
     "color_tunability": "static_white",

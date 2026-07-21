@@ -82,6 +82,12 @@
           "source_attestation_ids": [],
           "state": "none"
         },
+        "domestic_content": {
+          "evidence_present": false,
+          "programs": [],
+          "source_attestation_ids": [],
+          "state": "none"
+        },
         "embodied_carbon": {
           "evidence_present": false,
           "programs": [],
@@ -115,7 +121,7 @@
     "attestation_programs": [
       "ul_924"
     ],
-    "builder_version": "0.6.0",
+    "builder_version": "0.7.0",
     "catalog_model": "ES6",
     "catalog_number": "ES61SRC",
     "conformance_level": "standard",
