@@ -47,7 +47,12 @@ import (
 // always-stamped generated members, computed by the achievements package. Additive:
 // conformance_level and every other projection are byte-identical. Stored records
 // re-stamp on the next ulc build-index to gain the two new members.
-const BuilderVersion = "0.6.0"
+// 0.7.0: the Product Achievements axis gains a seventh theme, domestic_content, mapping the
+// baa, baba, and american_iron_and_steel attestation programs. Additive: the six existing
+// themes and every other projection are byte-identical; each stored index gains a
+// domestic_content theme entry (state none on records carrying none of the three programs).
+// Stored records re-stamp on the next ulc build-index to gain the seventh theme.
+const BuilderVersion = "0.7.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard

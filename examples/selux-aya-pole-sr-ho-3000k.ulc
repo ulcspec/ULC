@@ -435,6 +435,16 @@
           ],
           "state": "claimed"
         },
+        "domestic_content": {
+          "evidence_present": false,
+          "programs": [
+            "baa"
+          ],
+          "source_attestation_ids": [
+            "baa_selux_aya_pole"
+          ],
+          "state": "claimed"
+        },
         "embodied_carbon": {
           "evidence_present": false,
           "programs": [],
@@ -480,7 +490,7 @@
       "rohs"
     ],
     "bug_rating": "B2-U0-G1",
-    "builder_version": "0.6.0",
+    "builder_version": "0.7.0",
     "catalog_model": "Aya Pole or Pendant (AYAP)",
     "catalog_number": "selux-aya-pole-sr-ho-3000k",
     "color_tunability": "static_white",

@@ -170,9 +170,9 @@ detail, is foreclosed to the next major, v2.0.0; minors stay additive-only.
   when it differs from the seller. A future revision may add a structured
   listing-detail object alongside the token. Relates to the `New
   AttestationProgram values` item above.
-- **Future achievement themes.** The achievements axis ships six themes under an
-  open theme container, so new themes add without breaking. Controls and
-  domestic-content themes are planned for v1.1; hazardous-location and
+- **Future achievement themes.** The achievements axis ships seven themes under an
+  open theme container, so new themes add without breaking. A controls theme is
+  deliberately unscheduled; hazardous-location and
   regional-market-access-consolidation themes, a social-responsibility theme
   (the organization-level ILFI JUST label, `just_label`, is unthemed-tracked
   toward it), and a disposition for the project-level programs (LEED, WELL)

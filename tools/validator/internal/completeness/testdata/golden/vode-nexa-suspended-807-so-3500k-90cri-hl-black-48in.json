@@ -3,8 +3,20 @@
     {
       "level": "INFO",
       "code": "achievements/roadmap",
+      "message": "to document the domestic_content achievement, attach the certificate document to the baa attestation",
+      "path": "/index/achievements/themes/domestic_content"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/roadmap",
       "message": "to document the material_health achievement, attach the certificate document to the declare attestation",
       "path": "/index/achievements/themes/material_health"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
+      "message": "domestic_content achievement: claimed (baa, baba)",
+      "path": "/index/achievements/themes/domestic_content"
     },
     {
       "level": "INFO",
@@ -15,7 +27,7 @@
     {
       "level": "INFO",
       "code": "achievements/summary",
-      "message": "achievements: 0 documented, 1 claimed",
+      "message": "achievements: 0 documented, 2 claimed",
       "path": "/index/achievements"
     },
     {
@@ -319,6 +331,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 40
+    "infos": 42
   }
 }

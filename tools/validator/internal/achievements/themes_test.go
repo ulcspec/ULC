@@ -2,15 +2,16 @@ package achievements
 
 import "testing"
 
-// namedThemeSets is the six theme sets, keyed for reporting.
+// namedThemeSets is the seven theme sets, keyed for reporting.
 func namedThemeSets() map[string]map[string]bool {
 	return map[string]map[string]bool{
-		ThemeEmbodiedCarbon: embodiedCarbonPrograms,
-		ThemeCircularity:    circularityPrograms,
-		ThemeMaterialHealth: materialHealthPrograms,
-		ThemeEnergy:         energyPrograms,
-		ThemeDarkSky:        darkSkyPrograms,
-		ThemeEmergency:      emergencyPrograms,
+		ThemeEmbodiedCarbon:  embodiedCarbonPrograms,
+		ThemeCircularity:     circularityPrograms,
+		ThemeMaterialHealth:  materialHealthPrograms,
+		ThemeEnergy:          energyPrograms,
+		ThemeDarkSky:         darkSkyPrograms,
+		ThemeEmergency:       emergencyPrograms,
+		ThemeDomesticContent: domesticContentPrograms,
 	}
 }
 
@@ -86,7 +87,7 @@ func TestThemeSetsDisjointExceptDualRoute(t *testing.T) {
 	}
 }
 
-// 5.10 EXHAUSTIVENESS: the union of the six theme sets, the restricted set, and the
+// 5.10 EXHAUSTIVENESS: the union of the seven theme sets, the restricted set, and the
 // unthemed residue set equals the full AttestationProgram enum EXACTLY. cradle_to_cradle
 // is the only token covered twice (its dual-route). A new enum token then fails this test
 // until it is consciously triaged.
@@ -125,4 +126,45 @@ func TestEnumPartitionExhaustive(t *testing.T) {
 	if len(union) != len(enum) {
 		t.Errorf("the partition covers %d distinct tokens; the enum has %d", len(union), len(enum))
 	}
+}
+
+// T4 WIRING GUARD: themeOrder, themeSets, and the test-only namedThemeSets() must expose the
+// identical key set. TestEnumPartitionExhaustive iterates namedThemeSets(), so a theme wired
+// into themeOrder/themeSets but forgotten in namedThemeSets() (or the reverse) would leave the
+// partition guard green while Compute badges that theme's tokens all-none. Pinning the three
+// key sets together makes a half-wired theme fail loudly here instead of shipping silently.
+func TestThemeSetKeysIdentical(t *testing.T) {
+	orderKeys := map[string]bool{}
+	for _, k := range themeOrder {
+		if orderKeys[k] {
+			t.Errorf("duplicate key %q in themeOrder", k)
+		}
+		orderKeys[k] = true
+	}
+	mapKeys := func(m map[string]map[string]bool) map[string]bool {
+		out := map[string]bool{}
+		for k := range m {
+			out[k] = true
+		}
+		return out
+	}
+	setKeys, namedKeys := mapKeys(themeSets), mapKeys(namedThemeSets())
+
+	// equalKeys asserts two key sets are identical, checking both directions so a key
+	// present in either set but missing from the other fails loudly.
+	equalKeys := func(a, b map[string]bool, aName, bName string) {
+		for k := range a {
+			if !b[k] {
+				t.Errorf("%s has theme %q but %s does not", aName, k, bName)
+			}
+		}
+		for k := range b {
+			if !a[k] {
+				t.Errorf("%s has theme %q but %s does not", bName, k, aName)
+			}
+		}
+	}
+	// themeOrder is the pivot: identity with both maps forces all three key sets identical.
+	equalKeys(orderKeys, setKeys, "themeOrder", "themeSets")
+	equalKeys(orderKeys, namedKeys, "themeOrder", "namedThemeSets")
 }

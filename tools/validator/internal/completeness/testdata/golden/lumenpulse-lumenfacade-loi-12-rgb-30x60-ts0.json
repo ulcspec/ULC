@@ -2,8 +2,20 @@
   "findings": [
     {
       "level": "INFO",
+      "code": "achievements/roadmap",
+      "message": "to document the domestic_content achievement, attach the certificate document to the baa attestation",
+      "path": "/index/achievements/themes/domestic_content"
+    },
+    {
+      "level": "INFO",
+      "code": "achievements/state",
+      "message": "domestic_content achievement: claimed (baa)",
+      "path": "/index/achievements/themes/domestic_content"
+    },
+    {
+      "level": "INFO",
       "code": "achievements/summary",
-      "message": "achievements: 0 documented, 0 claimed",
+      "message": "achievements: 0 documented, 1 claimed",
       "path": "/index/achievements"
     },
     {
@@ -288,6 +300,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 37
+    "infos": 39
   }
 }

@@ -1,4 +1,4 @@
-INFO    achievements/summary at /index/achievements: achievements: 0 documented, 1 claimed
+INFO    achievements/summary at /index/achievements: achievements: 0 documented, 2 claimed
 INFO    conformance/gap at /colorimetry/sdcm_step: to reach "standard", add /colorimetry/sdcm_step (from datasheet_pdf, per ANSI C78.377)
 INFO    conformance/gap at /colorimetry/tm_30/rf: to reach "full", add /colorimetry/tm_30/rf (from test_report, per TM-30)
 INFO    conformance/gap at /colorimetry/tm_30/rf_h_per_bin: to reach "full", add /colorimetry/tm_30/rf_h_per_bin (from test_report, per TM-30)
@@ -9,4 +9,4 @@ INFO    conformance/gap at method-backed lumen maintenance (TM-21 hours or TM-28
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "core" satisfied
 INFO    conformance/level at /index/conformance_level: this record achieves conformance level "core"
 
-OK -- vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc: 0 errors, 0 warnings, 40 infos (30 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).
+OK -- vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc: 0 errors, 0 warnings, 42 infos (32 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).

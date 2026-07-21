@@ -77,25 +77,33 @@ func TestBuildAchievementsMatchesCompute(t *testing.T) {
 }
 
 // 5.12 TestRealExampleAchievementStates asserts the section 4.3 expected-state table
-// verbatim over the real examples: the six theme states, documented_count, the restricted
-// array, and that conformance_level is unchanged on every record. Escalate any mismatch;
-// never adjust a record to force a state.
+// verbatim over the real examples: the seven theme states, the domestic_content programs
+// slice on each record, documented_count, the restricted array, and that conformance_level
+// is unchanged on every record. Escalate any mismatch; never adjust a record to force a state.
 func TestRealExampleAchievementStates(t *testing.T) {
 	type row struct {
-		emergency, energy, darkSky, materialHealth, embodiedCarbon, circularity string
-		documentedCount                                                         int
-		restricted                                                              []string
-		conformance                                                             string
+		emergency, energy, darkSky, materialHealth, embodiedCarbon, circularity, domesticContent string
+		documentedCount                                                                          int
+		restricted                                                                               []string
+		conformance                                                                              string
 	}
 	want := map[string]row{
-		"cooper-atlite-auxswhsd.ulc":                               {"documented", "none", "none", "none", "none", "none", 1, []string{}, "standard"},
-		"cooper-sure-lites-es61src.ulc":                            {"claimed", "none", "none", "none", "none", "none", 0, []string{}, "standard"},
-		"cooper-sure-lites-lpx7sd.ulc":                             {"claimed", "claimed", "none", "none", "none", "none", 0, []string{}, "core"},
-		"erco-quintessence-30416-023.ulc":                          {"none", "none", "none", "none", "none", "none", 0, []string{}, "standard"},
-		"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc":          {"none", "none", "none", "none", "none", "none", 0, []string{"rohs"}, "standard"},
-		"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc":    {"none", "none", "none", "none", "none", "none", 0, []string{"rohs"}, "standard"},
-		"selux-aya-pole-sr-ho-3000k.ulc":                           {"none", "none", "claimed", "claimed", "none", "none", 0, []string{"rohs"}, "standard"},
-		"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc": {"none", "none", "none", "claimed", "none", "none", 0, []string{}, "core"},
+		"cooper-atlite-auxswhsd.ulc":                               {"documented", "none", "none", "none", "none", "none", "none", 1, []string{}, "standard"},
+		"cooper-sure-lites-es61src.ulc":                            {"claimed", "none", "none", "none", "none", "none", "none", 0, []string{}, "standard"},
+		"cooper-sure-lites-lpx7sd.ulc":                             {"claimed", "claimed", "none", "none", "none", "none", "none", 0, []string{}, "core"},
+		"erco-quintessence-30416-023.ulc":                          {"none", "none", "none", "none", "none", "none", "none", 0, []string{}, "standard"},
+		"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc":          {"none", "none", "none", "none", "none", "none", "claimed", 0, []string{"rohs"}, "standard"},
+		"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc":    {"none", "none", "none", "none", "none", "none", "claimed", 0, []string{"rohs"}, "standard"},
+		"selux-aya-pole-sr-ho-3000k.ulc":                           {"none", "none", "claimed", "claimed", "none", "none", "claimed", 0, []string{"rohs"}, "standard"},
+		"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc": {"none", "none", "none", "claimed", "none", "none", "claimed", 0, []string{}, "core"},
+	}
+	// T2: section 4's programs column, machine-pinned. Non-carrier records default to an empty
+	// slice; the four carriers name their sorted domestic_content programs.
+	wantDCPrograms := map[string][]string{
+		"selux-aya-pole-sr-ho-3000k.ulc":                           {"baa"},
+		"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc":          {"baa"},
+		"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc":    {"baa"},
+		"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc": {"baa", "baba"},
 	}
 	records := exampleRecords(t)
 	if len(records) != len(want) {
@@ -105,6 +113,15 @@ func TestRealExampleAchievementStates(t *testing.T) {
 		e, _ := themes[key].(map[string]any)
 		s, _ := e["state"].(string)
 		return s
+	}
+	programsOf := func(themes map[string]any, key string) []string {
+		e, _ := themes[key].(map[string]any)
+		raw, _ := e["programs"].([]any)
+		out := make([]string, len(raw))
+		for i, v := range raw {
+			out[i], _ = v.(string)
+		}
+		return out
 	}
 	for name, w := range want {
 		t.Run(name, func(t *testing.T) {
@@ -122,11 +139,19 @@ func TestRealExampleAchievementStates(t *testing.T) {
 				{"material_health", stateOf(themes, "material_health"), w.materialHealth},
 				{"embodied_carbon", stateOf(themes, "embodied_carbon"), w.embodiedCarbon},
 				{"circularity", stateOf(themes, "circularity"), w.circularity},
+				{"domestic_content", stateOf(themes, "domestic_content"), w.domesticContent},
 			}
 			for _, c := range checks {
 				if c.got != c.want {
 					t.Errorf("%s: %s = %q, want %q", name, c.theme, c.got, c.want)
 				}
+			}
+			// T2: the domestic_content programs slice matches section 4's programs column
+			// exactly (empty on non-carriers, [baa] on selux and both lumenpulse, [baa, baba]
+			// on vode), so the programs column is machine-pinned and cannot silently drift.
+			gotProg := programsOf(themes, "domestic_content")
+			if got, want := strings.Join(gotProg, ","), strings.Join(wantDCPrograms[name], ","); got != want {
+				t.Errorf("%s: domestic_content programs = %v, want %v", name, gotProg, wantDCPrograms[name])
 			}
 			if got := ach["documented_count"]; got != int64(w.documentedCount) {
 				t.Errorf("%s: documented_count = %v, want %d", name, got, w.documentedCount)
