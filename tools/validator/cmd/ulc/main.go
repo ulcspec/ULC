@@ -21,7 +21,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -529,19 +528,31 @@ USAGE
 	return 0
 }
 
-func printIndex(idx index.Index) int {
+// printJSON encodes v as two-space-indented JSON and writes it to stdout in a
+// single call, so a mid-encode failure can never leave a partial document on
+// stdout. escapeHTML selects the encoder's treatment of <, > and &: build-index
+// leaves them literal to preserve the record's own byte shape, while scope
+// escapes them because its document carries record-controlled strings a consumer
+// may inline into a page. Both paths report every failure on stderr, so an exit
+// code of 1 always comes with a diagnostic.
+func printJSON(subcommand string, v any, escapeHTML bool) int {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	enc.SetIndent("", "  ")
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(idx); err != nil {
-		fmt.Fprintf(os.Stderr, "ulc build-index: %v\n", err)
+	enc.SetEscapeHTML(escapeHTML)
+	if err := enc.Encode(v); err != nil {
+		fmt.Fprintf(os.Stderr, "ulc %s: %v\n", subcommand, err)
 		return 1
 	}
 	if _, err := os.Stdout.Write(buf.Bytes()); err != nil {
+		fmt.Fprintf(os.Stderr, "ulc %s: write stdout: %v\n", subcommand, err)
 		return 1
 	}
 	return 0
+}
+
+func printIndex(idx index.Index) int {
+	return printJSON("build-index", idx, false)
 }
 
 // --- scope ---
@@ -563,10 +574,19 @@ type scopeItemOut struct {
 	Standard       string `json:"standard"`
 }
 
-// scopeDoc is the manifest document. record_id and ulc_version are echoed from
-// the record when present as strings and omitted otherwise; they are the one
-// place the document carries record input, and `ulc scope` runs no schema
-// validation, so a consumer escapes them for its own output context.
+// scopeDoc is the manifest document. record_id and ulc_version are the one place
+// it carries record input: each is echoed when the record holds a non-empty
+// string there, and omitted when the key is absent, non-string, or empty.
+//
+// `ulc scope` runs no schema validation, so BOTH fields are unvalidated,
+// record-controlled strings even though the surrounding document is
+// CLI-authored. They are echoed rather than dropped because a consumer that fans
+// out over a corpus and concatenates manifests loses the record pairing
+// irrecoverably without record_id, and non-conforming records are exactly the
+// ones being triaged. A consumer must therefore treat both as untrusted input:
+// never a filesystem path, a cache key, or a trust anchor, and escaped for
+// whatever output context it lands in. Every other field is a static rubric or
+// CLI string.
 type scopeDoc struct {
 	ScopeVersion string         `json:"scope_version"`
 	CLIVersion   string         `json:"cli_version"`
@@ -577,14 +597,14 @@ type scopeDoc struct {
 }
 
 // buildScopeDoc projects the rubric's scope for record into the output document.
-// blocks is the sorted, de-duplicated union of the items' own evidence blocks; it
-// is a rollup, never an independent judgement, and items stays authoritative.
+// It is a pure DTO mapping: the scope decision and the blocks rollup both belong
+// to internal/completeness, which owns the rubric and tests them.
 func buildScopeDoc(record map[string]any) scopeDoc {
 	items := completeness.Scope(record)
 	doc := scopeDoc{
 		ScopeVersion: scopeContractVersion,
 		CLIVersion:   CLIVersion,
-		Blocks:       []string{},
+		Blocks:       completeness.RollupBlocks(items),
 		Items:        make([]scopeItemOut, 0, len(items)),
 	}
 	if s, ok := record["record_id"].(string); ok {
@@ -593,7 +613,6 @@ func buildScopeDoc(record map[string]any) scopeDoc {
 	if s, ok := record["ulc_version"].(string); ok {
 		doc.ULCVersion = s
 	}
-	seen := map[string]bool{}
 	for _, it := range items {
 		doc.Items = append(doc.Items, scopeItemOut{
 			Tier:           it.Level.String(),
@@ -602,14 +621,7 @@ func buildScopeDoc(record map[string]any) scopeDoc {
 			SourceDocument: it.Document,
 			Standard:       it.Standard,
 		})
-		for _, b := range it.Blocks {
-			if !seen[b] {
-				seen[b] = true
-				doc.Blocks = append(doc.Blocks, b)
-			}
-		}
 	}
-	sort.Strings(doc.Blocks)
 	return doc
 }
 
@@ -659,18 +671,7 @@ USAGE
 		return 1
 	}
 
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	enc.SetIndent("", "  ")
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(buildScopeDoc(record)); err != nil {
-		fmt.Fprintf(os.Stderr, "ulc scope: %v\n", err)
-		return 1
-	}
-	if _, err := os.Stdout.Write(buf.Bytes()); err != nil {
-		return 1
-	}
-	return 0
+	return printJSON("scope", buildScopeDoc(record), true)
 }
 
 // valueFlags are the flag names across all subcommands that take a

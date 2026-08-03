@@ -327,7 +327,10 @@ func TestColIndex(t *testing.T) {
 	}{
 		{"A1", 0}, {"B7", 1}, {"Z1", 25}, {"AA1", 26}, {"AB10", 27}, {"ZZ99", 701},
 		{"a1", 0}, {"", -1}, {"1", -1},
-		{"XFD1", 16383}, {"XFE1", -1}, {"ZZZ1", -1}, {"AAAAAAAAAAAAA1", -1},
+		// The XFD boundary, from both sides and in both cases, plus a run long
+		// enough that an unbounded accumulator would overflow int.
+		{"XFD1", 16383}, {"xfd1", 16383},
+		{"XFE1", -1}, {"xfe1", -1}, {"ZZZ1", -1}, {"AAAAAAAAAAAAA1", -1},
 	}
 	for _, c := range cases {
 		if got := colIndex(c.ref); got != c.want {
@@ -458,9 +461,12 @@ func TestReadXLSXOutOfRangeColumnReference(t *testing.T) {
 			`</Relationships>`,
 		"xl/worksheets/sheet1.xml": `<?xml version="1.0"?><worksheet ` + ns + `><sheetData>` +
 			// A 13-letter reference, past XFD by many orders of magnitude, on both rows.
+			// XFD is the format's last addressable column and must still convert.
 			`<row r="1"><c r="A1" t="inlineStr"><is><t>record_id</t></is></c>` +
+			`<c r="XFD1" t="inlineStr"><is><t>note</t></is></c>` +
 			`<c r="AAAAAAAAAAAAA1" t="inlineStr"><is><t>ignored</t></is></c></row>` +
 			`<row r="2"><c r="A2" t="inlineStr"><is><t>r1</t></is></c>` +
+			`<c r="XFD2" t="inlineStr"><is><t>kept</t></is></c>` +
 			`<c r="AAAAAAAAAAAAA2" t="inlineStr"><is><t>dropped</t></is></c></row>` +
 			`</sheetData></worksheet>`,
 	}
@@ -471,7 +477,9 @@ func TestReadXLSXOutOfRangeColumnReference(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadXLSX: %v", err)
 	}
-	want := Workbook{"records": []Row{{"record_id": "r1"}}}
+	// The out-of-range cell is skipped; the legal XFD column beside it survives,
+	// so the bound rejects only what the format itself cannot address.
+	want := Workbook{"records": []Row{{"record_id": "r1", "note": "kept"}}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("out-of-range column mismatch:\n got: %v\nwant: %v", got, want)
 	}

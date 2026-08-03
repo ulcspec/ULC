@@ -69,7 +69,7 @@ var requirementBlocks = map[string][]string{
 	"test-report-backed face illuminance":                    {"exit_sign"},
 }
 
-// isGating reports whether a level is one of the three graded tiers. The two
+// isGating reports whether a level is one of the three gating tiers. The two
 // sentinel levels and the incomplete floor are not.
 func isGating(l Level) bool {
 	return l == LevelCore || l == LevelStandard || l == LevelFull
@@ -99,6 +99,8 @@ func scopeBlocksFor(kind ScopeKind, path string) []string {
 	case ScopeKindRequirement:
 		src = requirementBlocks[path]
 	default:
+		// A pointer row needs no copy: the slice is freshly built here and
+		// aliases nothing shared.
 		rest := strings.TrimPrefix(path, "/")
 		if i := strings.Index(rest, "/"); i >= 0 {
 			rest = rest[:i]
@@ -106,9 +108,10 @@ func scopeBlocksFor(kind ScopeKind, path string) []string {
 		if rest == "" {
 			return []string{}
 		}
-		src = []string{rest}
+		return []string{rest}
 	}
-	// Copy, so a caller can never mutate the shared table.
+	// Only the two package-level tables reach here, so copy: a caller holding a
+	// ScopeItem must never be able to mutate the shared table through it.
 	out := make([]string, len(src))
 	copy(out, src)
 	return out
@@ -138,11 +141,36 @@ func Scope(record map[string]any) []ScopeItem {
 			Blocks:   scopeBlocksFor(kind, ru.path),
 		})
 	}
-	sort.Slice(out, func(i, j int) bool {
+	// SliceStable, not Slice: (Level, Path) is unique across the gating band
+	// today (TestNoDuplicateLevelPath guards it), but the manifest is a
+	// byte-compared published contract, so a future duplicate must degrade to
+	// rubric order rather than to whatever the sort's internals happen to do.
+	sort.SliceStable(out, func(i, j int) bool {
 		if out[i].Level != out[j].Level {
 			return out[i].Level < out[j].Level
 		}
 		return out[i].Path < out[j].Path
 	})
+	return out
+}
+
+// RollupBlocks returns the sorted, de-duplicated union of the items' blocks.
+// This is the derivation the manifest publishes as its `blocks` array: a rollup
+// of what Scope already decided, never an independent judgement. A block in the
+// result means at least one in-scope item's evidence lives there, not that the
+// whole block is graded. It lives here, beside the per-item Blocks it unions, so
+// the package that owns the rubric also owns and tests the shipped derivation.
+func RollupBlocks(items []ScopeItem) []string {
+	seen := map[string]bool{}
+	for _, it := range items {
+		for _, b := range it.Blocks {
+			seen[b] = true
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for b := range seen {
+		out = append(out, b)
+	}
+	sort.Strings(out)
 	return out
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -53,25 +54,29 @@ func captureStderr(t *testing.T, fn func() int) (string, int) {
 	return <-done, code
 }
 
+// captureOutErr runs fn with both standard streams redirected and returns what it
+// wrote to each plus the exit code.
+func captureOutErr(t *testing.T, fn func() int) (stdout, stderr string, code int) {
+	t.Helper()
+	stdout, code = captureStdout(t, func() int {
+		var inner int
+		stderr, inner = captureStderr(t, fn)
+		return inner
+	})
+	return stdout, stderr, code
+}
+
 // normalizeCLIVersion swaps the live cli_version value for the sentinel, leaving
-// the field's presence and position untouched.
+// the field's presence and position untouched. Neither value can contain a
+// character JSON must escape, so the tokens are built by concatenation.
 func normalizeCLIVersion(t *testing.T, out string) string {
 	t.Helper()
-	live := `"cli_version": ` + quoteJSON(t, CLIVersion)
-	want := `"cli_version": ` + quoteJSON(t, cliVersionSentinel)
+	live := `"cli_version": "` + CLIVersion + `"`
+	want := `"cli_version": "` + cliVersionSentinel + `"`
 	if !strings.Contains(out, live) {
 		t.Fatalf("output does not carry the live cli_version %q:\n%s", CLIVersion, out)
 	}
 	return strings.Replace(out, live, want, 1)
-}
-
-func quoteJSON(t *testing.T, s string) string {
-	t.Helper()
-	b, err := json.Marshal(s)
-	if err != nil {
-		t.Fatalf("marshal %q: %v", s, err)
-	}
-	return string(b)
 }
 
 // scopeExampleNames lists every shipped example record by filename.
@@ -96,65 +101,100 @@ func scopeExampleNames(t *testing.T) []string {
 // committed golden (after normalizing cli_version) and asserts the command is
 // deterministic across runs.
 func TestCLIScopeGoldens(t *testing.T) {
-	for _, name := range scopeExampleNames(t) {
-		stem := strings.TrimSuffix(name, ".ulc")
-		record := exampleRecord(t, name)
+	names := scopeExampleNames(t)
+	expected := map[string]bool{}
+	for _, name := range names {
+		expected[strings.TrimSuffix(name, ".ulc")+".json"] = true
+	}
 
-		out, code := captureStdout(t, func() int { return runScope([]string{record}) })
-		if code != 0 {
-			t.Fatalf("%s: exit = %d, want 0", name, code)
-		}
-		// Determinism: the same input yields byte-identical output.
-		again, code2 := captureStdout(t, func() int { return runScope([]string{record}) })
-		if code2 != 0 || again != out {
-			t.Errorf("%s: second run is not byte-identical to the first", name)
-		}
+	for _, name := range names {
+		name := name
+		// Subtests, so one missing golden reports itself instead of aborting the
+		// other seven comparisons (and, under -update-scope-golden, instead of
+		// leaving testdata/ half regenerated).
+		t.Run(name, func(t *testing.T) {
+			stem := strings.TrimSuffix(name, ".ulc")
+			record := exampleRecord(t, name)
 
-		// The field's presence and position are asserted independently of its value.
-		var order []string
-		dec := json.NewDecoder(strings.NewReader(out))
-		if _, err := dec.Token(); err != nil { // opening brace
-			t.Fatalf("%s: %v", name, err)
-		}
-		for dec.More() {
-			tok, err := dec.Token()
+			out, code := captureStdout(t, func() int { return runScope([]string{record}) })
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0", code)
+			}
+			// Determinism: the same input yields byte-identical output.
+			again, code2 := captureStdout(t, func() int { return runScope([]string{record}) })
+			if code2 != 0 || again != out {
+				t.Errorf("second run is not byte-identical to the first")
+			}
+
+			// The envelope opens with the contract version, then the CLI version.
+			// Asserted on the raw text so a regenerated golden cannot bless a
+			// reordering of its own, and so the scope_version literal is pinned.
+			wantPrefix := "{\n  \"scope_version\": \"" + scopeContractVersion + "\",\n  \"cli_version\": \""
+			if !strings.HasPrefix(out, wantPrefix) {
+				t.Errorf("envelope must open with scope_version %q then cli_version; got:\n%s",
+					scopeContractVersion, firstLines(out, 4))
+			}
+
+			normalized := normalizeCLIVersion(t, out)
+			goldenPath := filepath.Join(scopeGoldenDir, stem+".json")
+			if *updateScopeGolden {
+				if err := os.MkdirAll(scopeGoldenDir, 0o755); err != nil {
+					t.Fatalf("mkdir %s: %v", scopeGoldenDir, err)
+				}
+				if err := os.WriteFile(goldenPath, []byte(normalized), 0o644); err != nil {
+					t.Fatalf("write %s: %v", goldenPath, err)
+				}
+				t.Logf("wrote %s", goldenPath)
+				return
+			}
+			want, err := os.ReadFile(goldenPath)
 			if err != nil {
-				t.Fatalf("%s: %v", name, err)
+				t.Fatalf("read %s (regenerate with -update-scope-golden): %v", goldenPath, err)
 			}
-			key, ok := tok.(string)
-			if !ok {
-				t.Fatalf("%s: unexpected object key token %v", name, tok)
+			if normalized != string(want) {
+				t.Errorf("manifest does not match %s.\n%s", goldenPath, lineDiff(string(want), normalized))
 			}
-			order = append(order, key)
-			var discard json.RawMessage
-			if err := dec.Decode(&discard); err != nil {
-				t.Fatalf("%s: %v", name, err)
-			}
-		}
-		if len(order) < 2 || order[0] != "scope_version" || order[1] != "cli_version" {
-			t.Errorf("%s: envelope key order = %v, want scope_version then cli_version first", name, order)
-		}
+		})
+	}
 
-		normalized := normalizeCLIVersion(t, out)
-		goldenPath := filepath.Join(scopeGoldenDir, stem+".json")
-		if *updateScopeGolden {
-			if err := os.MkdirAll(scopeGoldenDir, 0o755); err != nil {
-				t.Fatalf("mkdir %s: %v", scopeGoldenDir, err)
-			}
-			if err := os.WriteFile(goldenPath, []byte(normalized), 0o644); err != nil {
-				t.Fatalf("write %s: %v", goldenPath, err)
-			}
-			t.Logf("wrote %s", goldenPath)
-			continue
-		}
-		want, err := os.ReadFile(goldenPath)
-		if err != nil {
-			t.Fatalf("read %s (regenerate with -update-scope-golden): %v", goldenPath, err)
-		}
-		if normalized != string(want) {
-			t.Errorf("%s: manifest does not match %s", name, goldenPath)
+	// An orphan golden means an example was renamed or removed and its manifest
+	// was left behind, where it would silently stop being compared to anything.
+	if *updateScopeGolden {
+		return
+	}
+	entries, err := os.ReadDir(scopeGoldenDir)
+	if err != nil {
+		t.Fatalf("read %s: %v", scopeGoldenDir, err)
+	}
+	for _, e := range entries {
+		if !e.IsDir() && !expected[e.Name()] {
+			t.Errorf("%s/%s has no matching record in examples/; delete it or restore the record", scopeGoldenDir, e.Name())
 		}
 	}
+}
+
+// firstLines returns at most n leading lines of s, for compact failure output.
+func firstLines(s string, n int) string {
+	lines := strings.SplitN(s, "\n", n+1)
+	if len(lines) > n {
+		lines = lines[:n]
+	}
+	return strings.Join(lines, "\n")
+}
+
+// lineDiff reports the first differing line and the surrounding counts, so a
+// golden mismatch in CI names what moved instead of only that something did.
+// The goldens run to hundreds of lines, so a full dump is not useful.
+func lineDiff(want, got string) string {
+	w := strings.Split(want, "\n")
+	g := strings.Split(got, "\n")
+	for i := 0; i < len(w) && i < len(g); i++ {
+		if w[i] != g[i] {
+			return fmt.Sprintf("first difference at line %d:\n  want: %s\n   got: %s\n(want %d lines, got %d)",
+				i+1, w[i], g[i], len(w), len(g))
+		}
+	}
+	return fmt.Sprintf("one side is a prefix of the other (want %d lines, got %d)", len(w), len(g))
 }
 
 // TestCLIScopeUsageErrors pins the exit-2 cases. Every assertion is on the
@@ -163,31 +203,69 @@ func TestCLIScopeGoldens(t *testing.T) {
 func TestCLIScopeUsageErrors(t *testing.T) {
 	vode := exampleRecord(t, vodeRecord)
 	cases := []struct {
-		name string
-		args []string
+		name    string
+		args    []string
+		wantErr string // a distinguishing fragment of the stderr diagnostic
 	}{
-		{"no positional args", []string{}},
-		{"two positional args", []string{vode, vode}},
-		{"unrecognized flag", []string{vode, "--json"}},
+		{"no positional args", []string{}, "USAGE"},
+		{"two positional args", []string{vode, vode}, "USAGE"},
+		{"unrecognized flag", []string{vode, "--json"}, "not defined"},
 	}
 	for _, c := range cases {
 		c := c
-		_, rc := captureStderr(t, func() int { return runScope(c.args) })
-		if rc != 2 {
-			t.Errorf("%s: exit = %d, want 2", c.name, rc)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			stdout, stderr, rc := captureOutErr(t, func() int { return runScope(c.args) })
+			if rc != 2 {
+				t.Errorf("exit = %d, want 2", rc)
+			}
+			if stdout != "" {
+				t.Errorf("wrote %d bytes to stdout, want none:\n%s", len(stdout), stdout)
+			}
+			// Without this the three cases are indistinguishable and any of them
+			// could be reaching exit 2 by the wrong route.
+			if !strings.Contains(stderr, c.wantErr) {
+				t.Errorf("stderr does not contain %q:\n%s", c.wantErr, stderr)
+			}
+			// The parse-error arm must not re-print the block Parse already printed.
+			if n := strings.Count(stderr, "USAGE"); n != 1 {
+				t.Errorf("usage block printed %d times, want once:\n%s", n, stderr)
+			}
+		})
+	}
+}
+
+// TestCLIScopeFlagAfterPositional pins the reorderFlagsFirst routing. Without it
+// the stdlib parser stops at the first non-flag argument, so `ulc scope rec -h`
+// would exit 2 instead of printing help, diverging from every sibling
+// subcommand. Every other case in this file passes with or without the reorder.
+func TestCLIScopeFlagAfterPositional(t *testing.T) {
+	vode := exampleRecord(t, vodeRecord)
+	stdout, stderr, rc := captureOutErr(t, func() int { return runScope([]string{vode, "-h"}) })
+	if rc != 0 {
+		t.Errorf("`ulc scope <record> -h` exit = %d, want 0", rc)
+	}
+	if stdout != "" {
+		t.Errorf("help wrote %d bytes to stdout, want none", len(stdout))
+	}
+	if !strings.Contains(stderr, "ulc scope -- print the grading-scope manifest") {
+		t.Errorf("help block missing from stderr:\n%s", stderr)
+	}
+}
+
+// TestCLIUsageListsScope pins the subcommand's entry in the top-level usage
+// block, which is the only discovery surface for it.
+func TestCLIUsageListsScope(t *testing.T) {
+	buf := &bytes.Buffer{}
+	usage(buf)
+	if !strings.Contains(buf.String(), "scope") {
+		t.Errorf("top-level usage block does not list the scope subcommand:\n%s", buf.String())
 	}
 }
 
 // TestCLIScopeHelp asserts that -h exits 0, writes the usage block to stderr, and
 // writes nothing to stdout.
 func TestCLIScopeHelp(t *testing.T) {
-	var errOut string
-	stdout, rc := captureStdout(t, func() int {
-		var inner int
-		errOut, inner = captureStderr(t, func() int { return runScope([]string{"-h"}) })
-		return inner
-	})
+	stdout, errOut, rc := captureOutErr(t, func() int { return runScope([]string{"-h"}) })
 	if rc != 0 {
 		t.Errorf("-h exit = %d, want 0", rc)
 	}
@@ -224,33 +302,30 @@ func TestCLIScopeReadErrors(t *testing.T) {
 	}
 	for _, c := range cases {
 		c := c
-		var stderrOut string
-		stdout, rc := captureStdout(t, func() int {
-			var inner int
-			stderrOut, inner = captureStderr(t, func() int { return runScope([]string{c.path}) })
-			return inner
+		t.Run(c.name, func(t *testing.T) {
+			stdout, stderrOut, rc := captureOutErr(t, func() int { return runScope([]string{c.path}) })
+			if rc != 1 {
+				t.Errorf("exit = %d, want 1", rc)
+			}
+			if stdout != "" {
+				t.Errorf("wrote %d bytes to stdout, want none:\n%s", len(stdout), stdout)
+			}
+			if !strings.HasPrefix(stderrOut, "ulc scope: ") {
+				t.Errorf("stderr = %q, want a `ulc scope: ` diagnostic", stderrOut)
+			}
 		})
-		if rc != 1 {
-			t.Errorf("%s: exit = %d, want 1", c.name, rc)
-		}
-		if stdout != "" {
-			t.Errorf("%s: wrote %d bytes to stdout, want none:\n%s", c.name, len(stdout), stdout)
-		}
-		if !strings.HasPrefix(stderrOut, "ulc scope: ") {
-			t.Errorf("%s: stderr = %q, want a `ulc scope: ` diagnostic", c.name, stderrOut)
-		}
 	}
 }
 
 // TestCLIScopeEnvelopeEchoes covers the two record-controlled envelope fields:
-// they are omitted when absent or non-string, and a hostile string still yields
-// parseable JSON.
+// they are omitted when absent, non-string, or empty, and a hostile string is
+// escaped on the wire while still round-tripping through a JSON parser.
 func TestCLIScopeEnvelopeEchoes(t *testing.T) {
 	dir := t.TempDir()
-	run := func(t *testing.T, name, body string) map[string]any {
+	run := func(t *testing.T, name string, body []byte) (map[string]any, string) {
 		t.Helper()
 		p := filepath.Join(dir, name)
-		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+		if err := os.WriteFile(p, body, 0o644); err != nil {
 			t.Fatalf("write %s: %v", name, err)
 		}
 		out, rc := captureStdout(t, func() int { return runScope([]string{p}) })
@@ -261,29 +336,29 @@ func TestCLIScopeEnvelopeEchoes(t *testing.T) {
 		if err := json.Unmarshal([]byte(out), &doc); err != nil {
 			t.Fatalf("%s: output is not parseable JSON: %v\n%s", name, err, out)
 		}
-		return doc
+		return doc, out
 	}
 
 	t.Run("empty object omits both echoes", func(t *testing.T) {
-		doc := run(t, "empty.ulc", `{}`)
+		// Item and block counts are pinned in internal/completeness, which owns
+		// the rubric; the subject here is echo omission and array shape alone.
+		doc, _ := run(t, "empty.ulc", []byte(`{}`))
 		if _, ok := doc["record_id"]; ok {
 			t.Error("record_id should be omitted when absent")
 		}
 		if _, ok := doc["ulc_version"]; ok {
 			t.Error("ulc_version should be omitted when absent")
 		}
-		items, _ := doc["items"].([]any)
-		if len(items) != 35 {
-			t.Errorf("empty-object manifest has %d items, want 35", len(items))
+		if _, ok := doc["items"].([]any); !ok {
+			t.Error("items must always be an array, never null")
 		}
-		blocks, _ := doc["blocks"].([]any)
-		if len(blocks) != 12 {
-			t.Errorf("empty-object manifest has %d blocks, want 12", len(blocks))
+		if _, ok := doc["blocks"].([]any); !ok {
+			t.Error("blocks must always be an array, never null")
 		}
 	})
 
 	t.Run("non-string echoes are omitted", func(t *testing.T) {
-		doc := run(t, "nonstring.ulc", `{"record_id":7,"ulc_version":{"major":1}}`)
+		doc, _ := run(t, "nonstring.ulc", []byte(`{"record_id":7,"ulc_version":{"major":1}}`))
 		if _, ok := doc["record_id"]; ok {
 			t.Error("a numeric record_id should be omitted")
 		}
@@ -292,17 +367,47 @@ func TestCLIScopeEnvelopeEchoes(t *testing.T) {
 		}
 	})
 
-	t.Run("hostile echoes stay parseable", func(t *testing.T) {
-		// A script-closing tag, a quote, a backslash, a control character and a
-		// lone surrogate escape (invalid UTF-8 once decoded).
-		hostile := `</script>\" \\ \u0007 \ud800`
-		doc := run(t, "hostile.ulc", `{"record_id":"`+hostile+`","ulc_version":"</b>"}`)
+	t.Run("empty-string echoes are omitted", func(t *testing.T) {
+		doc, _ := run(t, "emptystring.ulc", []byte(`{"record_id":"","ulc_version":""}`))
+		if _, ok := doc["record_id"]; ok {
+			t.Error("an empty record_id should be omitted")
+		}
+		if _, ok := doc["ulc_version"]; ok {
+			t.Error("an empty ulc_version should be omitted")
+		}
+	})
+
+	t.Run("hostile echoes are escaped on the wire", func(t *testing.T) {
+		// A script-closing tag, an escaped quote, a backslash, a control
+		// character, and RAW 0x80-range bytes. A \ud800-style escape would be
+		// decoded to U+FFFD long before the encoder saw it, so only raw bytes
+		// actually exercise the encoder's invalid-UTF-8 path.
+		body := []byte(`{"record_id":"</script>\" \\ \u0007 `)
+		body = append(body, 0x80, 0xfe, 0xff)
+		body = append(body, []byte(`","ulc_version":"</b>&x"}`)...)
+
+		doc, raw := run(t, "hostile.ulc", body)
 		got, _ := doc["record_id"].(string)
 		if got == "" {
-			t.Error("hostile record_id was dropped")
+			t.Fatal("hostile record_id was dropped")
 		}
-		if !strings.Contains(got, "</script>") {
-			t.Errorf("record_id = %q, want the hostile string echoed verbatim", got)
+		// It still round-trips to what a consumer's JSON parser sees.
+		for _, want := range []string{"</script>", `"`, `\`, "\x07"} {
+			if !strings.Contains(got, want) {
+				t.Errorf("decoded record_id %q is missing %q", got, want)
+			}
+		}
+		// On the WIRE the angle brackets and ampersand must be escaped, so a
+		// consumer inlining the manifest into a page cannot be broken out of.
+		// Asserting on the decoded value alone would pass either way, which is
+		// what made the previous version of this test unable to see the setting.
+		for _, forbidden := range []string{"</script>", "<", ">", "&"} {
+			if strings.Contains(raw, forbidden) {
+				t.Errorf("raw manifest contains unescaped %q; HTML escaping must stay on:\n%s", forbidden, raw)
+			}
+		}
+		if !strings.Contains(raw, `\u003c`) {
+			t.Errorf("raw manifest does not carry the escaped form of '<':\n%s", raw)
 		}
 	})
 }

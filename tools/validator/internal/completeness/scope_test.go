@@ -57,22 +57,10 @@ func hasScope(items []ScopeItem, lvl Level, path string) bool {
 	return ok
 }
 
-// rolledUpBlocks is the sorted, de-duplicated union of the items' blocks, the
-// same derivation the CLI publishes as the manifest's blocks array.
-func rolledUpBlocks(items []ScopeItem) []string {
-	seen := map[string]bool{}
-	for _, it := range items {
-		for _, b := range it.Blocks {
-			seen[b] = true
-		}
-	}
-	out := make([]string, 0, len(seen))
-	for b := range seen {
-		out = append(out, b)
-	}
-	sort.Strings(out)
-	return out
-}
+// rolledUpBlocks is the SHIPPED derivation, not a test-local copy of it: the CLI
+// publishes the manifest's blocks array from this exact function, so every
+// assertion below constrains production code.
+func rolledUpBlocks(items []ScopeItem) []string { return RollupBlocks(items) }
 
 // tierCounts returns the per-tier item counts of a manifest.
 func tierCounts(items []ScopeItem) (core, standard, full int) {
@@ -224,7 +212,11 @@ func TestScopeGatingTable(t *testing.T) {
 		t.Fatalf("read %s (regenerate with -update-gating-table): %v", gatingTablePath, err)
 	}
 	if got != string(want) {
-		t.Errorf("the frozen gating table drifted.\n--- want (%s) ---\n%s\n--- got ---\n%s", gatingTablePath, want, got)
+		t.Errorf("the frozen gating table drifted. Every one of these rows is published "+
+			"verbatim by the scope manifest and by conformance/gap findings, so a diff here "+
+			"is a BREAKING CHANGE to a public contract, not a refactor. Regenerating with "+
+			"-update-gating-table is only correct once that break is intended and recorded.\n"+
+			"--- want (%s) ---\n%s\n--- got ---\n%s", gatingTablePath, want, got)
 	}
 }
 
@@ -263,6 +255,60 @@ func TestScopeKindPartition(t *testing.T) {
 				t.Errorf("row %q contributes block %q, which is not a top-level property of ulc.schema.json", ru.path, b)
 			}
 		}
+	}
+
+	// Level totality. isGating is an allowlist, so a future Level constant would
+	// otherwise be dropped from every manifest with the whole suite still green:
+	// this test, the frozen table and the floor test all filter through the same
+	// predicate, so none of them can notice on its own. Pinning the three-way
+	// split against len(rubric) forces an explicit decision instead.
+	var gating, enrichment, observation int
+	for _, ru := range rubric {
+		switch {
+		case isGating(ru.level):
+			gating++
+		case ru.level == LevelEnrichment:
+			enrichment++
+		case ru.level == LevelObservation:
+			observation++
+		default:
+			t.Errorf("rubric row %q carries level %s, which is neither gating nor a known sentinel; decide whether Scope must publish it", ru.path, ru.level)
+		}
+	}
+	if gating+enrichment+observation != len(rubric) {
+		t.Errorf("level split = %d gating + %d enrichment + %d observation, want %d total", gating, enrichment, observation, len(rubric))
+	}
+	if gating != 68 || enrichment != 70 || observation != 2 {
+		t.Errorf("level split = %d/%d/%d, want 68 gating / 70 enrichment / 2 observation", gating, enrichment, observation)
+	}
+
+	// Every tier token the manifest can emit must be one of the three documented
+	// values. Level.String() falls back to "incomplete" for an unmapped constant,
+	// which would publish a token that is absent from the contract but looks
+	// known, defeating the ignore-unrecognized-values rule consumers were given.
+	for _, ru := range rubric {
+		if !isGating(ru.level) {
+			continue
+		}
+		switch ru.level.String() {
+		case "core", "standard", "full":
+		default:
+			t.Errorf("gating row %q emits tier token %q, which is not in the documented set", ru.path, ru.level.String())
+		}
+	}
+
+	// (level, path) uniqueness across the gating band is what makes Scope's sort a
+	// total order and the goldens byte-stable.
+	seenKey := map[scopeKey]string{}
+	for _, ru := range rubric {
+		if !isGating(ru.level) {
+			continue
+		}
+		k := scopeKey{ru.level, ru.path}
+		if prev, dup := seenKey[k]; dup {
+			t.Errorf("duplicate gating (level, path) %s %s: item order between this row and %q is then unspecified", ru.level, ru.path, prev)
+		}
+		seenKey[k] = ru.path
 	}
 
 	if counts[ScopeKindPointer] != 59 || counts[ScopeKindChoice] != 2 || counts[ScopeKindRequirement] != 7 {
@@ -315,7 +361,9 @@ func TestScopeSupersetOfGaps(t *testing.T) {
 		items := Scope(rec)
 		index := scopeKeys(items)
 
+		gaps := map[scopeKey]bool{}
 		for _, gap := range Compute(rec).TierRoadmap {
+			gaps[scopeKey{gap.NextLevel, gap.Path}] = true
 			if _, ok := index[scopeKey{gap.NextLevel, gap.Path}]; !ok {
 				t.Errorf("%s: gap %s %s is not in the scope manifest", name, gap.NextLevel, gap.Path)
 			}
@@ -325,6 +373,197 @@ func TestScopeSupersetOfGaps(t *testing.T) {
 				t.Errorf("%s: scope names %s %s, which is not a gating rubric row", name, it.Level, it.Path)
 			}
 		}
+
+		// The other direction, which is the half the shipped contract sells:
+		// "scope minus the gaps validate reports gives the satisfied set". That
+		// only holds if every in-scope item NOT reported as a gap is genuinely
+		// present, which in turn depends on AchievedLevel's ladder agreeing with
+		// missingAt at every tier at or below the achieved level (Compute skips
+		// whole tiers below the grade). Without this, a consumer could read an
+		// absent field as satisfied and nothing would object.
+		for _, it := range items {
+			if gaps[scopeKey{it.Level, it.Path}] {
+				continue
+			}
+			ru, found := ruleByLevelPath(it.Level, it.Path)
+			if !found {
+				t.Errorf("%s: scope item %s %s has no rubric row", name, it.Level, it.Path)
+				continue
+			}
+			if !ru.present(rec) {
+				t.Errorf("%s: %s %s is in scope and is NOT reported as a gap, so a consumer reads it as satisfied, but its present-closure is false", name, it.Level, it.Path)
+			}
+		}
+	}
+}
+
+// TestScopeCorpusShape is the second witness the CLI goldens lack. The goldens
+// are regenerated by their own -update flag, so a predicate regression that shows
+// up only on a real example (selux losing outdoor_classification, erco losing
+// colorimetry) would be baked in silently. These numbers were derived
+// independently of any generated artifact and are asserted against Scope
+// directly, never through a golden file.
+func TestScopeCorpusShape(t *testing.T) {
+	base := []string{
+		"attestations", "configuration", "corrections_applied", "electrical",
+		"instrumentation", "lumen_maintenance_luminaire", "lumen_maintenance_package",
+		"operating_point", "photometry", "product_family", "test_conditions", "uncertainty",
+	}
+	withColor := func(extra ...string) []string {
+		out := append([]string{}, base...)
+		out = append(out, extra...)
+		sort.Strings(out)
+		return out
+	}
+	sign := []string{"attestations", "electrical", "emergency", "exit_sign", "product_family"}
+
+	cases := []struct {
+		record                 string
+		items, core, std, full int
+		blocks                 []string
+	}{
+		{"cooper-atlite-auxswhsd.ulc", 25, 15, 9, 1, sign},
+		{"cooper-sure-lites-es61src.ulc", 22, 15, 6, 1, sign},
+		{"cooper-sure-lites-lpx7sd.ulc", 25, 15, 9, 1, sign},
+		{"erco-quintessence-30416-023.ulc", 44, 21, 15, 8, withColor("colorimetry")},
+		{"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc", 37, 19, 12, 6, base},
+		{"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc", 38, 20, 12, 6, withColor("colorimetry")},
+		{"selux-aya-pole-sr-ho-3000k.ulc", 47, 21, 18, 8, withColor("colorimetry", "outdoor_classification")},
+		{"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc", 45, 21, 16, 8, withColor("colorimetry")},
+	}
+	if got := len(cases); got != len(scopeExamples(t)) {
+		t.Fatalf("this table covers %d records but examples/ holds %d; add the new record here too", got, len(scopeExamples(t)))
+	}
+	for _, c := range cases {
+		c := c
+		t.Run(c.record, func(t *testing.T) {
+			items := Scope(exampleRecord(t, c.record))
+			core, std, full := tierCounts(items)
+			if len(items) != c.items || core != c.core || std != c.std || full != c.full {
+				t.Errorf("scope = %d items (%d/%d/%d), want %d (%d/%d/%d)",
+					len(items), core, std, full, c.items, c.core, c.std, c.full)
+			}
+			if got := rolledUpBlocks(items); !equalStrings(got, c.blocks) {
+				t.Errorf("blocks = %v, want %v", got, c.blocks)
+			}
+		})
+	}
+}
+
+// TestScopeEmptyObjectIdentity pins the identity, not just the count, of the
+// broadest manifest. The empty object scopes as a generic luminaire and is the
+// one record whose expectations were derived by hand, so a within-tier predicate
+// swap that preserves the 19/10/6 counts has to fail somewhere: here.
+func TestScopeEmptyObjectIdentity(t *testing.T) {
+	// No colorimetry row appears: with no white point declared, hasWhitePoint and
+	// isWhiteLightPrimary are both false, so nominal_cct_k and cri_ra are out of
+	// scope. That is the class-aware cut working on the degenerate record.
+	want := []string{
+		"core|/configuration/tested_axes/color_tunability",
+		"core|/electrical/driver_protocol",
+		"core|/electrical/input_power_w",
+		"core|/electrical/input_voltage_v (or input_voltage_class)",
+		"core|/photometry/distribution_type",
+		"core|/photometry/luminaire_efficacy_lm_per_w",
+		"core|/photometry/total_luminous_flux_lm",
+		"core|/product_family/catalog_model",
+		"core|/product_family/cutsheet",
+		"core|/product_family/environment_rating",
+		"core|/product_family/indoor_outdoor",
+		"core|/product_family/manufacturer/display_name",
+		"core|/product_family/manufacturer/slug",
+		"core|/product_family/mounting_types",
+		"core|/product_family/primary_category",
+		"core|/product_family/secondary_function",
+		"core|/product_family/shape",
+		"core|/product_family/technical_region",
+		"core|safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)",
+		"standard|/electrical/control_gear_type",
+		"standard|/instrumentation/measurement_regime",
+		"standard|/lumen_maintenance_luminaire (or /lumen_maintenance_package)",
+		"standard|/photometry/maximum_intensity_cd",
+		"standard|/photometry/photometric_coordinate_system",
+		"standard|/photometry/symmetry_type",
+		"standard|/product_family/shared_mechanical/housing_material",
+		"standard|/product_family/shared_mechanical/lens_material",
+		"standard|/test_conditions/photometry_basis",
+		"standard|LM-79 attestation",
+		"full|/corrections_applied",
+		"full|/operating_point",
+		"full|/photometry/zonal_lumens",
+		"full|/uncertainty",
+		"full|instrumentation depth (goniometer/lab)",
+		"full|method-backed lumen maintenance (TM-21 hours or TM-28)",
+	}
+	got := []string{}
+	for _, it := range Scope(map[string]any{}) {
+		got = append(got, it.Level.String()+"|"+it.Path)
+	}
+	if !equalStrings(got, want) {
+		t.Errorf("empty-object manifest identity drifted.\n got: %v\nwant: %v", got, want)
+	}
+}
+
+// TestScopeBlocksNotAliased pins the immutability guarantee scopeBlocksFor
+// documents. Scope is exported and ScopeItem.Blocks is an exported field, so
+// handing back the package-level table's own slice would let one consumer corrupt
+// the rubric tables process-wide for every later call.
+func TestScopeBlocksNotAliased(t *testing.T) {
+	const path = "safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)"
+	first, ok := scopeKeys(Scope(coreBase()))[scopeKey{LevelCore, path}]
+	if !ok {
+		t.Fatal("the universal safety-listing row should always be in scope")
+	}
+	if len(first.Blocks) == 0 {
+		t.Fatal("the safety-listing row should contribute blocks")
+	}
+	first.Blocks[0] = "CORRUPTED"
+
+	second, ok := scopeKeys(Scope(coreBase()))[scopeKey{LevelCore, path}]
+	if !ok {
+		t.Fatal("the universal safety-listing row should always be in scope")
+	}
+	if !equalStrings(second.Blocks, []string{"attestations", "product_family"}) {
+		t.Errorf("mutating a returned Blocks slice corrupted the shared table: second call = %v", second.Blocks)
+	}
+}
+
+// TestScopeHostileInput pins the totality claim Scope's doc comment makes. Scope
+// runs every gating applicability predicate against attacker-controlled JSON
+// before any schema validation, so a wrong type at any level must yield a
+// manifest rather than a panic.
+func TestScopeHostileInput(t *testing.T) {
+	cases := map[string]map[string]any{
+		"empty":              {},
+		"nulls":              {"product_family": nil, "photometry": nil, "exit_sign": nil, "emergency": nil},
+		"arrays where maps":  {"product_family": []any{1, 2}, "colorimetry": []any{}, "configuration": []any{nil}},
+		"scalars where maps": {"product_family": 7, "electrical": "x", "exit_sign": true},
+		"wrong leaf types": {"product_family": map[string]any{
+			"primary_category": []any{"exit_sign"}, "technical_region": 3, "indoor_outdoor": nil,
+		}},
+		"nested wrong types": {"product_family": map[string]any{
+			"shared_mechanical": "not-a-map", "manufacturer": []any{},
+		}, "exit_sign": map[string]any{"illumination_mode": map[string]any{}}},
+		"junk class tokens": {"product_family": map[string]any{
+			"primary_category": "\x00� not a category", "technical_region": "",
+		}},
+	}
+	for name, rec := range cases {
+		name, rec := name, rec
+		t.Run(name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Fatalf("Scope panicked on hostile input: %v", r)
+				}
+			}()
+			items := Scope(rec)
+			if len(items) < 13 {
+				t.Errorf("hostile input yielded %d items; every record carries at least the 13 universal rows", len(items))
+			}
+			if !contains(RollupBlocks(items), "attestations") {
+				t.Error("hostile input dropped the universal attestations block")
+			}
+		})
 	}
 }
 
@@ -365,7 +604,7 @@ func TestScopeUniversalFloor(t *testing.T) {
 		}
 		blocks := rolledUpBlocks(items)
 		for _, want := range []string{"attestations", "product_family"} {
-			if !containsString(blocks, want) {
+			if !contains(blocks, want) {
 				t.Errorf("%s: blocks %v does not contain %q", name, blocks, want)
 			}
 		}
@@ -440,10 +679,10 @@ func TestScopeBlocksDerivation(t *testing.T) {
 	}
 	for name, rec := range records {
 		blocks := rolledUpBlocks(Scope(rec))
-		if containsString(blocks, "input_voltage_class") {
+		if contains(blocks, "input_voltage_class") {
 			t.Errorf("%s: blocks %v contains input_voltage_class", name, blocks)
 		}
-		if !containsString(blocks, "attestations") {
+		if !contains(blocks, "attestations") {
 			t.Errorf("%s: blocks %v does not contain attestations", name, blocks)
 		}
 	}
@@ -451,6 +690,8 @@ func TestScopeBlocksDerivation(t *testing.T) {
 
 // --- small helpers ---
 
+// equalStrings compares two string slices element-wise. (containsString is not
+// defined here: the package already carries `contains` in emergency_test.go.)
 func equalStrings(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
@@ -461,13 +702,4 @@ func equalStrings(a, b []string) bool {
 		}
 	}
 	return true
-}
-
-func containsString(xs []string, want string) bool {
-	for _, x := range xs {
-		if x == want {
-			return true
-		}
-	}
-	return false
 }
