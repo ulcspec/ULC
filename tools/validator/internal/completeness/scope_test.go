@@ -751,3 +751,74 @@ func equalStrings(a, b []string) bool {
 	}
 	return true
 }
+
+// TestNonPointerBlocksAreNecessary is the DRIFT GUARD for the two contribution
+// tables, and the reason the tables can be hand-maintained safely.
+//
+// choiceBlocks and requirementBlocks republish, as public contract, which record
+// blocks each non-pointer row's present-closure reads. Asserting the tables
+// against a hand-written list (TestScopeBlocksDerivation) pins the published
+// values but proves nothing about the closures, so a closure that later starts
+// reading an additional block would leave the manifest quietly under-reporting
+// it. That is exactly the defect this feature's first review round found in an
+// earlier draft, where every manifest omitted `attestations`.
+//
+// This test closes it behaviorally instead of by inspection: take a record whose
+// closure is satisfied, delete every block the table declares, and require the
+// closure to go false. A closure reading an undeclared block would stay
+// satisfied through it and fail here.
+func TestNonPointerBlocksAreNecessary(t *testing.T) {
+	cases := []struct {
+		level  Level
+		path   string
+		record map[string]any // must satisfy the row's present-closure
+	}{
+		{LevelCore, "/electrical/input_voltage_v (or input_voltage_class)", coreBase()},
+		{LevelCore, "safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)", coreBase()},
+		{LevelCore, "UL 924 listing", comboSignCore()},
+		{LevelStandard, "LM-79 attestation", standardBase()},
+		{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", standardBase()},
+		{LevelFull, "instrumentation depth (goniometer/lab)", fullBase()},
+		{LevelFull, "method-backed lumen maintenance (TM-21 hours or TM-28)", fullBase()},
+		{LevelFull, "test-report-backed sign-face luminance", comboSignFull()},
+		{LevelFull, "test-report-backed face illuminance", externalComboSignFull()},
+	}
+
+	// Every non-pointer gating row must appear above, so a new one cannot be
+	// added without also being guarded.
+	covered := map[scopeKey]bool{}
+	for _, c := range cases {
+		covered[scopeKey{c.level, c.path}] = true
+	}
+	for _, ru := range rubric {
+		if !isGating(ru.level) || scopeKindOf(ru.path) == ScopeKindPointer {
+			continue
+		}
+		if !covered[scopeKey{ru.level, ru.path}] {
+			t.Errorf("non-pointer gating row %s %q has no necessity case; add one so its declared blocks stay guarded", ru.level, ru.path)
+		}
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.path, func(t *testing.T) {
+			ru, found := ruleByLevelPath(c.level, c.path)
+			if !found {
+				t.Fatalf("no rubric row for %s %q", c.level, c.path)
+			}
+			if !ru.present(c.record) {
+				t.Fatalf("fixture does not satisfy the closure, so the deletion below would prove nothing")
+			}
+			declared := scopeBlocksFor(scopeKindOf(c.path), c.path)
+			if len(declared) == 0 {
+				t.Fatalf("row declares no blocks")
+			}
+			for _, b := range declared {
+				delete(c.record, b)
+			}
+			if ru.present(c.record) {
+				t.Errorf("after deleting the declared blocks %v the closure is STILL satisfied, so it reads a block the table does not declare and the manifest under-reports it", declared)
+			}
+		})
+	}
+}
