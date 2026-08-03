@@ -67,8 +67,9 @@ func captureOutErr(t *testing.T, fn func() int) (stdout, stderr string, code int
 }
 
 // normalizeCLIVersion swaps the live cli_version value for the sentinel, leaving
-// the field's presence and position untouched. Neither value can contain a
-// character JSON must escape, so the tokens are built by concatenation.
+// the field's presence and position untouched. Both values are a semver-ish tag
+// or the fixed sentinel, so neither can contain a character this encoder escapes
+// (which now includes <, > and &), and the tokens are built by concatenation.
 func normalizeCLIVersion(t *testing.T, out string) string {
 	t.Helper()
 	live := `"cli_version": "` + CLIVersion + `"`
@@ -128,7 +129,9 @@ func TestCLIScopeGoldens(t *testing.T) {
 
 			// The envelope opens with the contract version, then the CLI version.
 			// Asserted on the raw text so a regenerated golden cannot bless a
-			// reordering of its own, and so the scope_version literal is pinned.
+			// reordering of its own. This does NOT pin the scope_version literal
+			// (wantPrefix is built from the same constant); TestCLIScopeContractVersion
+			// does that.
 			wantPrefix := "{\n  \"scope_version\": \"" + scopeContractVersion + "\",\n  \"cli_version\": \""
 			if !strings.HasPrefix(out, wantPrefix) {
 				t.Errorf("envelope must open with scope_version %q then cli_version; got:\n%s",
@@ -237,7 +240,9 @@ func TestCLIScopeUsageErrors(t *testing.T) {
 // TestCLIScopeFlagAfterPositional pins the reorderFlagsFirst routing. Without it
 // the stdlib parser stops at the first non-flag argument, so `ulc scope rec -h`
 // would exit 2 instead of printing help, diverging from every sibling
-// subcommand. Every other case in this file passes with or without the reorder.
+// subcommand. (Dropping the reorder also makes the unrecognized-flag case in
+// TestCLIScopeUsageErrors reach exit 2 by the wrong route, failing its stderr
+// assertion; this test is the direct witness, that one is collateral.)
 func TestCLIScopeFlagAfterPositional(t *testing.T) {
 	vode := exampleRecord(t, vodeRecord)
 	stdout, stderr, rc := captureOutErr(t, func() int { return runScope([]string{vode, "-h"}) })
@@ -379,9 +384,11 @@ func TestCLIScopeEnvelopeEchoes(t *testing.T) {
 
 	t.Run("hostile echoes are escaped on the wire", func(t *testing.T) {
 		// A script-closing tag, an escaped quote, a backslash, a control
-		// character, and RAW 0x80-range bytes. A \ud800-style escape would be
-		// decoded to U+FFFD long before the encoder saw it, so only raw bytes
-		// actually exercise the encoder's invalid-UTF-8 path.
+		// character, and raw 0x80-range bytes. Note the raw bytes do NOT reach
+		// the encoder as invalid UTF-8: encoding/json coerces them to U+FFFD
+		// while DECODING, exactly as it would a \ud800 escape. They are kept
+		// because they prove that path is safe end to end; the assertions that
+		// carry this subtest are the wire-level escaping checks below.
 		body := []byte(`{"record_id":"</script>\" \\ \u0007 `)
 		body = append(body, 0x80, 0xfe, 0xff)
 		body = append(body, []byte(`","ulc_version":"</b>&x"}`)...)
@@ -408,6 +415,66 @@ func TestCLIScopeEnvelopeEchoes(t *testing.T) {
 		}
 		if !strings.Contains(raw, `\u003c`) {
 			t.Errorf("raw manifest does not carry the escaped form of '<':\n%s", raw)
+		}
+	})
+}
+
+// TestCLIScopeContractVersion pins the manifest contract's version literal. The
+// goldens carry it too, but they are regenerable by their own flag, so without a
+// hand-maintained assertion a bump could ship unnoticed.
+func TestCLIScopeContractVersion(t *testing.T) {
+	if scopeContractVersion != "1.0.0" {
+		t.Errorf("scopeContractVersion = %q, want %q. Bumping it is a contract change: "+
+			"update the README bullet and the CHANGELOG alongside this constant.",
+			scopeContractVersion, "1.0.0")
+	}
+}
+
+// TestPrintJSONEscapeModes pins BOTH sides of printJSON's escapeHTML switch, at
+// the call sites that choose it. The switch is shared by build-index and scope,
+// so testing only the scope direction would let a flip of the build-index call
+// site pass silently and change that subcommand's output for any record carrying
+// <, > or &, diverging --stdout from the in-place record write.
+func TestPrintJSONEscapeModes(t *testing.T) {
+	// A record whose index will carry an ampersand and angle brackets.
+	rec := filepath.Join(t.TempDir(), "amp.ulc")
+	body := `{
+  "ulc_version": "1.0.0",
+  "record_id": "amp-test",
+  "record_status": "draft",
+  "product_family": {
+    "manufacturer": {"slug": "amp", "display_name": "A & B <Lighting>"},
+    "catalog_model": "X<1> & Y"
+  }
+}`
+	if err := os.WriteFile(rec, []byte(body), 0o644); err != nil {
+		t.Fatalf("write record: %v", err)
+	}
+
+	t.Run("build-index --stdout does not escape", func(t *testing.T) {
+		out, code := captureStdout(t, func() int { return runBuildIndex([]string{rec, "--stdout"}) })
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0", code)
+		}
+		if !strings.Contains(out, "X<1> & Y") {
+			t.Errorf("build-index --stdout must leave <, > and & literal to preserve the record's byte shape; got:\n%s", out)
+		}
+		if strings.Contains(out, `\u0026`) || strings.Contains(out, `\u003c`) {
+			t.Errorf("build-index --stdout must not escape HTML characters; got:\n%s", out)
+		}
+	})
+
+	t.Run("scope escapes", func(t *testing.T) {
+		out, code := captureStdout(t, func() int { return runScope([]string{rec}) })
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0", code)
+		}
+		// record_id is a plain slug here, so assert on the whole document: no raw
+		// angle bracket or ampersand may appear anywhere in a manifest.
+		for _, forbidden := range []string{"<", ">", "&"} {
+			if strings.Contains(out, forbidden) {
+				t.Errorf("scope manifest contains unescaped %q:\n%s", forbidden, out)
+			}
 		}
 	})
 }

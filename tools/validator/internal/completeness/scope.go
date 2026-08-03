@@ -141,10 +141,12 @@ func Scope(record map[string]any) []ScopeItem {
 			Blocks:   scopeBlocksFor(kind, ru.path),
 		})
 	}
-	// SliceStable, not Slice: (Level, Path) is unique across the gating band
-	// today (TestNoDuplicateLevelPath guards it), but the manifest is a
-	// byte-compared published contract, so a future duplicate must degrade to
-	// rubric order rather than to whatever the sort's internals happen to do.
+	// SliceStable, not Slice. (Level, Path) is unique across the gating band and
+	// a test pins that, so the two are indistinguishable today and no test can
+	// tell them apart. It is chosen anyway: the manifest is a byte-compared
+	// published contract, and if that uniqueness ever lapses the output should
+	// degrade to rubric order rather than to whatever the sort's internals
+	// happen to do on that Go release.
 	sort.SliceStable(out, func(i, j int) bool {
 		if out[i].Level != out[j].Level {
 			return out[i].Level < out[j].Level
@@ -154,12 +156,14 @@ func Scope(record map[string]any) []ScopeItem {
 	return out
 }
 
-// RollupBlocks returns the sorted, de-duplicated union of the items' blocks.
-// This is the derivation the manifest publishes as its `blocks` array: a rollup
-// of what Scope already decided, never an independent judgement. A block in the
-// result means at least one in-scope item's evidence lives there, not that the
-// whole block is graded. It lives here, beside the per-item Blocks it unions, so
-// the package that owns the rubric also owns and tests the shipped derivation.
+// RollupBlocks returns the sorted, de-duplicated union of the items' blocks. It
+// is always non-nil, so a caller marshalling it emits [] rather than null for an
+// empty item list. Today its only caller is the CLI, which publishes the result
+// as the manifest's `blocks` array: a rollup of what Scope already decided, never
+// an independent judgement. A block in the result means at least one in-scope
+// item's evidence lives there, not that the whole block is graded. It lives here,
+// beside the per-item Blocks it unions, so the package that owns the rubric also
+// owns and tests the shipped derivation.
 func RollupBlocks(items []ScopeItem) []string {
 	seen := map[string]bool{}
 	for _, it := range items {

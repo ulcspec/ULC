@@ -529,12 +529,16 @@ USAGE
 }
 
 // printJSON encodes v as two-space-indented JSON and writes it to stdout in a
-// single call, so a mid-encode failure can never leave a partial document on
-// stdout. escapeHTML selects the encoder's treatment of <, > and &: build-index
-// leaves them literal to preserve the record's own byte shape, while scope
-// escapes them because its document carries record-controlled strings a consumer
-// may inline into a page. Both paths report every failure on stderr, so an exit
-// code of 1 always comes with a diagnostic.
+// single call, so an encode failure leaves nothing at all on stdout. (A write
+// failure is different: os.Stdout.Write can report an error after a partial
+// write, which no buffering can prevent. Both are reported on stderr, so an exit
+// code of 1 always comes with a diagnostic.)
+//
+// escapeHTML selects the encoder's treatment of <, > and &: build-index leaves
+// them literal to preserve the record's own byte shape, while scope escapes them
+// because its document carries record-controlled strings a consumer may inline
+// into a page. Both directions are pinned by tests; the setting is public
+// contract for each subcommand, not an implementation detail.
 func printJSON(subcommand string, v any, escapeHTML bool) int {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
@@ -645,8 +649,9 @@ enrichment and observation guidance stays in `+"`ulc validate`"+`. This is not t
 record's `+"`applicability`"+` block, which declares SKU coverage.
 
 Exit codes:
-  0   manifest emitted
-  1   the record could not be read, parsed, or used as a ULC record
+  0   manifest emitted (or -h)
+  1   the record could not be read, parsed, or used as a ULC record,
+      or the manifest could not be written
   2   usage error
 
 USAGE

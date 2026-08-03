@@ -36,6 +36,19 @@ func scopeExamples(t *testing.T) []string {
 	return out
 }
 
+// genericBlocks is the blocks list of a record that scopes as a generic
+// luminaire with no colorimetry and no outdoor classification: the empty object,
+// and the RGB lumenpulse example. Shared so a new block is edited in one place.
+var genericBlocks = []string{
+	"attestations", "configuration", "corrections_applied", "electrical",
+	"instrumentation", "lumen_maintenance_luminaire", "lumen_maintenance_package",
+	"operating_point", "photometry", "product_family", "test_conditions", "uncertainty",
+}
+
+// universalGatingRowCount is how many gating rows carry no applicability
+// predicate, and so appear in every record's manifest.
+const universalGatingRowCount = 13
+
 // scopeKey is the (tier, path) identity of a scope item.
 type scopeKey struct {
 	level Level
@@ -164,18 +177,11 @@ func TestScopePerClass(t *testing.T) {
 	})
 
 	t.Run("empty object", func(t *testing.T) {
+		// Item counts and identities are pinned by TestScopeEmptyObjectIdentity,
+		// which implies them exactly; blocks are the independent witness here.
 		items := Scope(map[string]any{})
-		core, standard, full := tierCounts(items)
-		if len(items) != 35 || core != 19 || standard != 10 || full != 6 {
-			t.Errorf("empty-object scope = %d items (%d/%d/%d), want 35 (19/10/6)", len(items), core, standard, full)
-		}
-		want := []string{
-			"attestations", "configuration", "corrections_applied", "electrical",
-			"instrumentation", "lumen_maintenance_luminaire", "lumen_maintenance_package",
-			"operating_point", "photometry", "product_family", "test_conditions", "uncertainty",
-		}
-		if got := rolledUpBlocks(items); !equalStrings(got, want) {
-			t.Errorf("empty-object blocks = %v, want %v", got, want)
+		if got := rolledUpBlocks(items); !equalStrings(got, genericBlocks) {
+			t.Errorf("empty-object blocks = %v, want %v", got, genericBlocks)
 		}
 	})
 }
@@ -315,10 +321,6 @@ func TestScopeKindPartition(t *testing.T) {
 		t.Errorf("gating kind partition = %d pointer / %d choice / %d requirement, want 59/2/7",
 			counts[ScopeKindPointer], counts[ScopeKindChoice], counts[ScopeKindRequirement])
 	}
-	if total := counts[ScopeKindPointer] + counts[ScopeKindChoice] + counts[ScopeKindRequirement]; total != 68 {
-		t.Errorf("gating row count = %d, want 68", total)
-	}
-
 	// The tables must not carry entries no gating row claims.
 	for path := range choiceBlocks {
 		if _, found := ruleByGatingPath(path); !found {
@@ -404,11 +406,7 @@ func TestScopeSupersetOfGaps(t *testing.T) {
 // independently of any generated artifact and are asserted against Scope
 // directly, never through a golden file.
 func TestScopeCorpusShape(t *testing.T) {
-	base := []string{
-		"attestations", "configuration", "corrections_applied", "electrical",
-		"instrumentation", "lumen_maintenance_luminaire", "lumen_maintenance_package",
-		"operating_point", "photometry", "product_family", "test_conditions", "uncertainty",
-	}
+	base := genericBlocks
 	withColor := func(extra ...string) []string {
 		out := append([]string{}, base...)
 		out = append(out, extra...)
@@ -504,6 +502,56 @@ func TestScopeEmptyObjectIdentity(t *testing.T) {
 	}
 }
 
+// TestScopePathUniqueWithinManifest backs the join contract the docs publish.
+// Identity is (tier, path) because a few paths are graded at two tiers, but the
+// shipped guidance also says a per-record join on `path` alone is sound. That is
+// only true if no single manifest ever holds one path twice, which is a property
+// of the applicability predicates (the two-tier paths are class-exclusive) and
+// not of the rubric, so it needs its own assertion rather than the (level, path)
+// uniqueness check, which would stay green the day two such rows became
+// co-applicable to one record.
+func TestScopePathUniqueWithinManifest(t *testing.T) {
+	records := map[string]map[string]any{
+		"{} (empty object)":     {},
+		"coreBase":              coreBase(),
+		"comboSignCore":         comboSignCore(),
+		"externalSignCore":      externalSignCore(),
+		"photoSignCore":         photoSignCore(),
+		"tritiumSignCore":       tritiumSignCore(),
+		"emgLuminaireCore":      emgLuminaireCore(),
+		"emgLuminaireFull":      emgLuminaireFull(),
+		"comboSignFull":         comboSignFull(),
+		"externalComboSignFull": externalComboSignFull(),
+	}
+	for _, name := range scopeExamples(t) {
+		records[name] = exampleRecord(t, name)
+	}
+	for name, rec := range records {
+		seen := map[string]Level{}
+		for _, it := range Scope(rec) {
+			if prev, dup := seen[it.Path]; dup {
+				t.Errorf("%s: path %q appears at both %s and %s in one manifest, so a per-record join on path alone is ambiguous", name, it.Path, prev, it.Level)
+			}
+			seen[it.Path] = it.Level
+		}
+	}
+}
+
+// TestRollupBlocksEmpty pins the non-nil guarantee that makes the manifest's
+// blocks array marshal as [] rather than null. Scope always yields items today,
+// so this case is unreachable through the CLI and would otherwise go untested.
+func TestRollupBlocksEmpty(t *testing.T) {
+	for _, in := range [][]ScopeItem{nil, {}} {
+		got := RollupBlocks(in)
+		if got == nil {
+			t.Errorf("RollupBlocks(%v) returned nil; it must be non-nil so callers emit [] rather than null", in)
+		}
+		if len(got) != 0 {
+			t.Errorf("RollupBlocks(%v) = %v, want empty", in, got)
+		}
+	}
+}
+
 // TestScopeBlocksNotAliased pins the immutability guarantee scopeBlocksFor
 // documents. Scope is exported and ScopeItem.Blocks is an exported field, so
 // handing back the package-level table's own slice would let one consumer corrupt
@@ -557,8 +605,8 @@ func TestScopeHostileInput(t *testing.T) {
 				}
 			}()
 			items := Scope(rec)
-			if len(items) < 13 {
-				t.Errorf("hostile input yielded %d items; every record carries at least the 13 universal rows", len(items))
+			if len(items) < universalGatingRowCount {
+				t.Errorf("hostile input yielded %d items; every record carries at least the %d universal rows", len(items), universalGatingRowCount)
 			}
 			if !contains(RollupBlocks(items), "attestations") {
 				t.Error("hostile input dropped the universal attestations block")
@@ -586,8 +634,8 @@ func universalGatingRows() []scopeKey {
 // blocks no record can reach core without.
 func TestScopeUniversalFloor(t *testing.T) {
 	universal := universalGatingRows()
-	if len(universal) != 13 {
-		t.Fatalf("universal gating rows = %d, want 13", len(universal))
+	if len(universal) != universalGatingRowCount {
+		t.Fatalf("universal gating rows = %d, want %d", len(universal), universalGatingRowCount)
 	}
 
 	records := map[string]map[string]any{"{} (empty object)": {}}
