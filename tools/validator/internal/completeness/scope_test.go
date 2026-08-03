@@ -799,6 +799,23 @@ func TestNonPointerBlocksAreNecessary(t *testing.T) {
 		}
 	}
 
+	// kitchenSink is the union of every shipped record's top-level blocks plus the
+	// full-tier synthetic fixture, so "every other block is populated" is real
+	// coverage rather than a claim.
+	kitchenSink := map[string]any{}
+	for _, name := range scopeExamples(t) {
+		for k, v := range exampleRecord(t, name) {
+			if _, present := kitchenSink[k]; !present {
+				kitchenSink[k] = v
+			}
+		}
+	}
+	for k, v := range fullBase() {
+		if _, present := kitchenSink[k]; !present {
+			kitchenSink[k] = v
+		}
+	}
+
 	for _, c := range cases {
 		c := c
 		t.Run(c.path, func(t *testing.T) {
@@ -806,18 +823,38 @@ func TestNonPointerBlocksAreNecessary(t *testing.T) {
 			if !found {
 				t.Fatalf("no rubric row for %s %q", c.level, c.path)
 			}
-			if !ru.present(c.record) {
-				t.Fatalf("fixture does not satisfy the closure, so the deletion below would prove nothing")
-			}
 			declared := scopeBlocksFor(scopeKindOf(c.path), c.path)
 			if len(declared) == 0 {
 				t.Fatalf("row declares no blocks")
 			}
-			for _, b := range declared {
-				delete(c.record, b)
+
+			// Populate every OTHER top-level block first. Deleting the declared
+			// blocks from a sparse fixture would only prove they are load-bearing
+			// for that fixture: a closure that later gained an ALTERNATIVE read
+			// through an undeclared block would survive undetected, because the
+			// sparse fixture never populates the alternative. Filling the record
+			// out removes that escape, so the deletion below is a real test of
+			// the whole declared set.
+			rec := c.record
+			for k, v := range kitchenSink {
+				if _, present := rec[k]; !present {
+					rec[k] = v
+				}
 			}
-			if ru.present(c.record) {
-				t.Errorf("after deleting the declared blocks %v the closure is STILL satisfied, so it reads a block the table does not declare and the manifest under-reports it", declared)
+			if !ru.present(rec) {
+				t.Fatalf("fixture does not satisfy the closure even fully populated, so the deletion below would prove nothing")
+			}
+
+			for _, b := range declared {
+				delete(rec, b)
+			}
+			if ru.present(rec) {
+				remaining := make([]string, 0, len(rec))
+				for k := range rec {
+					remaining = append(remaining, k)
+				}
+				sort.Strings(remaining)
+				t.Errorf("after deleting the declared blocks %v the closure is STILL satisfied from the remaining blocks %v, so it reads a block the table does not declare and the manifest under-reports it", declared, remaining)
 			}
 		})
 	}
