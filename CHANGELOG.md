@@ -20,6 +20,30 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.2.0 (2026-08-03)
+
+A new CLI subcommand, `ulc scope`, that exports the conformance rubric's applicability determination as a versioned JSON document. The rubric is already class-aware: when grading a record it decides which blocks and graded items apply to that product class and which do not, and until now that decision was internal. Exposing it in result form lets any tool built on the CLI present, collect, or check the right fields without re-deriving the rubric, and keeps the rubric the single source of that judgement. This release is purely additive: no conformance grade moves, no computed `index` changes, there is no schema or taxonomy change, and neither the exit code nor the output of `ulc validate` or `ulc build-index` changes. Every golden file is byte-identical, and no example record changed a byte.
+
+### For consumers
+
+Nothing to do. Records, indices, and existing tooling are unaffected; the new subcommand is entirely opt-in. If you build on the CLI, `ulc scope <record.ulc>` now prints a manifest naming that record's in-scope blocks and graded items, each with the rubric's own path, source document, and governing standard, so scope minus the gaps `ulc validate` reports gives you the satisfied set. The manifest carries its own contract version, `scope_version`, starting at `1.0.0`: it is additive-only, so the minor bumps when fields, `kind` values, or arrays are added, consumers must ignore any `tier` or `kind` value they do not recognize, and no existing field, key string, or semantic changes within ULC 1.x.
+
+### Validator
+
+- New subcommand `ulc scope <record.ulc>`, which prints one JSON document on stdout and takes no flags. The envelope carries `scope_version`, `cli_version`, and `record_id` and `ulc_version` echoed from the record when present as strings. `blocks` is a derived rollup, the sorted union of the top-level blocks the in-scope items' evidence lives in; `items` is authoritative. Each item carries `tier` (`core`, `standard`, or `full`), `kind`, `path`, `source_document`, and `standard`, using the rubric's own path strings, the same ones `conformance/gap` findings already emit, so the two surfaces can never disagree on identity.
+- `kind` describes the form of the path string only, with three values: `pointer`, a JSON Pointer naming the graded location, which may be a leaf, an object, or an array; `choice`, a pointer carrying an alternative where either location satisfies; and `requirement`, a prose label for a requirement no single pointer names. An item states no presence or satisfaction state.
+- The manifest covers the graded tiers only. The non-gating enrichment and observation guidance stays where it is, in `ulc validate`. It is also distinct from the record's `applicability` block, which declares the range of orderable SKU configurations.
+- Exit codes: 0 when a manifest is emitted or `-h` is given; 1 when the record cannot be read, parsed, or used as a ULC record, with the diagnostic on stderr and no partial JSON on stdout; 2 on a usage error. The subcommand runs no schema validation and reads nothing but the record, so it is report-time only.
+- `ulc from-sheet` now treats an A1 column reference beyond `XFD`, the format's maximum column, as malformed and skips its cell, the same handling a reference carrying no column letters already receives. No workbook a spreadsheet application can author reaches that bound, so conversion output is unchanged for every legal workbook.
+
+### Docs
+
+- `tools/validator/README.md`: the shipped-features checklist gains the `ulc scope` entry and the column-reference clause.
+- `tools/README.md`: the `ulc` subcommand inventory now lists four subcommands.
+- `docs/how-it-works.md`: the CLI walkthrough names `ulc scope <record>`.
+- `docs/methodology.md`: the applicability-predicates section records that the determination is also exported in result form.
+- `README.md`: the current-release version line.
+
 ## 1.1.0 (2026-07-21)
 
 A seventh Product Achievements theme, `domestic_content`. This additive-minor release maps the three US domestic-content procurement programs already in the taxonomy (`baa`, `baba`, `american_iron_and_steel`) into a new achievement theme alongside the existing six. The achievements engine is table-driven, so the theme computes with no new grading logic: a record earns `domestic_content` from the same ledger, evidence, and record-relative expiry rules every other theme uses. Conformance grades, `documented_count`, and `restricted_substances_declared` are byte-identical on every example; only the new theme entry and the builder-version stamp change in the generated index.
