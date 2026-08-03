@@ -564,7 +564,9 @@ func printIndex(idx index.Index) int {
 // scopeContractVersion is the semver of the grading-scope manifest's own output
 // contract, independent of both CLIVersion and index.BuilderVersion. It is
 // additive-only: a new field, a new kind value or a new array bumps the minor,
-// and no existing field, key string or semantic changes within ULC 1.x.
+// and no existing field, key string or semantic changes for the lifetime of
+// scope_version 1.x. That scoping is deliberate: the ULC version line governs
+// the schema surface, which this manifest is not part of.
 const scopeContractVersion = "1.0.0"
 
 // scopeItemOut is one graded item of the manifest. source_document and standard
