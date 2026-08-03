@@ -1,0 +1,338 @@
+{
+  "scope_version": "1.0.0",
+  "cli_version": "CLI_VERSION",
+  "record_id": "vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in",
+  "ulc_version": "0.8.0",
+  "blocks": [
+    "attestations",
+    "colorimetry",
+    "configuration",
+    "corrections_applied",
+    "electrical",
+    "instrumentation",
+    "lumen_maintenance_luminaire",
+    "lumen_maintenance_package",
+    "operating_point",
+    "photometry",
+    "product_family",
+    "test_conditions",
+    "uncertainty"
+  ],
+  "items": [
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/colorimetry/cri_ra",
+      "source_document": "datasheet_pdf",
+      "standard": "CIE 13.3"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/colorimetry/nominal_cct_k",
+      "source_document": "datasheet_pdf",
+      "standard": "ANSI C78.377"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/configuration/tested_axes/color_tunability",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/electrical/driver_protocol",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/electrical/input_power_w",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "core",
+      "kind": "choice",
+      "path": "/electrical/input_voltage_v (or input_voltage_class)",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/photometry/distribution_type",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/photometry/luminaire_efficacy_lm_per_w",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/photometry/total_luminous_flux_lm",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/catalog_model",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/cutsheet",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/environment_rating",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/indoor_outdoor",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/manufacturer/display_name",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/manufacturer/slug",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/mounting_types",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/primary_category",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/secondary_function",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/shape",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/technical_region",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "requirement",
+      "path": "safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)",
+      "source_document": "compliance_documents",
+      "standard": "UL 1598 / IEC 60598"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/colorimetry/sdcm_step",
+      "source_document": "datasheet_pdf",
+      "standard": "ANSI C78.377"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/configuration/tested_axes/cri_tier",
+      "source_document": "datasheet_pdf",
+      "standard": "CIE 13.3"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/electrical/control_gear_type",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/electrical/dimming_method",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/electrical/dimming_range_percent",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/instrumentation/measurement_regime",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "standard",
+      "kind": "choice",
+      "path": "/lumen_maintenance_luminaire (or /lumen_maintenance_package)",
+      "source_document": "datasheet_pdf",
+      "standard": "TM-21"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/photometry/declared_by_length",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/photometry/maximum_intensity_cd",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/photometry/per_length_normalized",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/photometry/photometric_coordinate_system",
+      "source_document": "ies",
+      "standard": "LM-75"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/photometry/symmetry_type",
+      "source_document": "ies",
+      "standard": "LM-75"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/product_family/shared_mechanical/housing_material",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/product_family/shared_mechanical/lens_material",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/test_conditions/photometry_basis",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "standard",
+      "kind": "requirement",
+      "path": "LM-79 attestation",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "full",
+      "kind": "pointer",
+      "path": "/colorimetry/tm_30/rf",
+      "source_document": "test_report",
+      "standard": "TM-30"
+    },
+    {
+      "tier": "full",
+      "kind": "pointer",
+      "path": "/colorimetry/tm_30/rf_h_per_bin",
+      "source_document": "test_report",
+      "standard": "TM-30"
+    },
+    {
+      "tier": "full",
+      "kind": "pointer",
+      "path": "/corrections_applied",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "full",
+      "kind": "pointer",
+      "path": "/operating_point",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "full",
+      "kind": "pointer",
+      "path": "/photometry/zonal_lumens",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "tier": "full",
+      "kind": "pointer",
+      "path": "/uncertainty",
+      "source_document": "test_report",
+      "standard": "LM-79 / GUM"
+    },
+    {
+      "tier": "full",
+      "kind": "requirement",
+      "path": "instrumentation depth (goniometer/lab)",
+      "source_document": "test_report",
+      "standard": "LM-79 / LM-75"
+    },
+    {
+      "tier": "full",
+      "kind": "requirement",
+      "path": "method-backed lumen maintenance (TM-21 hours or TM-28)",
+      "source_document": "test_report",
+      "standard": "LM-80 / TM-21 / TM-28"
+    }
+  ]
+}

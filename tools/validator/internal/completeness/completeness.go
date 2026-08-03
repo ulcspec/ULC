@@ -772,6 +772,10 @@ func hasEmergencyPhotometryReference(r map[string]any) bool {
 // voltage, lumen maintenance, operating point, instrumentation, method-backed
 // maintenance) use a predicate-backed present-closure and are skipped by the
 // shape-guard test.
+//
+// PUBLIC CONTRACT: each row's path, document and standard strings are public
+// surface. They are emitted verbatim by conformance/gap findings and by the
+// grading-scope manifest, so a consumer keys on them. Never reword one casually.
 var rubric = []rule{
 	// --- CORE ---
 	{LevelCore, "/product_family/manufacturer/slug", "", "datasheet_pdf", "identity", "", str("product_family", "manufacturer", "slug"), nil},

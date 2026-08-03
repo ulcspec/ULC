@@ -1,0 +1,169 @@
+{
+  "scope_version": "1.0.0",
+  "cli_version": "CLI_VERSION",
+  "record_id": "cooper-sure-lites-es61src",
+  "ulc_version": "0.10.0",
+  "blocks": [
+    "attestations",
+    "electrical",
+    "emergency",
+    "exit_sign",
+    "product_family"
+  ],
+  "items": [
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/emergency/power_source",
+      "source_document": "datasheet_pdf",
+      "standard": "UL 924"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/exit_sign/illumination_mode",
+      "source_document": "datasheet_pdf",
+      "standard": "UL 924"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/exit_sign/legend_color",
+      "source_document": "datasheet_pdf",
+      "standard": "NFPA 101"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/catalog_model",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/cutsheet",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/environment_rating",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/indoor_outdoor",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/manufacturer/display_name",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/manufacturer/slug",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/mounting_types",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/primary_category",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/shape",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "pointer",
+      "path": "/product_family/technical_region",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "core",
+      "kind": "requirement",
+      "path": "UL 924 listing",
+      "source_document": "compliance_documents",
+      "standard": "UL 924"
+    },
+    {
+      "tier": "core",
+      "kind": "requirement",
+      "path": "safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)",
+      "source_document": "compliance_documents",
+      "standard": "UL 1598 / IEC 60598"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/electrical/input_power_w",
+      "source_document": "datasheet_pdf",
+      "standard": "UL 924"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/exit_sign/directional_indicator",
+      "source_document": "datasheet_pdf",
+      "standard": "NFPA 101"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/exit_sign/face_count",
+      "source_document": "datasheet_pdf",
+      "standard": "UL 924"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/exit_sign/legend_height",
+      "source_document": "datasheet_pdf",
+      "standard": "NFPA 101 / IBC"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/product_family/shared_mechanical/housing_material",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "standard",
+      "kind": "pointer",
+      "path": "/product_family/shared_mechanical/lens_material",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "tier": "full",
+      "kind": "requirement",
+      "path": "test-report-backed sign-face luminance",
+      "source_document": "test_report",
+      "standard": "UL 924"
+    }
+  ]
+}

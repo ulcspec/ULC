@@ -1,0 +1,68 @@
+core	choice	/electrical/input_voltage_v (or input_voltage_class)	datasheet_pdf	LM-79
+core	pointer	/colorimetry/cri_ra	datasheet_pdf	CIE 13.3
+core	pointer	/colorimetry/nominal_cct_k	datasheet_pdf	ANSI C78.377
+core	pointer	/configuration/tested_axes/color_tunability	datasheet_pdf	identity
+core	pointer	/electrical/driver_protocol	datasheet_pdf	identity
+core	pointer	/electrical/input_power_w	ies	LM-79
+core	pointer	/emergency/power_source	datasheet_pdf	UL 924
+core	pointer	/exit_sign/illumination_mode	datasheet_pdf	UL 924
+core	pointer	/exit_sign/legend_color	datasheet_pdf	NFPA 101
+core	pointer	/photometry/distribution_type	ies	LM-79
+core	pointer	/photometry/luminaire_efficacy_lm_per_w	ies	LM-79
+core	pointer	/photometry/total_luminous_flux_lm	ies	LM-79
+core	pointer	/product_family/catalog_model	datasheet_pdf	identity
+core	pointer	/product_family/cutsheet	datasheet_pdf	identity
+core	pointer	/product_family/environment_rating	datasheet_pdf	identity
+core	pointer	/product_family/indoor_outdoor	datasheet_pdf	identity
+core	pointer	/product_family/manufacturer/display_name	datasheet_pdf	identity
+core	pointer	/product_family/manufacturer/slug	datasheet_pdf	identity
+core	pointer	/product_family/mounting_types	datasheet_pdf	identity
+core	pointer	/product_family/primary_category	datasheet_pdf	identity
+core	pointer	/product_family/secondary_function	datasheet_pdf	identity
+core	pointer	/product_family/shape	datasheet_pdf	identity
+core	pointer	/product_family/technical_region	datasheet_pdf	identity
+core	requirement	UL 924 listing	compliance_documents	UL 924
+core	requirement	safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)	compliance_documents	UL 1598 / IEC 60598
+full	pointer	/colorimetry/tm_30/rf	test_report	TM-30
+full	pointer	/colorimetry/tm_30/rf_h_per_bin	test_report	TM-30
+full	pointer	/corrections_applied	test_report	LM-79
+full	pointer	/operating_point	test_report	LM-79
+full	pointer	/photometry/zonal_lumens	ies	LM-79
+full	pointer	/uncertainty	test_report	LM-79 / GUM
+full	requirement	instrumentation depth (goniometer/lab)	test_report	LM-79 / LM-75
+full	requirement	method-backed lumen maintenance (TM-21 hours or TM-28)	test_report	LM-80 / TM-21 / TM-28
+full	requirement	test-report-backed face illuminance	test_report	UL 924
+full	requirement	test-report-backed sign-face luminance	test_report	UL 924
+standard	choice	/lumen_maintenance_luminaire (or /lumen_maintenance_package)	datasheet_pdf	TM-21
+standard	pointer	/colorimetry/sdcm_step	datasheet_pdf	ANSI C78.377
+standard	pointer	/configuration/tested_axes/cri_tier	datasheet_pdf	CIE 13.3
+standard	pointer	/electrical/control_gear_type	datasheet_pdf	LM-79
+standard	pointer	/electrical/dimming_method	datasheet_pdf	identity
+standard	pointer	/electrical/dimming_range_percent	datasheet_pdf	identity
+standard	pointer	/electrical/input_power_w	datasheet_pdf	UL 924
+standard	pointer	/emergency/battery_chemistry	datasheet_pdf	UL 924
+standard	pointer	/emergency/battery_duration_min	datasheet_pdf	UL 924
+standard	pointer	/emergency/self_test	datasheet_pdf	UL 924
+standard	pointer	/exit_sign/contrast_ratio	datasheet_pdf	NFPA 101
+standard	pointer	/exit_sign/directional_indicator	datasheet_pdf	NFPA 101
+standard	pointer	/exit_sign/face_count	datasheet_pdf	UL 924
+standard	pointer	/exit_sign/face_illuminance_lx	datasheet_pdf	NFPA 101 / IBC
+standard	pointer	/exit_sign/legend_height	datasheet_pdf	NFPA 101 / IBC
+standard	pointer	/exit_sign/min_charging_illuminance_lx	datasheet_pdf	UL 924
+standard	pointer	/exit_sign/sign_face_luminance_cd_per_m2	datasheet_pdf	UL 924
+standard	pointer	/exit_sign/tritium_rated_life_years	datasheet_pdf	NRC 10 CFR 31.5
+standard	pointer	/instrumentation/measurement_regime	ies	LM-79
+standard	pointer	/outdoor_classification/bug_rating	datasheet_pdf	TM-15
+standard	pointer	/outdoor_classification/longitudinal_distribution_range	ies	RP-8
+standard	pointer	/outdoor_classification/outdoor_distribution_type	ies	RP-8
+standard	pointer	/photometry/beam_angle_deg	ies	LM-79
+standard	pointer	/photometry/declared_by_length	datasheet_pdf	LM-79
+standard	pointer	/photometry/maximum_intensity_cd	ies	LM-79
+standard	pointer	/photometry/per_length_normalized	datasheet_pdf	LM-79
+standard	pointer	/photometry/photometric_coordinate_system	ies	LM-75
+standard	pointer	/photometry/symmetry_type	ies	LM-75
+standard	pointer	/product_family/shared_mechanical/housing_material	datasheet_pdf	identity
+standard	pointer	/product_family/shared_mechanical/ip_rating	compliance_documents	IEC 60529
+standard	pointer	/product_family/shared_mechanical/lens_material	datasheet_pdf	identity
+standard	pointer	/test_conditions/photometry_basis	ies	LM-79
+standard	requirement	LM-79 attestation	test_report	LM-79
