@@ -42,6 +42,13 @@
 // render reproduces the human-facing INFO emission from it. AchievedLevel stays
 // the independent, cheap level ladder the index builder calls.
 //
+// The package carries a SECOND projection over the same rubric table, in
+// scope.go: Scope reports which graded items the rubric holds in scope for a
+// record, in result form, and RollupBlocks unions their evidence blocks. Both
+// exist here, rather than in a caller, because the rubric table, the rule struct,
+// and every predicate are unexported and stay that way; anything computed from
+// the rubric is computed inside this package and only its results leave.
+//
 // Severity model:
 //
 //	INFO    everything grading emits: the achieved-grade summary, the per-grade
@@ -582,6 +589,8 @@ var anySafetyListings = map[string]bool{
 // docs/compliance-attestation.md. North American records require an NA-recognized
 // listing; everywhere else any recognized listing (including IEC 60598 / CE)
 // satisfies the gate.
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
 func hasMarketSafetyListing(r map[string]any) bool {
 	accept := anySafetyListings
 	if naRegions[getString(r, "product_family", "technical_region")] {
@@ -702,6 +711,8 @@ func emergencyPowerCoreClass(r map[string]any) bool {
 // hasUL924Listing reports whether the merged attestation program list contains ul_924,
 // reading the same list hasMarketSafetyListing reads (top-level attestations[] plus
 // product_family.shared_attestations, via attestationPrograms).
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
 func hasUL924Listing(r map[string]any) bool {
 	for _, p := range attestationPrograms(r) {
 		if p == "ul_924" {
@@ -717,6 +728,8 @@ func hasUL924Listing(r map[string]any) bool {
 // provenance object IS the evidence, so a measured value with NO provenance object
 // (ProvenancedNumber does not require one) deliberately fails. Total on hostile input:
 // a missing field, a non-map provenance, or a wrong-typed source all read false.
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
 func testReportBacked(keys ...string) predicate {
 	return func(r map[string]any) bool {
 		if !hasNumberValue(r, keys...) {
@@ -772,6 +785,10 @@ func hasEmergencyPhotometryReference(r map[string]any) bool {
 // voltage, lumen maintenance, operating point, instrumentation, method-backed
 // maintenance) use a predicate-backed present-closure and are skipped by the
 // shape-guard test.
+//
+// PUBLIC CONTRACT: each row's path, document and standard strings are public
+// surface. They are emitted verbatim by conformance/gap findings and by the
+// grading-scope manifest, so a consumer keys on them. Never reword one casually.
 var rubric = []rule{
 	// --- CORE ---
 	{LevelCore, "/product_family/manufacturer/slug", "", "datasheet_pdf", "identity", "", str("product_family", "manufacturer", "slug"), nil},
@@ -1289,6 +1306,8 @@ func emitAttestationCoverage(record map[string]any, report *findings.Report) {
 // LM-79 family (program token starts with "lm_79"). Checks both record-level
 // attestations and product_family.shared_attestations, matching where the index
 // builder collects programs.
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
 func hasLM79Attestation(record map[string]any) bool {
 	for _, p := range attestationPrograms(record) {
 		if strings.HasPrefix(p, "lm_79") {
@@ -1301,6 +1320,8 @@ func hasLM79Attestation(record map[string]any) bool {
 // attestationPrograms collects program tokens from both the top-level
 // attestations[] and product_family.shared_attestations[], so a listing authored
 // under either is read.
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
 func attestationPrograms(record map[string]any) []string {
 	out := []string{}
 	collect := func(arr []any) {
@@ -1406,6 +1427,8 @@ func hasLumenMaintenancePackage(record map[string]any) bool {
 // method-backed lumen-maintenance projection: a package entry with a
 // tm_21_projection_hours value, or a luminaire framework with a tm_28 projection.
 // A bare manufacturer_rated_claim does not count.
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
 func hasMethodBackedLumenMaintenance(record map[string]any) bool {
 	if arr, ok := record["lumen_maintenance_package"].([]any); ok {
 		for _, e := range arr {
@@ -1625,6 +1648,8 @@ func hasOperatingPoint(record map[string]any) bool {
 // measurement_regime that signals lab depth. Each of the five recognized fields is a
 // string (enum or free text) in the schema, so a non-empty string is required: a
 // non-string value at one of these keys reads as absent.
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
 func hasInstrumentationDepth(record map[string]any) bool {
 	instr, ok := record["instrumentation"].(map[string]any)
 	if !ok {

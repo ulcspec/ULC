@@ -369,8 +369,14 @@ func cellValue(c xlCell, table []string) string {
 // colIndex parses the leading letters of an A1 cell reference ("B", "AA", "ZZ")
 // into a 0-based column index, ignoring the trailing row digits. Bijective
 // base-26: A=1..Z=26, AA=27, so the 0-based result is (accumulated - 1). Returns
-// -1 for a reference with no leading letter (malformed); callers skip it.
+// -1 for a reference with no leading letter (malformed), and for one that
+// accumulates past XFD, the OOXML and Excel hard maximum column; callers skip
+// both. The bound is checked in the loop rather than after it, so a long letter
+// run can neither size buildHeader's allocation from file input nor overflow.
 func colIndex(ref string) int {
+	// maxColumns is XFD (16384), the last column the format can address, so the
+	// bound rejects no reference a real workbook can carry.
+	const maxColumns = 16384
 	n := 0
 	i := 0
 	for ; i < len(ref); i++ {
@@ -382,6 +388,9 @@ func colIndex(ref string) int {
 			n = n*26 + int(ch-'a'+1)
 		default:
 			i = len(ref) // stop at the first non-letter (the row digits)
+		}
+		if n > maxColumns {
+			return -1
 		}
 	}
 	if n == 0 {

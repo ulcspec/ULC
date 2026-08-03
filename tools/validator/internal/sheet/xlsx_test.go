@@ -317,7 +317,9 @@ func TestReadXLSXCellTypes(t *testing.T) {
 }
 
 // TestColIndex checks the A1 column-letter parser across single, double, and
-// malformed references.
+// malformed references, plus the XFD bound: XFD is the last column the format
+// can address and parses normally, while anything past it is malformed and is
+// skipped by the caller the same way a reference with no leading letter is.
 func TestColIndex(t *testing.T) {
 	cases := []struct {
 		ref  string
@@ -325,6 +327,10 @@ func TestColIndex(t *testing.T) {
 	}{
 		{"A1", 0}, {"B7", 1}, {"Z1", 25}, {"AA1", 26}, {"AB10", 27}, {"ZZ99", 701},
 		{"a1", 0}, {"", -1}, {"1", -1},
+		// The XFD boundary, from both sides and in both cases, plus a run long
+		// enough that an unbounded accumulator would overflow int.
+		{"XFD1", 16383}, {"xfd1", 16383},
+		{"XFE1", -1}, {"xfe1", -1}, {"ZZZ1", -1}, {"AAAAAAAAAAAAA1", -1},
 	}
 	for _, c := range cases {
 		if got := colIndex(c.ref); got != c.want {
@@ -436,4 +442,45 @@ func readRawCSV(t *testing.T, path string) [][]string {
 		t.Fatalf("read %s: %v", path, err)
 	}
 	return recs
+}
+
+// TestReadXLSXOutOfRangeColumnReference is the converter-level guard for the XFD
+// bound. A worksheet carrying a column reference far past the format maximum
+// used to size buildHeader's allocation from that reference and crash the
+// process; the reference is now malformed, so the reader skips the cell and the
+// surrounding real columns convert normally.
+func TestReadXLSXOutOfRangeColumnReference(t *testing.T) {
+	const ns = `xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"`
+	parts := map[string]string{
+		"xl/workbook.xml": `<?xml version="1.0"?><workbook ` + ns +
+			` xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+			`<sheets><sheet name="records" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+		"xl/_rels/workbook.xml.rels": `<?xml version="1.0"?>` +
+			`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+			`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+			`</Relationships>`,
+		"xl/worksheets/sheet1.xml": `<?xml version="1.0"?><worksheet ` + ns + `><sheetData>` +
+			// A 13-letter reference, past XFD by many orders of magnitude, on both rows.
+			// XFD is the format's last addressable column and must still convert.
+			`<row r="1"><c r="A1" t="inlineStr"><is><t>record_id</t></is></c>` +
+			`<c r="XFD1" t="inlineStr"><is><t>note</t></is></c>` +
+			`<c r="AAAAAAAAAAAAA1" t="inlineStr"><is><t>ignored</t></is></c></row>` +
+			`<row r="2"><c r="A2" t="inlineStr"><is><t>r1</t></is></c>` +
+			`<c r="XFD2" t="inlineStr"><is><t>kept</t></is></c>` +
+			`<c r="AAAAAAAAAAAAA2" t="inlineStr"><is><t>dropped</t></is></c></row>` +
+			`</sheetData></worksheet>`,
+	}
+	path := filepath.Join(t.TempDir(), "outofrange.xlsx")
+	writeRawXLSX(t, path, parts)
+
+	got, err := ReadXLSX(path)
+	if err != nil {
+		t.Fatalf("ReadXLSX: %v", err)
+	}
+	// The out-of-range cell is skipped; the legal XFD column beside it survives,
+	// so the bound rejects only what the format itself cannot address.
+	want := Workbook{"records": []Row{{"record_id": "r1", "note": "kept"}}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("out-of-range column mismatch:\n got: %v\nwant: %v", got, want)
+	}
 }

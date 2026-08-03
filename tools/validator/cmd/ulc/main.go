@@ -6,6 +6,7 @@
 //	ulc validate <record.ulc>        Validate a record against the ULC schema.
 //	ulc build-index <record.ulc>     Regenerate the record's index block.
 //	ulc from-sheet <input>           Convert a workbook (CSV bundle or .xlsx) into records.
+//	ulc scope <record.ulc>           Print the record's grading-scope manifest.
 //	ulc version                      Print the CLI version.
 //
 // For per-subcommand flags and semantics, run `ulc <subcommand> -h`.
@@ -50,6 +51,8 @@ func main() {
 		os.Exit(runBuildIndex(args))
 	case "from-sheet":
 		os.Exit(runFromSheet(args))
+	case "scope":
+		os.Exit(runScope(args))
 	case "version", "-v", "--version":
 		fmt.Printf("ulc %s (builder %s)\n", CLIVersion, index.BuilderVersion)
 	case "help", "-h", "--help":
@@ -71,6 +74,7 @@ SUBCOMMANDS
     validate      Validate a ULC record against the ULC schema.
     build-index   Regenerate the record's index block from its deep blocks.
     from-sheet    Convert a workbook (CSV bundle or .xlsx) into validated ULC records.
+    scope         Print the grading-scope manifest for a ULC record.
     version       Print the CLI version.
     help          Print this help message.
 
@@ -524,19 +528,157 @@ USAGE
 	return 0
 }
 
-func printIndex(idx index.Index) int {
+// printJSON encodes v as two-space-indented JSON and writes it to stdout in a
+// single call, so an encode failure leaves nothing at all on stdout. (A write
+// failure is different: os.Stdout.Write can report an error after a partial
+// write, which no buffering can prevent. Both are reported on stderr, so an exit
+// code of 1 always comes with a diagnostic.)
+//
+// escapeHTML selects the encoder's treatment of <, > and &: build-index leaves
+// them literal to preserve the record's own byte shape, while scope escapes them
+// because its document carries record-controlled strings a consumer may inline
+// into a page. Both directions are pinned by tests; the setting is public
+// contract for each subcommand, not an implementation detail.
+func printJSON(subcommand string, v any, escapeHTML bool) int {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	enc.SetIndent("", "  ")
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(idx); err != nil {
-		fmt.Fprintf(os.Stderr, "ulc build-index: %v\n", err)
+	enc.SetEscapeHTML(escapeHTML)
+	if err := enc.Encode(v); err != nil {
+		fmt.Fprintf(os.Stderr, "ulc %s: %v\n", subcommand, err)
 		return 1
 	}
 	if _, err := os.Stdout.Write(buf.Bytes()); err != nil {
+		fmt.Fprintf(os.Stderr, "ulc %s: write stdout: %v\n", subcommand, err)
 		return 1
 	}
 	return 0
+}
+
+func printIndex(idx index.Index) int {
+	return printJSON("build-index", idx, false)
+}
+
+// --- scope ---
+
+// scopeContractVersion is the semver of the grading-scope manifest's own output
+// contract, independent of both CLIVersion and index.BuilderVersion. It is
+// additive-only: a new field, a new kind value or a new array bumps the minor,
+// and no existing field, key string or semantic changes for the lifetime of
+// scope_version 1.x. That scoping is deliberate: the ULC version line governs
+// the schema surface, which this manifest is not part of.
+const scopeContractVersion = "1.0.0"
+
+// scopeItemOut is one graded item of the manifest. source_document and standard
+// reuse the JSON names the findings contract already ships, and every field here
+// is a static rubric string, never record input.
+type scopeItemOut struct {
+	Tier           string `json:"tier"`
+	Kind           string `json:"kind"`
+	Path           string `json:"path"`
+	SourceDocument string `json:"source_document"`
+	Standard       string `json:"standard"`
+}
+
+// scopeDoc is the manifest document. record_id and ulc_version are the one place
+// it carries record input: each is echoed when the record holds a non-empty
+// string there, and omitted when the key is absent, non-string, or empty.
+//
+// `ulc scope` runs no schema validation, so BOTH fields are unvalidated,
+// record-controlled strings even though the surrounding document is
+// CLI-authored. They are echoed rather than dropped because a consumer that fans
+// out over a corpus and concatenates manifests loses the record pairing
+// irrecoverably without record_id, and non-conforming records are exactly the
+// ones being triaged. A consumer must therefore treat both as untrusted input:
+// never a filesystem path, a cache key, or a trust anchor, and escaped for
+// whatever output context it lands in. Every other field is a static rubric or
+// CLI string.
+type scopeDoc struct {
+	ScopeVersion string         `json:"scope_version"`
+	CLIVersion   string         `json:"cli_version"`
+	RecordID     string         `json:"record_id,omitempty"`
+	ULCVersion   string         `json:"ulc_version,omitempty"`
+	Blocks       []string       `json:"blocks"`
+	Items        []scopeItemOut `json:"items"`
+}
+
+// buildScopeDoc projects the rubric's scope for record into the output document.
+// It is a pure DTO mapping: the scope decision and the blocks rollup both belong
+// to internal/completeness, which owns the rubric and tests them.
+func buildScopeDoc(record map[string]any) scopeDoc {
+	items := completeness.Scope(record)
+	doc := scopeDoc{
+		ScopeVersion: scopeContractVersion,
+		CLIVersion:   CLIVersion,
+		Blocks:       completeness.RollupBlocks(items),
+		Items:        make([]scopeItemOut, 0, len(items)),
+	}
+	if s, ok := record["record_id"].(string); ok {
+		doc.RecordID = s
+	}
+	if s, ok := record["ulc_version"].(string); ok {
+		doc.ULCVersion = s
+	}
+	for _, it := range items {
+		doc.Items = append(doc.Items, scopeItemOut{
+			Tier:           it.Level.String(),
+			Kind:           string(it.Kind),
+			Path:           it.Path,
+			SourceDocument: it.Document,
+			Standard:       it.Standard,
+		})
+	}
+	return doc
+}
+
+func runScope(args []string) int {
+	// ContinueOnError, deliberately unlike validate, build-index and from-sheet:
+	// it keeps -h and an unrecognized flag as return values rather than an
+	// os.Exit inside the process, so both stay assertable. Parse has already
+	// printed the usage block in each case, so neither arm re-prints it.
+	fs := flag.NewFlagSet("scope", flag.ContinueOnError)
+	fs.Usage = func() {
+		fmt.Fprint(os.Stderr, `ulc scope -- print the grading-scope manifest for a ULC record.
+
+States, in result form, which top-level blocks and which graded items the
+conformance rubric holds in scope for this record: an exit sign is never
+asked for photometric distribution data, a downlight is never asked for the
+exit_sign dataset. The output names results only, never the predicate logic
+that decided them.
+
+The manifest covers the gating tiers (core, standard, full). Non-gating
+enrichment and observation guidance stays in `+"`ulc validate`"+`. This is not the
+record's `+"`applicability`"+` block, which declares SKU coverage.
+
+Exit codes:
+  0   manifest emitted (or -h)
+  1   the record could not be read, parsed, or used as a ULC record,
+      or the manifest could not be written
+  2   usage error
+
+USAGE
+    ulc scope <record.ulc>
+`)
+	}
+	if err := fs.Parse(reorderFlagsFirst(args)); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() != 1 {
+		fs.Usage()
+		return 2
+	}
+	recordPath := fs.Arg(0)
+
+	record, err := readRecord(recordPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ulc scope: %v\n", err)
+		return 1
+	}
+
+	return printJSON("scope", buildScopeDoc(record), true)
 }
 
 // valueFlags are the flag names across all subcommands that take a
