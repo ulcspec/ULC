@@ -51,6 +51,7 @@ Two cautions. `blocks` is a rollup, not a judgement: a named block means at leas
 - `docs/how-it-works.md`: the CLI walkthrough names `ulc scope <record>`.
 - `docs/methodology.md`: the applicability-predicates section records that the determination is also exported in result form.
 - `README.md`: the current-release version line.
+- `ROADMAP.md`: the active-version heading now names the current line, the applicability item moves out of deferred work because this release ships it, and the deferred list gains the `ulc validate --json` escaping-consistency item.
 
 ## 1.1.0 (2026-07-21)
 

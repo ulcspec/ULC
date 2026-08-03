@@ -23,7 +23,7 @@ changed `required[]`) requires the next major, v2.0.0. Pre-1.0 releases generall
 aimed for additive changes; compatibility-tightening changes occurred only when
 documented in the changelog (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.0.x
+## Active version: v1.2.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -40,6 +40,12 @@ surface: every authored schema change is a new optional field, def, or enum, and
 field, token, or code is removed or narrowed; grades and completeness findings are
 byte-identical. The two new generated index members are required in the built index,
 so each stored record re-stamps with `ulc build-index` to gain them.
+
+The minors since have stayed additive. v1.1.0 adds the `domestic_content`
+achievement theme as an optional index property, leaving the `required` set
+unchanged. v1.2.0 adds `ulc scope`, which exports the conformance rubric's
+applicability determination as a versioned JSON manifest in result form, and
+changes no schema, no taxonomy, no computed value, and no existing output.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
@@ -176,12 +182,19 @@ detail, is foreclosed to the next major, v2.0.0; minors stay additive-only.
   regional-market-access-consolidation themes, a social-responsibility theme
   (the organization-level ILFI JUST label, `just_label`, is unthemed-tracked
   toward it), and a disposition for the project-level programs (LEED, WELL)
-  beyond their current unthemed-tracked state, are candidates for v1.2.
+  beyond their current unthemed-tracked state, are candidates for a future minor.
 - **Attestation-document byte-verification.** `VerifyHashes` byte-checks
   `source_files[].reference` hashes today; the evidence documents the achievements
   axis reads (`attestations[].source_document_ref`) are checked for presence, not
   byte-verified, consistent with the cutsheet treatment. Byte-verifying attachment
   documents is future work.
+- **Consistent HTML escaping across machine-readable output.** `ulc scope`
+  escapes `<`, `>` and `&` in its manifest, because the document carries
+  record-controlled strings a consumer may inline into a page. `ulc validate
+  --json` does not escape them, though it carries the same class of string.
+  Aligning the two changes the default output of `ulc validate --json` for any
+  record containing those characters, so it needs its own release rather than
+  riding along with a change that promises no output movement.
 - **DarkSky as a sustainability facet, and C2C per-category levels.** The dark-sky
   theme stands alone today; folding it under a broader sustainability grouping,
   and recording Cradle to Cradle per-category levels (the `sustainability_metric`
