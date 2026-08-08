@@ -92,12 +92,14 @@ func runValidate(args []string) int {
 	var expiry bool
 	var asOf string
 	var expiryWindow int
+	var verifyEvidence bool
 	fs.BoolVar(&jsonOut, "json", false, "Emit findings as machine-readable JSON instead of human-readable text.")
 	fs.BoolVar(&verbose, "verbose", false, "Include the optional conformance and achievement findings (the enrichment roadmap, observation notes, and per-theme achievement state and roadmap) in text output. JSON always includes them.")
 	fs.StringVar(&schemaDir, "schema-dir", "", "Directory containing ulc.schema.json and taxonomy.schema.json. Auto-detected when omitted.")
 	fs.BoolVar(&expiry, "expiry", false, "Opt in to the advisory attestation-expiry check. Advisory: never changes the exit code or the computed index.")
 	fs.StringVar(&asOf, "as-of", "", "Evaluation date for --expiry as YYYY-MM-DD (default: today). Requires --expiry.")
 	fs.IntVar(&expiryWindow, "expiry-window", 90, "Days ahead to flag upcoming expiry for --expiry (0..36500). Requires --expiry.")
+	fs.BoolVar(&verifyEvidence, "verify-evidence", false, "Also byte-verify attestation evidence documents (source_document_ref). Absent files stay INFO; a hash mismatch is an ERROR.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc validate -- validate a ULC record against the ULC schema.
 
@@ -119,13 +121,20 @@ Optional expiry advisory (opt in with --expiry):
   --expiry-window N   Days ahead to flag upcoming expiry, 0..36500 (default: 90).
                       Requires --expiry.
 
+Optional evidence verification (opt in with --verify-evidence):
+  --verify-evidence   Also byte-verify attestation evidence documents
+                      (attestations and product_family.shared_attestations
+                      source_document_ref entries). A locally absent document
+                      stays INFO; a document whose SHA-256 does not match is
+                      an ERROR and fails validation.
+
 Exit codes:
   0   no ERROR findings (WARNING and INFO do not fail validation)
   1   at least one ERROR finding
   2   usage error
 
 USAGE
-    ulc validate [--json] [--verbose] [--schema-dir PATH]
+    ulc validate [--json] [--verbose] [--schema-dir PATH] [--verify-evidence]
                  [--expiry [--as-of DATE] [--expiry-window N]] <record.ulc>
 `)
 	}
@@ -240,7 +249,7 @@ USAGE
 
 	// 3. File-reference hash verification (read files relative to the record).
 	recordDir := filepath.Dir(recordPath)
-	validate.VerifyFileReferences(recordDir, recordMap, validate.VerifyOptions{Evidence: false}, report)
+	validate.VerifyFileReferences(recordDir, recordMap, validate.VerifyOptions{Evidence: verifyEvidence}, report)
 
 	// 4. Conformance report. The achieved grade was already computed by the
 	// builder and stored in index.conformance_level, and the parity step above
