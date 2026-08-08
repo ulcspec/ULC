@@ -4,7 +4,7 @@ How to emit ULC records from a Product Information Management (PIM) system or eq
 
 ## Why this exists
 
-Manufacturers with catalog-scale output (hundreds or thousands of SKUs across multiple product lines) do not hand-author ULC records. They emit them programmatically from the PIM that already holds their product data. The question is how to translate PIM-shaped data (products, attributes, categories, assets, relationships) into ULC-shaped records without losing provenance or conformance.
+Manufacturers with catalog-scale output (hundreds or thousands of SKUs across multiple product lines) do not hand-author ULC records. They emit them programmatically from the systems that hold the data: product attributes typically from a PIM or product-master database, test reports and certificates typically from the engineering and compliance side (a PLM system, a document vault, a QMS, or a well-kept folder). The question is how to translate PIM-shaped data (products, attributes, categories, assets, relationships) into ULC-shaped records without losing provenance or conformance.
 
 These guides describe, per PIM platform, how the typical PIM data model maps into the ULC schema. They are architectural and pragmatic, not prescriptive; every manufacturer's PIM implementation differs. Treat them as starting points that an integration engineer adapts to the actual attribute taxonomy in use.
 

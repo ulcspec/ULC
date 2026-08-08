@@ -52,11 +52,7 @@ A second, orthogonal axis, **Product Achievements**, is computed from the same r
 
 ## Source inputs
 
-ULC is designed around the three source types realistically available across the industry today:
-
-- PDF datasheets
-- IES photometric files (ANSI/IES LM-63)
-- EULUMDAT photometric files (LDT)
+ULC is designed around the source documents manufacturers actually publish. The primary sources are PDF datasheets, IES photometric files (ANSI/IES LM-63), and EULUMDAT photometric files (LDT); the full `SourceFileType` vocabulary also covers driver datasheets, installation instructions, test reports, compliance certificates, and the other document types a record can reference by hash.
 
 Additional source types and fields may be supported in future versions.
 
