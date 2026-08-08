@@ -41,11 +41,12 @@ A `source-file/not-found-locally` INFO at a record's `source_files` entry is exp
 - `ulc from-sheet` bounds `.xlsx` archives: 1024 entries, 16 MiB inflated per part, 32 MiB inflated across every part the reader opens, and a 100:1 compression ratio above a 1 MiB floor. A workbook exceeding one is rejected with an error naming the limit. The byte limits are derived from the measured amplification of worksheet XML into the workbook model. Parts the reader never opens are not charged, and the CSV bundle path parses no archive and is unchanged.
 - `ulc from-sheet` resolves symbolic links before hashing and rejects a reference that resolves outside the assets root. A reference to a file that is not present behaves as before: an error unless `--allow-missing-files` is set, which stamps the zero sentinel and marks the record a draft.
 - `ulc validate --json` escapes `<`, `>`, and `&`, matching `ulc scope`. `ulc build-index --stdout` still does not, because its output must preserve the record's own byte shape.
-- Text output sanitizes control characters in record-supplied strings at the render boundary. Message text is unchanged; consumers needing exact bytes use `--json`.
+- Text output sanitizes record-supplied strings at the render boundary, covering control characters (C0, DEL, and C1) and the bidirectional formatting characters that reorder rendered text without any control character present, so a filename cannot display as a different name from the one whose bytes were hashed. Escapes are `\xNN` below U+0100 and `\uNNNN` above it. Message text is unchanged; consumers needing exact bytes use `--json`.
+- `ulc from-sheet` assembles a shared string from its formatting runs in one pass. The previous accumulation reallocated per run, so a workbook inside every size limit could still hold the reader at full CPU for minutes; nothing bounds how many runs a single string may carry.
 
 ### Docs
 
-- `README.md`: the source-inputs section names the primary source documents and points at the full `SourceFileType` vocabulary instead of claiming three source types.
+- `README.md`: the source-inputs section names the primary source documents and points at the full `SourceFileType` vocabulary, which covers twelve document types rather than the three the section used to list.
 - `docs/how-it-works.md`: Path 2 describes emitting from the systems that hold the data rather than from a PIM alone, and the CLI bullet mentions `--verify-evidence`.
 - `docs/authoring-patterns.md`: new guidance on withholding an evidence document while still documenting a theme, and a new `source_files` primitive subsection covering what the array asserts, including document-grade commercial references.
 - `docs/methodology.md`: the trust-boundary section states what a withheld evidence document does and does not change.
