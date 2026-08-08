@@ -256,15 +256,24 @@ func (r *Report) HasErrors() bool {
 	return false
 }
 
-// SanitizeText renders control characters as visible \xNN escapes, so text
-// that a record supplies cannot forge report lines or drive the terminal.
-// Filenames, record ids, and the messages that echo them are schema-valid with
-// any content at all, and the text report prints them raw.
+// SanitizeText renders characters that would misrepresent a report as visible
+// escapes, so text a record supplies cannot forge report lines, drive the
+// terminal, or display as something other than the bytes it names. Filenames,
+// record ids, and the messages that echo them are schema-valid with any
+// content at all, and the text report prints them raw.
 //
-// It covers C0 (below U+0020), DEL, and C1 (U+0080 to U+009F). JSON output
-// needs none of this for C0, which encoding/json always escapes, but it passes
-// DEL and C1 through literally, so the two ranges are handled together here
-// rather than split by what another encoder happens to cover.
+// Two classes are covered. Control characters: C0 (below U+0020), DEL, and C1
+// (U+0080 to U+009F). JSON output needs none of this for C0, which
+// encoding/json always escapes, but it passes DEL and C1 through literally, so
+// the ranges are handled together here rather than split by what another
+// encoder happens to cover. Bidirectional formatting characters: the overrides
+// and isolates at U+202A to U+202E and U+2066 to U+2069, the marks U+200E and
+// U+200F, and the separators U+2028 and U+2029. Those reorder rendered text
+// with no control character present anywhere, so a filename can display as a
+// different name from the one whose bytes were hashed.
+//
+// Escapes are \xNN below U+0100 and \uNNNN at or above it, so an escape's own
+// width is never ambiguous.
 //
 // This is a display contract, not a parsing one: a filename containing the
 // literal characters backslash-x-1-b renders the same as an escaped ESC.
@@ -284,8 +293,8 @@ func SanitizeText(s string) string {
 			// terminal that is not reading UTF-8, and the C1 range would
 			// otherwise slip through as U+FFFD.
 			fmt.Fprintf(&b, "\\x%02X", s[i])
-		case isControl(r):
-			fmt.Fprintf(&b, "\\x%02X", r)
+		case mustEscape(r):
+			escapeRune(&b, r)
 		default:
 			b.WriteString(s[i : i+size])
 		}
@@ -300,7 +309,7 @@ func SanitizeText(s string) string {
 func needsEscaping(s string) bool {
 	for i := 0; i < len(s); {
 		r, size := utf8.DecodeRuneInString(s[i:])
-		if (r == utf8.RuneError && size == 1) || isControl(r) {
+		if (r == utf8.RuneError && size == 1) || mustEscape(r) {
 			return true
 		}
 		i += size
@@ -308,8 +317,30 @@ func needsEscaping(s string) bool {
 	return false
 }
 
-func isControl(r rune) bool {
-	return r < 0x20 || r == 0x7F || (r >= 0x80 && r <= 0x9F)
+// mustEscape reports whether a rune may not be emitted verbatim.
+func mustEscape(r rune) bool {
+	switch {
+	case r < 0x20, r == 0x7F, r >= 0x80 && r <= 0x9F:
+		return true // C0, DEL, C1
+	case r == 0x200E, r == 0x200F: // LRM, RLM
+		return true
+	case r >= 0x202A && r <= 0x202E: // LRE, RLE, PDF, LRO, RLO
+		return true
+	case r >= 0x2066 && r <= 0x2069: // LRI, RLI, FSI, PDI
+		return true
+	case r == 0x2028, r == 0x2029: // line and paragraph separators
+		return true
+	}
+	return false
+}
+
+// escapeRune writes r in the narrowest unambiguous form.
+func escapeRune(b *strings.Builder, r rune) {
+	if r < 0x100 {
+		fmt.Fprintf(b, "\\x%02X", r)
+		return
+	}
+	fmt.Fprintf(b, "\\u%04X", r)
 }
 
 // WriteText renders the report as human-readable lines. Finalize should have

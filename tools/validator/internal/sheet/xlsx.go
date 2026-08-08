@@ -177,20 +177,33 @@ type xlInline struct {
 
 // text concatenates the simple and rich-run text of a shared-string entry.
 func (si xlSI) text() string {
-	out := si.T
-	for _, r := range si.R {
-		out += r.T
+	if len(si.R) == 0 {
+		return si.T
 	}
-	return out
+	// Accumulate through a Builder: `out += r.T` reallocates and copies the
+	// whole accumulator per run, which is quadratic in the run count. Nothing
+	// bounds that count, so a part well inside the size limits could still
+	// pin a core for minutes.
+	var b strings.Builder
+	b.WriteString(si.T)
+	for _, r := range si.R {
+		b.WriteString(r.T)
+	}
+	return b.String()
 }
 
 // text concatenates the simple and rich-run text of an inline string cell.
 func (in xlInline) text() string {
-	out := in.T
-	for _, r := range in.R {
-		out += r.T
+	if len(in.R) == 0 {
+		return in.T
 	}
-	return out
+	// Same quadratic accumulation as xlSI.text; see the note there.
+	var b strings.Builder
+	b.WriteString(in.T)
+	for _, r := range in.R {
+		b.WriteString(r.T)
+	}
+	return b.String()
 }
 
 // --- readers ---

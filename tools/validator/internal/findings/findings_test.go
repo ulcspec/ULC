@@ -386,6 +386,19 @@ func TestSanitizeTextEscapesControlCharacters(t *testing.T) {
 		{"c1\u0085next.pdf", `c1\x85next.pdf`},
 		{"tab\there", `tab\x09here`},
 		{"unicode \u00e9 \u4e2d stays", "unicode \u00e9 \u4e2d stays"},
+		// Bidi overrides reorder rendered text with no control character
+		// present, so a filename can display as a different name from the one
+		// whose bytes were hashed. Escapes above U+00FF use the wider form so
+		// the escape's own width is unambiguous.
+		{"report\u202Egpj.tnetap", `report\u202Egpj.tnetap`},
+		{"iso\u2066late\u2069.pdf", `iso\u2066late\u2069.pdf`},
+		{"mark\u200Ehere.pdf", `mark\u200Ehere.pdf`},
+		{"sep\u2028next.pdf", `sep\u2028next.pdf`},
+		// A raw byte that is not valid UTF-8 is escaped as itself: 0x9B is CSI
+		// on a terminal that is not reading UTF-8, and decoding it to the
+		// replacement rune first would let it through untouched.
+		{"raw\x9bcsi.pdf", `raw\x9Bcsi.pdf`},
+		{"raw\xffbyte.pdf", `raw\xFFbyte.pdf`},
 	}
 	for _, c := range cases {
 		if got := SanitizeText(c.in); got != c.want {

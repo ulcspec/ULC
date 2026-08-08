@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -575,5 +576,80 @@ func TestOpenPartRejectsOverflowingClaim(t *testing.T) {
 	}
 	if b.remaining != maxArchiveInflatedBytes {
 		t.Errorf("a rejected part must not spend the budget: remaining = %d", b.remaining)
+	}
+}
+
+// The size limits bound the bytes a part may inflate; they do not by
+// themselves bound the work of turning those bytes into a Workbook. A shared
+// string assembled from many small runs is where those two diverge: nothing
+// caps the run count, so an accumulator that reallocates per run is quadratic,
+// and a part well inside every limit can pin a core for minutes.
+//
+// The assertion is on allocation volume rather than wall clock, so it does not
+// depend on how fast the machine is. Measured on this fixture: about 30x the
+// part size when the accumulation is linear, and about 83,000x when it is
+// quadratic. Anything near the latter means the accumulator regressed.
+func TestReadXLSXSharedStringWithManyRunsIsLinear(t *testing.T) {
+	const runs = 400_000
+	const maxAllocRatio = 500
+
+	var sst strings.Builder
+	sst.WriteString(`<?xml version="1.0"?><sst ` + xlNS + `><si>`)
+	for i := 0; i < runs; i++ {
+		// Vary the run text: identical runs deflate past 1000:1 and would trip
+		// the ratio gate, which would make this a test of rejection instead.
+		fmt.Fprintf(&sst, "<r><t>run%07d</t></r>", i)
+	}
+	sst.WriteString(`</si></sst>`)
+	partSize := int64(sst.Len())
+
+	out := filepath.Join(t.TempDir(), "runs.xlsx")
+	parts := workbookParts("records")
+	for i := range parts {
+		if parts[i].name == "xl/sharedStrings.xml" {
+			parts[i].data = []byte(sst.String())
+		}
+	}
+	parts = append(parts, rawPart{"xl/worksheets/sheet1.xml", []byte(
+		`<?xml version="1.0"?><worksheet ` + xlNS + `><sheetData>` +
+			`<row r="1"><c r="A1" t="s"><v>0</v></c></row>` +
+			`</sheetData></worksheet>`)})
+	writeZipParts(t, out, parts)
+
+	// The part must sit inside the limits, or this would be testing rejection.
+	zr, err := zip.OpenReader(out)
+	if err != nil {
+		t.Fatalf("open fixture: %v", err)
+	}
+	for _, f := range zr.File {
+		if f.Name != "xl/sharedStrings.xml" {
+			continue
+		}
+		if f.UncompressedSize64 > maxPartInflatedBytes {
+			t.Fatalf("fixture part is %d bytes, over the %d per-part limit", f.UncompressedSize64, maxPartInflatedBytes)
+		}
+		if f.CompressedSize64 > 0 && f.UncompressedSize64/f.CompressedSize64 > maxCompressionRatio {
+			t.Fatalf("fixture stores at %d:1, which would trip the ratio gate instead", f.UncompressedSize64/f.CompressedSize64)
+		}
+	}
+	zr.Close()
+
+	var before, after runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&before)
+	wb, err := ReadXLSX(out)
+	runtime.ReadMemStats(&after)
+	if err != nil {
+		t.Fatalf("ReadXLSX: %v", err)
+	}
+	if _, ok := wb["records"]; !ok {
+		t.Errorf("workbook has no records sheet")
+	}
+
+	ratio := float64(after.TotalAlloc-before.TotalAlloc) / float64(partSize)
+	t.Logf("part %d bytes, allocated %.1fx the part size", partSize, ratio)
+	if ratio > maxAllocRatio {
+		t.Errorf("reading a %d-byte part allocated %.0fx its size (limit %dx): the shared-string accumulator is superlinear in the run count",
+			partSize, ratio, maxAllocRatio)
 	}
 }
