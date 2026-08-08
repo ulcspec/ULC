@@ -3,6 +3,7 @@ package sheet
 import (
 	"archive/zip"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -37,22 +38,35 @@ func ReadXLSX(filePath string) (Workbook, error) {
 	}
 	defer zr.Close()
 
+	if err := checkEntryCount(filePath, len(zr.File)); err != nil {
+		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
+	}
+	budget := newArchiveBudget(filePath)
+
 	files := make(map[string]*zip.File, len(zr.File))
 	for _, f := range zr.File {
 		files[f.Name] = f
 	}
 
 	var wbXML xlWorkbook
-	if err := decodeXMLPart(files, "xl/workbook.xml", &wbXML); err != nil {
+	if err := decodeXMLPart(files, "xl/workbook.xml", &wbXML, budget); err != nil {
 		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
 	}
 
 	// The relationships map (r:id -> worksheet part path) is how a sheet's
 	// display name resolves to its XML part. Most files have it; tolerate its
-	// absence only to produce a clearer downstream error.
+	// absence only to produce a clearer downstream error. A cap violation is
+	// not absence, so it has to be told apart from one and propagated: this is
+	// the fourth part the reader opens, and swallowing its errors would leave
+	// it capped in name only.
 	relTarget := map[string]string{}
 	var rels xlRels
-	if err := decodeXMLPart(files, "xl/_rels/workbook.xml.rels", &rels); err == nil {
+	err = decodeXMLPart(files, "xl/_rels/workbook.xml.rels", &rels, budget)
+	var lim *ArchiveLimitError
+	if errors.As(err, &lim) {
+		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
+	}
+	if err == nil {
 		for _, r := range rels.Relationships {
 			if r.TargetMode == "External" {
 				continue
@@ -61,7 +75,7 @@ func ReadXLSX(filePath string) (Workbook, error) {
 		}
 	}
 
-	table, err := readSharedStrings(files)
+	table, err := readSharedStrings(files, budget)
 	if err != nil {
 		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
 	}
@@ -77,7 +91,7 @@ func ReadXLSX(filePath string) (Workbook, error) {
 		if !ok {
 			return nil, fmt.Errorf("xlsx %s: sheet %q worksheet part %q not found", filePath, s.Name, partPath)
 		}
-		rc, err := f.Open()
+		rc, err := openPart(f, budget)
 		if err != nil {
 			return nil, fmt.Errorf("xlsx %s: open worksheet %q: %w", filePath, partPath, err)
 		}
@@ -184,12 +198,12 @@ func (in xlInline) text() string {
 // decodeXMLPart decodes a required XML part into v, erroring when the part is
 // absent (used for xl/workbook.xml; the .rels part is decoded best-effort by the
 // caller).
-func decodeXMLPart(files map[string]*zip.File, name string, v any) error {
+func decodeXMLPart(files map[string]*zip.File, name string, v any, budget *archiveBudget) error {
 	f, ok := files[name]
 	if !ok {
 		return fmt.Errorf("missing part %s", name)
 	}
-	rc, err := f.Open()
+	rc, err := openPart(f, budget)
 	if err != nil {
 		return fmt.Errorf("open %s: %w", name, err)
 	}
@@ -202,12 +216,12 @@ func decodeXMLPart(files map[string]*zip.File, name string, v any) error {
 
 // readSharedStrings reads the shared string table, returning an empty (non-nil)
 // table when xl/sharedStrings.xml is absent (a file with no shared strings).
-func readSharedStrings(files map[string]*zip.File) ([]string, error) {
+func readSharedStrings(files map[string]*zip.File, budget *archiveBudget) ([]string, error) {
 	f, ok := files["xl/sharedStrings.xml"]
 	if !ok {
 		return []string{}, nil
 	}
-	rc, err := f.Open()
+	rc, err := openPart(f, budget)
 	if err != nil {
 		return nil, fmt.Errorf("open sharedStrings: %w", err)
 	}
