@@ -49,6 +49,38 @@ func (h *fileHasher) hashFile(filename string) (string, error) {
 		return "", fmt.Errorf("referenced file %q escapes the assets root via .. traversal; reference files by their relative path under the assets directory", filename)
 	}
 	resolved := filepath.Join(h.assetsRoot, cleaned)
+
+	// The lexical checks above cannot see a symlink: a plain name like
+	// "specs.pdf" can point anywhere, and hashing its target would stamp an
+	// out-of-root digest into the emitted record and into its dual-written
+	// cutsheet, so the record's datasheet hash would be a lie. Resolve both
+	// sides so containment reflects what os.Open will actually reach. This
+	// mirrors the validate-side check at internal/validate/hash.go:88-116; the
+	// two are deliberately kept separate rather than shared, because their
+	// error models differ (findings there, hard errors and the missing-file
+	// sentinel here).
+	//
+	// An escape is unconditional: --allow-missing-files never suppresses it. A
+	// dangling symlink resolves to not-exist and falls through to the open
+	// below, so it behaves exactly like an absent file and the draft workflow
+	// is unchanged. The assets root is resolved per call, because the root is
+	// itself commonly reached through a symlink.
+	if real, rerr := filepath.EvalSymlinks(resolved); rerr == nil {
+		rootReal, err := filepath.EvalSymlinks(h.assetsRoot)
+		if err != nil {
+			return "", fmt.Errorf("resolve assets root %q: %w", h.assetsRoot, err)
+		}
+		rel, err := filepath.Rel(rootReal, real)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return "", fmt.Errorf("referenced file %q resolves outside the assets root; reference files by their relative path under the assets directory", filename)
+		}
+		// Hash the real path, so the bytes covered are the ones the
+		// containment check approved.
+		resolved = real
+	} else if !os.IsNotExist(rerr) {
+		return "", fmt.Errorf("resolve referenced file %q: %w", filename, rerr)
+	}
+
 	f, err := os.Open(resolved)
 	if err != nil {
 		if os.IsNotExist(err) {
