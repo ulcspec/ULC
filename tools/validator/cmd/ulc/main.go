@@ -443,7 +443,7 @@ USAGE
 	sawSentinel := false
 	for _, res := range results {
 		for _, w := range res.Warnings {
-			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", res.RecordID, w)
+			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", findings.SanitizeText(res.RecordID), findings.SanitizeText(w))
 		}
 		recordSentinel := res.HasMissingFileSentinel
 		if recordSentinel {
@@ -452,7 +452,7 @@ USAGE
 
 		built := index.Build(res.Record)
 		if missing := index.MissingRequiredKeys(built); len(missing) > 0 {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: %s: builder cannot derive required index keys:\n", res.RecordID)
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: %s: builder cannot derive required index keys:\n", findings.SanitizeText(res.RecordID))
 			for _, key := range missing {
 				src := index.RequiredKeySources[key]
 				if src == "" {
@@ -472,7 +472,7 @@ USAGE
 		// validated record, so it is never written to --out (the run also exits
 		// non-zero below).
 		if recordSentinel {
-			fmt.Printf("%s -> DRAFT, not written (references files not present; --allow-missing-files stamped placeholder hashes)\n", res.RecordID)
+			fmt.Printf("%s -> DRAFT, not written (references files not present; --allow-missing-files stamped placeholder hashes)\n", findings.SanitizeText(res.RecordID))
 			continue
 		}
 
@@ -494,7 +494,7 @@ USAGE
 		report.OmitFlagHint = true
 		rawTree, derr := decodeStrict(recordBytes)
 		if derr != nil {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", res.RecordID, derr)
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", findings.SanitizeText(res.RecordID), derr)
 			failed = true
 			continue
 		}
@@ -507,7 +507,7 @@ USAGE
 		// so the level string is never empty.
 		level, _ := built["conformance_level"].(string)
 		if report.HasErrors() {
-			fmt.Printf("%s -> %s (%d findings, not written)\n", res.RecordID, level, len(report.Findings))
+			fmt.Printf("%s -> %s (%d findings, not written)\n", findings.SanitizeText(res.RecordID), level, len(report.Findings))
 			if err := report.WriteText(os.Stderr, outPath); err != nil {
 				fmt.Fprintf(os.Stderr, "ulc from-sheet: write report: %v\n", err)
 			}
@@ -515,7 +515,7 @@ USAGE
 			continue
 		}
 		if err := os.WriteFile(outPath, recordBytes, 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: write %s: %v\n", outPath, err)
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: write %s: %v\n", findings.SanitizeText(outPath), err)
 			failed = true
 			continue
 		}
@@ -523,9 +523,9 @@ USAGE
 		// record and flag that it is not yet a publishable grade. The roadmap in the
 		// report names what core still needs.
 		if level == completeness.LevelIncomplete.String() {
-			fmt.Printf("%s -> incomplete (below core; see roadmap) (%d findings)\n", res.RecordID, len(report.Findings))
+			fmt.Printf("%s -> incomplete (below core; see roadmap) (%d findings)\n", findings.SanitizeText(res.RecordID), len(report.Findings))
 		} else {
-			fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+			fmt.Printf("%s -> %s (%d findings)\n", findings.SanitizeText(res.RecordID), level, len(report.Findings))
 		}
 	}
 
@@ -548,8 +548,10 @@ USAGE
 // escapeHTML selects the encoder's treatment of <, > and &: build-index leaves
 // them literal to preserve the record's own byte shape, while scope escapes them
 // because its document carries record-controlled strings a consumer may inline
-// into a page. Both directions are pinned by tests; the setting is public
-// contract for each subcommand, not an implementation detail.
+// into a page. Validate's --json report escapes them for the same reason (see
+// findings.WriteJSON, which owns that encoder). Both directions are pinned by
+// tests; the setting is public contract for each subcommand, not an
+// implementation detail.
 func printJSON(subcommand string, v any, escapeHTML bool) int {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)

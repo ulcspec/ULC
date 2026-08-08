@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 )
 
 // Level is the severity tier of a Finding.
@@ -254,9 +255,47 @@ func (r *Report) HasErrors() bool {
 	return false
 }
 
+// SanitizeText renders control characters as visible \xNN escapes, so text
+// that a record supplies cannot forge report lines or drive the terminal.
+// Filenames, record ids, and the messages that echo them are schema-valid with
+// any content at all, and the text report prints them raw.
+//
+// It covers C0 (below U+0020), DEL, and C1 (U+0080 to U+009F). JSON output
+// needs none of this for C0, which encoding/json always escapes, but it passes
+// DEL and C1 through literally, so the two ranges are handled together here
+// rather than split by what another encoder happens to cover.
+//
+// This is a display contract, not a parsing one: a filename containing the
+// literal characters backslash-x-1-b renders the same as an escaped ESC.
+// Consumers that need exact bytes use --json.
+func SanitizeText(s string) string {
+	if !strings.ContainsFunc(s, isControl) {
+		return s
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		if isControl(r) {
+			fmt.Fprintf(&b, "\\x%02X", r)
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+func isControl(r rune) bool {
+	return r < 0x20 || r == 0x7F || (r >= 0x80 && r <= 0x9F)
+}
+
 // WriteText renders the report as human-readable lines. Finalize should have
 // been called first so findings are ordered and counts are accurate.
+//
+// Every record-controlled string is sanitized at this boundary rather than
+// where the message is built, so the messages themselves stay byte-identical
+// and the escaping is applied in exactly one place.
 func (r *Report) WriteText(w io.Writer, recordPath string) error {
+	recordPath = SanitizeText(recordPath)
 	if len(r.Findings) == 0 {
 		_, err := fmt.Fprintf(w, "OK -- %s: 0 errors, 0 warnings, 0 infos.\n", recordPath)
 		return err
@@ -275,9 +314,9 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 		}
 		loc := ""
 		if f.Path != "" {
-			loc = " at " + f.Path
+			loc = " at " + SanitizeText(f.Path)
 		}
-		if _, err := fmt.Fprintf(w, "%-7s %s%s: %s\n", f.Level, f.Code, loc, f.Message); err != nil {
+		if _, err := fmt.Fprintf(w, "%-7s %s%s: %s\n", f.Level, f.Code, loc, SanitizeText(f.Message)); err != nil {
 			return err
 		}
 	}
@@ -299,10 +338,14 @@ func (r *Report) WriteText(w io.Writer, recordPath string) error {
 	return err
 }
 
-// WriteJSON emits the report as pretty-printed JSON on w.
+// WriteJSON emits the report as pretty-printed JSON on w. Angle brackets and
+// ampersands are escaped, matching `ulc scope`: the report echoes
+// record-controlled strings that a consumer may inline into a page, and one
+// escaping contract across the machine-readable surfaces is easier to rely on
+// than a per-subcommand rule. JSON semantics are unchanged after parsing.
 func (r *Report) WriteJSON(w io.Writer) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	enc.SetEscapeHTML(false)
+	enc.SetEscapeHTML(true)
 	return enc.Encode(r)
 }
