@@ -20,6 +20,38 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.3.0 (2026-08-08)
+
+An integrity release. Default `ulc validate` output now includes hash-verification findings for the family cutsheet (`product_family.cutsheet`) and the emergency photometry reference (`emergency.photometry_reference`): on records whose files are absent locally this adds INFO findings, and a locally present file whose hash does not match its declared value is an ERROR that fails validation, where previously only `source_files` entries were checked. `ulc validate --json` now escapes `<`, `>`, and `&` as `\u003c`, `\u003e`, and `\u0026`, so its bytes change for records containing those characters in echoed strings, aligning it with `ulc scope`; JSON semantics after parsing are identical. A new opt-in flag, `ulc validate --verify-evidence`, byte-verifies attestation evidence documents. `ulc from-sheet` now bounds workbook archives (entry count, per-part and total inflated size, compression ratio) and rejects a file exceeding one of them with an error naming the limit, while the CSV bundle path is unchanged. from-sheet now resolves symbolic links before hashing a referenced file and rejects any reference that resolves outside the assets root. Text output now renders control characters in record-supplied text as visible escapes, so a crafted filename cannot forge report lines or alter terminal state; JSON output, which already escapes the control characters below U+0020, is unchanged. There is no schema or taxonomy change and no computed value change: grades and completeness findings are byte-identical, every golden file is byte-identical, and no example record changed a byte.
+
+### For consumers
+
+If you pin exit codes, one case is new: a record whose cutsheet or emergency photometry file sits beside it locally and does not match its declared hash now exits 1 instead of 0. That is the intended correction, and on the eight shipped examples nothing moves, because no source file is distributed alongside them.
+
+If you parse `--json`, expect one additional finding object per record whose cutsheet is not reachable locally, and `summary.infos` one higher. The escaping change moves bytes only for records that carry `<`, `>`, or `&` in an echoed string such as a filename or a record id; no shipped example does, so all eight are byte-identical apart from the added finding.
+
+A `source-file/not-found-locally` INFO at a record's `source_files` entry is expected and documented when a manufacturer publishes an evidence reference while withholding the document itself. It is not a defect, the record still validates, and the theme still reads `documented`. See "Withholding the evidence document" in `docs/authoring-patterns.md`.
+
+`--verify-evidence` is opt-in and absent from default runs. Its real coverage is evidence documents that a record references but does not also list among its source files; where a record follows the shipped guidance and dual-writes the document into `source_files`, the default walk already covers those bytes and the flag adds a second pointer rather than a second check.
+
+### Validator
+
+- File-reference hash verification now runs at every site the schema defines a reference: `source_files[].reference`, `product_family.cutsheet`, and `emergency.photometry_reference` on every run, plus `attestations[].source_document_ref` and `product_family.shared_attestations[].source_document_ref` under `--verify-evidence`. The sites are named by a declared registry, and a schema-derived test fails the build if a future schema mounts a reference the registry does not name, so a new reference field cannot ship unverified by oversight. Findings reuse the existing `source-file/*` codes with the site's own JSON Pointer as the discriminator; no code or message template changed.
+- New flag `ulc validate --verify-evidence`. A locally absent evidence document stays INFO, so a record that withholds the document still validates; a document whose SHA-256 does not match is an ERROR and fails validation. Absent from default runs, so default output and the goldens are untouched by it.
+- `ulc from-sheet` bounds `.xlsx` archives: 1024 entries, 16 MiB inflated per part, 32 MiB inflated across every part the reader opens, and a 100:1 compression ratio above a 1 MiB floor. A workbook exceeding one is rejected with an error naming the limit. The byte limits are derived from the measured amplification of worksheet XML into the workbook model. Parts the reader never opens are not charged, and the CSV bundle path parses no archive and is unchanged.
+- `ulc from-sheet` resolves symbolic links before hashing and rejects a reference that resolves outside the assets root. A reference to a file that is not present behaves as before: an error unless `--allow-missing-files` is set, which stamps the zero sentinel and marks the record a draft.
+- `ulc validate --json` escapes `<`, `>`, and `&`, matching `ulc scope`. `ulc build-index --stdout` still does not, because its output must preserve the record's own byte shape.
+- Text output sanitizes control characters in record-supplied strings at the render boundary. Message text is unchanged; consumers needing exact bytes use `--json`.
+
+### Docs
+
+- `README.md`: the source-inputs section names the primary source documents and points at the full `SourceFileType` vocabulary instead of claiming three source types.
+- `docs/how-it-works.md`: Path 2 describes emitting from the systems that hold the data rather than from a PIM alone, and the CLI bullet mentions `--verify-evidence`.
+- `docs/authoring-patterns.md`: new guidance on withholding an evidence document while still documenting a theme, and a new `source_files` primitive subsection covering what the array asserts, including document-grade commercial references.
+- `docs/methodology.md`: the trust-boundary section states what a withheld evidence document does and does not change.
+- `mappings/README.md` and `mappings/pim/README.md`: product attributes and compliance evidence commonly live in different systems; a new "Where the evidence lives" section describes joining them at emit time.
+- `tools/validator/README.md`: records the widened verification, the new flag, the archive limits, the assets-root containment rule, and the escaping alignment.
+
 ## 1.2.0 (2026-08-03)
 
 A new CLI subcommand, `ulc scope`, that exports the conformance rubric's applicability determination as a versioned JSON document. The rubric is already class-aware: when grading a record it decides which blocks and graded items apply to that product class and which do not, and until now that decision was internal. Exposing it in result form lets any tool built on the CLI present, collect, or check the right fields without re-deriving the rubric, and keeps the rubric the single source of that judgement. This release is purely additive: no conformance grade moves, no computed `index` changes, there is no schema or taxonomy change, and neither the exit code nor the output of `ulc validate` or `ulc build-index` changes. Every golden file is byte-identical, and no example record changed a byte.
