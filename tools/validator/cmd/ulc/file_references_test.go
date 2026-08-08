@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -216,5 +217,97 @@ func TestCLICutsheetMismatchOnDualWrittenRecord(t *testing.T) {
 	}
 	if !strings.Contains(out, "source-file/hash-mismatch at /source_files/0/reference") {
 		t.Errorf("missing the pre-existing source_files ERROR; got:\n%s", out)
+	}
+}
+
+// TestCLIFromSheetSanitizesRecordControlledOutput pins the from-sheet render
+// sites. The record id comes from a workbook cell, which is untrusted input
+// that reaches stdout before any schema validation runs, so a crafted one
+// could otherwise forge a report line or drive the terminal. Every echo of it
+// goes through the sanitizer; drop any one wrapper and this fails.
+func TestCLIFromSheetSanitizesRecordControlledOutput(t *testing.T) {
+	src := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
+	if _, err := os.Stat(src); err != nil {
+		t.Skipf("bundle fixture not available: %v", err)
+	}
+
+	// An ESC sequence, a DEL, and a newline followed by a forged success line.
+	const hostile = "acme\x1b]0;pwned\x07\x7f\nOK -- forged: 0 errors, 0 warnings, 0 infos.-1200"
+
+	// Copy the bundle so the repo fixture stays read-only. The CSVs are
+	// rewritten through encoding/csv rather than by string substitution, so the
+	// embedded newline and control bytes are correctly quoted and the converter
+	// reaches the record-id echo sites instead of failing on a malformed field.
+	bundle := t.TempDir()
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		t.Fatalf("read bundle: %v", err)
+	}
+	rewrote := false
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(src, e.Name()))
+		if err != nil {
+			t.Fatalf("read %s: %v", e.Name(), err)
+		}
+		if filepath.Ext(e.Name()) == ".csv" {
+			rows, err := csv.NewReader(bytes.NewReader(data)).ReadAll()
+			if err != nil {
+				t.Fatalf("parse %s: %v", e.Name(), err)
+			}
+			// record_id is the join key and is the first column of every sheet
+			// in this bundle; rewrite it by header name in each.
+			col := -1
+			for i, h := range rows[0] {
+				if h == "record_id" {
+					col = i
+				}
+			}
+			for _, row := range rows[1:] {
+				if col >= 0 && col < len(row) {
+					row[col] = hostile
+					rewrote = true
+				}
+			}
+			var buf bytes.Buffer
+			w := csv.NewWriter(&buf)
+			if err := w.WriteAll(rows); err != nil {
+				t.Fatalf("write %s: %v", e.Name(), err)
+			}
+			data = buf.Bytes()
+		}
+		if err := os.WriteFile(filepath.Join(bundle, e.Name()), data, 0o644); err != nil {
+			t.Fatalf("write %s: %v", e.Name(), err)
+		}
+	}
+	if !rewrote {
+		t.Fatal("no cell carried the record id, so nothing hostile was planted")
+	}
+
+	out, _ := captureStdout(t, func() int {
+		return runFromSheet([]string{"--out", t.TempDir(), "--allow-missing-files", bundle})
+	})
+
+	// The converter must have gotten far enough to echo the record id; a parse
+	// failure would make the control-byte assertion below vacuous.
+	if !strings.Contains(out, "acme") {
+		t.Fatalf("from-sheet never echoed the record id, so this asserts nothing:\n%q", out)
+	}
+	for i := 0; i < len(out); i++ {
+		if b := out[i]; b != '\n' && (b < 0x20 || b == 0x7F) {
+			t.Fatalf("control byte %#x reached stdout at offset %d:\n%q", b, i, out)
+		}
+	}
+	// The forged text may appear (escaping makes it visible, not invisible);
+	// what must not happen is it starting a line of its own.
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, "OK -- forged:") {
+			t.Errorf("a forged report line survived rendering:\n%q", out)
+		}
+	}
+	if !strings.Contains(out, `\x0A`) {
+		t.Errorf("the newline in the record id should render as a visible escape:\n%q", out)
 	}
 }

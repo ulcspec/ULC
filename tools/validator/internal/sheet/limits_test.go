@@ -170,6 +170,11 @@ func TestReadXLSXRejectsOversizedPart(t *testing.T) {
 	if !strings.Contains(err.Error(), "claims") {
 		t.Errorf("a gate message must speak of the claim: %v", err)
 	}
+	// Pin the constant by literal: bracketing it between fixture sizes would
+	// let the documented 16 MiB contract drift without a test noticing.
+	if !strings.Contains(err.Error(), "the per-part limit is 16777216") {
+		t.Errorf("message does not name the 16 MiB per-part limit: %v", err)
+	}
 }
 
 // (c) total bomb: three opened worksheets, each honest and each under both the
@@ -212,6 +217,9 @@ func TestReadXLSXRejectsTotalInflation(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "total limit") && !strings.Contains(err.Error(), "total inflation limit") {
 		t.Errorf("message does not name the total limit: %v", err)
+	}
+	if !strings.Contains(err.Error(), "33554432") {
+		t.Errorf("message does not name the 32 MiB total limit: %v", err)
 	}
 }
 
@@ -508,4 +516,64 @@ func TestReadXLSXRealExcelFixture(t *testing.T) {
 		t.Errorf("fixture inflates to %d bytes, over half the %d total limit", total, maxArchiveInflatedBytes)
 	}
 	t.Logf("real Excel fixture: %d entries, largest part %d bytes, %d bytes total inflated", len(zr.File), largest, total)
+}
+
+// The ratio gate applies only above a 1 MiB floor. Without the floor a small
+// worksheet of repeated inline strings, which routinely deflates past 100:1,
+// would be rejected as a bomb. This pins the floor: drop it and this fails.
+func TestReadXLSXAcceptsHighRatioBelowTheFloor(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "under-floor.xlsx")
+	parts := workbookParts("records")
+	// 512 KiB of zeros: about 1000:1, far past the ratio limit, but under the
+	// 1 MiB floor, so the gate must not look at it.
+	parts = append(parts, rawPart{"xl/worksheets/sheet1.xml", worksheetWithPadding(512<<10, zeroPad)})
+	writeZipParts(t, out, parts)
+
+	zr, err := zip.OpenReader(out)
+	if err != nil {
+		t.Fatalf("open fixture: %v", err)
+	}
+	for _, f := range zr.File {
+		if f.Name == "xl/worksheets/sheet1.xml" {
+			if f.UncompressedSize64 >= ratioFloorBytes {
+				t.Fatalf("fixture part is %d bytes, must sit under the %d floor", f.UncompressedSize64, ratioFloorBytes)
+			}
+			if f.CompressedSize64 > 0 && f.UncompressedSize64/f.CompressedSize64 <= maxCompressionRatio {
+				t.Fatalf("fixture stores at %d:1, which does not exercise the floor", f.UncompressedSize64/f.CompressedSize64)
+			}
+		}
+	}
+	zr.Close()
+
+	if _, err := ReadXLSX(out); err != nil {
+		t.Fatalf("a highly compressible part under the ratio floor must be accepted: %v", err)
+	}
+}
+
+// A zip64 header can declare an uncompressed size that does not fit in int64.
+// Converting it before comparing wraps it negative, which passes every gate.
+func TestOpenPartRejectsOverflowingClaim(t *testing.T) {
+	f := &zip.File{FileHeader: zip.FileHeader{
+		Name:               "xl/worksheets/sheet1.xml",
+		UncompressedSize64: 1 << 63,
+		CompressedSize64:   512,
+	}}
+	b := newArchiveBudget("fixture.xlsx")
+	rc, err := openPart(f, b)
+	if rc != nil {
+		t.Error("no reader may be returned for a rejected part")
+	}
+	var lim *ArchiveLimitError
+	if !errors.As(err, &lim) {
+		t.Fatalf("expected an *ArchiveLimitError, got %v", err)
+	}
+	if lim.Limit != limitPartBytes {
+		t.Errorf("Limit = %q, want %q", lim.Limit, limitPartBytes)
+	}
+	if lim.Observed <= 0 {
+		t.Errorf("Observed = %d, want a positive quantity (a wrapped conversion reads negative)", lim.Observed)
+	}
+	if b.remaining != maxArchiveInflatedBytes {
+		t.Errorf("a rejected part must not spend the budget: remaining = %d", b.remaining)
+	}
 }

@@ -67,10 +67,82 @@ var siteFixtures = []siteFixture{
 
 // TestVerifyFileReferencesCoversEveryFixture keeps the fixture table honest: a
 // registry row added without a fixture would silently drop out of the outcome
-// matrix below.
+// matrix below. Matching on the site set rather than the count also catches a
+// duplicated fixture, which would keep the counts equal while leaving the new
+// site unexercised.
 func TestVerifyFileReferencesCoversEveryFixture(t *testing.T) {
-	if len(siteFixtures) != len(fileReferenceRegistry) {
-		t.Fatalf("siteFixtures covers %d sites, registry declares %d", len(siteFixtures), len(fileReferenceRegistry))
+	want := map[string]bool{}
+	for _, site := range fileReferenceRegistry {
+		want[strings.Replace(site.family, "<i>", "0", 1)] = true
+	}
+	got := map[string]bool{}
+	for _, f := range siteFixtures {
+		if got[f.pointer] {
+			t.Errorf("two fixtures share the pointer %q", f.pointer)
+		}
+		got[f.pointer] = true
+	}
+	for p := range want {
+		if !got[p] {
+			t.Errorf("registry site %q has no fixture, so no outcome is exercised there", p)
+		}
+	}
+	for p := range got {
+		if !want[p] {
+			t.Errorf("fixture %q names no registry site", p)
+		}
+	}
+}
+
+// TestFileReferenceRegistryPolicies pins each site's policy by family name.
+// Without this, flipping a default site to evidence-only passes the whole
+// suite: the outcome matrix runs under Evidence: true, the drift guard only
+// rejects policyUnset, and no shipped example carries an
+// emergency.photometry_reference for the corpus run to catch it.
+func TestFileReferenceRegistryPolicies(t *testing.T) {
+	want := map[string]refPolicy{
+		"/source_files/<i>/reference":                                 policyDefault,
+		"/product_family/cutsheet":                                    policyDefault,
+		"/emergency/photometry_reference":                             policyDefault,
+		"/attestations/<i>/source_document_ref":                       policyEvidence,
+		"/product_family/shared_attestations/<i>/source_document_ref": policyEvidence,
+	}
+	if len(fileReferenceRegistry) != len(want) {
+		t.Fatalf("registry has %d rows, this test pins %d", len(fileReferenceRegistry), len(want))
+	}
+	for _, site := range fileReferenceRegistry {
+		w, ok := want[site.family]
+		if !ok {
+			t.Errorf("registry names %q, which this test does not pin", site.family)
+			continue
+		}
+		if site.policy != w {
+			t.Errorf("%s: policy = %d, want %d (changing a site's policy changes default output and must be a deliberate, released decision)", site.family, site.policy, w)
+		}
+	}
+}
+
+// TestVerifyFileReferencesDefaultSitesRunWithoutTheFlag is the runtime half of
+// the policy pin: the three default sites report on a plain run.
+func TestVerifyFileReferencesDefaultSitesRunWithoutTheFlag(t *testing.T) {
+	for _, site := range siteFixtures {
+		policy := refPolicy(policyUnset)
+		for _, row := range fileReferenceRegistry {
+			if strings.Replace(row.family, "<i>", "0", 1) == site.pointer {
+				policy = row.policy
+			}
+		}
+		if policy != policyDefault {
+			continue
+		}
+		t.Run(site.name, func(t *testing.T) {
+			record := site.build(map[string]any{
+				"filename": "missing.pdf", "sha256": strings.Repeat("b", 64),
+			})
+			report := findings.NewReport()
+			VerifyFileReferences(t.TempDir(), record, VerifyOptions{}, report)
+			one(t, report.Findings, findings.LevelInfo, findings.CodeSourceFileNotFound, site.pointer, "not present locally")
+		})
 	}
 }
 

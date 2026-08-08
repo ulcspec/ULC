@@ -48,6 +48,18 @@ func (w *schemaWalk) walk(node any, ptr string, stack []string) {
 		}
 	case map[string]any:
 		if raw, ok := n["$ref"]; ok {
+			// Draft 2020-12 lets $ref carry siblings, and this walk follows the
+			// $ref and stops. An assertion sibling is harmless; an applicator
+			// sibling would mount schema this walk never visits, so a reference
+			// under it would be invisible here and would ship unverified. The
+			// shipped schema pairs $ref only with description, so this fault is
+			// a tripwire for a future change, not a live condition.
+			for k := range n {
+				if k != "$ref" && applicatorKeywords[k] {
+					w.faults = append(w.faults, fmt.Sprintf(
+						"applicator %q sits beside a $ref at %s: this walk follows the $ref only, so a file reference mounted under the sibling would be invisible. Extend the walk to merge both before merging the schema change.", k, ptr))
+				}
+			}
 			ref, _ := raw.(string)
 			name, local := strings.CutPrefix(ref, "#/$defs/")
 			if !local {
