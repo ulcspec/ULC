@@ -55,7 +55,8 @@ func (h *fileHasher) hashFile(filename string) (string, error) {
 	// out-of-root digest into the emitted record and into its dual-written
 	// cutsheet, so the record's datasheet hash would be a lie. Resolve both
 	// sides so containment reflects what os.Open will actually reach. This
-	// mirrors the validate-side check at internal/validate/hash.go:88-116; the
+	// mirrors the containment pass in validate.verifyOne (internal/validate/
+	// hash.go), which resolves the record directory the same way; the
 	// two are deliberately kept separate rather than shared, because their
 	// error models differ (findings there, hard errors and the missing-file
 	// sentinel here).

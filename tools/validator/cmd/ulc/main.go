@@ -348,7 +348,10 @@ USAGE
 		if diffs := index.Diff(stored, built); len(diffs) > 0 {
 			fmt.Fprintf(os.Stderr, "Index drift in %s:\n", recordPath)
 			for _, d := range diffs {
-				fmt.Fprintln(os.Stderr, d)
+				// Each line quotes the record's own stored index values, and
+				// this subcommand runs no schema validation, so they are
+				// arbitrary record-supplied strings.
+				fmt.Fprintln(os.Stderr, findings.SanitizeText(d))
 			}
 			return 1
 		}
@@ -417,7 +420,9 @@ USAGE
 		AllowMissingFiles: allowMissing,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
+		// The converter quotes workbook content (column headers, cell values)
+		// into its errors, and the workbook is the untrusted input here.
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: %s\n", findings.SanitizeText(err.Error()))
 		return 1
 	}
 

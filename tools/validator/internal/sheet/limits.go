@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"math"
 )
 
 // Worksheet XML amplifies into the Workbook model at a measured 12x retained
@@ -112,16 +113,26 @@ func checkEntryCount(path string, entries int) error {
 // in depth that keeps enforcement correct if that ever changes, and it is what
 // charges the shared total.
 func openPart(f *zip.File, b *archiveBudget) (io.ReadCloser, error) {
-	claimed := int64(f.UncompressedSize64)
-	comp := int64(f.CompressedSize64)
+	// The size fields are unsigned and come straight off the central directory,
+	// where a zip64 header can declare a value that does not fit in int64.
+	// Compare unsigned, so a claim that would wrap negative is rejected here
+	// rather than slipping past all three gates.
+	claimedU := f.UncompressedSize64
+	compU := f.CompressedSize64
 
-	if claimed > maxPartInflatedBytes {
+	if claimedU > uint64(maxPartInflatedBytes) {
+		observed := int64(math.MaxInt64)
+		if claimedU <= math.MaxInt64 {
+			observed = int64(claimedU)
+		}
 		return nil, &ArchiveLimitError{
 			Path: b.path, Part: f.Name, Limit: limitPartBytes,
-			Max: maxPartInflatedBytes, Observed: claimed,
+			Max: maxPartInflatedBytes, Observed: observed,
 			kind: kindPartClaim,
 		}
 	}
+	// Bounded by the gate above, so the conversion is exact from here on.
+	claimed := int64(claimedU)
 	if claimed > b.remaining {
 		return nil, &ArchiveLimitError{
 			Path: b.path, Part: f.Name, Limit: limitTotalBytes,
@@ -129,10 +140,12 @@ func openPart(f *zip.File, b *archiveBudget) (io.ReadCloser, error) {
 			kind: kindTotalClaim,
 		}
 	}
-	if claimed >= ratioFloorBytes && comp > 0 && claimed/comp > maxCompressionRatio {
+	// Unsigned division as well: a lying compressed size cannot turn the ratio
+	// negative and silently skip this gate.
+	if claimed >= ratioFloorBytes && compU > 0 && claimedU/compU > maxCompressionRatio {
 		return nil, &ArchiveLimitError{
 			Path: b.path, Part: f.Name, Limit: limitCompressionRatio,
-			Max: maxCompressionRatio, Observed: claimed / comp,
+			Max: maxCompressionRatio, Observed: int64(claimedU / compU),
 			kind: kindRatioClaim,
 		}
 	}

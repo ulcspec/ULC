@@ -18,6 +18,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 // Level is the severity tier of a Finding.
@@ -269,19 +270,42 @@ func (r *Report) HasErrors() bool {
 // literal characters backslash-x-1-b renders the same as an escaped ESC.
 // Consumers that need exact bytes use --json.
 func SanitizeText(s string) string {
-	if !strings.ContainsFunc(s, isControl) {
+	if !needsEscaping(s) {
 		return s
 	}
 	var b strings.Builder
 	b.Grow(len(s))
-	for _, r := range s {
-		if isControl(r) {
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		switch {
+		case r == utf8.RuneError && size == 1:
+			// A byte that is not valid UTF-8. Escape the raw byte rather than
+			// the replacement rune it decodes to: a bare 0x9B is CSI on a
+			// terminal that is not reading UTF-8, and the C1 range would
+			// otherwise slip through as U+FFFD.
+			fmt.Fprintf(&b, "\\x%02X", s[i])
+		case isControl(r):
 			fmt.Fprintf(&b, "\\x%02X", r)
-			continue
+		default:
+			b.WriteString(s[i : i+size])
 		}
-		b.WriteRune(r)
+		i += size
 	}
 	return b.String()
+}
+
+// needsEscaping reports whether the string carries anything the writer must
+// not emit verbatim. It decodes the same way SanitizeText does, so a string
+// holding raw non-UTF-8 bytes cannot take the untouched fast path.
+func needsEscaping(s string) bool {
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if (r == utf8.RuneError && size == 1) || isControl(r) {
+			return true
+		}
+		i += size
+	}
+	return false
 }
 
 func isControl(r rune) bool {
