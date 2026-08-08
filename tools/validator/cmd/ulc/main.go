@@ -105,7 +105,9 @@ Runs the following checks and emits a findings report:
   1. JSON Schema Draft 2020-12 structural validation
   2. Builder parity (stored index matches the deterministic projection,
      including the computed index.conformance_level)
-  3. Source-file SHA-256 hash verification (when files are reachable locally)
+  3. File-reference SHA-256 hash verification (when files are reachable
+     locally): source_files entries, the family cutsheet, and the emergency
+     photometry reference
   4. Conformance report (INFO: the computed grade plus a per-grade roadmap to full)
   5. Product Achievements report (INFO: the per-theme achievement summary; the
      per-theme state and roadmap show under --verbose or --json)
@@ -236,9 +238,9 @@ USAGE
 		}
 	}
 
-	// 3. Source-file hash verification (read files relative to the record).
+	// 3. File-reference hash verification (read files relative to the record).
 	recordDir := filepath.Dir(recordPath)
-	validate.VerifyHashes(recordDir, recordMap, report)
+	validate.VerifyFileReferences(recordDir, recordMap, validate.VerifyOptions{Evidence: false}, report)
 
 	// 4. Conformance report. The achieved grade was already computed by the
 	// builder and stored in index.conformance_level, and the parity step above
