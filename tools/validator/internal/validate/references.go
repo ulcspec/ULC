@@ -58,6 +58,7 @@ var fileReferenceRegistry = []refSite{
 	arraySite(policyDefault, []string{"source_files"}, "reference"),
 	objectSite(policyDefault, []string{"product_family", "cutsheet"}),
 	objectSite(policyDefault, []string{"emergency", "photometry_reference"}),
+	objectSite(policyDefault, []string{"product_family", "shared_warranty", "conditions_document"}),
 	arraySite(policyEvidence, []string{"attestations"}, "source_document_ref"),
 	arraySite(policyEvidence, []string{"product_family", "shared_attestations"}, "source_document_ref"),
 }

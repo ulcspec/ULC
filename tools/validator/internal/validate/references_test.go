@@ -44,6 +44,15 @@ var siteFixtures = []siteFixture{
 		},
 	},
 	{
+		name:    "warranty_conditions",
+		pointer: "/product_family/shared_warranty/conditions_document",
+		build: func(ref map[string]any) map[string]any {
+			return map[string]any{"product_family": map[string]any{
+				"shared_warranty": map[string]any{"conditions_document": ref},
+			}}
+		},
+	},
+	{
 		name:    "attestation_evidence",
 		pointer: "/attestations/0/source_document_ref",
 		build: func(ref map[string]any) map[string]any {
@@ -104,6 +113,7 @@ func TestFileReferenceRegistryPolicies(t *testing.T) {
 		"/source_files/<i>/reference":                                 policyDefault,
 		"/product_family/cutsheet":                                    policyDefault,
 		"/emergency/photometry_reference":                             policyDefault,
+		"/product_family/shared_warranty/conditions_document":         policyDefault,
 		"/attestations/<i>/source_document_ref":                       policyEvidence,
 		"/product_family/shared_attestations/<i>/source_document_ref": policyEvidence,
 	}
