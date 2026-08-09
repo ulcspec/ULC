@@ -666,7 +666,8 @@
             "scope": { "type": "string" },
             "conditions_reference": {
               "description": "Free-text pointer to the warranty conditions (a document title, code, or URL as printed on the cutsheet). DEPRECATED: prefer conditions_document, which carries a filename and content hash, plus the revision date when the document states one, so the conditions travel with the term verifiably. Retained through the 1.x line under the additive-only compatibility commitment; removal is scheduled for v2.0.0.",
-              "type": "string"
+              "type": "string",
+              "deprecated": true
             },
             "conditions_document": {
               "description": "Reference to the manufacturer's published warranty-conditions document, by filename and content hash, carrying the revision label and date when the document states them. The document holds the exclusions, conditional extensions, and per-accessory variations that qualify term_years, so the conditions travel with the headline number instead of being lost. Preferred over the deprecated free-text conditions_reference.",

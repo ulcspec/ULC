@@ -270,7 +270,8 @@
         "cutoff",
         "semi_cutoff",
         "non_cutoff"
-      ]
+      ],
+      "deprecated": true
     },
 
     "BeamFamily": {
@@ -1303,7 +1304,7 @@
 
     "RecordStatus": {
       "title": "Record commercial status",
-      "description": "Where the product sits in its commercial lifecycle at the time the record was authored or last verified. `superseded` specifically indicates a product that has been replaced by a newer SKU but may still be referenced by existing project specifications or installed-base records.",
+      "description": "Where the product sits in its commercial lifecycle at the time the record was authored or last verified. `superseded` specifically indicates a product that has been replaced by a newer SKU but may still be referenced by existing project specifications or installed-base records. When the replacement is known, the record names it in the top-level `superseded_by` field.",
       "type": "string",
       "enum": [
         "active",
