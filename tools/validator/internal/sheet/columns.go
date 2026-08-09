@@ -79,6 +79,13 @@ var recordColumns = []Column{
 	{Header: "record_status", Path: "record_status", Kind: KindEnum},
 	{Header: "record_status_as_of", Path: "record_status_as_of", Kind: KindDate},
 
+	// --- lifecycle (top-level envelope) ---
+	{Header: "superseded_by_record_id", Path: "superseded_by.record_id", Kind: KindString},
+	{Header: "superseded_by_record_sha256", Path: "superseded_by.record_sha256", Kind: KindString},
+	{Header: "superseded_by_catalog_number", Path: "superseded_by.catalog_number", Kind: KindString},
+	{Header: "superseded_by_catalog_model", Path: "superseded_by.catalog_model", Kind: KindString},
+	{Header: "discontinued_at", Path: "discontinued_at", Kind: KindDate},
+
 	// --- product_family identity ---
 	{Header: "family_id", Path: "product_family.family_id", Kind: KindString},
 	{Header: "family_display_name", Path: "product_family.family_display_name", Kind: KindString},
@@ -104,6 +111,15 @@ var recordColumns = []Column{
 	{Header: "finish_color_options", Path: "product_family.shared_mechanical.finish_color_options", Kind: KindList},
 	{Header: "ip_rating", Path: "product_family.shared_mechanical.ip_rating", Kind: KindString},
 	{Header: "ik_rating", Path: "product_family.shared_mechanical.ik_rating", Kind: KindString},
+
+	// --- shared_warranty ---
+	// warranty_conditions_file (the hashed conditions_document) is a path-input
+	// column wired in convert.go beside the cutsheet dual-write, not here: file
+	// hashing is not a cell coercion. The deprecated free-text
+	// conditions_reference deliberately gets no column.
+	{Header: "warranty_term_years", Path: "product_family.shared_warranty.term_years", Kind: KindNumber},
+	{Header: "warranty_term_basis", Path: "product_family.shared_warranty.term_basis", Kind: KindEnum},
+	{Header: "warranty_scope", Path: "product_family.shared_warranty.scope", Kind: KindString},
 
 	// --- physical_dimensions (common downlight subset) ---
 	{Header: "overall_diameter_mm", Path: "product_family.physical_dimensions.overall_diameter", Kind: KindDualUnitSI, DualKind: dualLength, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},

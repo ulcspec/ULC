@@ -14,7 +14,8 @@ import (
 // Options configures a conversion run.
 type Options struct {
 	// AssetsRoot is the directory path-input columns (cutsheet_file,
-	// source_files.filename, attestations.source_document_file) resolve against.
+	// warranty_conditions_file, source_files.filename,
+	// attestations.source_document_file) resolve against.
 	// When empty, the converter uses the bundle directory.
 	AssetsRoot string
 	// AllowMissingFiles tolerates a referenced file that is absent on disk by
@@ -190,9 +191,11 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 		"record_id": id,
 	}
 	// ulc_version default per DESIGN.md (overridable by the records column).
-	// Tracks the current ULC spec version, matching every shipped example and
-	// template; a manufacturer who omits the column gets a current-spec record.
-	rec["ulc_version"] = "1.0.0"
+	// Tracks the current ULC specification version, so a manufacturer who
+	// omits the column gets a record declaring the spec the converter's
+	// column set targets. Bumped with each release that adds authorable
+	// schema fields.
+	rec["ulc_version"] = "1.4.0"
 	// record_status default: active (overridable below).
 	rec["record_status"] = "active"
 
@@ -230,6 +233,21 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 			return nil, err
 		}
 		if err := setPath(rec, "product_family.cutsheet", cutsheetRef); err != nil {
+			return nil, err
+		}
+	}
+
+	// Warranty conditions document: records.warranty_conditions_file ->
+	// product_family.shared_warranty.conditions_document, hashed like every
+	// other path-input column (the cutsheet pattern above). The override
+	// columns warranty_conditions_file__revision_label and
+	// warranty_conditions_file__revision_date apply via buildFileReference.
+	if condFile := master["warranty_conditions_file"]; condFile != "" {
+		condRef, err := buildFileReference(condFile, master, "warranty_conditions_file", hasher)
+		if err != nil {
+			return nil, err
+		}
+		if err := setPath(rec, "product_family.shared_warranty.conditions_document", condRef); err != nil {
 			return nil, err
 		}
 	}
