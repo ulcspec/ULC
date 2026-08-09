@@ -1106,7 +1106,7 @@
 
     "SourceFileType": {
       "title": "Source file type",
-      "description": "A manufacturer-published source file from which a ULC record derives its data. Each ULC record references its source files by type; the files themselves remain with the manufacturer or in archival storage and are identified in the record by filename and SHA-256 content hash. `uld` is DIALux's proprietary binary bundle (CFBF container carrying 3D geometry, materials, light-emitting surface definition, thumbnail, and photometry). `gldf` is the open-standard Global Lighting Data Format (zipped XML bundle intended to replace ULD). Neither is parsed or embedded by ULC; they are referenced for consumers that want the 3D or rendering data. `supplementary_pdf` covers ancillary PDFs that accompany the primary datasheet: certifications cheat sheets, installation-option matrices, end-of-life program documents, and similar content that informs authoring but is not itself a photometric or safety source. `driver_datasheet_pdf` is the LED-driver or control-gear datasheet, the source for driver-protocol and electrical detail. `test_report` is an accredited photometric or colorimetric test report (the source for measurement uncertainty, corrections, instrumentation depth, and TM-30 detail). `compliance_documents` is a safety-listing or market-access certificate (the source for the core safety listing and ingress ratings).",
+      "description": "A manufacturer-published source file from which a ULC record derives its data. Each ULC record references its source files by type; the files themselves remain with the manufacturer or in archival storage and are identified in the record by filename and SHA-256 content hash. `uld` is DIALux's proprietary binary bundle (CFBF container carrying 3D geometry, materials, light-emitting surface definition, thumbnail, and photometry). `gldf` is the open-standard Global Lighting Data Format (zipped XML bundle intended to replace ULD). Neither is parsed or embedded by ULC; they are referenced for consumers that want the 3D or rendering data. `supplementary_pdf` covers ancillary PDFs that accompany the primary datasheet: certifications cheat sheets, installation-option matrices, end-of-life program documents, and similar content that informs authoring but is not itself a photometric or safety source. `driver_datasheet_pdf` is the LED-driver or control-gear datasheet, the source for driver-protocol and electrical detail. `test_report` is an accredited photometric or colorimetric test report (the source for measurement uncertainty, corrections, instrumentation depth, and TM-30 detail). `compliance_documents` is a safety-listing or market-access certificate (the source for the core safety listing and ingress ratings). `commercial_terms_pdf` is a manufacturer-published commercial-terms document (a lead-time policy, ordering-terms, or freight-terms sheet, typically self-disclaimed and revised on the manufacturer's own cadence). The record asserts only that the document with this hash existed on the referenced revision date, never the currency of the numbers inside it: values that change while the product stays the same do not enter a ULC record.",
       "type": "string",
       "enum": [
         "datasheet_pdf",
@@ -1120,7 +1120,8 @@
         "supplementary_pdf",
         "driver_datasheet_pdf",
         "test_report",
-        "compliance_documents"
+        "compliance_documents",
+        "commercial_terms_pdf"
       ]
     },
 
@@ -1141,6 +1142,7 @@
         "driver_datasheet_pdf",
         "test_report",
         "compliance_documents",
+        "commercial_terms_pdf",
         "manufacturer_direct",
         "computed",
         "inferred",
