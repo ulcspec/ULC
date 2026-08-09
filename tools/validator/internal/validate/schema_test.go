@@ -653,7 +653,11 @@ func TestValidatorConstrainsSupersededBy(t *testing.T) {
 		"a hash pin without record_id": {"record_sha256": hash},
 		"a malformed record_id slug":   {"record_id": "Bad_Slug"},
 		"a record_id under minLength":  {"record_id": "ab"},
-		"a malformed record_sha256":    {"record_id": "acme-orbit-2400-3000k", "record_sha256": "xyz"},
+		// An empty naming member would satisfy anyOf while naming nothing,
+		// which is the case the constraint exists to reject.
+		"an empty catalog_number":   {"catalog_number": ""},
+		"an empty catalog_model":    {"catalog_model": ""},
+		"a malformed record_sha256": {"record_id": "acme-orbit-2400-3000k", "record_sha256": "xyz"},
 	}
 	for name, ref := range rejected {
 		t.Run("rejects "+name, func(t *testing.T) {

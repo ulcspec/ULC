@@ -480,11 +480,13 @@
         },
         "catalog_number": {
           "description": "The successor's specific manufacturer-assigned catalog number or order code, in the same vocabulary as configuration.catalog_number. The slot for SKU-precise supersession, matching the record_status `superseded` token's own definition (replaced by a newer SKU).",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "catalog_model": {
           "description": "The successor's catalog model (family-level identity), in the same vocabulary as product_family.catalog_model. The slot for family-level supersession, or for a successor whose exact order code is not yet assigned or published.",
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "anyOf": [
