@@ -33,7 +33,7 @@ func bundleWithColumns(t *testing.T, cols map[string]string) string {
 		t.Fatalf("expected a header and one record row in the fixture, got %d lines", len(lines))
 	}
 	// Deterministic order: the sheet reader keys on the header, but a stable
-	// file keeps the fixture diffable.
+	// column order keeps the generated fixture easy to compare.
 	names := make([]string, 0, len(cols))
 	for name := range cols {
 		names = append(names, name)
