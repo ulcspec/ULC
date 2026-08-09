@@ -22,8 +22,10 @@ import (
 // Only the Go standard library is used (archive/zip + encoding/xml), so the
 // reader stays offline and dependency-free, the same constraint the CSV reader
 // honors. The tab names must equal the sheet names the converter joins on
-// (records, source_files, attestations, ...); the published workbook template
-// ships its tabs already named that way.
+// (records, source_files, attestations, ...); those are the workbook
+// template's CSV file names without the `.csv` extension, so a tab named
+// after the CSV it was filled from (`records`, not `records.csv`) is already
+// correct.
 //
 // The reader is faithful to each cell's stored text, not to Excel's display
 // formatting: it does not consult xl/styles.xml, so a date authored as an Excel
