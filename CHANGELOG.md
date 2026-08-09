@@ -33,7 +33,7 @@ The admission rule behind the lifecycle pair is worth stating, because it govern
 - `superseded_by` resolves a long-standing incoherence: `record_status` could say `superseded`, documented as "replaced by a newer SKU", while no slot named the SKU. The pointer names the successor by `catalog_number` (the successor order code, the SKU-precise slot), by `catalog_model` (the successor family model, when the exact order code is not yet assigned), by ULC `record_id` once the successor record is published, or several of these together, and can pin the exact successor record revision with `record_sha256`.
 - `discontinued_at` is the effective end-of-availability date, distinct from `record_status_as_of` (when the status was last verified).
 - `shared_warranty.term_basis` (`invoice`, `shipment`, `installation`, `energization`) states the event the warranty term runs from; identical term lengths differ materially by basis.
-- `shared_warranty.conditions_document` references the published warranty-conditions document by filename and content hash, with its revision label and date when the document states them, so exclusions and conditional extensions travel with the headline number. The free-text `conditions_reference` is deprecated in its favor and is scheduled for removal at v2.0.0; it remains valid throughout the 1.x line.
+- `shared_warranty.conditions_document` references the published warranty-conditions document by filename and content hash, with its revision label and date when the document states them, so exclusions and conditional extensions travel with the headline number. The free-text `conditions_reference` is deprecated in its favor and is scheduled for removal at v2.0.0; it remains valid throughout the 1.x line. The deprecation is machine-readable: the field carries the JSON Schema `deprecated` annotation, which changes no validation result.
 
 The new `commercial_terms_pdf` token names a document, not its contents: a record referencing one asserts that the document with that hash existed on the referenced revision date, and never that the numbers inside it are current.
 
@@ -42,7 +42,8 @@ No example record changes: the repository's real-data rule forbids fabricating l
 ### Schema
 
 - New top-level optional fields `superseded_by` (via the new `$defs/SupersessionReference`) and `discontinued_at`. `SupersessionReference` requires at least one of `record_id`, `catalog_number`, or `catalog_model`, and `record_sha256` requires `record_id`; the constraints live entirely inside the new definition, so no previously-valid record is affected.
-- `product_family.shared_warranty` gains `term_basis` and `conditions_document`; `conditions_reference` is deprecated in prose with its type unchanged.
+- `product_family.shared_warranty` gains `term_basis` and `conditions_document`; `conditions_reference` carries the `deprecated` annotation and a deprecation notice in its description, with its type unchanged.
+- The `deprecated` annotation also lands on the taxonomy's legacy cutoff classification, whose description has marked it deprecated since it shipped; no validation behavior changes.
 - New taxonomy enum `WarrantyTermBasis` with four tokens. It is descriptive vocabulary: it gates no conformance tier and feeds no rubric row.
 - New `SourceFileType` and `ProvenanceSource` token `commercial_terms_pdf` for manufacturer-published commercial-terms documents carried as hashed source files; the two enums stay synchronized by design.
 
