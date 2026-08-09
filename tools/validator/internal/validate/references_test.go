@@ -12,7 +12,7 @@ import (
 // siteFixture places one FileReference at one registry site and states the
 // runtime pointer the walk must report it at. Every site in
 // fileReferenceRegistry has an entry here, so the outcome matrix below runs
-// against all five rather than against source_files alone.
+// against all six rather than against source_files alone.
 type siteFixture struct {
 	name    string
 	pointer string
@@ -133,7 +133,7 @@ func TestFileReferenceRegistryPolicies(t *testing.T) {
 }
 
 // TestVerifyFileReferencesDefaultSitesRunWithoutTheFlag is the runtime half of
-// the policy pin: the three default sites report on a plain run.
+// the policy pin: the four default sites report on a plain run.
 func TestVerifyFileReferencesDefaultSitesRunWithoutTheFlag(t *testing.T) {
 	for _, site := range siteFixtures {
 		policy := refPolicy(policyUnset)
@@ -280,6 +280,10 @@ func TestVerifyFileReferencesSkipsNonMapNodes(t *testing.T) {
 		{"product_family": "not a map"},
 		{"product_family": map[string]any{"cutsheet": []any{}}},
 		{"emergency": map[string]any{"photometry_reference": 42}},
+		// The warranty-conditions site is the only one with two intermediate
+		// object hops, so a wrong shape at each hop is exercised.
+		{"product_family": map[string]any{"shared_warranty": "not a map"}},
+		{"product_family": map[string]any{"shared_warranty": map[string]any{"conditions_document": 42}}},
 		{"attestations": map[string]any{"not": "an array"}},
 		{"attestations": []any{map[string]any{"source_document_ref": nil}}},
 		{"product_family": map[string]any{"shared_attestations": []any{7}}},

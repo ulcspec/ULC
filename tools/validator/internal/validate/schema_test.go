@@ -652,6 +652,7 @@ func TestValidatorConstrainsSupersededBy(t *testing.T) {
 		"an empty object":              {},
 		"a hash pin without record_id": {"record_sha256": hash},
 		"a malformed record_id slug":   {"record_id": "Bad_Slug"},
+		"a record_id under minLength":  {"record_id": "ab"},
 		"a malformed record_sha256":    {"record_id": "acme-orbit-2400-3000k", "record_sha256": "xyz"},
 	}
 	for name, ref := range rejected {
@@ -840,6 +841,48 @@ func TestSchemaFormatDeclarationsAreAsserted(t *testing.T) {
 	}
 	if len(sites) == 0 {
 		t.Fatal("no format declarations found, so this guard checked nothing")
+	}
+}
+
+// TestProvenanceSourceMirrorsSourceFileType enforces the synchronization the
+// taxonomy states normatively: every SourceFileType token must also be a
+// ProvenanceSource token, so any source file a record cites can also be named
+// as the origin of an individual value. The two enums are edited by hand, and
+// nothing else fails when a token lands in one and not the other.
+func TestProvenanceSourceMirrorsSourceFileType(t *testing.T) {
+	var doc map[string]any
+	if err := json.Unmarshal(embedded.TaxonomySchemaJSON, &doc); err != nil {
+		t.Fatalf("parse taxonomy.schema.json: %v", err)
+	}
+	defs, ok := doc["$defs"].(map[string]any)
+	if !ok {
+		t.Fatal("taxonomy.schema.json has no $defs object")
+	}
+	tokens := func(name string) map[string]bool {
+		def, ok := defs[name].(map[string]any)
+		if !ok {
+			t.Fatalf("taxonomy.schema.json has no %s definition", name)
+		}
+		raw, ok := def["enum"].([]any)
+		if !ok || len(raw) == 0 {
+			t.Fatalf("%s has no non-empty enum", name)
+		}
+		out := make(map[string]bool, len(raw))
+		for _, v := range raw {
+			s, ok := v.(string)
+			if !ok {
+				t.Fatalf("%s has a non-string enum member %v", name, v)
+			}
+			out[s] = true
+		}
+		return out
+	}
+
+	provenance := tokens("ProvenanceSource")
+	for token := range tokens("SourceFileType") {
+		if !provenance[token] {
+			t.Errorf("SourceFileType token %q is missing from ProvenanceSource", token)
+		}
 	}
 }
 

@@ -23,8 +23,8 @@ ulc from-sheet ./workbook.xlsx   --out ./out --assets ./assets
 ```
 
 `--out` is where the `<record_id>.ulc.json` files are written. `--assets` is the
-directory your referenced files (cutsheet PDF, IES, attestation documents) live
-in; it defaults to the workbook directory.
+directory your referenced files (cutsheet PDF, warranty conditions PDF, IES,
+attestation documents) live in; it defaults to the workbook directory.
 
 ## The join key
 

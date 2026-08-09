@@ -474,7 +474,9 @@
         "record_sha256": {
           "description": "SHA-256 content hash of the successor record file bytes as published, pinning the exact successor revision this pointer was authored against. Requires record_id. A republished successor (including an index re-stamp) changes this hash, so a mismatch means the successor moved to a newer revision, not that content was tampered with. This is a record-to-record pin, not a source-file reference: it is not part of the source-file hash verification walk.",
           "type": "string",
-          "pattern": "^[a-f0-9]{64}$"
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
         },
         "catalog_number": {
           "description": "The successor's specific manufacturer-assigned catalog number or order code, in the same vocabulary as configuration.catalog_number. The slot for SKU-precise supersession, matching the record_status `superseded` token's own definition (replaced by a newer SKU).",

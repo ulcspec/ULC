@@ -40,6 +40,11 @@ func bundleWithColumns(t *testing.T, cols map[string]string) string {
 	}
 	sort.Strings(names)
 	for _, name := range names {
+		// The row is appended as raw text, so a value carrying a comma or a
+		// quote would silently reshape the row rather than fail loudly.
+		if strings.ContainsAny(cols[name], ",\"") {
+			t.Fatalf("column %q value must not contain a comma or a quote: %q", name, cols[name])
+		}
 		lines[0] += "," + name
 		lines[1] += "," + cols[name]
 	}
@@ -164,6 +169,8 @@ func TestConvertWarrantyColumns(t *testing.T) {
 	wantString(t, rec, "product_family.shared_warranty.conditions_document.sha256", hex.EncodeToString(sum[:]))
 	wantString(t, rec, "product_family.shared_warranty.conditions_document.revision_label", "Rev 4")
 	wantString(t, rec, "product_family.shared_warranty.conditions_document.revision_date", "2026-02-10")
+
+	wantSchemaValid(t, rec)
 }
 
 // TestConvertWarrantyConditionsFileMissing pins the missing-file behavior the
@@ -190,7 +197,7 @@ func TestConvertWarrantyConditionsFileMissing(t *testing.T) {
 // legitimately carries headers the column table does not drive (record_id, the
 // path-input columns, the applicability headers, and the extensions pair).
 func TestTemplateHeaderCoversRecordColumns(t *testing.T) {
-	path := filepath.Join(repoRoot(t), "templates", "workbook", "records.csv")
+	path := filepath.Join(filepath.Dir(schemaDir(t)), "templates", "workbook", "records.csv")
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("open template: %v", err)
@@ -202,7 +209,13 @@ func TestTemplateHeaderCoversRecordColumns(t *testing.T) {
 	}
 	present := make(map[string]bool, len(header))
 	for _, h := range header {
-		present[strings.TrimSpace(h)] = true
+		h = strings.TrimSpace(h)
+		// The reader is last-cell-wins on a repeated header, so a duplicate
+		// silently discards whatever the author typed in the first column.
+		if present[h] {
+			t.Errorf("header %q appears twice in templates/workbook/records.csv", h)
+		}
+		present[h] = true
 	}
 
 	for _, c := range recordColumns {
@@ -210,7 +223,13 @@ func TestTemplateHeaderCoversRecordColumns(t *testing.T) {
 			t.Errorf("column %q has no header in templates/workbook/records.csv", c.Header)
 		}
 	}
+	// The records sheet's path-input columns and their revision overrides are
+	// read by name in convert.go rather than through recordColumns, so the
+	// loop above cannot see them.
 	for _, literal := range []string{
+		"cutsheet_file",
+		"cutsheet_file__revision_label",
+		"cutsheet_file__revision_date",
 		"warranty_conditions_file",
 		"warranty_conditions_file__revision_label",
 		"warranty_conditions_file__revision_date",
@@ -219,15 +238,4 @@ func TestTemplateHeaderCoversRecordColumns(t *testing.T) {
 			t.Errorf("path-input column %q has no header in templates/workbook/records.csv", literal)
 		}
 	}
-}
-
-func repoRoot(t *testing.T) string {
-	t.Helper()
-	// Tests run from tools/validator/internal/sheet; four levels up is the
-	// repository root.
-	p, err := filepath.Abs(filepath.Join("..", "..", "..", ".."))
-	if err != nil {
-		t.Fatalf("resolve repo root: %v", err)
-	}
-	return p
 }
