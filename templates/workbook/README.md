@@ -23,8 +23,8 @@ ulc from-sheet ./workbook.xlsx   --out ./out --assets ./assets
 ```
 
 `--out` is where the `<record_id>.ulc.json` files are written. `--assets` is the
-directory your referenced files (cutsheet PDF, IES, attestation documents) live
-in; it defaults to the workbook directory.
+directory your referenced files (cutsheet PDF, warranty conditions PDF, IES,
+attestation documents) live in; it defaults to the workbook directory.
 
 ## The join key
 
@@ -85,7 +85,7 @@ expected does not appear.)
 
 | Sheet | What it carries | When you need it |
 |---|---|---|
-| `records` | One row per record: identity, taxonomy, mechanical, electrical, photometry, colorimetry, the applicability header, and the sustainability scalars. | Always |
+| `records` | One row per record: identity, taxonomy, lifecycle (supersession pointer and discontinuation date), mechanical, warranty, electrical, photometry, colorimetry, the applicability header, and the sustainability scalars. | Always |
 | `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
 | `attestations` | Per-record program attestations. The LM-79 row is the measurement anchor. | Measured photometry needs the LM-79 anchor even at core; standard and up otherwise as applicable |
 | `shared_attestations` | Family-wide listings (UL, IEC, RoHS). | As applicable |
@@ -107,6 +107,11 @@ populated `catalog_number` with no applicability sheets is a single-SKU pin
 (Pattern A or, with derived photometry provenance, C); a `cct_multipliers` table
 is Pattern B; a `declared_by_length` sheet or a `per_foot_linear_scaling`
 derivation on the length axis is Pattern D.
+
+When you author the supersession columns (`superseded_by_record_id`,
+`superseded_by_catalog_number`, `superseded_by_catalog_model`), also set
+`record_status` to `superseded`: the converter's blank-cell default is
+`active`.
 
 ## Notes for `.xlsx` authors
 

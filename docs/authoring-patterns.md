@@ -8,6 +8,8 @@ It is not normative. It describes patterns, not requirements, and it informs the
 
 A ULC record represents **one attested photometric scenario** for a fixture, not an orderable SKU and not an IES file. The reasoning behind that unit, and the two decouplings it buys, is in [methodology.md](methodology.md#the-core-unit-one-attested-photometric-scenario); what matters for authoring is the two links that carry the weight. A structured `applicability` block inside the record connects it to the orderable SKUs it describes. Provenance metadata on each value connects that value to the measurement evidence behind it.
 
+**Lifecycle facts are monotonic.** Beside `record_status` and `record_status_as_of`, a record may carry `superseded_by` (the successor pointer, by successor `record_id`, order code, or family model, with an optional `record_sha256` pin of the exact successor record revision) and `discontinued_at` (the effective end-of-availability date). Both are recorded once, when the fact is settled: they can appear on a record, but they do not drift the way volatile commercial data does, which is the ULC admission rule that keeps lead times, stock, and pricing out of a point-in-time record. When you author a supersession, also set `record_status` to `superseded`. The guidance runs in that direction only: `superseded_by` stays optional on a superseded record, because a manufacturer may retire a product before naming its replacement, and because every record already carrying the `superseded` status predates the pointer and remains valid. Both facts speak for the whole record, the way `record_status` does: they describe the product across every orderable SKU the record's `applicability` block covers, so neither is the place to record a fate that reaches only part of that range.
+
 ## The four authoring patterns
 
 Four distinct patterns emerged across four manufacturers during the schema evaluation phase. Each is grounded in a real cutsheet.
@@ -97,7 +99,7 @@ The Product Achievements axis is computed from the attestations a record already
 
 A top-level block carrying the data that is true for every SKU in the cutsheet. The PIM populates it once and replicates it into each record emitted from the family.
 
-Typical contents: `family_id`, `family_display_name`, `manufacturer`, `catalog_line`, `catalog_model`, `cutsheet` (filename, URL, sha256, revision), `primary_category`, `shared_mechanical`, `shared_warranty`, and `shared_attestations` (claims that apply to every SKU without qualification, such as UL Listing and Declare Red List status).
+Typical contents: `family_id`, `family_display_name`, `manufacturer`, `catalog_line`, `catalog_model`, `cutsheet` (filename, URL, sha256, revision), `primary_category`, `shared_mechanical`, `shared_warranty` (term, basis, scope, and the hashed conditions document), and `shared_attestations` (claims that apply to every SKU without qualification, such as UL Listing and Declare Red List status).
 
 Consumers group records by `family_id` to reconstruct cutsheet-level views without forcing cutsheet-level JSON bundles.
 
@@ -105,7 +107,7 @@ Consumers group records by `family_id` to reconstruct cutsheet-level views witho
 
 The top-level array naming every manufacturer-published file the record derives data from or anchors evidence to: the datasheet PDF, photometric files, installation instructions, test reports, compliance certificates. Each entry carries a `file_type` from the `SourceFileType` vocabulary and a `reference` with the filename and SHA-256 content hash. The hash is the record's only assertion about the file: this document existed with these bytes when the record was published. ULC never asserts that a referenced document is current, only that it is the one the record was built from. A document can be listed here and hashed without being published; see "Withholding the evidence document" under Authoring achievement attestations above.
 
-That makes `source_files` the right carrier for document-grade commercial references too. A manufacturer that publishes a lead-time or commercial-terms policy document can attach it as a `supplementary_pdf` entry, hashed like any other source file. The record then anchors the policy document without restating its contents; the live numbers (current lead times, stock, pricing) belong to transactional systems and never enter the record, because a hash-anchored copy of a number that changes weekly would be stale by design.
+That makes `source_files` the right carrier for document-grade commercial references too. A manufacturer that publishes a lead-time or commercial-terms policy document can attach it as a `commercial_terms_pdf` entry, hashed like any other source file. The record then anchors the policy document without restating its contents; the live numbers (current lead times, stock, pricing) belong to transactional systems and never enter the record, because a hash-anchored copy of a number that changes weekly would be stale by design.
 
 ### `configuration`
 
@@ -235,6 +237,7 @@ A single manufacturer may use different patterns for different product families.
 - **Family grouping:** every record in a cutsheet shares a `product_family.family_id`. Consumers group on this key to reconstruct cutsheet-level views.
 - **Attestation inheritance:** derived records (Pattern C simulations and extended-photometry records) carry `provenance.base_attestation_ref` pointing at the measured base record's test ID, so a consumer can trace any rated value back to the measurement it rests on.
 - **Accessory references:** mechanical accessories listed in `compatible_accessories[]` are identified by their own catalog numbers. An accessory needs its own photometric record only when it changes fixture photometry.
+- **Supersession pointers:** a superseded record names its successor in the top-level `superseded_by`: by successor `record_id` (optionally pinned to an exact revision with `record_sha256`), by successor `catalog_number` (order code) or `catalog_model` (family model), or several of these together. The pointer is set once and never retargeted.
 
 ## Validation implications
 

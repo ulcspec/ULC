@@ -70,7 +70,7 @@ safety-listing requirements documented in `docs/methodology.md`. Schema structur
 identity/cutsheet/scenario fields:
 
 ```
-record_id, ulc_version(=1.0.0 default), record_status(=active),
+record_id, ulc_version(=1.4.0 default), record_status(=active),
 family_id, manufacturer_slug, manufacturer_display_name, catalog_model,
 cutsheet_file        (-> sha256 + cutsheet/source_files dual-write),
 primary_category     (indexing anchor),
@@ -129,12 +129,14 @@ the schema level, the converter does NOT author `test_temperature_c` (rather tha
 emit a value that conflicts with the dual-unit temperature policy).
 
 ### 3.2 SHA-256 + cutsheet dual-write
-Any path-input column (`records.cutsheet_file`, `source_files.filename`,
-`attestations.source_document_file`) is a local path the converter resolves, hashes (lowercase
-hex `^[a-f0-9]{64}$`), and stamps into the matching `reference.sha256`. `records.cutsheet_file`
-is dual-written to both `product_family.cutsheet` (the FileReference directly) AND a synthesized
-`source_files[] {file_type: datasheet_pdf}` entry (de-duplicated on filename). The manufacturer
-lists the cutsheet once.
+Any path-input column (`records.cutsheet_file`, `records.warranty_conditions_file`,
+`source_files.filename`, `attestations.source_document_file`) is a local path the converter
+resolves, hashes (lowercase hex `^[a-f0-9]{64}$`), and stamps into the matching
+`reference.sha256`. `records.cutsheet_file` is dual-written to both `product_family.cutsheet`
+(the FileReference directly) AND a synthesized `source_files[] {file_type: datasheet_pdf}`
+entry (de-duplicated on filename). The manufacturer lists the cutsheet once.
+`records.warranty_conditions_file` stamps into
+`product_family.shared_warranty.conditions_document`.
 
 ### 3.3 Provenance (per-column defaults, overridable)
 Every ProvenancedNumber/DualUnit needs `provenance {source, method}` + `value_type`. The converter

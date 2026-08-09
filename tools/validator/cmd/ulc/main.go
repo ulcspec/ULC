@@ -108,8 +108,8 @@ Runs the following checks and emits a findings report:
   2. Builder parity (stored index matches the deterministic projection,
      including the computed index.conformance_level)
   3. File-reference SHA-256 hash verification (when files are reachable
-     locally): source_files entries, the family cutsheet, and the emergency
-     photometry reference
+     locally): source_files entries, the family cutsheet, the emergency
+     photometry reference, and the family warranty-conditions document
   4. Conformance report (INFO: the computed grade plus a per-grade roadmap to full)
   5. Product Achievements report (INFO: the per-theme achievement summary; the
      per-theme state and roadmap show under --verbose or --json)
@@ -381,7 +381,7 @@ func runFromSheet(args []string) int {
 	var outDir, assetsDir string
 	var allowMissing bool
 	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>.ulc.json files into.")
-	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, IES, attestation docs) resolve against. Defaults to the bundle directory.")
+	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, warranty conditions, IES, attestation docs) resolve against. Defaults to the bundle directory.")
 	fs.BoolVar(&allowMissing, "allow-missing-files", false, "When a referenced file is absent on disk, stamp the 64-zero sentinel SHA-256 and treat the record as a DRAFT (reported, not written to --out; the run exits non-zero) instead of erroring immediately.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a manufacturer workbook into validated ULC records.

@@ -23,7 +23,7 @@ changed `required[]`) requires the next major, v2.0.0. Pre-1.0 releases generall
 aimed for additive changes; compatibility-tightening changes occurred only when
 documented in the changelog (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.3.x
+## Active version: v1.4.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -52,6 +52,14 @@ workbook reader's archive handling, and aligns JSON output escaping across
 subcommands. It is the first minor to move default output: `ulc validate`
 reports the newly covered reference sites, and `ulc validate --json` escapes
 `<`, `>`, and `&`; the authored schema surface is unchanged.
+v1.4.0 adds the product-lifecycle and warranty-basis fields: `superseded_by`
+(a successor pointer resolving the `superseded` status token's missing
+successor slot), `discontinued_at` (the effective end-of-availability date,
+on the GDSN discontinuation-date precedent), `shared_warranty.term_basis`,
+and the hashed `shared_warranty.conditions_document`. All are optional and
+tracked, not graded; the generated index is unchanged, so stored records
+need no re-stamp. The free-text `shared_warranty.conditions_reference` is
+deprecated in favor of `conditions_document`.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
@@ -81,8 +89,9 @@ model natively. Each is expected to land when a second independent example
 record surfaces the same need, so the change stays grounded rather than
 speculative. With v1.0.0's compatibility commitment now in force, every
 breaking item among these, the plural attestation references, the multi-claim
-and multi-framework lumen-maintenance arrays, and the structured safety-listing
-detail, is foreclosed to the next major, v2.0.0; minors stay additive-only.
+and multi-framework lumen-maintenance arrays, the structured safety-listing
+detail, and the removal of the deprecated `conditions_reference` string, is
+foreclosed to the next major, v2.0.0; minors stay additive-only.
 
 - **Accessory photometric records.** When a mechanical accessory genuinely
   changes photometry (louver, snoot, distribution-altering lens), the
@@ -194,6 +203,22 @@ detail, is foreclosed to the next major, v2.0.0; minors stay additive-only.
   and recording Cradle to Cradle per-category levels (the `sustainability_metric`
   carries the overall level only), are non-breaking additions held for a real need.
 - **Filename minimum length.** `FileReference.filename` has no `minLength`, so an empty-string filename is schema-valid and can still back a `documented` achievement. Tightening to `minLength: 1` touches every `FileReference` site across the schema, so it is held for a future schema minor.
+- **Multi-leg warranty terms.** `shared_warranty` carries one headline term
+  (`term_years` plus its v1.4.0 `term_basis`); real warranties often carry a
+  second leg (a battery or finish term, sometimes pro-rata) that today lives
+  in the free-text `scope`. A plural warranty shape is a candidate once a
+  second independent record needs it structurally.
+- **Deprecated `conditions_reference` removal.** v1.4.0 deprecates the
+  free-text `shared_warranty.conditions_reference` in favor of the hashed
+  `conditions_document`. Removing the string field is a breaking change,
+  foreclosed to v2.0.0 with the rest of the narrowing-blocked class.
+- **Format-assertion conformance statement.** Since v1.3.0 the reference
+  validator asserts the schema's declared string formats, while the published
+  schemas declare the plain Draft 2020-12 dialect, in which `format` is an
+  annotation that a generic validator does not enforce. A conformance
+  statement defining exactly what an implementation must check, and whether
+  the schemas should adopt the format-assertion vocabulary, is held for a
+  future release.
 
 ## Explicitly out of scope
 

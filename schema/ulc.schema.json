@@ -33,6 +33,17 @@
       "format": "date"
     },
 
+    "superseded_by": {
+      "description": "Pointer to the successor product for a record whose product has been replaced by a newer SKU. Complements record_status: the `superseded` status token says the product was replaced, and this field names its replacement. The supersession fact is monotonic: set once when the supersession occurs and never retargeted, so it can appear but cannot go stale. A later record revision may add identifiers for the same successor (for example a record_id once the successor record is published).",
+      "$ref": "#/$defs/SupersessionReference"
+    },
+
+    "discontinued_at": {
+      "description": "Effective calendar date on which the product's commercial availability ends or ended. ISO 8601 date (YYYY-MM-DD). Distinct from record_status_as_of, which records when the status was last verified, not when it took effect; the family-level counterpart introduced_at lives in product_family, while this date sits at the record envelope beside the record_status token it qualifies, because availability can end per configuration, not only per family. Recorded once, when the end of availability is fixed; unlike a lead time or a price, it does not drift with the market. Precedent: GDSN carries a discontinuation date inside the master trade-item record.",
+      "type": "string",
+      "format": "date"
+    },
+
     "conformance_level": false,
 
     "index": {
@@ -448,6 +459,46 @@
       "required": ["filename", "sha256"]
     },
 
+    "SupersessionReference": {
+      "title": "Supersession reference",
+      "description": "Names the successor product of a superseded record. At least one of record_id (when the successor has a published ULC record), catalog_number (the successor's order code, for SKU-precise supersession), or catalog_model (the successor's family model) is required; carrying several is valid and preferred as the successor's identity firms up. record_sha256 optionally pins the exact successor record revision by content hash and is only meaningful alongside record_id.",
+      "type": "object",
+      "properties": {
+        "record_id": {
+          "description": "The successor record's record_id, using the same slug convention as the top-level record_id. Typically, though not necessarily, within the same manufacturer's namespace: a successor published under a parent or sibling brand is valid.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "record_sha256": {
+          "description": "SHA-256 content hash of the successor record file bytes as published, pinning the exact successor revision this pointer was authored against. Requires record_id. A republished successor (including an index re-stamp) changes this hash, so a mismatch means the successor moved to a newer revision, not that content was tampered with. This is a record-to-record pin, not a source-file reference: it is not part of the source-file hash verification walk.",
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "catalog_number": {
+          "description": "The successor's specific manufacturer-assigned catalog number or order code, in the same vocabulary as configuration.catalog_number. The slot for SKU-precise supersession, matching the record_status `superseded` token's own definition (replaced by a newer SKU).",
+          "type": "string",
+          "minLength": 1
+        },
+        "catalog_model": {
+          "description": "The successor's catalog model (family-level identity), in the same vocabulary as product_family.catalog_model. The slot for family-level supersession, or for a successor whose exact order code is not yet assigned or published.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "anyOf": [
+        { "required": ["record_id"] },
+        { "required": ["catalog_number"] },
+        { "required": ["catalog_model"] }
+      ],
+      "dependentRequired": {
+        "record_sha256": ["record_id"]
+      }
+    },
+
     "SourceFile": {
       "title": "Source file entry",
       "description": "One source file that contributes data to this ULC record.",
@@ -606,11 +657,24 @@
           }
         },
         "shared_warranty": {
+          "description": "Family-level warranty summary as published on the cutsheet.",
           "type": "object",
           "properties": {
             "term_years": { "type": "integer", "minimum": 0 },
+            "term_basis": {
+              "description": "The commencement event the warranty term (term_years) runs from. Published terms of identical length differ materially in coverage depending on the basis, so it is carried explicitly rather than inferred. It qualifies term_years, the family's headline term; warranties with additional legs (for example a separate battery or finish term) describe those legs in scope. Absent when the cutsheet does not state a basis.",
+              "$ref": "taxonomy.schema.json#/$defs/WarrantyTermBasis"
+            },
             "scope": { "type": "string" },
-            "conditions_reference": { "type": "string" }
+            "conditions_reference": {
+              "description": "Free-text pointer to the warranty conditions (a document title, code, or URL as printed on the cutsheet). DEPRECATED: prefer conditions_document, which carries a filename and content hash, plus the revision date when the document states one, so the conditions travel with the term verifiably. Retained through the 1.x line under the additive-only compatibility commitment; removal is scheduled for v2.0.0.",
+              "type": "string",
+              "deprecated": true
+            },
+            "conditions_document": {
+              "description": "Reference to the manufacturer's published warranty-conditions document, by filename and content hash, carrying the revision label and date when the document states them. The document holds the exclusions, conditional extensions, and per-accessory variations that qualify term_years, so the conditions travel with the headline number instead of being lost. Preferred over the deprecated free-text conditions_reference.",
+              "$ref": "#/$defs/FileReference"
+            }
           }
         },
         "shared_attestations": {

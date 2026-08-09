@@ -62,7 +62,7 @@ Additional source types and fields may be supported in future versions.
 
 **Manufacturers** publish ULC files alongside their datasheet PDFs, IES, and LDT files on their product pages. Their products surface in AI-mediated specifier discovery with accurate attributes, not whatever an extraction layer guessed off the PDF. They own the data relationship at the data layer; existing commercial relationships (reps, distributors, agencies, aggregators) stay where they are.
 
-**Software vendors and AI systems** implement readers, writers, and validators against the ULC schema. The reference CLI validator (`ulc`, at `tools/validator/`) packages JSON Schema validation, index-builder parity, and source-file hash verification into one command, shipped as a single-file binary. Any JSON Schema Draft 2020-12 library can also validate ULC records against the schemas directly. General-purpose AI assistants (ChatGPT, Claude, Gemini) parse ULC files natively as JSON; domain-specific agents (LightingAgent.AI) consume ULC with lighting-domain-tuned depth.
+**Software vendors and AI systems** implement readers, writers, and validators against the ULC schema. The reference CLI validator (`ulc`, at `tools/validator/`) packages JSON Schema validation, index-builder parity, and source-file hash verification into one command, shipped as a single-file binary. Any JSON Schema Draft 2020-12 library can also validate ULC records against the schemas directly. The reference validator is stricter on one axis: it asserts the schema's declared date and URI formats, which a generic library treats as annotations under the 2020-12 dialect. General-purpose AI assistants (ChatGPT, Claude, Gemini) parse ULC files natively as JSON; domain-specific agents (LightingAgent.AI) consume ULC with lighting-domain-tuned depth.
 
 ## How to consume ULC today
 
@@ -90,7 +90,7 @@ The current working state ships the schema, taxonomy, drift-guard tooling, the a
 - To see those patterns in real data, read the records in `examples/`, which exercise the four authoring patterns and the exit-sign/emergency product class against real manufacturer spec sheets.
 - **To try ULC right now**, drag any `.ulc` record from `examples/` into ChatGPT, Claude, or Gemini and ask it to render the spec sheet, compare two records, or pull out a specific attribute. No setup required.
 - To explore the schema directly, read `schema/ulc.schema.json` for the record structure and `schema/taxonomy.schema.json` for the closed vocabularies.
-- To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
+- To implement ULC in your own software, reference those two schema files by URL and use any JSON Schema Draft 2020-12 validator. To match the reference validator exactly, enable format assertion in your library; the declared date and URI formats are otherwise annotations. The `tools/schema-drift-guard.py` script shows how `$ref`s resolve across the split.
 - To validate a record end-to-end (schema, index-builder parity, source-file hashes), run `ulc validate <record>` on any `.ulc` or `.ulc.json` file; the [CLI how-to in how-it-works.md](docs/how-it-works.md#how-to-try-it-today) covers `ulc build-index`, the release-binary download, and building from source.
 
 ## Relationship to adjacent standards
@@ -121,7 +121,7 @@ To check the current state of manufacturer adoption (which manufacturers have pu
 
 ## Project status
 
-The current release is `1.3.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
+The current release is `1.4.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
 
 The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 

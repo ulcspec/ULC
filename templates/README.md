@@ -4,7 +4,7 @@ This directory holds the **fill-in workbook template** for authoring ULC records
 
 - [`workbook/`](workbook/) is a `records.csv` plus the related sheets. Copy it, transcribe your source data into it (one row per photometric scenario), and run `ulc from-sheet <workbook> --out <dir>` to produce validated ULC records with no LLM and no cloud step. The column reference lives in [`workbook/README.md`](workbook/README.md).
 
-For the full picture of how a manufacturer creates ULC records (the two authoring paths, which source documents to gather, and why the output is accurate by construction), see [How records are authored](../docs/how-it-works.md#how-records-are-authored) in how-it-works.md.
+For the full picture of how a manufacturer creates ULC records (the two authoring paths, which source documents to gather, and why the output is verified by construction), see [How records are authored](../docs/how-it-works.md#how-records-are-authored) in how-it-works.md.
 
 For a sense of what a finished record looks like, read the curated real-world records in [`../examples/`](../examples/), and for the schema each record conforms to, see [`../schema/ulc.schema.json`](../schema/ulc.schema.json).
 

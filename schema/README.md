@@ -13,9 +13,9 @@ The schemas in this directory define:
 
 ## Validation
 
-A reference validator is available in `tools/validator/`. Any JSON Schema Draft 2020-12 compliant validator can verify ULC records against these schemas.
+A reference validator is available in `tools/validator/`. Any JSON Schema Draft 2020-12 compliant validator can verify ULC records against these schemas. The reference validator additionally asserts the schema's declared string formats (dates and URIs); a generic Draft 2020-12 validator treats those declarations as annotations, so it will not reject a malformed date or a relative URL that the reference validator rejects.
 
 ## See also
 
-- `docs/specification.md` for the narrative specification of what these schemas enforce
-- `docs/field-reference.md` for per-field definitions
+- `docs/methodology.md` for the narrative specification and rubric
+- `docs/authoring-patterns.md` for per-field authoring guidance
