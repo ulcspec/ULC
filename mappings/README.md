@@ -1,9 +1,9 @@
 # Mappings
 
-How ULC relates to the other systems it has to live alongside. Two categories of mapping live here:
+How ULC relates to the other systems it has to live alongside. Two categories of mapping live here, plus one cross-cutting pattern:
 
-1. **Adjacent data standards** — GLDF, ETIM, IES LM-63, EULUMDAT. ULC is designed to cooperate with, not replace, existing work.
-2. **Product Information Management (PIM) platforms** — Salsify, Akeneo, SAP, and in-house product databases. How to emit ULC records at catalog scale from the systems that already hold a manufacturer's product data.
+1. **Adjacent data standards**: GLDF, ETIM, IES LM-63, EULUMDAT. ULC is designed to cooperate with, not replace, existing work.
+2. **Product Information Management (PIM) platforms**: Salsify, Akeneo, SAP, and in-house product databases. How to emit ULC records at catalog scale from the systems that hold a manufacturer's product and compliance data.
 
 ## Adjacent data standards
 
@@ -22,3 +22,7 @@ ULC does not redistribute the text of any paid or restricted standards. It refer
 ## PIM platforms
 
 See [`pim/`](pim/) for platform-specific emit patterns: [Salsify](pim/salsify.md), [Akeneo](pim/akeneo.md), [SAP](pim/sap.md), and [custom / in-house](pim/custom-pim.md). Start with [`pim/README.md`](pim/README.md) for the six shared translation concerns (record-per-scenario model, dual-unit handling, provenance defaults, source-file hashing, category enum mapping, index generation).
+
+## Where the evidence lives
+
+In most manufacturers, no single system holds everything a ULC record carries. Product attributes live in a PIM or product-master database; test reports, certificates, and compliance documents live with the engineering and quality functions (a PLM system, a document vault, a QMS, or a maintained folder). ULC does not require consolidating them. The emitter reads attributes from one place and evidence documents from another, hashes each document where it lives, and joins the two at emit time. The hash requirement is on the bytes, not on where they are stored.

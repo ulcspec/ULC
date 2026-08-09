@@ -86,7 +86,7 @@ Salsify's asset model maps cleanly to ULC's `source_files[]`:
 | `photometric_ldt` | `ldt` |
 | `installation_instructions` | `installation_instructions_pdf` |
 
-The emitter streams each asset by its Salsify asset ID, computes SHA-256, and populates `source_files[].reference.{filename, sha256, url, revision_label, revision_date}`. `revision_label` comes from Salsify's asset version number; `revision_date` from the asset's `updated_at` timestamp.
+The emitter streams each asset by its Salsify asset ID, computes SHA-256, and populates `source_files[].reference.{filename, sha256, url, revision_label, revision_date}`. `revision_label` comes from Salsify's asset version number; `revision_date` from the date portion (`YYYY-MM-DD`) of the asset's `updated_at` timestamp.
 
 **The cutsheet file populates both `source_files[]` and `product_family.cutsheet`.** `product_family.cutsheet` is a graded core requirement, so an emitter that writes only the `source_files[]` entry produces a record that grades `incomplete` rather than `core` (it still validates and carries a roadmap naming the cutsheet). When the Salsify `cutsheet_pdf` asset is streamed and hashed, copy the computed `{filename, sha256, url, revision_label, revision_date}` into `product_family.cutsheet` as well. The same bytes live in one place on disk; the record references them twice with different consumer semantics.
 

@@ -234,7 +234,7 @@ func TestConvertFromXLSX(t *testing.T) {
 	}
 	report := findings.NewReport()
 	v.Validate(tree, report)
-	validate.VerifyHashes(dir, res.Record, report)
+	validate.VerifyFileReferences(dir, res.Record, validate.VerifyOptions{}, report)
 	report.Finalize()
 	if report.HasErrors() {
 		buf := &bytes.Buffer{}

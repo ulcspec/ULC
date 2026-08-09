@@ -527,6 +527,83 @@ func TestValidatorConstrainsDomesticContentTheme(t *testing.T) {
 	}
 }
 
+// TestValidatorAssertsDeclaredFormats asserts the compiler runs the schema's
+// declared `format` keywords as checks rather than annotations: a malformed
+// date and a relative URI are each a schema violation at their own JSON
+// Pointer, and well-formed values in both families still validate. This is the
+// test that fails the day the AssertFormat call is dropped from compile.
+func TestValidatorAssertsDeclaredFormats(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		return m
+	}
+	setFirstSourceFileURL := func(m map[string]any, url string) {
+		sf, _ := m["source_files"].([]any)
+		if len(sf) == 0 {
+			t.Fatalf("erco record has no source_files to mutate")
+		}
+		first, ok := sf[0].(map[string]any)
+		if !ok {
+			t.Fatalf("first source_files entry is not an object")
+		}
+		ref, ok := first["reference"].(map[string]any)
+		if !ok {
+			t.Fatalf("first source_files entry has no reference object")
+		}
+		ref["url"] = url
+	}
+	// Assert the pointer and the code only: the library owns the message text.
+	wantViolationAt := func(t *testing.T, r *findings.Report, pointer string) {
+		t.Helper()
+		for _, f := range r.Findings {
+			if f.Code == findings.CodeSchemaViolation && f.Path == pointer {
+				return
+			}
+		}
+		t.Errorf("expected a %q finding at %q; got: %+v", findings.CodeSchemaViolation, pointer, r.Findings)
+	}
+
+	// A spreadsheet date serial where an ISO date belongs.
+	t.Run("date serial in record_status_as_of", func(t *testing.T) {
+		m := load()
+		m["record_status_as_of"] = "46082"
+		r := findings.NewReport()
+		v.Validate(m, r)
+		wantViolationAt(t, r, "/record_status_as_of")
+	})
+
+	// format: uri requires an absolute URI, so a relative reference is rejected.
+	t.Run("relative url on a file reference", func(t *testing.T) {
+		m := load()
+		setFirstSourceFileURL(m, "files/datasheet.pdf")
+		r := findings.NewReport()
+		v.Validate(m, r)
+		wantViolationAt(t, r, "/source_files/0/reference/url")
+	})
+
+	// Positive floor: an absolute url beside the record's shipped ISO
+	// record_status_as_of validates, so the assertion cannot pass by rejecting
+	// every value.
+	t.Run("well-formed values validate", func(t *testing.T) {
+		m := load()
+		setFirstSourceFileURL(m, "https://example.com/datasheet.pdf")
+		r := findings.NewReport()
+		v.Validate(m, r)
+		if r.HasErrors() {
+			t.Errorf("well-formed format values must validate; got: %+v", r.Findings)
+		}
+	})
+}
+
 func TestFindSchemaDirExplicit(t *testing.T) {
 	root := repoRoot(t)
 	schemaDir := filepath.Join(root, "schema")

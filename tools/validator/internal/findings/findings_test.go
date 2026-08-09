@@ -322,3 +322,120 @@ func TestAchievementsFindingSuppression(t *testing.T) {
 		}
 	}
 }
+
+// TestWriteJSONEscapesHTMLCharacters pins the escaping contract validate's
+// --json shares with `ulc scope`. The six-character sequences below are
+// literal: \u003c, \u003e, \u0026. If they ever collapse into bare <, >, and &
+// this test contradicts itself and asserts nothing.
+func TestWriteJSONEscapesHTMLCharacters(t *testing.T) {
+	r := NewReport()
+	r.AddError(CodeSourceFileHashMismatch, "/source_files/0/reference", `filename <a href="x">&</a> is odd`)
+	r.Finalize()
+
+	var buf bytes.Buffer
+	if err := r.WriteJSON(&buf); err != nil {
+		t.Fatalf("WriteJSON: %v", err)
+	}
+	out := buf.String()
+
+	for _, want := range []string{`\u003c`, `\u003e`, `\u0026`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output does not contain %s:\n%s", want, out)
+		}
+	}
+	for _, bad := range []string{"<", ">", "&"} {
+		if strings.Contains(out, bad) {
+			t.Errorf("output still contains a raw %q:\n%s", bad, out)
+		}
+	}
+
+	// Escaping is a byte-level concern only: the parsed value is unchanged.
+	var envelope struct {
+		Findings []struct {
+			Message string `json:"message"`
+		} `json:"findings"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &envelope); err != nil {
+		t.Fatalf("parse output: %v", err)
+	}
+	if len(envelope.Findings) != 1 || envelope.Findings[0].Message != `filename <a href="x">&</a> is odd` {
+		t.Errorf("round-trip changed the message: %+v", envelope.Findings)
+	}
+
+	// WriteText keeps the literals: the sanitizer touches control characters,
+	// never printable ones.
+	var text bytes.Buffer
+	if err := r.WriteText(&text, "record.ulc"); err != nil {
+		t.Fatalf("WriteText: %v", err)
+	}
+	if !strings.Contains(text.String(), `<a href="x">&</a>`) {
+		t.Errorf("text output should keep the literal characters:\n%s", text.String())
+	}
+}
+
+// TestSanitizeTextEscapesControlCharacters pins the render boundary: a
+// record-supplied string cannot forge report lines or drive the terminal.
+func TestSanitizeTextEscapesControlCharacters(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"plain.pdf", "plain.pdf"},
+		{"esc\x1b[31m.pdf", `esc\x1B[31m.pdf`},
+		{"forged\nERROR fake at /x: boom.pdf", `forged\x0AERROR fake at /x: boom.pdf`},
+		{"del\x7f.pdf", `del\x7F.pdf`},
+		{"c1\u0085next.pdf", `c1\x85next.pdf`},
+		{"tab\there", `tab\x09here`},
+		{"unicode \u00e9 \u4e2d stays", "unicode \u00e9 \u4e2d stays"},
+		// Bidi overrides reorder rendered text with no control character
+		// present, so a filename can display as a different name from the one
+		// whose bytes were hashed. Escapes above U+00FF use the wider form so
+		// the escape's own width is unambiguous.
+		{"report\u202Egpj.tnetap", `report\u202Egpj.tnetap`},
+		{"iso\u2066late\u2069.pdf", `iso\u2066late\u2069.pdf`},
+		{"mark\u200Ehere.pdf", `mark\u200Ehere.pdf`},
+		{"sep\u2028next.pdf", `sep\u2028next.pdf`},
+		// A raw byte that is not valid UTF-8 is escaped as itself: 0x9B is CSI
+		// on a terminal that is not reading UTF-8, and decoding it to the
+		// replacement rune first would let it through untouched.
+		{"raw\x9bcsi.pdf", `raw\x9Bcsi.pdf`},
+		{"raw\xffbyte.pdf", `raw\xFFbyte.pdf`},
+	}
+	for _, c := range cases {
+		if got := SanitizeText(c.in); got != c.want {
+			t.Errorf("SanitizeText(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// TestWriteTextSanitizesRecordControlledStrings drives the whole rendering
+// path with a hostile path, message, and record name.
+func TestWriteTextSanitizesRecordControlledStrings(t *testing.T) {
+	r := NewReport()
+	r.AddError(CodeSourceFileHashMismatch,
+		"/source_files/0/reference\nERROR forged/code at /nowhere: injected",
+		"SHA-256 mismatch for evil\x1b[2Jname\x7f.pdf")
+	r.Finalize()
+
+	var buf bytes.Buffer
+	if err := r.WriteText(&buf, "record\x1b]0;pwned\x07.ulc"); err != nil {
+		t.Fatalf("WriteText: %v", err)
+	}
+	out := buf.String()
+
+	for _, b := range []byte(out) {
+		if b == '\n' {
+			continue
+		}
+		if b < 0x20 || b == 0x7F {
+			t.Fatalf("control byte %#x survived rendering:\n%q", b, out)
+		}
+	}
+	// One line per rendered finding, plus the blank line and the footer the
+	// writer always emits. A forged newline would push this past three.
+	if got := strings.Count(out, "\n"); got != 3 {
+		t.Errorf("line terminators = %d, want 3 (one finding, one blank, one footer):\n%q", got, out)
+	}
+	if !strings.Contains(out, `\x0AERROR forged/code`) {
+		t.Errorf("the forged line should render as escaped text:\n%s", out)
+	}
+}

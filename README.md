@@ -52,11 +52,7 @@ A second, orthogonal axis, **Product Achievements**, is computed from the same r
 
 ## Source inputs
 
-ULC is designed around the three source types realistically available across the industry today:
-
-- PDF datasheets
-- IES photometric files (ANSI/IES LM-63)
-- EULUMDAT photometric files (LDT)
+ULC is designed around the source documents manufacturers actually publish. The primary sources are PDF datasheets, IES photometric files (ANSI/IES LM-63), and EULUMDAT photometric files (LDT); the full `SourceFileType` vocabulary also covers driver datasheets, installation instructions, test reports, compliance certificates, and the other document types a record can reference by hash.
 
 Additional source types and fields may be supported in future versions.
 
@@ -125,7 +121,7 @@ To check the current state of manufacturer adoption (which manufacturers have pu
 
 ## Project status
 
-The current release is `1.2.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
+The current release is `1.3.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
 
 The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 

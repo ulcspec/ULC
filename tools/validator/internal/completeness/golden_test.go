@@ -34,7 +34,7 @@ var updateGolden = flag.Bool("update-golden", false, "rewrite the golden compat 
 //     verbatim (it does not basename), so passing the base name keeps the header
 //     and footer host-independent.
 //   - Verbose and OmitFlagHint are false (the validate-path defaults).
-//   - validate.VerifyHashes is NOT called, so the machine-varying
+//   - validate.VerifyFileReferences is NOT called, so the machine-varying
 //     source-file/not-found-locally INFO findings stay out of the buffers.
 //
 // The test globs examples/*.ulc, so the three v0.10.0 exit-sign records

@@ -64,7 +64,7 @@ func TestVerifyHashesAllOutcomes(t *testing.T) {
 	}
 
 	report := findings.NewReport()
-	VerifyHashes(tmp, record, report)
+	VerifyFileReferences(tmp, record, VerifyOptions{}, report)
 
 	var (
 		errs  []findings.Finding
@@ -128,7 +128,7 @@ func TestVerifyHashesRefusesAbsolutePath(t *testing.T) {
 		},
 	}
 	report := findings.NewReport()
-	VerifyHashes(tmp, record, report)
+	VerifyFileReferences(tmp, record, VerifyOptions{}, report)
 
 	if len(report.Findings) != 1 {
 		t.Fatalf("expected exactly 1 finding, got %d (%v)", len(report.Findings), report.Findings)
@@ -172,7 +172,7 @@ func TestVerifyHashesRefusesTraversal(t *testing.T) {
 		},
 	}
 	report := findings.NewReport()
-	VerifyHashes(recordDir, record, report)
+	VerifyFileReferences(recordDir, record, VerifyOptions{}, report)
 
 	if len(report.Findings) != 1 {
 		t.Fatalf("expected exactly 1 finding, got %d (%v)", len(report.Findings), report.Findings)
@@ -218,7 +218,7 @@ func TestVerifyHashesRefusesSymlinkEscape(t *testing.T) {
 		},
 	}
 	report := findings.NewReport()
-	VerifyHashes(recordDir, record, report)
+	VerifyFileReferences(recordDir, record, VerifyOptions{}, report)
 
 	if len(report.Findings) != 1 {
 		t.Fatalf("expected exactly 1 finding, got %d (%v)", len(report.Findings), report.Findings)
@@ -260,7 +260,7 @@ func TestVerifyHashesAllowsSymlinkInside(t *testing.T) {
 		},
 	}
 	report := findings.NewReport()
-	VerifyHashes(recordDir, record, report)
+	VerifyFileReferences(recordDir, record, VerifyOptions{}, report)
 
 	if len(report.Findings) != 0 {
 		t.Fatalf("expected 0 findings for in-scope symlink, got %d (%v)",
@@ -291,7 +291,7 @@ func TestVerifyHashesAllowsNestedPath(t *testing.T) {
 		},
 	}
 	report := findings.NewReport()
-	VerifyHashes(recordDir, record, report)
+	VerifyFileReferences(recordDir, record, VerifyOptions{}, report)
 
 	if len(report.Findings) != 0 {
 		t.Fatalf("expected 0 findings for valid nested path, got %d (%v)",
@@ -315,7 +315,7 @@ func TestVerifyHashesSkipsFlatShape(t *testing.T) {
 		},
 	}
 	report := findings.NewReport()
-	VerifyHashes("/tmp", record, report)
+	VerifyFileReferences("/tmp", record, VerifyOptions{}, report)
 	if len(report.Findings) != 0 {
 		t.Fatalf("expected no hash findings for malformed entry, got %v", report.Findings)
 	}

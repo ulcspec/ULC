@@ -84,7 +84,7 @@ func TestConvertPatternA(t *testing.T) {
 	}
 	report := findings.NewReport()
 	v.Validate(tree, report)
-	validate.VerifyHashes(filepath.Join("testdata", "bundle"), res.Record, report)
+	validate.VerifyFileReferences(filepath.Join("testdata", "bundle"), res.Record, validate.VerifyOptions{}, report)
 	report.Finalize()
 
 	if report.HasErrors() {
@@ -213,7 +213,7 @@ func convertOne(t *testing.T, bundle string, wantPattern Pattern, wantLevel comp
 	}
 	report := findings.NewReport()
 	v.Validate(tree, report)
-	validate.VerifyHashes(bundle, res.Record, report)
+	validate.VerifyFileReferences(bundle, res.Record, validate.VerifyOptions{}, report)
 	report.Finalize()
 	if report.HasErrors() {
 		buf := &bytes.Buffer{}

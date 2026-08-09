@@ -113,10 +113,19 @@ derivation on the length axis is Pattern D.
 The `.xlsx` reader is faithful to the cell text, not to Excel's display formatting,
 so author with that in mind:
 
-- **Dates as text.** Type dates as ISO strings (`2026-02-01`), not as Excel date
-  cells. An Excel date cell stores a serial number (for example `46054`), and the
-  reader passes the stored value through verbatim. ISO text reads identically from
-  a CSV and an `.xlsx`.
+- **Format date and identifier columns as Text before typing.** In a spreadsheet
+  application, format the date columns and identifier columns such as
+  `catalog_number` as Text before entering any data. Spreadsheets re-type as you
+  enter: an ISO date typed into a General cell is stored as its serial number (for
+  example `46054`), and an identifier such as `1200.40` is stored as the number
+  `1200.4`, with the trailing zero gone from the file itself. The reader passes the
+  stored value through verbatim, and no tool can restore a character the file no
+  longer contains. A leading apostrophe (`'2026-02-01`) forces text entry cell by
+  cell; formatting the column as Text first does it wholesale.
+- **Dates as ISO text.** Type dates as ISO strings (`2026-02-01`). ISO text reads
+  identically from a CSV and an `.xlsx`, and schema validation rejects any date
+  that is not `YYYY-MM-DD`, so a serial-number slip is caught at conversion instead
+  of landing in a record.
 - **Plain numbers.** Author numerics as plain numbers without cell-level rounding.
   Excel stores the full precision of a value, so a displayed `0.33` that is really
   `0.333333` is read as `0.333333`.

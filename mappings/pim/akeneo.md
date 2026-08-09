@@ -90,7 +90,7 @@ In Community Edition (no Asset Manager), cutsheet files typically live as plain 
 | `photometric_ldt` asset | `ldt` |
 | `installation_pdf` asset | `installation_instructions_pdf` |
 
-Asset version maps to `reference.revision_label`; `updated_at` to `reference.revision_date`.
+Asset version maps to `reference.revision_label`; the date portion (`YYYY-MM-DD`) of `updated_at` to `reference.revision_date`.
 
 The cutsheet asset populates **both** `source_files[]` (as the entry with `file_type: "datasheet_pdf"`) **and** `product_family.cutsheet` (a graded core requirement). Stream and hash once, write the same `FileReference` fields in both places; an emitter that only populates `source_files[]` produces a record that grades `incomplete` rather than `core`.
 

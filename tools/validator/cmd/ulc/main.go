@@ -92,20 +92,24 @@ func runValidate(args []string) int {
 	var expiry bool
 	var asOf string
 	var expiryWindow int
+	var verifyEvidence bool
 	fs.BoolVar(&jsonOut, "json", false, "Emit findings as machine-readable JSON instead of human-readable text.")
 	fs.BoolVar(&verbose, "verbose", false, "Include the optional conformance and achievement findings (the enrichment roadmap, observation notes, and per-theme achievement state and roadmap) in text output. JSON always includes them.")
 	fs.StringVar(&schemaDir, "schema-dir", "", "Directory containing ulc.schema.json and taxonomy.schema.json. Auto-detected when omitted.")
 	fs.BoolVar(&expiry, "expiry", false, "Opt in to the advisory attestation-expiry check. Advisory: never changes the exit code or the computed index.")
 	fs.StringVar(&asOf, "as-of", "", "Evaluation date for --expiry as YYYY-MM-DD (default: today). Requires --expiry.")
 	fs.IntVar(&expiryWindow, "expiry-window", 90, "Days ahead to flag upcoming expiry for --expiry (0..36500). Requires --expiry.")
+	fs.BoolVar(&verifyEvidence, "verify-evidence", false, "Also byte-verify attestation evidence documents (source_document_ref). Absent files stay INFO; a hash mismatch is an ERROR.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc validate -- validate a ULC record against the ULC schema.
 
 Runs the following checks and emits a findings report:
-  1. JSON Schema Draft 2020-12 structural validation
+  1. JSON Schema Draft 2020-12 validation (structure and declared value formats)
   2. Builder parity (stored index matches the deterministic projection,
      including the computed index.conformance_level)
-  3. Source-file SHA-256 hash verification (when files are reachable locally)
+  3. File-reference SHA-256 hash verification (when files are reachable
+     locally): source_files entries, the family cutsheet, and the emergency
+     photometry reference
   4. Conformance report (INFO: the computed grade plus a per-grade roadmap to full)
   5. Product Achievements report (INFO: the per-theme achievement summary; the
      per-theme state and roadmap show under --verbose or --json)
@@ -117,13 +121,20 @@ Optional expiry advisory (opt in with --expiry):
   --expiry-window N   Days ahead to flag upcoming expiry, 0..36500 (default: 90).
                       Requires --expiry.
 
+Optional evidence verification (opt in with --verify-evidence):
+  --verify-evidence   Also byte-verify attestation evidence documents
+                      (attestations and product_family.shared_attestations
+                      source_document_ref entries). A locally absent document
+                      stays INFO; a document whose SHA-256 does not match is
+                      an ERROR and fails validation.
+
 Exit codes:
   0   no ERROR findings (WARNING and INFO do not fail validation)
   1   at least one ERROR finding
   2   usage error
 
 USAGE
-    ulc validate [--json] [--verbose] [--schema-dir PATH]
+    ulc validate [--json] [--verbose] [--schema-dir PATH] [--verify-evidence]
                  [--expiry [--as-of DATE] [--expiry-window N]] <record.ulc>
 `)
 	}
@@ -236,9 +247,9 @@ USAGE
 		}
 	}
 
-	// 3. Source-file hash verification (read files relative to the record).
+	// 3. File-reference hash verification (read files relative to the record).
 	recordDir := filepath.Dir(recordPath)
-	validate.VerifyHashes(recordDir, recordMap, report)
+	validate.VerifyFileReferences(recordDir, recordMap, validate.VerifyOptions{Evidence: verifyEvidence}, report)
 
 	// 4. Conformance report. The achieved grade was already computed by the
 	// builder and stored in index.conformance_level, and the parity step above
@@ -337,7 +348,10 @@ USAGE
 		if diffs := index.Diff(stored, built); len(diffs) > 0 {
 			fmt.Fprintf(os.Stderr, "Index drift in %s:\n", recordPath)
 			for _, d := range diffs {
-				fmt.Fprintln(os.Stderr, d)
+				// Each line quotes the record's own stored index values, and
+				// this subcommand runs no schema validation, so they are
+				// arbitrary record-supplied strings.
+				fmt.Fprintln(os.Stderr, findings.SanitizeText(d))
 			}
 			return 1
 		}
@@ -406,7 +420,9 @@ USAGE
 		AllowMissingFiles: allowMissing,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
+		// The converter quotes workbook content (column headers, cell values)
+		// into its errors, and the workbook is the untrusted input here.
+		fmt.Fprintf(os.Stderr, "ulc from-sheet: %s\n", findings.SanitizeText(err.Error()))
 		return 1
 	}
 
@@ -432,7 +448,7 @@ USAGE
 	sawSentinel := false
 	for _, res := range results {
 		for _, w := range res.Warnings {
-			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", res.RecordID, w)
+			fmt.Fprintf(os.Stderr, "warning: %s: %s\n", findings.SanitizeText(res.RecordID), findings.SanitizeText(w))
 		}
 		recordSentinel := res.HasMissingFileSentinel
 		if recordSentinel {
@@ -441,7 +457,7 @@ USAGE
 
 		built := index.Build(res.Record)
 		if missing := index.MissingRequiredKeys(built); len(missing) > 0 {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: %s: builder cannot derive required index keys:\n", res.RecordID)
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: %s: builder cannot derive required index keys:\n", findings.SanitizeText(res.RecordID))
 			for _, key := range missing {
 				src := index.RequiredKeySources[key]
 				if src == "" {
@@ -461,7 +477,7 @@ USAGE
 		// validated record, so it is never written to --out (the run also exits
 		// non-zero below).
 		if recordSentinel {
-			fmt.Printf("%s -> DRAFT, not written (references files not present; --allow-missing-files stamped placeholder hashes)\n", res.RecordID)
+			fmt.Printf("%s -> DRAFT, not written (references files not present; --allow-missing-files stamped placeholder hashes)\n", findings.SanitizeText(res.RecordID))
 			continue
 		}
 
@@ -483,7 +499,7 @@ USAGE
 		report.OmitFlagHint = true
 		rawTree, derr := decodeStrict(recordBytes)
 		if derr != nil {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", res.RecordID, derr)
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: parse %s: %v\n", findings.SanitizeText(res.RecordID), derr)
 			failed = true
 			continue
 		}
@@ -496,7 +512,7 @@ USAGE
 		// so the level string is never empty.
 		level, _ := built["conformance_level"].(string)
 		if report.HasErrors() {
-			fmt.Printf("%s -> %s (%d findings, not written)\n", res.RecordID, level, len(report.Findings))
+			fmt.Printf("%s -> %s (%d findings, not written)\n", findings.SanitizeText(res.RecordID), level, len(report.Findings))
 			if err := report.WriteText(os.Stderr, outPath); err != nil {
 				fmt.Fprintf(os.Stderr, "ulc from-sheet: write report: %v\n", err)
 			}
@@ -504,7 +520,7 @@ USAGE
 			continue
 		}
 		if err := os.WriteFile(outPath, recordBytes, 0o644); err != nil {
-			fmt.Fprintf(os.Stderr, "ulc from-sheet: write %s: %v\n", outPath, err)
+			fmt.Fprintf(os.Stderr, "ulc from-sheet: write %s: %v\n", findings.SanitizeText(outPath), err)
 			failed = true
 			continue
 		}
@@ -512,9 +528,9 @@ USAGE
 		// record and flag that it is not yet a publishable grade. The roadmap in the
 		// report names what core still needs.
 		if level == completeness.LevelIncomplete.String() {
-			fmt.Printf("%s -> incomplete (below core; see roadmap) (%d findings)\n", res.RecordID, len(report.Findings))
+			fmt.Printf("%s -> incomplete (below core; see roadmap) (%d findings)\n", findings.SanitizeText(res.RecordID), len(report.Findings))
 		} else {
-			fmt.Printf("%s -> %s (%d findings)\n", res.RecordID, level, len(report.Findings))
+			fmt.Printf("%s -> %s (%d findings)\n", findings.SanitizeText(res.RecordID), level, len(report.Findings))
 		}
 	}
 
@@ -537,8 +553,10 @@ USAGE
 // escapeHTML selects the encoder's treatment of <, > and &: build-index leaves
 // them literal to preserve the record's own byte shape, while scope escapes them
 // because its document carries record-controlled strings a consumer may inline
-// into a page. Both directions are pinned by tests; the setting is public
-// contract for each subcommand, not an implementation detail.
+// into a page. Validate's --json report escapes them for the same reason (see
+// findings.WriteJSON, which owns that encoder). Both directions are pinned by
+// tests; the setting is public contract for each subcommand, not an
+// implementation detail.
 func printJSON(subcommand string, v any, escapeHTML bool) int {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
