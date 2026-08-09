@@ -104,7 +104,7 @@ func runValidate(args []string) int {
 		fmt.Fprint(os.Stderr, `ulc validate -- validate a ULC record against the ULC schema.
 
 Runs the following checks and emits a findings report:
-  1. JSON Schema Draft 2020-12 structural validation
+  1. JSON Schema Draft 2020-12 validation (structure and declared value formats)
   2. Builder parity (stored index matches the deterministic projection,
      including the computed index.conformance_level)
   3. File-reference SHA-256 hash verification (when files are reachable

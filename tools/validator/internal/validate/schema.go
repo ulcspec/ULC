@@ -66,6 +66,7 @@ func NewValidatorEmbedded() (*Validator, error) {
 // registered under, so the compiler never needs a network fetch.
 func compile(ulcDoc, taxDoc any) (*Validator, error) {
 	compiler := jsonschema.NewCompiler()
+	compiler.AssertFormat()
 	if err := compiler.AddResource(ulcSchemaURL, ulcDoc); err != nil {
 		return nil, fmt.Errorf("register ulc.schema.json: %w", err)
 	}
