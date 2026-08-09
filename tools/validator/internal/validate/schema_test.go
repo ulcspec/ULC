@@ -2,12 +2,15 @@ package validate
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
 
+	embedded "github.com/ulcspec/ULC/schema"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 )
 
@@ -602,6 +605,242 @@ func TestValidatorAssertsDeclaredFormats(t *testing.T) {
 			t.Errorf("well-formed format values must validate; got: %+v", r.Findings)
 		}
 	})
+}
+
+// TestValidatorConstrainsSupersededBy pins the SupersessionReference
+// constraints: at least one of the three naming members is required, the
+// record_sha256 pin is only meaningful alongside record_id, and both patterned
+// members reject malformed values.
+func TestValidatorConstrainsSupersededBy(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	const hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	validate := func(ref map[string]any) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		m["superseded_by"] = ref
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+
+	accepted := map[string]map[string]any{
+		"record_id alone":      {"record_id": "acme-orbit-2400-3000k"},
+		"catalog_number alone": {"catalog_number": "ORB-2400-30K-90"},
+		"catalog_model alone":  {"catalog_model": "ORB-2400"},
+		"record_id with catalog_number and a hash pin": {
+			"record_id":      "acme-orbit-2400-3000k",
+			"catalog_number": "ORB-2400-30K-90",
+			"record_sha256":  hash,
+		},
+	}
+	for name, ref := range accepted {
+		t.Run("accepts "+name, func(t *testing.T) {
+			if r := validate(ref); r.HasErrors() {
+				t.Errorf("expected a valid supersession reference; got: %+v", r.Findings)
+			}
+		})
+	}
+
+	rejected := map[string]map[string]any{
+		"an empty object":              {},
+		"a hash pin without record_id": {"record_sha256": hash},
+		"a malformed record_id slug":   {"record_id": "Bad_Slug"},
+		"a malformed record_sha256":    {"record_id": "acme-orbit-2400-3000k", "record_sha256": "xyz"},
+	}
+	for name, ref := range rejected {
+		t.Run("rejects "+name, func(t *testing.T) {
+			if r := validate(ref); !r.HasErrors() {
+				t.Errorf("expected a schema error for %s, got none", name)
+			}
+		})
+	}
+}
+
+// TestValidatorConstrainsWarrantyTermBasis pins the closed WarrantyTermBasis
+// token set at product_family.shared_warranty.term_basis.
+func TestValidatorConstrainsWarrantyTermBasis(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	validate := func(basis string) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		fam, ok := m["product_family"].(map[string]any)
+		if !ok {
+			t.Fatalf("record has no product_family object")
+		}
+		warranty, ok := fam["shared_warranty"].(map[string]any)
+		if !ok {
+			warranty = map[string]any{}
+			fam["shared_warranty"] = warranty
+		}
+		warranty["term_basis"] = basis
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+
+	for _, token := range []string{"invoice", "shipment", "installation", "energization"} {
+		t.Run("accepts "+token, func(t *testing.T) {
+			if r := validate(token); r.HasErrors() {
+				t.Errorf("expected %q to validate; got: %+v", token, r.Findings)
+			}
+		})
+	}
+	t.Run("rejects an unlisted basis", func(t *testing.T) {
+		if r := validate("purchase"); !r.HasErrors() {
+			t.Error("expected a schema error for an unlisted warranty term basis, got none")
+		}
+	})
+}
+
+// TestValidatorConstrainsWarrantyConditionsDocument asserts the new
+// conditions_document site carries the FileReference shape, hash included.
+func TestValidatorConstrainsWarrantyConditionsDocument(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	validate := func(ref map[string]any) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		fam, ok := m["product_family"].(map[string]any)
+		if !ok {
+			t.Fatalf("record has no product_family object")
+		}
+		warranty, ok := fam["shared_warranty"].(map[string]any)
+		if !ok {
+			warranty = map[string]any{}
+			fam["shared_warranty"] = warranty
+		}
+		warranty["conditions_document"] = ref
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+
+	full := map[string]any{
+		"filename":      "warranty-conditions.pdf",
+		"sha256":        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		"revision_date": "2026-01-15",
+	}
+	if r := validate(full); r.HasErrors() {
+		t.Errorf("expected a complete file reference to validate; got: %+v", r.Findings)
+	}
+	if r := validate(map[string]any{"filename": "warranty-conditions.pdf"}); !r.HasErrors() {
+		t.Error("expected a schema error for a conditions_document with no sha256, got none")
+	}
+}
+
+// TestValidatorConstrainsDiscontinuedAt asserts discontinued_at is checked as
+// an ISO 8601 date rather than accepted as free text: the validator asserts
+// declared string formats, so a spreadsheet serial, a slash date, and an
+// out-of-range ISO value are each a violation at the field's own pointer.
+func TestValidatorConstrainsDiscontinuedAt(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	validate := func(value string) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		m["discontinued_at"] = value
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+
+	if r := validate("2027-03-31"); r.HasErrors() {
+		t.Errorf("expected an ISO date to validate; got: %+v", r.Findings)
+	}
+	for _, bad := range []string{"46082", "3/1/26", "2026-13-45"} {
+		t.Run("rejects "+bad, func(t *testing.T) {
+			r := validate(bad)
+			for _, f := range r.Findings {
+				if f.Code == findings.CodeSchemaViolation && f.Path == "/discontinued_at" {
+					return
+				}
+			}
+			t.Errorf("expected a %q finding at %q; got: %+v", findings.CodeSchemaViolation, "/discontinued_at", r.Findings)
+		})
+	}
+}
+
+// TestSchemaFormatDeclarationsAreAsserted guards the two properties that make
+// a declared format load-bearing, at every site in both schema documents.
+// First, the format name is one the compiler actually asserts: an unrecognized
+// name is accepted silently and leaves the site unchecked, so a typo would
+// ship a field that looks constrained and is not, with every other test still
+// green. Adding a new format name to ULC means extending the pinned set here,
+// at which point the author confirms the library asserts it. Second, the same
+// subschema declares type string: the format checks return without complaint
+// for non-string instances, so the pairing is what makes the check run.
+func TestSchemaFormatDeclarationsAreAsserted(t *testing.T) {
+	assertedFormats := map[string]bool{"date": true, "uri": true}
+
+	var sites []string
+	var walk func(node any, ptr string)
+	walk = func(node any, ptr string) {
+		switch n := node.(type) {
+		case []any:
+			for i, v := range n {
+				walk(v, fmt.Sprintf("%s/%d", ptr, i))
+			}
+		case map[string]any:
+			if raw, ok := n["format"]; ok {
+				name, isString := raw.(string)
+				if !isString {
+					t.Errorf("%s: format is %T, want a string", ptr, raw)
+				} else if !assertedFormats[name] {
+					t.Errorf("%s: format %q is outside the asserted set {date, uri}; an unrecognized name leaves the site unchecked", ptr, name)
+				}
+				if n["type"] != "string" {
+					t.Errorf("%s: a subschema declaring format must declare type string, got type %v", ptr, n["type"])
+				}
+				sites = append(sites, ptr)
+			}
+			for k, v := range n {
+				walk(v, ptr+"/"+k)
+			}
+		}
+	}
+
+	for _, doc := range []struct {
+		name string
+		raw  []byte
+	}{
+		{"ulc.schema.json", embedded.ULCSchemaJSON},
+		{"taxonomy.schema.json", embedded.TaxonomySchemaJSON},
+	} {
+		var parsed map[string]any
+		if err := json.Unmarshal(doc.raw, &parsed); err != nil {
+			t.Fatalf("parse %s: %v", doc.name, err)
+		}
+		walk(parsed, doc.name)
+	}
+	if len(sites) == 0 {
+		t.Fatal("no format declarations found, so this guard checked nothing")
+	}
 }
 
 func TestFindSchemaDirExplicit(t *testing.T) {

@@ -1313,6 +1313,18 @@
       ]
     },
 
+    "WarrantyTermBasis": {
+      "title": "Warranty term basis",
+      "description": "The commencement event a warranty term runs from. `invoice` means the term runs from the invoice or purchase date. `shipment` means it runs from the date the product ships from the factory. `installation` means it runs from completed installation. `energization` means it runs from the date the product is first powered on in service. Published warranty terms of identical length differ materially by basis, which is why the basis is carried beside the term rather than inferred.",
+      "type": "string",
+      "enum": [
+        "invoice",
+        "shipment",
+        "installation",
+        "energization"
+      ]
+    },
+
     "DimmingMethod": {
       "title": "Dimming method",
       "description": "The underlying electrical method by which the driver changes LED output. Independent of the control protocol (DimmingProtocol), which is the signaling layer. `ccr` means constant current reduction (LED forward current is reduced directly) and is typical of architectural drivers for lowest-noise operation. `pwm` means pulse-width modulation (the LED is switched on and off at high frequency with varying duty cycle) and is typical of color-changing and precise-dim applications. `hybrid` combines CCR at higher dim levels with PWM at lower levels to extend the dim range while minimizing visible flicker.",

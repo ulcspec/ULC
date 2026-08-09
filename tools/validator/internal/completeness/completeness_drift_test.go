@@ -374,6 +374,12 @@ var descriptiveAllowlist = map[string]bool{
 	// the emergency-mode enrichment predicates (emergencyModeRoles) but carried as no row's
 	// taxonomy, so the disjointness guard stays clean.
 	"EmergencyRole": true,
+
+	// --- v1.4.0 lifecycle and warranty class ---
+	// Warranty sub-structure: term_years carries the enrichment row; the basis
+	// token qualifies that term and stays descriptive (tracked, not graded),
+	// the same treatment the attestation sub-structure enums receive above.
+	"WarrantyTermBasis": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from
