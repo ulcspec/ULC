@@ -489,11 +489,13 @@ cie97_lmf / cie97_llmf) add full-level depth when present.
 --json emits one JSON document on stdout: from_sheet_version (additive-only
 contract, currently 1.0.0), cli_version, one records[] entry per converted
 record (record_id, pattern, status written/draft/failed, conformance_level,
-warnings, path or draft_path where a file was written, and findings in the
-same shape ulc validate --json emits for records that reached validation),
-and a summary rollup. Exit codes are unchanged. A workbook-level conversion
-error (before records are assembled) produces no document; the error goes
-to stderr.
+warnings, path or draft_path where a file was written, missing_index_keys
+naming any required index keys the builder could not derive, error carrying
+a short reason when a record failed outside schema validation, and findings
+in the same shape ulc validate --json emits for records that reached
+validation), and a summary rollup. Exit codes are unchanged. A workbook-level
+conversion error (before records are assembled) produces no document; the
+error goes to stderr.
 
 Exit codes:
   0   every record assembled, built, and passed schema validation
