@@ -444,3 +444,84 @@ func TestCLIFromSheetRejectsOversizedArchive(t *testing.T) {
 		t.Errorf("stderr with --json does not name the limit:\n%s", stderr)
 	}
 }
+
+// TestCLIFromSheetDraftOutAfterPositional guards --draft-out's valueFlags
+// registration. reorderFlagsFirst partitions the argument list, and a
+// value-taking flag it does not know about has its value read as a second
+// positional, so `ulc from-sheet BUNDLE --draft-out DIR` degrades to a usage
+// error. Every other value-taking flag carries the same pin.
+func TestCLIFromSheetDraftOutAfterPositional(t *testing.T) {
+	bundle := sheetBundle(t)
+	rewriteRecordsCell(t, bundle, "cutsheet_file", "not-in-the-bundle.pdf")
+	outDir, draftDir := t.TempDir(), t.TempDir()
+
+	_, _, code := captureOutErr(t, func() int {
+		// Flag AFTER the positional, value space-separated.
+		return runFromSheet([]string{bundle, "--allow-missing-files", "--draft-out", draftDir, "--out", outDir})
+	})
+	if code == 2 {
+		t.Fatal("exit 2 (usage error): --draft-out is not registered in valueFlags, so its value was parsed as a second positional")
+	}
+	if code != 1 {
+		t.Errorf("exit code = %d, want 1 (a draft is not a success)", code)
+	}
+	if _, err := os.Stat(filepath.Join(draftDir, "acme-orbit-1200-4000k.draft.json")); err != nil {
+		t.Errorf("draft was not written with the flag after the positional: %v", err)
+	}
+}
+
+// TestCLIFromSheetJSONFailedStatus pins the --json contract's primary failure
+// shape. The refusal-to-write path is otherwise exercised only in text mode, so
+// nothing pinned status "failed" or a non-zero summary.failed in the machine
+// contract.
+func TestCLIFromSheetJSONFailedStatus(t *testing.T) {
+	bundle := sheetBundle(t)
+	// A malformed date fails the format assertion with one ERROR at
+	// /record_status_as_of, so the record reaches validation and is refused.
+	path := filepath.Join(bundle, "records.csv")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read records.csv: %v", err)
+	}
+	lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected a header and one row, got %d lines", len(lines))
+	}
+	lines[0] += ",record_status_as_of"
+	lines[1] += ",3/1/26"
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
+		t.Fatalf("write records.csv: %v", err)
+	}
+
+	outDir := t.TempDir()
+	stdout, code := captureStdout(t, func() int {
+		return runFromSheet([]string{"--out", outDir, "--json", bundle})
+	})
+	if code != 1 {
+		t.Errorf("exit code = %d, want 1", code)
+	}
+
+	doc := decodeReport(t, stdout)
+	if len(doc.Records) != 1 {
+		t.Fatalf("got %d records, want 1", len(doc.Records))
+	}
+	rec := doc.Records[0]
+	if rec.Status != "failed" {
+		t.Errorf("status = %q, want failed", rec.Status)
+	}
+	// This record reached validation, so its reason rides in findings, not in
+	// the error string. The two are not mutually exclusive in general: a record
+	// that validates and then fails its write carries both.
+	if rec.Findings == nil || rec.Findings.Summary == nil {
+		t.Error("a record refused at schema validation must carry its findings report")
+	}
+	if doc.Summary.Failed != 1 {
+		t.Errorf("summary.failed = %d, want 1", doc.Summary.Failed)
+	}
+	if doc.Summary.Written != 0 {
+		t.Errorf("summary.written = %d, want 0", doc.Summary.Written)
+	}
+	if n := countULCRecords(t, outDir); n != 0 {
+		t.Errorf("--out holds %d records; a refused record must not be written", n)
+	}
+}
