@@ -209,3 +209,104 @@ func TestHashFileCachesDigests(t *testing.T) {
 		t.Errorf("a missing file must never be cached, got %v", shared)
 	}
 }
+
+// TestHashFileCacheRespectsMissingAndContainment pins the two ways a cache hit
+// must never override a live check.
+//
+// (a) A file hashed for one record and deleted before the next must not come
+// back from the cache. Resolution fails once the file is gone, so the lookup is
+// skipped and the call takes the missing-file path: the zero sentinel plus a
+// warning under allowMissing, a hard error without it. Returning the first
+// call's digest would write a record to --out carrying a hash for a file that
+// is not on disk, which is the exact gate the cache must not weaken.
+//
+// (b) A cache seeded with a path outside the assets root must not let a lookup
+// bypass containment: the escape is a security boundary that runs on every
+// call, above the cache.
+func TestHashFileCacheRespectsMissingAndContainment(t *testing.T) {
+	t.Run("deleted between calls", func(t *testing.T) {
+		// The cache keys on the resolved path, so this probe needs a root whose
+		// own path is already symlink-free; otherwise the deleted-file lookup
+		// key and the cached key differ for the wrong reason and the test would
+		// pass without exercising the gate.
+		root := realTempDir(t)
+		writeSheetFile(t, filepath.Join(root, "cutsheet.pdf"), []byte("real bytes"))
+
+		shared := map[string]string{}
+		first := &fileHasher{assetsRoot: root, allowMissing: true, digests: shared}
+		digest, err := first.hashFile("cutsheet.pdf")
+		if err != nil {
+			t.Fatalf("hashFile: %v", err)
+		}
+		if len(shared) != 1 {
+			t.Fatalf("expected the successful digest to be cached, got %d entries", len(shared))
+		}
+
+		if err := os.Remove(filepath.Join(root, "cutsheet.pdf")); err != nil {
+			t.Fatalf("remove fixture: %v", err)
+		}
+
+		// Under allowMissing: sentinel plus warning, never the stale digest.
+		second := &fileHasher{assetsRoot: root, allowMissing: true, digests: shared}
+		got, err := second.hashFile("cutsheet.pdf")
+		if err != nil {
+			t.Fatalf("hashFile after delete: %v", err)
+		}
+		if got == digest {
+			t.Errorf("returned the cached digest %s for a file that no longer exists", got)
+		}
+		if got != zeroSHA256 {
+			t.Errorf("digest = %s, want the zero sentinel", got)
+		}
+		if !second.sentinelStamped {
+			t.Error("sentinelStamped is false; a deleted file must still mark the record a DRAFT")
+		}
+		if len(second.warnings) != 1 {
+			t.Errorf("got %d warnings, want exactly 1", len(second.warnings))
+		}
+
+		// Without allowMissing the same call is a hard error, not a cache hit.
+		strict := &fileHasher{assetsRoot: root, digests: shared}
+		if _, err := strict.hashFile("cutsheet.pdf"); err == nil {
+			t.Error("expected an error for a deleted file without allowMissing")
+		}
+	})
+
+	t.Run("seeded cache does not bypass containment", func(t *testing.T) {
+		skipWithoutSymlinks(t)
+		root := realTempDir(t)
+		outside := realTempDir(t)
+		secret := filepath.Join(outside, "secret.pdf")
+		writeSheetFile(t, secret, []byte("out of root"))
+		if err := os.Symlink(secret, filepath.Join(root, "alias.pdf")); err != nil {
+			t.Skipf("symlink not supported here: %v", err)
+		}
+
+		// Seed the cache with the very key the escaping reference resolves to.
+		seeded := map[string]string{secret: "cafebabe"}
+		h := &fileHasher{assetsRoot: root, allowMissing: true, digests: seeded}
+
+		got, err := h.hashFile("alias.pdf")
+		if err == nil {
+			t.Fatalf("expected the containment error, got digest %q", got)
+		}
+		if got == "cafebabe" {
+			t.Error("a seeded cache entry bypassed the containment check")
+		}
+		if !strings.Contains(err.Error(), "outside the assets root") {
+			t.Errorf("error %q does not name the containment failure", err)
+		}
+	})
+}
+
+// realTempDir returns a temp directory whose path contains no symlink
+// components, so a test can reason about resolved-path identity. On macOS
+// t.TempDir() sits under /var, itself a symlink to /private/var.
+func realTempDir(t *testing.T) string {
+	t.Helper()
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatalf("resolve temp dir: %v", err)
+	}
+	return dir
+}

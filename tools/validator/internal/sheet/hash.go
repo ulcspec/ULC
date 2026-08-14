@@ -32,10 +32,11 @@ type fileHasher struct {
 	sentinelStamped bool
 	// digests caches computed SHA-256 values by resolved path for the life of
 	// a Convert run, so a family-constant document referenced by every row
-	// (the cutsheet, the warranty conditions) is read and hashed once. Only
-	// successful digests are cached: a missing file re-runs the sentinel and
-	// warning branch per record, and the containment and symlink checks above
-	// the lookup run on every call.
+	// (the cutsheet, the warranty conditions) is read and hashed once.
+	// Only successful digests are cached, the containment and symlink checks
+	// above the lookup run on every call, and the lookup is gated on the file
+	// resolving on this call, so a file deleted mid-run misses the cache and
+	// takes the missing-file path.
 	digests map[string]string
 }
 
@@ -73,6 +74,7 @@ func (h *fileHasher) hashFile(filename string) (string, error) {
 	// below, so it behaves exactly like an absent file and the draft workflow
 	// is unchanged. The assets root is resolved per call, because the root is
 	// itself commonly reached through a symlink.
+	resolvedOK := false
 	if real, rerr := filepath.EvalSymlinks(resolved); rerr == nil {
 		rootReal, err := filepath.EvalSymlinks(h.assetsRoot)
 		if err != nil {
@@ -85,12 +87,19 @@ func (h *fileHasher) hashFile(filename string) (string, error) {
 		// Hash the real path, so the bytes covered are the ones the
 		// containment check approved.
 		resolved = real
+		resolvedOK = true
 	} else if !os.IsNotExist(rerr) {
 		return "", fmt.Errorf("resolve referenced file %q: %w", filename, rerr)
 	}
 
-	if sum, ok := h.digests[resolved]; ok {
-		return sum, nil
+	// The cache is consulted only when this call's resolution proved the
+	// file exists. A file deleted mid-run fails resolution, misses the
+	// cache, and takes the missing-file path below, exactly as with no
+	// cache.
+	if resolvedOK {
+		if sum, ok := h.digests[resolved]; ok {
+			return sum, nil
+		}
 	}
 
 	f, err := os.Open(resolved)
