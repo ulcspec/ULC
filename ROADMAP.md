@@ -23,7 +23,7 @@ changed `required[]`) requires the next major, v2.0.0. Pre-1.0 releases generall
 aimed for additive changes; compatibility-tightening changes occurred only when
 documented in the changelog (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.4.x
+## Active version: v1.5.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -60,6 +60,13 @@ and the hashed `shared_warranty.conditions_document`. All are optional and
 tracked, not graded; the generated index is unchanged, so stored records
 need no re-stamp. The free-text `shared_warranty.conditions_reference` is
 deprecated in favor of `conditions_document`.
+v1.5.0 is an authoring and tooling minor with no schema change: the workbook
+gains an Imperial entry side for dual-unit fields (the record still carries
+both units with SI authoritative), `ulc from-sheet` gains a machine-readable
+conversion report and a draft output directory, `ulc validate` flags the
+64-zero placeholder hash that draft conversion stamps, and the release
+archive gains the published unit-conversion policy. Grades, achievements,
+and the generated index are untouched, so stored records need no re-stamp.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
