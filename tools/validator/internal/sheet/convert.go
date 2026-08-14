@@ -517,6 +517,19 @@ func coerceColumn(col Column, raw string, row Row, provCtx provenanceContext) (a
 			return nil, err
 		}
 		return buildDualUnit(col.DualKind, si, rp.valueType, rp.provenance), nil
+	case KindDualUnitImperial:
+		if _, both := row[col.SIHeader]; both {
+			return nil, fmt.Errorf("the SI companion column %q is also authored for this row; author each dual-unit field on exactly one side and leave the other blank", col.SIHeader)
+		}
+		companion, err := parseFloat(raw)
+		if err != nil {
+			return nil, err
+		}
+		rp, err := resolveProvenance(col, row, provCtx)
+		if err != nil {
+			return nil, err
+		}
+		return buildDualUnitFromImperial(col.DualKind, companion, rp.valueType, rp.provenance), nil
 	default:
 		return nil, fmt.Errorf("unhandled column kind %d", col.Kind)
 	}

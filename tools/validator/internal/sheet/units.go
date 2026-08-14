@@ -15,6 +15,19 @@ const (
 	dualMassPerLength                     // kg_per_m -> lb_per_ft
 )
 
+// The four per-family conversion factors, shared by the outward
+// (companionValue) and entry-side (siValue) directions so each family is
+// governed by exactly one constant. Temperature converts by formula, not
+// factor. Documented publicly in docs/conversion-policy.md, which ships in
+// every release archive; the two surfaces are pinned against each other by
+// test.
+const (
+	mmPerInch        = 25.4
+	lbPerKg          = 2.2046226
+	ft2PerM2         = 10.7639
+	lbPerFtPerKgPerM = 0.671969
+)
+
 // dualUnitLeaves returns the SI leaf key and the companion leaf key for a kind.
 // These are the JSON property names the schema requires on each DualUnit object
 // (for example "mm" and "in" for DualUnitLength).
@@ -46,15 +59,15 @@ func (k dualUnitKind) leaves() (si, companion string) {
 func (k dualUnitKind) companionValue(si float64) float64 {
 	switch k {
 	case dualLength:
-		return roundTo(si/25.4, 4)
+		return roundTo(si/mmPerInch, 4)
 	case dualMass:
-		return roundTo(si*2.2046226, 1)
+		return roundTo(si*lbPerKg, 1)
 	case dualTemperature:
 		return si*9/5 + 32
 	case dualArea:
-		return roundTo(si*10.7639, 4)
+		return roundTo(si*ft2PerM2, 4)
 	case dualMassPerLength:
-		return roundTo(si*0.671969, 4)
+		return roundTo(si*lbPerFtPerKgPerM, 4)
 	default:
 		return 0
 	}
@@ -70,6 +83,56 @@ func buildDualUnit(k dualUnitKind, si float64, valueType string, provenance map[
 	obj := map[string]any{
 		siLeaf:        numberLeaf(si),
 		companionLeaf: numberLeaf(k.companionValue(si)),
+	}
+	if valueType != "" {
+		obj["value_type"] = valueType
+	}
+	if len(provenance) > 0 {
+		obj["provenance"] = provenance
+	}
+	return obj
+}
+
+// siValue computes the SI leaf from an authored Imperial (or Fahrenheit)
+// companion, inverting the same per-family rule companionValue applies
+// outward, so both directions of a family are governed by one rule. Every
+// computed SI leaf is rounded to <= 4 decimal places, the treatment the
+// Pattern D length axis already applies (see linear.go): the rounding removes
+// binary floating-point artifacts (96 in * 25.4 evaluates to
+// 2438.3999999999996), it does not coarsen authored precision.
+//
+//	mm       = in * 25.4            rounded to <= 4 dp
+//	kg       = lb / 2.2046226       rounded to <= 4 dp
+//	c        = (f - 32) * 5/9       rounded to <= 4 dp
+//	m2       = ft2 / 10.7639        rounded to <= 4 dp
+//	kg_per_m = lb_per_ft / 0.671969 rounded to <= 4 dp
+func (k dualUnitKind) siValue(companion float64) float64 {
+	switch k {
+	case dualLength:
+		return roundTo(companion*mmPerInch, 4)
+	case dualMass:
+		return roundTo(companion/lbPerKg, 4)
+	case dualTemperature:
+		return roundTo((companion-32)*5/9, 4)
+	case dualArea:
+		return roundTo(companion/ft2PerM2, 4)
+	case dualMassPerLength:
+		return roundTo(companion/lbPerFtPerKgPerM, 4)
+	default:
+		return 0
+	}
+}
+
+// buildDualUnitFromImperial assembles a DualUnit object from an authored
+// Imperial (or Fahrenheit) value: the authored leaf is written verbatim so the
+// published number appears in the record exactly as printed, the SI leaf is
+// computed via siValue, and value_type and provenance follow the same rules as
+// buildDualUnit. Only the computed side is ever rounded.
+func buildDualUnitFromImperial(k dualUnitKind, companion float64, valueType string, provenance map[string]any) map[string]any {
+	siLeaf, companionLeaf := k.leaves()
+	obj := map[string]any{
+		siLeaf:        numberLeaf(k.siValue(companion)),
+		companionLeaf: numberLeaf(companion),
 	}
 	if valueType != "" {
 		obj["value_type"] = valueType
