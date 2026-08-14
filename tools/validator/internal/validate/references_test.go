@@ -204,7 +204,7 @@ func TestVerifyFileReferencesOutcomesPerSite(t *testing.T) {
 			ref: func(t *testing.T, outer, recordDir string) map[string]any {
 				secret := filepath.Join(outer, "secret.txt")
 				writeFile(t, secret, []byte("top secret"))
-				return map[string]any{"filename": secret, "sha256": strings.Repeat("0", 64)}
+				return map[string]any{"filename": secret, "sha256": strings.Repeat("a", 64)}
 			},
 			check: func(t *testing.T, pointer string, got []findings.Finding) {
 				one(t, got, findings.LevelInfo, findings.CodeSourceFileNotFound, pointer, "is absolute")
@@ -214,7 +214,7 @@ func TestVerifyFileReferencesOutcomesPerSite(t *testing.T) {
 			name: "traversal_is_contained",
 			ref: func(t *testing.T, outer, recordDir string) map[string]any {
 				writeFile(t, filepath.Join(outer, "secret.txt"), []byte("top secret"))
-				return map[string]any{"filename": "../secret.txt", "sha256": strings.Repeat("0", 64)}
+				return map[string]any{"filename": "../secret.txt", "sha256": strings.Repeat("a", 64)}
 			},
 			check: func(t *testing.T, pointer string, got []findings.Finding) {
 				one(t, got, findings.LevelInfo, findings.CodeSourceFileNotFound, pointer, "outside the record directory")
@@ -229,7 +229,7 @@ func TestVerifyFileReferencesOutcomesPerSite(t *testing.T) {
 				if err := os.Symlink(target, link); err != nil {
 					t.Skipf("symlink not supported on this platform: %v", err)
 				}
-				return map[string]any{"filename": "looks-innocent.pdf", "sha256": strings.Repeat("0", 64)}
+				return map[string]any{"filename": "looks-innocent.pdf", "sha256": strings.Repeat("a", 64)}
 			},
 			check: func(t *testing.T, pointer string, got []findings.Finding) {
 				one(t, got, findings.LevelInfo, findings.CodeSourceFileNotFound, pointer, "symlink")
@@ -244,7 +244,7 @@ func TestVerifyFileReferencesOutcomesPerSite(t *testing.T) {
 				if err := os.MkdirAll(filepath.Join(recordDir, "not-a-file.pdf"), 0o755); err != nil {
 					t.Fatalf("mkdir: %v", err)
 				}
-				return map[string]any{"filename": "not-a-file.pdf", "sha256": strings.Repeat("0", 64)}
+				return map[string]any{"filename": "not-a-file.pdf", "sha256": strings.Repeat("a", 64)}
 			},
 			check: func(t *testing.T, pointer string, got []findings.Finding) {
 				one(t, got, findings.LevelWarning, findings.CodeSourceFileUnreadable, pointer, "could not read")
@@ -495,4 +495,69 @@ func one(t *testing.T, got []findings.Finding, level findings.Level, code findin
 	if !strings.Contains(f.Message, fragment) {
 		t.Errorf("message %q does not contain %q", f.Message, fragment)
 	}
+}
+
+// TestVerifyFileReferencesFlagsPlaceholderHash pins the draft-placeholder
+// warning: a reference declaring the 64-zero placeholder is flagged wherever it
+// appears, whether or not the file is reachable, and the flag is a WARNING, so
+// it never changes the exit code. The walk continues past it, so the existing
+// outcomes are preserved: an absent file still reports INFO, and a present file
+// that does not match still fails with an ERROR.
+func TestVerifyFileReferencesFlagsPlaceholderHash(t *testing.T) {
+	const placeholder = "0000000000000000000000000000000000000000000000000000000000000000"
+	record := func(filename string) map[string]any {
+		return map[string]any{"product_family": map[string]any{
+			"cutsheet": map[string]any{"filename": filename, "sha256": placeholder},
+		}}
+	}
+
+	t.Run("file absent", func(t *testing.T) {
+		report := findings.NewReport()
+		VerifyFileReferences(t.TempDir(), record("not-on-disk.pdf"), VerifyOptions{}, report)
+		if report.HasErrors() {
+			t.Errorf("a placeholder hash must not fail validation: %v", report.Findings)
+		}
+		wantFinding(t, report.Findings, findings.LevelWarning, findings.CodeSourceFilePlaceholderHash,
+			"/product_family/cutsheet", "64-zero placeholder")
+		wantFinding(t, report.Findings, findings.LevelInfo, findings.CodeSourceFileNotFound,
+			"/product_family/cutsheet", "")
+		if len(report.Findings) != 2 {
+			t.Errorf("expected exactly the warning and the not-found info, got %d: %v", len(report.Findings), report.Findings)
+		}
+	})
+
+	t.Run("file present", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, "real.pdf"), []byte("real bytes"), 0o644); err != nil {
+			t.Fatalf("write fixture: %v", err)
+		}
+		report := findings.NewReport()
+		VerifyFileReferences(dir, record("real.pdf"), VerifyOptions{}, report)
+		// Strictness is preserved: a real file never hashes to sixty-four
+		// zeros, so the mismatch is still an ERROR.
+		if !report.HasErrors() {
+			t.Errorf("a present file whose hash does not match must still be an ERROR: %v", report.Findings)
+		}
+		wantFinding(t, report.Findings, findings.LevelWarning, findings.CodeSourceFilePlaceholderHash,
+			"/product_family/cutsheet", "64-zero placeholder")
+		wantFinding(t, report.Findings, findings.LevelError, findings.CodeSourceFileHashMismatch,
+			"/product_family/cutsheet", "")
+		if len(report.Findings) != 2 {
+			t.Errorf("expected exactly the warning and the mismatch error, got %d: %v", len(report.Findings), report.Findings)
+		}
+	})
+}
+
+// wantFinding asserts the report carries a finding with the given level, code,
+// and pointer, and a message containing fragment. Unlike one(), it tolerates
+// other findings alongside it, which the placeholder legs need: each expects
+// the new warning plus the pre-existing outcome.
+func wantFinding(t *testing.T, got []findings.Finding, level findings.Level, code findings.Code, pointer, fragment string) {
+	t.Helper()
+	for _, f := range got {
+		if f.Level == level && f.Code == code && f.Path == pointer && strings.Contains(f.Message, fragment) {
+			return
+		}
+	}
+	t.Errorf("no %s %s finding at %q containing %q; got %v", level, code, pointer, fragment, got)
 }

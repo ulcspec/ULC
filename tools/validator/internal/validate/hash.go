@@ -12,11 +12,23 @@ import (
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 )
 
+// zeroPlaceholderSHA256 is the 64-zero placeholder the from-sheet converter
+// stamps for a referenced file that is missing on disk under
+// --allow-missing-files. It is schema-valid lowercase hex, so nothing
+// structural distinguishes a draft from a published record; verifyOne flags
+// it so the draft state stays visible at every reference site the run
+// verifies (the attestation evidence sites run under --verify-evidence).
+const zeroPlaceholderSHA256 = "0000000000000000000000000000000000000000000000000000000000000000"
+
 func verifyOne(recordDir string, ref map[string]any, path string, report *findings.Report) {
 	filename := asString(ref["filename"])
 	declared := strings.ToLower(asString(ref["sha256"]))
 	if filename == "" || declared == "" {
 		return
+	}
+	if declared == zeroPlaceholderSHA256 {
+		report.AddWarning(findings.CodeSourceFilePlaceholderHash, path,
+			fmt.Sprintf("declared SHA-256 for %s is the 64-zero placeholder stamped by draft conversion (from-sheet --allow-missing-files); replace it with the real file hash before publishing", filename))
 	}
 	// Constrain hash verification to files at-or-below the record's directory.
 	// `ulc validate` runs in CI on PR-provided records, so honoring absolute
