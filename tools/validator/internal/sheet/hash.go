@@ -30,6 +30,13 @@ type fileHasher struct {
 	// missing file under allowMissing. Callers read this structured flag (rather
 	// than parsing warning text) to mark the record a DRAFT.
 	sentinelStamped bool
+	// digests caches computed SHA-256 values by resolved path for the life of
+	// a Convert run, so a family-constant document referenced by every row
+	// (the cutsheet, the warranty conditions) is read and hashed once. Only
+	// successful digests are cached: a missing file re-runs the sentinel and
+	// warning branch per record, and the containment and symlink checks above
+	// the lookup run on every call.
+	digests map[string]string
 }
 
 // hashFile resolves filename against the assets root, reads it, and returns the
@@ -82,6 +89,10 @@ func (h *fileHasher) hashFile(filename string) (string, error) {
 		return "", fmt.Errorf("resolve referenced file %q: %w", filename, rerr)
 	}
 
+	if sum, ok := h.digests[resolved]; ok {
+		return sum, nil
+	}
+
 	f, err := os.Open(resolved)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -101,5 +112,9 @@ func (h *fileHasher) hashFile(filename string) (string, error) {
 	if _, err := io.Copy(sum, f); err != nil {
 		return "", fmt.Errorf("read referenced file %q: %w", filename, err)
 	}
-	return hex.EncodeToString(sum.Sum(nil)), nil
+	digest := hex.EncodeToString(sum.Sum(nil))
+	if h.digests != nil {
+		h.digests[resolved] = digest
+	}
+	return digest, nil
 }

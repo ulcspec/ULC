@@ -101,6 +101,12 @@ func Convert(input string, opts Options) ([]Result, error) {
 		assetsRoot = assetsDefault
 	}
 
+	// One digest cache for the whole run: rows in a family workbook reference
+	// the same cutsheet and conditions documents, and re-hashing them per row
+	// is pure waste. The cache carries digests only; per-record warnings and
+	// the DRAFT sentinel are per-row state on each fileHasher.
+	digests := map[string]string{}
+
 	results := make([]Result, 0, len(records))
 	seen := map[string]struct{}{}
 	for i, master := range records {
@@ -113,7 +119,7 @@ func Convert(input string, opts Options) ([]Result, error) {
 		}
 		seen[id] = struct{}{}
 
-		hasher := &fileHasher{assetsRoot: assetsRoot, allowMissing: opts.AllowMissingFiles}
+		hasher := &fileHasher{assetsRoot: assetsRoot, allowMissing: opts.AllowMissingFiles, digests: digests}
 		pattern := detectPattern(wb, id, master)
 
 		rec, err := assembleRecord(wb, id, master, pattern, hasher)

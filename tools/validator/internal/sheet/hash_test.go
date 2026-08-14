@@ -138,3 +138,74 @@ func TestHashFileAssetsRootBehindSymlinkStillHashes(t *testing.T) {
 		t.Errorf("sha256 hex length = %d, want 64", len(sum))
 	}
 }
+
+// TestHashFileCachesDigests pins the per-run digest cache: a hit answers from
+// the map without re-reading the file, and a miss is never cached, so the
+// per-record sentinel and warning semantics under allowMissing are unchanged.
+//
+// The cache is keyed on the post-EvalSymlinks path when the file exists and on
+// the unresolved path when it does not, so a delete-between-calls probe would
+// miss on any host whose temp directory sits behind a symlink (macOS). The
+// probe here overwrites the content instead: the original digest coming back
+// proves the cache answered.
+func TestHashFileCachesDigests(t *testing.T) {
+	root := t.TempDir()
+	writeSheetFile(t, filepath.Join(root, "cutsheet.pdf"), []byte("first bytes"))
+
+	digests := map[string]string{}
+	first := &fileHasher{assetsRoot: root, digests: digests}
+	want, err := first.hashFile("cutsheet.pdf")
+	if err != nil {
+		t.Fatalf("hashFile: %v", err)
+	}
+
+	writeSheetFile(t, filepath.Join(root, "cutsheet.pdf"), []byte("different bytes entirely"))
+
+	// A second record's hasher shares the run's cache, so it must answer from
+	// the map rather than re-reading the changed file.
+	second := &fileHasher{assetsRoot: root, digests: digests}
+	cached, err := second.hashFile("cutsheet.pdf")
+	if err != nil {
+		t.Fatalf("hashFile (cached): %v", err)
+	}
+	if cached != want {
+		t.Errorf("cached digest = %s, want the first run's %s (the cache did not answer)", cached, want)
+	}
+
+	// A hasher with a fresh cache still reads the file, so the miss path is
+	// intact rather than globally short-circuited.
+	fresh := &fileHasher{assetsRoot: root, digests: map[string]string{}}
+	reread, err := fresh.hashFile("cutsheet.pdf")
+	if err != nil {
+		t.Fatalf("hashFile (fresh cache): %v", err)
+	}
+	if reread == want {
+		t.Errorf("a fresh cache must re-hash the changed file, got the stale digest %s", reread)
+	}
+
+	// Misses are never cached: the second record naming the same missing file
+	// re-runs the sentinel and warning branch, so per-record DRAFT state stays
+	// per-record.
+	shared := map[string]string{}
+	for i, h := range []*fileHasher{
+		{assetsRoot: root, allowMissing: true, digests: shared},
+		{assetsRoot: root, allowMissing: true, digests: shared},
+	} {
+		sum, err := h.hashFile("not-in-the-bundle.pdf")
+		if err != nil {
+			t.Fatalf("hasher %d: hashFile: %v", i, err)
+		}
+		if sum != zeroSHA256 {
+			t.Errorf("hasher %d: digest = %s, want the zero sentinel", i, sum)
+		}
+		if !h.sentinelStamped {
+			t.Errorf("hasher %d: sentinelStamped is false; the miss path must run per record", i)
+		}
+		if len(h.warnings) != 1 {
+			t.Errorf("hasher %d: got %d warnings, want exactly 1", i, len(h.warnings))
+		}
+	}
+	if len(shared) != 0 {
+		t.Errorf("a missing file must never be cached, got %v", shared)
+	}
+}
