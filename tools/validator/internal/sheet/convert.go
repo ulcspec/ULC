@@ -101,6 +101,12 @@ func Convert(input string, opts Options) ([]Result, error) {
 		assetsRoot = assetsDefault
 	}
 
+	// One digest cache for the whole run: rows in a family workbook reference
+	// the same cutsheet and conditions documents, and re-hashing them per row
+	// is pure waste. The cache carries digests only; per-record warnings and
+	// the DRAFT sentinel are per-row state on each fileHasher.
+	digests := map[string]string{}
+
 	results := make([]Result, 0, len(records))
 	seen := map[string]struct{}{}
 	for i, master := range records {
@@ -113,7 +119,7 @@ func Convert(input string, opts Options) ([]Result, error) {
 		}
 		seen[id] = struct{}{}
 
-		hasher := &fileHasher{assetsRoot: assetsRoot, allowMissing: opts.AllowMissingFiles}
+		hasher := &fileHasher{assetsRoot: assetsRoot, allowMissing: opts.AllowMissingFiles, digests: digests}
 		pattern := detectPattern(wb, id, master)
 
 		rec, err := assembleRecord(wb, id, master, pattern, hasher)
@@ -191,10 +197,11 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 		"record_id": id,
 	}
 	// ulc_version default per DESIGN.md (overridable by the records column).
-	// Tracks the current ULC specification version, so a manufacturer who
-	// omits the column gets a record declaring the spec the converter's
-	// column set targets. Bumped with each release that adds authorable
-	// schema fields.
+	// Tracks the specification version whose authorable fields the converter's
+	// column set targets, which is not necessarily the current release: it is
+	// bumped with each release that adds authorable schema fields, and a
+	// release that adds none leaves it alone. Guarded by the version-guard
+	// test in this package.
 	rec["ulc_version"] = "1.4.0"
 	// record_status default: active (overridable below).
 	rec["record_status"] = "active"
@@ -517,6 +524,19 @@ func coerceColumn(col Column, raw string, row Row, provCtx provenanceContext) (a
 			return nil, err
 		}
 		return buildDualUnit(col.DualKind, si, rp.valueType, rp.provenance), nil
+	case KindDualUnitImperial:
+		if _, both := row[col.SIHeader]; both {
+			return nil, fmt.Errorf("the SI companion column %q is also authored for this row; author each dual-unit field on exactly one side and leave the other blank", col.SIHeader)
+		}
+		companion, err := parseFloat(raw)
+		if err != nil {
+			return nil, err
+		}
+		rp, err := resolveProvenance(col, row, provCtx)
+		if err != nil {
+			return nil, err
+		}
+		return buildDualUnitFromImperial(col.DualKind, companion, rp.valueType, rp.provenance), nil
 	default:
 		return nil, fmt.Errorf("unhandled column kind %d", col.Kind)
 	}

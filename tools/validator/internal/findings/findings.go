@@ -46,6 +46,12 @@ const (
 	CodeSourceFileHashMismatch Code = "source-file/hash-mismatch"
 	CodeSourceFileNotFound     Code = "source-file/not-found-locally"
 	CodeSourceFileUnreadable   Code = "source-file/unreadable"
+	// CodeSourceFilePlaceholderHash flags a reference whose declared SHA-256
+	// is the 64-zero placeholder that draft conversion stamps for a missing
+	// file (ulc from-sheet --allow-missing-files). The reference carries no
+	// real content hash, so the record is a draft rather than a publishable
+	// one. WARNING: it never changes the exit code.
+	CodeSourceFilePlaceholderHash Code = "source-file/placeholder-hash"
 
 	// Conformance grading. The conformance level a record achieves is computed by
 	// the builder and stored in index.conformance_level (guarded by the build-

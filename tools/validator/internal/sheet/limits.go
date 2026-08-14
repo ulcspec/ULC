@@ -140,12 +140,14 @@ func openPart(f *zip.File, b *archiveBudget) (io.ReadCloser, error) {
 			kind: kindTotalClaim,
 		}
 	}
-	// Unsigned division as well: a lying compressed size cannot turn the ratio
-	// negative and silently skip this gate.
-	if claimed >= ratioFloorBytes && compU > 0 && claimedU/compU > maxCompressionRatio {
+	// Exact arithmetic, no division: the previous claimedU/compU form
+	// truncated, so a part between 100:1 and 101:1 read as 100 and slipped a
+	// 100:1 limit. The predicate rejects strictly above the limit; a claimed
+	// ratio of exactly 100:1 still passes.
+	if claimed >= ratioFloorBytes && ratioClaimExceeds(claimedU, compU) {
 		return nil, &ArchiveLimitError{
 			Path: b.path, Part: f.Name, Limit: limitCompressionRatio,
-			Max: maxCompressionRatio, Observed: int64(claimedU / compU),
+			Max: maxCompressionRatio, Observed: ceilRatio(claimedU, compU),
 			kind: kindRatioClaim,
 		}
 	}
@@ -202,3 +204,23 @@ func (c *countingPart) Read(p []byte) (int, error) {
 }
 
 func (c *countingPart) Close() error { return c.rc.Close() }
+
+// ratioClaimExceeds reports whether a part's central-directory claim exceeds
+// the compression-ratio limit, without the truncation integer division would
+// introduce. compU >= claimedU means a ratio of at most 1:1, so the gate does
+// not apply; the same guard bounds the multiplication, because openPart only
+// calls this after the per-part gate has capped claimedU, so compU*100 cannot
+// overflow.
+func ratioClaimExceeds(claimedU, compU uint64) bool {
+	if compU == 0 || compU >= claimedU {
+		return false
+	}
+	return claimedU > compU*maxCompressionRatio
+}
+
+// ceilRatio reports the claimed-to-compressed ratio rounded up, so the error
+// names a ratio that actually exceeds the printed limit rather than the
+// truncated figure integer division produced.
+func ceilRatio(claimedU, compU uint64) int64 {
+	return int64((claimedU + compU - 1) / compU)
+}

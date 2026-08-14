@@ -3,12 +3,14 @@ version: 2
 project_name: ulc
 
 before:
-  # Stage the repo-root LICENSE next to the validator so goreleaser's archive
-  # step can bundle it with a simple relative path. The copy is gitignored;
-  # the canonical LICENSE stays at the repo root.
+  # Stage the repo-root LICENSE and the unit-conversion policy next to the
+  # validator so goreleaser's archive step can bundle them with simple
+  # relative paths. The copies are gitignored; the canonical files stay at
+  # the repo root and under docs/.
   hooks:
     - go mod tidy
     - cp ../../LICENSE LICENSE
+    - cp ../../docs/conversion-policy.md CONVERSION-POLICY.md
 
 builds:
   - id: ulc
@@ -39,13 +41,16 @@ archives:
         formats:
           - zip
     # The `ulc` binary ships with the ULC schemas embedded via go:embed.
-    # The archive carries the binary, the validator README, and the MIT
-    # LICENSE text so binary distributions include the required attribution.
+    # The archive carries the binary, the validator README, the MIT
+    # LICENSE text so binary distributions include the required attribution,
+    # and the unit-conversion policy the converter implements.
     files:
       - src: README.md
         dst: README.md
       - src: LICENSE
         dst: LICENSE
+      - src: CONVERSION-POLICY.md
+        dst: CONVERSION-POLICY.md
 
 checksum:
   name_template: "ulc_{{ .Version }}_checksums.txt"

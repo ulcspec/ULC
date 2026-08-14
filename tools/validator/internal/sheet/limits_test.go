@@ -205,7 +205,7 @@ func TestReadXLSXRejectsTotalInflation(t *testing.T) {
 		if f.CompressedSize64 == 0 {
 			t.Fatalf("%s stored nothing", f.Name)
 		}
-		if ratio := f.UncompressedSize64 / f.CompressedSize64; ratio > maxCompressionRatio {
+		if ratio := f.UncompressedSize64 / f.CompressedSize64; ratioClaimExceeds(f.UncompressedSize64, f.CompressedSize64) {
 			t.Fatalf("%s stores at %d:1, which would trip the ratio gate instead of the total budget", f.Name, ratio)
 		}
 	}
@@ -539,7 +539,7 @@ func TestReadXLSXAcceptsHighRatioBelowTheFloor(t *testing.T) {
 			if f.UncompressedSize64 >= ratioFloorBytes {
 				t.Fatalf("fixture part is %d bytes, must sit under the %d floor", f.UncompressedSize64, ratioFloorBytes)
 			}
-			if f.CompressedSize64 > 0 && f.UncompressedSize64/f.CompressedSize64 <= maxCompressionRatio {
+			if f.CompressedSize64 > 0 && !ratioClaimExceeds(f.UncompressedSize64, f.CompressedSize64) {
 				t.Fatalf("fixture stores at %d:1, which does not exercise the floor", f.UncompressedSize64/f.CompressedSize64)
 			}
 		}
@@ -628,7 +628,7 @@ func TestReadXLSXSharedStringWithManyRunsIsLinear(t *testing.T) {
 		if f.UncompressedSize64 > maxPartInflatedBytes {
 			t.Fatalf("fixture part is %d bytes, over the %d per-part limit", f.UncompressedSize64, maxPartInflatedBytes)
 		}
-		if f.CompressedSize64 > 0 && f.UncompressedSize64/f.CompressedSize64 > maxCompressionRatio {
+		if f.CompressedSize64 > 0 && ratioClaimExceeds(f.UncompressedSize64, f.CompressedSize64) {
 			t.Fatalf("fixture stores at %d:1, which would trip the ratio gate instead", f.UncompressedSize64/f.CompressedSize64)
 		}
 	}
@@ -651,5 +651,61 @@ func TestReadXLSXSharedStringWithManyRunsIsLinear(t *testing.T) {
 	if ratio > maxAllocRatio {
 		t.Errorf("reading a %d-byte part allocated %.0fx its size (limit %dx): the shared-string accumulator is superlinear in the run count",
 			partSize, ratio, maxAllocRatio)
+	}
+}
+
+// TestRatioClaimExceedsBoundary pins the exact arithmetic at the boundary the
+// previous truncating division could not see: a part just above 100:1 is
+// rejected, exactly 100:1 is accepted, and the reported ratio is the ceiling so
+// the error never names a figure equal to the printed limit.
+func TestRatioClaimExceedsBoundary(t *testing.T) {
+	cases := []struct {
+		name             string
+		claimed, compAmt uint64
+		want             bool
+	}{
+		// 1048576/10485 is 100.007:1. Integer division read it as 100 and let it
+		// through; the exact form rejects it.
+		{"just above the limit", 1048576, 10485, true},
+		{"exactly at the limit", 1048500, 10485, false},
+		{"zero compressed size", 1048576, 0, false},
+		{"compressed equals claimed", 1048576, 1048576, false},
+		{"compressed above claimed", 10485, 1048576, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := ratioClaimExceeds(tc.claimed, tc.compAmt); got != tc.want {
+				t.Errorf("ratioClaimExceeds(%d, %d) = %v, want %v", tc.claimed, tc.compAmt, got, tc.want)
+			}
+		})
+	}
+
+	if got := ceilRatio(1048576, 10485); got != 101 {
+		t.Errorf("ceilRatio(1048576, 10485) = %d, want 101 (the reported ratio must exceed the limit)", got)
+	}
+}
+
+// TestConvertRejectsArchiveLimit pins cap propagation at the Convert seam: a
+// limit error raised inside ReadXLSX survives the wrapping readWorkbook applies
+// and is still recoverable as an *ArchiveLimitError. It must be errors.As: the
+// error leaves ReadXLSX wrapped, so a type assertion would miss it.
+func TestConvertRejectsArchiveLimit(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "over-entry-count.xlsx")
+	parts := make([]rawPart, 0, maxArchiveEntries+1)
+	for i := 0; i <= maxArchiveEntries; i++ {
+		parts = append(parts, rawPart{name: fmt.Sprintf("filler/%04d.bin", i), data: []byte("x")})
+	}
+	writeZipParts(t, out, parts)
+
+	_, err := Convert(out, Options{})
+	if err == nil {
+		t.Fatal("expected Convert to reject an over-cap archive")
+	}
+	var limitErr *ArchiveLimitError
+	if !errors.As(err, &limitErr) {
+		t.Fatalf("error must surface as *ArchiveLimitError through the Convert seam, got %T: %v", err, err)
+	}
+	if limitErr.Limit != limitEntryCount {
+		t.Errorf("Limit = %q, want %q", limitErr.Limit, limitEntryCount)
 	}
 }

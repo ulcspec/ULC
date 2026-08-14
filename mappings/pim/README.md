@@ -44,10 +44,10 @@ Pick the pattern up front per product family, not per record. Building a Pattern
 ULC requires SI-authoritative values with a derived Imperial companion for every length, mass, temperature, area, and mass-per-length field. PIMs typically store one unit. Emitters must:
 
 - **Pick a canonical unit in the PIM** (millimeters for length, kilograms for mass, Celsius for temperature).
-- **Compute the companion at emit time.** Do not round-trip through rounding that loses precision; `25.4 mm` is exactly `1.0 in`, not `1`.
-- **Preserve significant figures.** If the PIM stores `113 mm`, emit `{mm: 113, in: 4.45}` not `{mm: 113, in: 4}`.
+- **Compute the companion at emit time, following the published conversion policy** (`docs/conversion-policy.md`, also shipped in every release archive as `CONVERSION-POLICY.md`): one conversion rule per family (a single constant for four families, a fixed formula for temperature), with the computed companion rounded to the fixed decimal places the policy states.
+- **Write the stored value verbatim and round only the computed companion.** If the PIM stores `113 mm`, emit `{mm: 113, in: 4.4488}`: the reference converter rounds a computed length companion to at most 4 decimal places, so an emitter that rounds differently (for example to `4.45`) produces records that disagree with the reference toolchain on identical input.
 
-Imperial-first conversion (rare but possible in US-only manufacturer PIMs) works the same way in reverse.
+Imperial-first conversion (for US-only manufacturer PIMs) follows the same policy in reverse: the stored Imperial value is written verbatim and the computed SI leaf is rounded per the policy.
 
 ### 3. Provenance
 

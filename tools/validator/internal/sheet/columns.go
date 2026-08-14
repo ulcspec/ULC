@@ -1,5 +1,7 @@
 package sheet
 
+import "strings"
+
 // Kind classifies how a records-sheet cell maps onto a ULC field. The assembler
 // dispatches on Kind to coerce the cell and write the right shape at the column's
 // dotted path.
@@ -27,6 +29,12 @@ const (
 	// KindDualUnitSI writes a DualUnit object from the authored SI leaf, computing
 	// the Imperial/Fahrenheit companion. The Unit field selects the family.
 	KindDualUnitSI
+	// KindDualUnitImperial writes a DualUnit object from the authored Imperial
+	// (or Fahrenheit) leaf, computing the SI companion. Columns of this kind
+	// are generated from their KindDualUnitSI siblings (see
+	// imperialCompanions); authoring both sides of one field on one row is an
+	// error.
+	KindDualUnitImperial
 )
 
 // Column is one declarative mapping from a records-sheet header to a ULC field.
@@ -41,14 +49,18 @@ type Column struct {
 	Path string
 	// Kind selects the coercion and output shape.
 	Kind Kind
-	// Unit selects the dual-unit family for KindDualUnitSI columns; ignored
-	// otherwise. For ProvenancedNumber columns it is the optional "unit" string
-	// (lm, W, cd, ...).
+	// Unit is the optional "unit" string on KindProvNumber columns (lm, W,
+	// cd, ...). It is unused on the dual-unit kinds, whose family comes from
+	// DualKind.
 	Unit string
-	// DualKind is the dual-unit family for KindDualUnitSI columns.
+	// DualKind is the dual-unit family for KindDualUnitSI and KindDualUnitImperial columns.
 	DualKind dualUnitKind
+	// SIHeader names the KindDualUnitSI sibling column a KindDualUnitImperial
+	// column was generated from; the assembler rejects a row that authors
+	// both. Empty on every other kind.
+	SIHeader string
 	// ProvSource / ProvMethod / ProvValueType are the per-column provenance
-	// defaults applied to KindProvNumber and KindDualUnitSI columns when the
+	// defaults applied to KindProvNumber and both dual-unit kinds when the
 	// manufacturer leaves the companion override columns blank. See DESIGN.md
 	// section 3.3.
 	ProvSource    string
@@ -59,10 +71,10 @@ type Column struct {
 // Provenanced reports whether this column carries provenance/value_type (and so
 // participates in the measured -> attestation_ref auto-link).
 func (c Column) Provenanced() bool {
-	return c.Kind == KindProvNumber || c.Kind == KindDualUnitSI
+	return c.Kind == KindProvNumber || c.Kind == KindDualUnitSI || c.Kind == KindDualUnitImperial
 }
 
-// recordColumns is the column spec for the records sheet, covering all CORE and
+// baseRecordColumns is the authored column spec for the records sheet, covering all CORE and
 // STANDARD fields for a downlight-class record: identity, cutsheet, taxonomy,
 // shared_mechanical, the common physical_dimensions, configuration (tested_axes
 // and tested_conditions), electrical, photometry, and colorimetry. Optional and
@@ -73,7 +85,7 @@ func (c Column) Provenanced() bool {
 // and rated electrical values default to {datasheet_pdf, extracted, rated}; the
 // photometric anchors default to {ies, extracted, measured}, which triggers the
 // attestation_ref auto-link.
-var recordColumns = []Column{
+var baseRecordColumns = []Column{
 	// --- top-level identity ---
 	{Header: "ulc_version", Path: "ulc_version", Kind: KindString},
 	{Header: "record_status", Path: "record_status", Kind: KindEnum},
@@ -242,3 +254,48 @@ var recordColumns = []Column{
 	{Header: "interior_performance", Path: "sustainability_declaration.interior_performance", Kind: KindString},
 	{Header: "responsible_sourcing", Path: "sustainability_declaration.responsible_sourcing", Kind: KindString},
 }
+
+// imperialSuffix maps each dual-unit family's SI header suffix to its Imperial
+// entry suffix, mirroring the leaf names units.go fixes per family.
+var imperialSuffix = map[dualUnitKind][2]string{
+	dualLength:        {"_mm", "_in"},
+	dualMass:          {"_kg", "_lb"},
+	dualTemperature:   {"_c", "_f"},
+	dualArea:          {"_m2", "_ft2"},
+	dualMassPerLength: {"_kg_per_m", "_lb_per_ft"},
+}
+
+// imperialCompanions derives one KindDualUnitImperial column per
+// KindDualUnitSI column: the same path and provenance defaults, the header's
+// SI suffix swapped for the family's Imperial suffix, and SIHeader linking
+// back so the assembler can reject a row that authors both sides. Deriving
+// the companions keeps the two sides structurally identical: a new dual-unit
+// SI column gains its Imperial entry column with no second edit. A header
+// that does not carry its family's SI suffix would derive wrongly; the test
+// suite pins the suffix convention.
+func imperialCompanions(cols []Column) []Column {
+	out := []Column{}
+	for _, c := range cols {
+		if c.Kind != KindDualUnitSI {
+			continue
+		}
+		suffixes, ok := imperialSuffix[c.DualKind]
+		if !ok || !strings.HasSuffix(c.Header, suffixes[0]) {
+			// A family with no suffix pair, or a header that does not carry its
+			// family's SI suffix, would derive a wrong or duplicate header
+			// (TrimSuffix of an absent suffix is the identity). Fail at init,
+			// loudly, rather than ship a column table that misroutes cells.
+			panic("imperialCompanions: column " + c.Header + " does not match its dual-unit family's SI suffix")
+		}
+		imp := c
+		imp.Kind = KindDualUnitImperial
+		imp.Header = strings.TrimSuffix(c.Header, suffixes[0]) + suffixes[1]
+		imp.SIHeader = c.Header
+		out = append(out, imp)
+	}
+	return out
+}
+
+// recordColumns is the full records-sheet column spec the assembler iterates:
+// the authored base columns plus the generated Imperial entry companions.
+var recordColumns = append(append([]Column{}, baseRecordColumns...), imperialCompanions(baseRecordColumns)...)

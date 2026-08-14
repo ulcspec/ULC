@@ -122,7 +122,7 @@ func TestVerifyHashesRefusesAbsolutePath(t *testing.T) {
 				"file_type": "datasheet_pdf",
 				"reference": map[string]any{
 					"filename": "/etc/passwd",
-					"sha256":   strings.Repeat("0", 64),
+					"sha256":   strings.Repeat("a", 64),
 				},
 			},
 		},
@@ -166,7 +166,7 @@ func TestVerifyHashesRefusesTraversal(t *testing.T) {
 				"file_type": "datasheet_pdf",
 				"reference": map[string]any{
 					"filename": "../secret.txt",
-					"sha256":   strings.Repeat("0", 64),
+					"sha256":   strings.Repeat("a", 64),
 				},
 			},
 		},
@@ -212,7 +212,7 @@ func TestVerifyHashesRefusesSymlinkEscape(t *testing.T) {
 				"file_type": "datasheet_pdf",
 				"reference": map[string]any{
 					"filename": "looks-innocent.pdf",
-					"sha256":   strings.Repeat("0", 64),
+					"sha256":   strings.Repeat("a", 64),
 				},
 			},
 		},

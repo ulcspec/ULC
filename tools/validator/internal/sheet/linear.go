@@ -8,7 +8,7 @@ import (
 
 // inchToMM is the exact inch-to-millimeter factor used to expand an authored
 // length in inches to the DualUnitLength SI leaf.
-const inchToMM = 25.4
+const inchToMM = mmPerInch
 
 // ftPerInch converts a length in inches to feet for per-foot rate scaling.
 const ftPerInch = 1.0 / 12.0

@@ -12,13 +12,14 @@ A manufacturer authors **one workbook** (a set of sheets / CSVs). Every sheet is
 
 1. reads sheets, joins on `record_id`;
 2. assembles ULC deep blocks;
-3. computes dual-unit companions (`in`/`lb`/`f`/`ft2`/`lb_per_ft`) from the SI side;
+3. computes dual-unit companions from the authored side (SI or Imperial; see 3.1);
 4. computes `sha256` of every referenced file;
 5. fills per-column default provenance;
 6. runs the existing index builder (stamps `index.*` + `conformance_level`) and the validator.
 
 The workbook carries **only authored values**. Three things are NEVER columns: the entire
-`index.*` block, every Imperial companion leaf, every `sha256`.
+`index.*` block, every `sha256`, and the computed side of a dual-unit field (each dual-unit
+field has an SI and an Imperial entry column; you author exactly one, see section 3.1).
 
 **Universal conventions used in every sheet:**
 
@@ -28,9 +29,16 @@ The workbook carries **only authored values**. Three things are NEVER columns: t
   `*__value_type`, `*__prov_source`, `*__prov_method`, `*__attestation_ref` columns. Where a
   column has a sensible per-pattern default (see section 3.3) the provenance columns may be left
   blank and the converter fills them.
-- **DualUnit columns** are authored as the **SI side only** (`*.mm`, `*.kg`, `*.c`, `*.m2`,
-  `*.kg_per_m`). The header names the SI leaf explicitly (e.g. `overall_diameter_mm`). The
-  converter writes both `mm` and the computed `in`.
+- **DualUnit columns** are authored on **exactly one side per field**: the SI column (`*_mm`,
+  `*_kg`, `*_kg_per_m`) or its generated Imperial companion column (`*_in`, `*_lb`,
+  `*_lb_per_ft`). The header names the authored leaf explicitly; the converter writes both
+  leaves, computing the companion (authoring both sides of one field on one row is an error).
+  The Imperial columns are derived from the SI column spec (see `imperialCompanions` in
+  columns.go), so a new SI dual-unit column gains its Imperial sibling automatically; the
+  temperature and area families are dual-unit in the schema but have no records-sheet column
+  today, and a future SI column in either family gains its companion the same way. The
+  `declared_by_length` sheet's `length_mm` column is SI-only: it is read outside
+  `recordColumns`, so no companion is generated for it.
 - **Enum-list / string-list scalars** with a single value are authored inline on `records` as a
   delimited cell (`;`-joined). When more than one value needs per-value structure they move to a
   dedicated long sheet.
@@ -108,17 +116,21 @@ values the manufacturer supplies.
 
 ## 3. Dual-unit, SHA-256, provenance
 
-### 3.1 Dual-unit (single SI input -> DualUnit)
-Author the SI/authoritative leaf only; the converter computes the companion and writes both keys
-plus the schema-required `value_type`:
+### 3.1 Dual-unit (either-side input -> DualUnit)
+Author exactly one side; the converter computes the companion and writes both keys plus the
+schema-required `value_type`. The authored value is written verbatim; only the computed leaf
+is rounded (round half away from zero). The policy is published at `docs/conversion-policy.md`
+and shipped in the release archive; the constants live in units.go. Leaf pairs per family
+(the temperature and area families currently have no records-sheet columns, and the
+`declared_by_length` sheet's `length_mm` is SI-only, read outside `recordColumns`):
 
-| Authored suffix | SI leaf | Computed companion |
-|---|---|---|
-| `*_mm` | `.mm` | `.in` = mm/25.4 |
-| `*_kg` | `.kg` | `.lb` = kg*2.2046226 |
-| `*_c` | `.c` | `.f` = c*9/5+32 |
-| `*_m2` | `.m2` | `.ft2` = m2*10.7639 |
-| `*_kg_per_m` | `.kg_per_m` | `.lb_per_ft` = kg_per_m*0.671969 |
+| Authored leaf | Companion leaf | SI authored: computed companion | Imperial authored: computed SI |
+|---|---|---|---|
+| `.mm` | `.in` | `.in` = mm/25.4 (<=4 dp) | `.mm` = in*25.4 (<=4 dp) |
+| `.kg` | `.lb` | `.lb` = kg*2.2046226 (1 dp) | `.kg` = lb/2.2046226 (<=4 dp) |
+| `.c` | `.f` | `.f` = c*9/5+32 (unrounded) | `.c` = (f-32)*5/9 (<=4 dp) |
+| `.m2` | `.ft2` | `.ft2` = m2*10.7639 (<=4 dp) | `.m2` = ft2/10.7639 (<=4 dp) |
+| `.kg_per_m` | `.lb_per_ft` | `.lb_per_ft` = kg_per_m*0.671969 (<=4 dp) | `.kg_per_m` = lb_per_ft/0.671969 (<=4 dp) |
 
 The dual-unit companion applies only to fields the schema types as a `DualUnit*`
 object (lengths, masses, the `ambient_temperature` / `case_temperature`

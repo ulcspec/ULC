@@ -38,11 +38,22 @@ Three things are computed, never typed into the workbook:
 
 - The entire `index` block (a deterministic projection, including the graded
   `conformance_level`).
-- Every Imperial companion leaf (`in`, `lb`, `f`, `ft2`, `lb_per_ft`) on a
-  dual-unit field. You author the SI side only, in the dual-unit `*_mm` / `*_kg`
-  / `*_c` columns; the converter writes both. (Not every `*_c` column is
-  dual-unit: the schema types the lumen-maintenance-package `test_temperature_c`
-  as a scalar `ProvenancedNumber`, which is inconsistent with the dual-unit
+- Every computed companion leaf on a dual-unit field. Each dual-unit field
+  on the records sheet has two entry columns, an SI column (`*_mm`, `*_kg`,
+  `*_kg_per_m`) and an Imperial companion column (`*_in`, `*_lb`,
+  `*_lb_per_ft`); the `declared_by_length` sheet's `length_mm` stays
+  SI-only. Author exactly one side per field and leave the other blank; the
+  converter writes both leaves, computing the companion per the published
+  conversion policy (`docs/conversion-policy.md`). The authored value lands
+  in the record verbatim; only the computed side is rounded. Authoring both
+  sides of one field on one row is an error. Imperial entry columns are
+  recognized from release 1.5.0 on, and an older `ulc` binary ignores
+  unrecognized columns silently, so check `ulc version` if an
+  Imperial-authored value does not appear in the output. (The schema also
+  defines dual-unit temperature and area families, but no records-sheet
+  column authors them today, and not every field named `*_c` is dual-unit:
+  the schema types the lumen-maintenance-package `test_temperature_c` as a
+  scalar `ProvenancedNumber`, which is inconsistent with the dual-unit
   temperature fields, so the converter does not author it pending a schema
   reconciliation.)
 - Every `sha256`. You name the file in a path column; the converter hashes it.
@@ -79,7 +90,8 @@ toward standard and full. Nothing you add is capped: the converter ingests every
 documented field you supply and the grade follows the data. (Columns and sheets
 it does not recognize are ignored, not an error, so a typoed column name is
 silently skipped: check the column names against the templates if a value you
-expected does not appear.)
+expected does not appear. The Imperial dual-unit columns are the newest
+addition, recognized from release 1.5.0 on.)
 
 ## The sheets
 
