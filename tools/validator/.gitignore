@@ -6,3 +6,7 @@ dist/
 # Staged at release time by the goreleaser before-hook; the canonical LICENSE
 # lives at the repo root.
 LICENSE
+
+# Staged at release time by the goreleaser before-hook; the canonical policy
+# lives at docs/conversion-policy.md.
+CONVERSION-POLICY.md
