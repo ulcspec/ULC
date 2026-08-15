@@ -73,6 +73,7 @@ func TestReproducibleInputsKitchenSink(t *testing.T) {
 		"photometry":         map[string]any{"total_luminous_flux_lm": map[string]any{"value": 1000.0}},
 		"electrical":         map[string]any{"input_power_w": map[string]any{"value": 10.0}},
 		"colorimetry":        map[string]any{"cri_ra": map[string]any{"value": 90.0}},
+		"media":              []any{map[string]any{"role": "product_photo", "media_type": "image/jpeg"}},
 	}
 	if !reflect.DeepEqual(Compute(full), Compute(stripped)) {
 		t.Errorf("Compute read a non-input field: kitchen-sink != stripped")

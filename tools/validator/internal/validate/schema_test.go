@@ -791,6 +791,104 @@ func TestValidatorConstrainsDiscontinuedAt(t *testing.T) {
 	}
 }
 
+// TestValidatorConstrainsMedia pins the media manifest: the required trio, the
+// two closed vocabularies (image formats only, so a document type is rejected
+// outright), the FileReference contract each entry's reference carries, and the
+// keyword conventions on the new descriptive members.
+func TestValidatorConstrainsMedia(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	const hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	photoRef := func() map[string]any {
+		return map[string]any{"filename": "acme-orbit-2400.jpg", "sha256": hash}
+	}
+	validate := func(entry map[string]any) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		m["media"] = []any{entry}
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+
+	accepted := map[string]map[string]any{
+		"a minimal entry": {
+			"role":       "product_photo",
+			"media_type": "image/jpeg",
+			"reference":  photoRef(),
+		},
+		"a dimensional drawing in a vector format": {
+			"role":       "dimensional_drawing",
+			"media_type": "image/svg+xml",
+			"reference":  map[string]any{"filename": "acme-orbit-2400-dimensions.svg", "sha256": hash},
+		},
+		"an entry populating every optional member": {
+			"role":               "application_photo",
+			"media_type":         "image/png",
+			"reference":          photoRef(),
+			"primary":            true,
+			"alt_text":           "The luminaire installed above a reception desk",
+			"caption":            "Reception installation",
+			"language":           "en-GB",
+			"width_px":           2400,
+			"height_px":          1600,
+			"size_bytes":         812345,
+			"rights":             "Reuse permitted with attribution",
+			"credit":             "Photograph supplied by the manufacturer",
+			"extracted_from_ref": "acme-orbit-datasheet.pdf",
+			"configuration_refs": []any{"ORB-2400-30K-90"},
+		},
+	}
+	for name, entry := range accepted {
+		t.Run("accepts "+name, func(t *testing.T) {
+			if r := validate(entry); r.HasErrors() {
+				t.Errorf("expected a valid media entry; got: %+v", r.Findings)
+			}
+		})
+	}
+
+	rejected := map[string]map[string]any{
+		"an entry with no role":       {"media_type": "image/jpeg", "reference": photoRef()},
+		"an entry with no reference":  {"role": "product_photo", "media_type": "image/jpeg"},
+		"an entry with no media_type": {"role": "product_photo", "reference": photoRef()},
+		"an unlisted role":            {"role": "thumbnail", "media_type": "image/jpeg", "reference": photoRef()},
+		"an unlisted image format":    {"role": "product_photo", "media_type": "image/gif", "reference": photoRef()},
+		// The manifest admits image formats only, so a document type is invalid
+		// wherever it appears: a PDF drawing belongs in source_files instead.
+		"a document media type": {
+			"role":       "dimensional_drawing",
+			"media_type": "application/pdf",
+			"reference":  map[string]any{"filename": "acme-orbit-2400-dimensions.pdf", "sha256": hash},
+		},
+		"a reference with no sha256": {
+			"role":       "product_photo",
+			"media_type": "image/jpeg",
+			"reference":  map[string]any{"filename": "acme-orbit-2400.jpg"},
+		},
+		"a zero pixel width": {
+			"role": "product_photo", "media_type": "image/jpeg", "reference": photoRef(),
+			"width_px": 0,
+		},
+		"an empty caption": {
+			"role": "product_photo", "media_type": "image/jpeg", "reference": photoRef(),
+			"caption": "",
+		},
+	}
+	for name, entry := range rejected {
+		t.Run("rejects "+name, func(t *testing.T) {
+			if r := validate(entry); !r.HasErrors() {
+				t.Errorf("expected a schema error for %s, got none", name)
+			}
+		})
+	}
+}
+
 // TestSchemaFormatDeclarationsAreAsserted guards the two properties that make
 // a declared format load-bearing, at every site in both schema documents.
 // First, the format name is one the compiler actually asserts: an unrecognized

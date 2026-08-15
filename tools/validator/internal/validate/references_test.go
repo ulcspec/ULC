@@ -12,7 +12,7 @@ import (
 // siteFixture places one FileReference at one registry site and states the
 // runtime pointer the walk must report it at. Every site in
 // fileReferenceRegistry has an entry here, so the outcome matrix below runs
-// against all six rather than against source_files alone.
+// against all seven rather than against source_files alone.
 type siteFixture struct {
 	name    string
 	pointer string
@@ -49,6 +49,15 @@ var siteFixtures = []siteFixture{
 		build: func(ref map[string]any) map[string]any {
 			return map[string]any{"product_family": map[string]any{
 				"shared_warranty": map[string]any{"conditions_document": ref},
+			}}
+		},
+	},
+	{
+		name:    "media",
+		pointer: "/media/0/reference",
+		build: func(ref map[string]any) map[string]any {
+			return map[string]any{"media": []any{
+				map[string]any{"role": "product_photo", "media_type": "image/jpeg", "reference": ref},
 			}}
 		},
 	},
@@ -114,6 +123,7 @@ func TestFileReferenceRegistryPolicies(t *testing.T) {
 		"/product_family/cutsheet":                                    policyDefault,
 		"/emergency/photometry_reference":                             policyDefault,
 		"/product_family/shared_warranty/conditions_document":         policyDefault,
+		"/media/<i>/reference":                                        policyDefault,
 		"/attestations/<i>/source_document_ref":                       policyEvidence,
 		"/product_family/shared_attestations/<i>/source_document_ref": policyEvidence,
 	}
@@ -133,7 +143,7 @@ func TestFileReferenceRegistryPolicies(t *testing.T) {
 }
 
 // TestVerifyFileReferencesDefaultSitesRunWithoutTheFlag is the runtime half of
-// the policy pin: the four default sites report on a plain run.
+// the policy pin: the five default sites report on a plain run.
 func TestVerifyFileReferencesDefaultSitesRunWithoutTheFlag(t *testing.T) {
 	for _, site := range siteFixtures {
 		policy := refPolicy(policyUnset)

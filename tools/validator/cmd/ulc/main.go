@@ -110,7 +110,8 @@ Runs the following checks and emits a findings report:
      including the computed index.conformance_level)
   3. File-reference SHA-256 hash verification (when files are reachable
      locally): source_files entries, the family cutsheet, the emergency
-     photometry reference, and the family warranty-conditions document
+     photometry reference, the family warranty-conditions document, and
+     media manifest entries
   4. Conformance report (INFO: the computed grade plus a per-grade roadmap to full)
   5. Product Achievements report (INFO: the per-theme achievement summary; the
      per-theme state and roadmap show under --verbose or --json)

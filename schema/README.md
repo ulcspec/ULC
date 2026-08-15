@@ -8,7 +8,7 @@ ULC schemas use JSON Schema Draft 2020-12. Each schema is identified by a canoni
 
 The schemas in this directory define:
 
-- The canonical ULC record structure: required fields, data types, unit patterns, source-file references, and compliance attestations
+- The canonical ULC record structure: required fields, data types, unit patterns, source-file references, the media manifest, and compliance attestations
 - Closed enumerations for luminaire categories, mounting types, and optical function tags
 
 ## Validation

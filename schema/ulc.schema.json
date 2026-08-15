@@ -176,6 +176,12 @@
       "items": { "$ref": "#/$defs/Attestation" }
     },
 
+    "media": {
+      "description": "Pointer-only manifest of the visual assets that document this product: product photographs, application photographs, and dimensional drawings. Entries reference each asset by filename, IANA media type, and SHA-256 content hash; no image data is ever embedded. Deliberately separate from source_files: a media asset documents the product's appearance and geometry for presentation, while source_files names the documents a record derives data from, so a media entry can never become a provenance source for a measured value.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/MediaAsset" }
+    },
+
     "extensions": {
       "description": "Top-level escape hatch for values that do not fit the core schema. `manufacturer_specific` holds vendor-specific fields; `experimental` holds values under active review for future promotion into the main schema. Consumers should treat extensions as informational only.",
       "$ref": "#/$defs/Extensions"
@@ -518,6 +524,81 @@
           }
         }
       }
+    },
+
+    "MediaAsset": {
+      "title": "Media asset",
+      "description": "One visual asset in the record's media manifest, referenced by content hash and never embedded. `role` states what the picture is for; `media_type` states what the bytes are; the two vocabularies are deliberately orthogonal. The role vocabulary maps one-to-one to GLDF's image types, so a crosswalk between the two formats is mechanical.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "description": "What the asset is for: the product itself, the product in an installed context, a dimensioned technical drawing, or another visual described by the caption.",
+          "$ref": "taxonomy.schema.json#/$defs/MediaRole"
+        },
+        "reference": {
+          "description": "The asset file, by filename, optional URL, and mandatory SHA-256 content hash, like every other file reference in the record.",
+          "$ref": "#/$defs/FileReference"
+        },
+        "media_type": {
+          "description": "IANA media type of the referenced bytes.",
+          "$ref": "taxonomy.schema.json#/$defs/MediaType"
+        },
+        "primary": {
+          "description": "Marks the preferred asset for its role when a record carries several. At most one entry per role should set it true; consumers encountering more than one fall back to document order.",
+          "type": "boolean"
+        },
+        "alt_text": {
+          "description": "Alternative text describing the asset for accessibility and non-visual consumers.",
+          "type": "string",
+          "minLength": 1
+        },
+        "caption": {
+          "description": "Human-readable caption. For an asset with role `other`, the caption is what tells a consumer what the asset is.",
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "description": "BCP 47 language tag for a language-specific asset, such as a localized dimensional drawing. Two language versions of one drawing are two entries.",
+          "type": "string",
+          "minLength": 1
+        },
+        "width_px": {
+          "description": "Pixel width of a raster asset.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "height_px": {
+          "description": "Pixel height of a raster asset.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "size_bytes": {
+          "description": "Size of the referenced file in bytes.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "rights": {
+          "description": "Free-text usage-rights statement for the asset, as the manufacturer publishes it.",
+          "type": "string",
+          "minLength": 1
+        },
+        "credit": {
+          "description": "Free-text attribution or credit line to display with the asset.",
+          "type": "string",
+          "minLength": 1
+        },
+        "extracted_from_ref": {
+          "description": "Filename of the source_files entry this asset was extracted from, for an asset that originated inside a listed source document rather than as a standalone file.",
+          "type": "string",
+          "minLength": 1
+        },
+        "configuration_refs": {
+          "description": "Order codes, in the vocabulary of configuration.catalog_number, of the specific covered configurations this asset depicts. Absent when the asset applies to everything the record's applicability block covers.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "required": ["role", "reference", "media_type"]
     },
 
     "ProductFamily": {

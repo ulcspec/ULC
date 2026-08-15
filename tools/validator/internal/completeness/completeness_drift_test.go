@@ -380,6 +380,13 @@ var descriptiveAllowlist = map[string]bool{
 	// token qualifies that term and stays descriptive (tracked, not graded),
 	// the same treatment the attestation sub-structure enums receive above.
 	"WarrantyTermBasis": true,
+
+	// --- v1.6.0 media manifest class ---
+	// Media manifest vocabulary: the role and media-type tokens describe a
+	// referenced visual asset. Media stays tracked, not graded, so imagery
+	// can never move a conformance tier.
+	"MediaRole": true,
+	"MediaType": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from
