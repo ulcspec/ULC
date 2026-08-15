@@ -20,6 +20,45 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.6.0 (2026-08-14)
+
+The media manifest. A record gains an optional pointer-only `media[]` array naming the visual assets that document the product: product photographs, application photographs, and dimensional drawings, each referenced by filename, IANA media type, and SHA-256 content hash. Entries are pointers, never bytes: no image data enters a record. Every addition is an optional field: no `required` set changes, nothing is removed or narrowed, no conformance grade or achievement state moves, and the generated index is untouched, so the builder version does not bump and no stored record needs re-stamping. Every example record and golden file is byte-identical.
+
+### For consumers
+
+Nothing to do. Records that omit `media` validate and grade exactly as before; records that carry it validate against the new definitions. The manifest is tracked, not graded: it gates no conformance tier and changes no computed value.
+
+Cutsheets carry photographs and dimensional drawings, and until now a record had no home to reference them by content hash. The manifest is built to answer five questions about each asset: which file it is, what it is for (`role`), what its bytes should hash to (`reference.sha256`), what format it is (`media_type`), and how it may be used and credited (`rights` and `credit`, free text as the manufacturer publishes them, when stated). The record states what the asset is; it never carries the asset.
+
+Verification of a media asset is three-state, and rendering should follow it. An asset whose bytes are present and match the declared hash is verified. An asset that cannot be verified, because the file is locally absent or a URL copy has not been fetched and hashed, is unverified: a consumer may render an unverified `product_photo` or `application_photo` with a visible unverified marking, and must not render an unverified `dimensional_drawing`, because wrong bytes on a drawing are a dimensional data hazard rather than a cosmetic one. The third state is absence: the record declares no asset for that role, which is different from an asset whose file is missing.
+
+- `role` states what a picture is for: `product_photo`, `application_photo`, `dimensional_drawing`, or `other` (qualified by `caption`). The vocabulary maps one-to-one to GLDF's image types, so a crosswalk between the two formats is mechanical.
+- `media_type` states what the bytes are, from a closed initial set of image formats: `image/jpeg`, `image/png`, `image/svg+xml`, and `image/webp`. The two vocabularies are orthogonal by design. The set is image formats only: a PDF is a document, not a picture, and belongs in `source_files`, so the media manifest and the source-file list share no format. The preferred authoring order for drawings is SVG, then PNG.
+- Optional descriptors: `primary` (the preferred asset for its role, at most one per role), `alt_text`, `caption`, `language`, `width_px`, `height_px`, `byte_size`, `rights`, `credit`, `extracted_from` (the source_files entry an extracted asset came from), and `configuration_refs` (the order codes an asset specifically depicts).
+
+No example record changes: the repository's real-data rule forbids fabricating media entries, so shipped examples gain manifests when their manufacturers supply real imagery with written usage rights.
+
+### Schema
+
+- New optional top-level array `media` of entries defined by the new `$defs/MediaAsset`. Each entry requires `role`, `reference` (a standard FileReference, so `filename` and `sha256` are required and `url` is optional), and `media_type`. The constraints live entirely inside the new definition, so no previously-valid record is affected.
+- New taxonomy enums `MediaRole` (four tokens) and `MediaType` (four tokens, image formats only). Both are descriptive vocabulary: they gate no conformance tier and feed no rubric row.
+- A media entry carries no `SourceFileType` token by design, so a photograph can never serve as the provenance source for a measured value; documents a record derives data from stay in `source_files`.
+
+### Validator
+
+- The byte-verification walk covers the new `media[].reference` site with the default policy: a local hash mismatch is an error, a locally absent file is informational. The walk's site registry gains the new site, and the validate help text and validator README name it in their default-site lists.
+- Media findings reuse the established file-reference finding codes (for example `source-file/hash-mismatch` for a tampered asset and `source-file/not-found-locally` for a locally absent one), which are a stable public contract; the finding's JSON Pointer names the media site, for example `/media/0/reference`.
+- `ulc from-sheet` gains no media columns in this release; workbook authoring for media arrives with the first example records that carry real imagery.
+
+### Docs
+
+- `docs/authoring-patterns.md`: the primitives section gains a `media` entry describing the manifest, the two vocabularies, the drawing preference order, and the three-state verification and rendering guidance.
+- `docs/how-it-works.md`: the provenance-and-integrity section states that the media manifest follows the identifies-never-embeds model.
+- `schema/README.md`: the scope list names the media manifest.
+- `tools/validator/README.md`: the hash-verification bullet's default-site list gains media manifest entries.
+- `README.md`: the current-release version line, and the record-contents list names the media manifest.
+- `ROADMAP.md`: the active-version heading and narrative; the deferred-work list gains the media index projection; the out-of-scope list gains inline media payloads and image quality grading.
+
 ## 1.5.0 (2026-08-14)
 
 An authoring and tooling release. The workbook gains an Imperial entry side for dual-unit fields, `ulc from-sheet` gains a machine-readable conversion report and a draft output directory, `ulc validate` flags placeholder hashes left by draft conversion, and the release archive gains the unit-conversion policy document. There is no schema or taxonomy change and no computed-value change: grades, achievements, and the generated index are untouched, the builder version does not bump, and every example record and golden file is byte-identical.

@@ -23,7 +23,7 @@ changed `required[]`) requires the next major, v2.0.0. Pre-1.0 releases generall
 aimed for additive changes; compatibility-tightening changes occurred only when
 documented in the changelog (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.5.x
+## Active version: v1.6.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -67,6 +67,16 @@ conversion report and a draft output directory, `ulc validate` flags the
 64-zero placeholder hash that draft conversion stamps, and the release
 archive gains the published unit-conversion policy. Grades, achievements,
 and the generated index are untouched, so stored records need no re-stamp.
+
+v1.6.0 adds the pointer-only media manifest: an optional top-level `media[]`
+array whose entries reference product photographs, application photographs,
+and dimensional drawings by filename, IANA media type, and SHA-256 content
+hash, with a role vocabulary that maps one-to-one to GLDF's image types.
+Entries are pointers, never bytes: no image data enters a record, and a
+media entry can never serve as the provenance source for a measured value.
+The manifest is tracked, not graded; the generated index is unchanged, so
+stored records need no re-stamp. Example records gain media entries when
+manufacturers supply real imagery with written usage rights.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
@@ -226,6 +236,11 @@ foreclosed to the next major, v2.0.0; minors stay additive-only.
   statement defining exactly what an implementation must check, and whether
   the schemas should adopt the format-assertion vocabulary, is held for a
   future release.
+- **Media index projection.** The `media[]` manifest is short enough for
+  consumers to walk directly. A generated index projection of the roles
+  present is held until a real facet or search consumer needs it, because
+  any new index member bumps the builder version and marks every stored
+  record's index stale until re-stamped.
 
 ## Explicitly out of scope
 
@@ -238,6 +253,13 @@ do not propose them:
   pedestrian activity: none of these belong in ULC.
 - **IANA media-type registration** (`application/vnd.ulc+json`). Deferred
   until adoption signals support the filing.
+- **Inline media payloads**. Media assets are referenced by filename, media
+  type, and SHA-256 content hash, never embedded. Base64 image data in
+  records is out of scope: records stay diffable, greppable metadata, and
+  the bytes travel outside the record.
+- **Image quality grading**. The media manifest is tracked, not graded. No
+  conformance tier and no achievement theme reads imagery, so the presence
+  or quality of a photograph can never move a computed grade.
 - **Vendor-specific extensions in the core schema**. Handled via the
   `extensions` field, not normative.
 - **Project-level lighting-design metadata**. Belongs in design tools or
