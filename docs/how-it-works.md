@@ -32,7 +32,7 @@ Download the CLI from the GitHub Releases page, or build it from source with `cd
 
 Every value in a ULC record carries provenance: where it came from, how it was obtained, and whether it is measured, rated, or nominal. That makes the source of any field traceable rather than asserted.
 
-ULC does not embed source files. It identifies them. Each referenced source file (datasheet PDF, IES, LDT) is recorded with its filename, an optional URL, and a SHA-256 content hash. A consumer who obtains a source file through any channel can verify it matches the record by recomputing the hash and comparing. If a single byte of the file differs, the hashes diverge. This is tamper-evident by construction, and it is a load-bearing differentiator: the record is not just data, it is data with a verifiable link back to the evidence behind it.
+ULC does not embed source files. It identifies them. Each referenced source file (datasheet PDF, IES, LDT) is recorded with its filename, an optional URL, and a SHA-256 content hash. A consumer who obtains a source file through any channel can verify it matches the record by recomputing the hash and comparing. If a single byte of the file differs, the hashes diverge. This is tamper-evident by construction, and it is a load-bearing differentiator: the record is not just data, it is data with a verifiable link back to the evidence behind it. The media manifest follows the identical model: a product photograph or dimensional drawing is referenced by filename, media type, and content hash, never embedded.
 
 ## How records are consumed today
 
