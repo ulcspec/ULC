@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## 1.6.0 (2026-08-14)
+## 1.6.0 (2026-08-15)
 
 The media manifest. A record gains an optional pointer-only `media[]` array naming the visual assets that document the product: product photographs, application photographs, and dimensional drawings, each referenced by filename, IANA media type, and SHA-256 content hash. Entries are pointers, never bytes: no image data enters a record. Every addition is an optional field: no `required` set changes, nothing is removed or narrowed, no conformance grade or achievement state moves, and the generated index is untouched, so the builder version does not bump and no stored record needs re-stamping. Every example record and golden file is byte-identical.
 
