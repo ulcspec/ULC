@@ -1182,7 +1182,7 @@
 
     "MediaType": {
       "title": "Media type",
-      "description": "The IANA RFC 6838 media type of a referenced media asset. The set admits image formats only: the common raster formats and SVG for vector drawings. A document format never appears here; a PDF is a document and belongs in source_files, so the media manifest and the source-file list share no format. When authoring a dimensional drawing the preferred order is `image/svg+xml`, then `image/png`. The set widens additively when real assets require it.",
+      "description": "The IANA RFC 6838 media type of a referenced media asset. The set admits image formats only: the common raster formats and SVG for vector drawings. A document format is never admitted here; a PDF is a document and belongs in source_files. When authoring a dimensional drawing the preferred order is `image/svg+xml`, then `image/png`. The set widens additively when real assets require it.",
       "type": "string",
       "enum": [
         "image/jpeg",

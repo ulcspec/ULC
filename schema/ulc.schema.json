@@ -572,7 +572,7 @@
           "type": "integer",
           "minimum": 1
         },
-        "byte_size": {
+        "size_bytes": {
           "description": "Size of the referenced file in bytes.",
           "type": "integer",
           "minimum": 1
@@ -587,7 +587,7 @@
           "type": "string",
           "minLength": 1
         },
-        "extracted_from": {
+        "extracted_from_ref": {
           "description": "Filename of the source_files entry this asset was extracted from, for an asset that originated inside a listed source document rather than as a standalone file.",
           "type": "string",
           "minLength": 1

@@ -838,10 +838,10 @@ func TestValidatorConstrainsMedia(t *testing.T) {
 			"language":           "en-GB",
 			"width_px":           2400,
 			"height_px":          1600,
-			"byte_size":          812345,
+			"size_bytes":         812345,
 			"rights":             "Reuse permitted with attribution",
 			"credit":             "Photograph supplied by the manufacturer",
-			"extracted_from":     "acme-orbit-datasheet.pdf",
+			"extracted_from_ref": "acme-orbit-datasheet.pdf",
 			"configuration_refs": []any{"ORB-2400-30K-90"},
 		},
 	}
