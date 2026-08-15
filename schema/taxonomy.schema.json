@@ -1168,6 +1168,30 @@
       ]
     },
 
+    "MediaRole": {
+      "title": "Media role",
+      "description": "What a media asset is for, independent of its file format. `product_photo` shows the product itself, typically isolated or on a neutral background. `application_photo` shows the product installed or in a usage context. `dimensional_drawing` is a dimensioned technical drawing of the product's geometry. `other` covers any other visual asset, described by the entry's caption. The four values map one-to-one to GLDF's image types (Product Picture, Application Picture, Technical Sketch, Other), so a crosswalk between the two formats is mechanical.",
+      "type": "string",
+      "enum": [
+        "product_photo",
+        "application_photo",
+        "dimensional_drawing",
+        "other"
+      ]
+    },
+
+    "MediaType": {
+      "title": "Media type",
+      "description": "The IANA RFC 6838 media type of a referenced media asset. The set admits image formats only: the common raster formats and SVG for vector drawings. A document format never appears here; a PDF is a document and belongs in source_files, so the media manifest and the source-file list share no format. When authoring a dimensional drawing the preferred order is `image/svg+xml`, then `image/png`. The set widens additively when real assets require it.",
+      "type": "string",
+      "enum": [
+        "image/jpeg",
+        "image/png",
+        "image/svg+xml",
+        "image/webp"
+      ]
+    },
+
     "ComparisonOperator": {
       "title": "Comparison operator",
       "description": "Used on manufacturer-declared bound values (for example flicker upper bounds) when the manufacturer claims `value <= X` rather than a specific measured value. `eq` means exact equality (the scalar itself); `lte` means the declared value is an upper bound; `lt` is strict upper bound. Pairs with a `ProvenancedNumber` to describe bound-expression quantities.",
