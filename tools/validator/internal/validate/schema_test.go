@@ -1030,8 +1030,7 @@ func TestValidatorConstrainsOrdering(t *testing.T) {
 
 // TestValidatorConstrainsCustomization pins the customization-openness keywords:
 // the closed axis vocabulary, the traceability anyOf, the conditional label on
-// `other`, the array floor, the four prose caps, and the minLength floors on
-// statement and published_in_ref.
+// `other`, the array floor, and the four prose caps with their minLength floors.
 // Each rejection case isolates exactly one keyword and asserts where it fires.
 func TestValidatorConstrainsCustomization(t *testing.T) {
 	root := repoRoot(t)
@@ -1150,6 +1149,17 @@ func TestValidatorConstrainsCustomization(t *testing.T) {
 		"an empty published_in_ref": {
 			list:    []any{map[string]any{"axis": "cct", "published_in_ref": ""}},
 			pointer: "/product_family/customization_openness/0/published_in_ref",
+		},
+		// The conditional's required is satisfied by presence too, so an empty
+		// label clears the `other` conditional and only the floor rejects it.
+		"an empty axis_label": {
+			list:    []any{map[string]any{"axis": "other", "axis_label": "", "contact_reference": "requests@manufacturer.example"}},
+			pointer: "/product_family/customization_openness/0/axis_label",
+		},
+		// Presence satisfies the anyOf, mirroring the empty published_in_ref case.
+		"an empty contact_reference": {
+			list:    []any{map[string]any{"axis": "cct", "contact_reference": ""}},
+			pointer: "/product_family/customization_openness/0/contact_reference",
 		},
 	}
 	for name, tc := range rejected {
