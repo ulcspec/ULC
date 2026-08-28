@@ -387,6 +387,12 @@ var descriptiveAllowlist = map[string]bool{
 	// can never move a conformance tier.
 	"MediaRole": true,
 	"MediaType": true,
+
+	// --- v1.7.0 ordering grammar class ---
+	// Ordering-grammar vocabulary: the order-unit token describes how a
+	// product is sold. Ordering stays tracked, not graded, so no ordering
+	// fact can ever move a conformance tier.
+	"OrderUnit": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from

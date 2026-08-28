@@ -44,6 +44,7 @@ A ULC record is a single JSON document that conforms to the ULC schema. It carri
 - Provenance for every extracted value, so the source of each field is always traceable
 - References to the original source files (datasheet PDF, IES, LDT) including filename, optional URL, and a SHA-256 content hash for integrity verification
 - References to product photographs, application photographs, and dimensional drawings (the optional media manifest), carried the same way: filename, optional URL, and SHA-256 content hash, never the image bytes
+- The ordering grammar for products sold by length or assembled from sections (the optional ordering block): the unit sold as, order and cut increments, and maximum continuous runs, per configuration where the manufacturer publishes them so, and never lead times, stock, or prices
 
 The record references source files by hash rather than embedding them, so any copy a consumer obtains can be verified against the record; see the [verification procedure in how-it-works.md](docs/how-it-works.md#provenance-and-integrity).
 
@@ -122,7 +123,7 @@ To check the current state of manufacturer adoption (which manufacturers have pu
 
 ## Project status
 
-The current release is `1.6.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
+The current release is `1.7.0`. ULC computes two orthogonal axes rather than declaring them: the reference builder grades each record against three completeness grades (`core`, `standard`, `full`) above an `incomplete` floor, and computes the Product Achievements axis (per theme, `none`, `claimed`, or `documented`) beside it, stamping both into the generated index. The toolchain ships the split schema and taxonomy, the drift-guard tooling, the reference command-line validator and compiler (`ulc`) with schema validation, builder parity, and source-file hash verification, the deterministic `from-sheet` workbook-to-record converter, the fill-in workbook template under `templates/workbook/`, and the PIM platform mapping guides under `mappings/pim/`. See `CHANGELOG.md` for the full release history.
 
 The specification will continue to evolve based on real-world use, industry feedback, and alignment with adjacent standards. See `CHANGELOG.md` for release notes.
 

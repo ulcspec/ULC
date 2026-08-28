@@ -133,6 +133,22 @@ A top-level block declaring the range of orderable SKUs the record's measurement
 - `excluded_combinations`: combinations that are orderable for other records but not this one (for example "Max Output not available with 2200K, 2700K, 3500K, 5000K")
 - `applicable_sku_count_estimate`: informational
 
+### `ordering`
+
+The optional top-level block for products sold by length or assembled from sections: tape and ribbon products cut to an ordered length, and sectional linears joined into rows. It carries the grammar of how the product is ordered, as printed on the family's own ordering documentation: `order_unit` says what the product is sold as (`cut_to_length_run` for continuous products ordered at a specified length, `fixed_length_section` for discrete sections joined on site), `order_increment` the granularity at which lengths may be ordered, `cut_increment` the module at which the product may be cut, and `max_continuous_run` the maximum electrically continuous run. Each length uses the record's standard dual-unit form (both `mm` and `in`, SI authoritative). A member lives in exactly one place: directly on the block when one value holds for everything the record covers, or in `declared_by_configuration` rows when the manufacturer publishes it per configuration, each row naming the configurations it covers by order codes in the vocabulary the record already speaks: a full catalog number, or a single option value as the applicability axes publish them, whichever of the two the manufacturer's own documentation uses. Codes are never matched as substrings. If an option value appears in more than one of the record's axes it is ambiguous; use full catalog numbers there instead. A row must carry at least one value beside the configurations it names. For a `fixed_length_section` family the enumerated set of section lengths lives where its order codes already live, on the applicability block's length axis, and `order_increment` is left absent.
+
+```json
+"ordering": {
+  "order_unit": "cut_to_length_run",
+  "max_continuous_run": { "mm": 12000, "in": 472.44 },
+  "declared_by_configuration": [
+    { "configuration_refs": ["A2"], "cut_increment": { "mm": 40, "in": 1.57 } }
+  ]
+}
+```
+
+The block carries the grammar of ordering and never the numbers of a transaction. Lead times, stock levels, prices, and minimum-order quantities change with the market and belong to the sales channel; a record that froze them under a content hash would preserve them stale. If the ordering documentation prints a constraint's existence with no value ("cut points on request, consult factory"), the record simply omits that member: for a consumer, an absent ordering value means the manufacturer has not published it, never that the product is unconstrained. A record for a product that is neither cut to length nor joined into rows omits the block entirely.
+
 ### Provenance classes
 
 Every photometric value declares a provenance method from a closed set. The values that matter for cutsheet authoring:
