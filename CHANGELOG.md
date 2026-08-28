@@ -20,6 +20,28 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.8.0 (2026-08-28)
+
+Customization openness. A product family gains an optional `customization_openness` array inside `product_family`: the axes (color temperature, finish, mounting, and the rest of a closed vocabulary) the manufacturer states are open to requests beyond the published order-code menu, as cutsheets already print in prose ("other color temperatures on request", a published modifications list). A specifier whose requirement falls outside the published menu can then see the closest published record together with the axes its manufacturer states are open, instead of no match at all. Each entry names its axis from the new closed `CustomizationAxis` vocabulary (twelve named axes plus a labelled `other`), may carry the manufacturer's own on-request wording (`statement`) and axis name (`axis_label`), and must carry at least one of a citation to the document where the openness is published (`published_in_ref`) or the routing the manufacturer names for such requests (`contact_reference`). The marker declares openness only: it never enumerates what the custom choices are, never implies price, lead time, minimum quantity, or acceptance of any specific request, and never widens a record's applicability, so a configuration obtained through a request inherits none of the record's measured values, derivations, or attestations. An axis absent from the list is unstated, never a refusal.
+
+Every addition is an optional field: no `required` set changes, nothing is removed or narrowed, no conformance grade or achievement state moves, and the generated index is untouched, so the builder version does not bump and no stored record needs re-stamping. Every example record and golden file is byte-identical.
+
+### For consumers
+
+Consuming this field carries rules. A consumer may facet on the axis tokens, display the attributed statement (dated by the record's `record_status_as_of` where it carries one), and return a record as a near match visibly flagged as request-required, ranked below covered matches and never merged into the covered set. Only listed axes may be presented as open: an absent axis is unstated, neither open nor refused. A consumer must never present an open axis as a covered configuration; never apply any measured value, derivation, computed grade, or attestation of the record to a custom variant; never compose or extend an order code for one; never parse a statement for values or paraphrase it as a commitment; and never infer price, lead time, minimum quantity, or that any particular region or representative will honor a request. Sibling records of one family should carry identical lists; on a conflict, treat the family's statement as unresolved rather than merging. Records that omit `customization_openness` validate and grade exactly as before, and the marker is tracked, not graded: it gates no conformance tier and changes no computed value.
+
+### Schema
+
+- New optional `product_family.customization_openness` array (`$defs/CustomizationOpening`): per-axis openness entries carrying `axis`, optional `axis_label` and `statement`, and at least one of `published_in_ref` or `contact_reference`; `axis_label` is required when the axis is `other`.
+- New closed taxonomy vocabulary `CustomizationAxis` (`cct`, `cri`, `finish`, `optic`, `mounting`, `mechanical`, `dimensions`, `driver`, `controls`, `light_source`, `output`, `emergency`, `other`), widening additively when real datasheets require it.
+
+### Docs
+
+- `docs/authoring-patterns.md` gains a customization-openness entry carrying the authoritative token-to-surface binding table and the boundary rule between covered order-code axes and openness statements.
+- The schema directory README's scope list names customization openness.
+- README and ROADMAP updated for the release, including a ROADMAP out-of-scope entry making the option-enumeration exclusion explicit and two deferred-work entries (vocabulary growth, index projection).
+- The ROADMAP versioning model now states that a changed `required[]` is breaking in either direction.
+
 ## 1.7.0 (2026-08-28)
 
 The ordering grammar. A record for a product sold by length or assembled from sections gains an optional top-level `ordering` block carrying the grammar of how the product is ordered: the unit it is sold as (`order_unit`, on the new closed `OrderUnit` vocabulary), the granularity at which lengths may be ordered (`order_increment`), the module at which the product may be cut (`cut_increment`), and the maximum electrically continuous run (`max_continuous_run`), each length in the record's standard dual-unit form. Values the manufacturer publishes per configuration sit in `declared_by_configuration` rows scoped by order codes, the order-code vocabulary the record already speaks. The block carries the grammar of ordering, never the numbers of a transaction: lead times, stock levels, and prices remain permanently out of scope, because a hash-anchored record could only preserve them stale. Industry precedent for carrying exactly this split is long-standing: durable product catalogs carry order units and increments (BMEcat's mandatory ORDER_UNIT, GDSN's orderable-unit flags and sizing factors) while transactional numbers travel on live channels.
