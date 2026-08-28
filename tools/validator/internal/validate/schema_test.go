@@ -889,6 +889,112 @@ func TestValidatorConstrainsMedia(t *testing.T) {
 	}
 }
 
+// TestValidatorConstrainsOrdering pins the keywords the ordering block adds:
+// the closed order-unit vocabulary, the dual-unit contract every length member
+// inherits through its $ref, and the addressing keywords on a per-configuration
+// row, which must name at least one configuration and carry at least one value
+// beside the names. Fixture codes and lengths are synthetic.
+func TestValidatorConstrainsOrdering(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	cutModule := func() map[string]any { return map[string]any{"mm": 40, "in": 1.57} }
+	runLimit := func() map[string]any { return map[string]any{"mm": 12000, "in": 472.44} }
+	validate := func(block map[string]any) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		m["ordering"] = block
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+	// A row is only ever validated inside the block that carries it.
+	validateRow := func(row map[string]any) *findings.Report {
+		return validate(map[string]any{"declared_by_configuration": []any{row}})
+	}
+	// Assert the pointer and the code only: the library owns the message text.
+	wantViolationAt := func(t *testing.T, r *findings.Report, pointer string) {
+		t.Helper()
+		for _, f := range r.Findings {
+			if f.Code == findings.CodeSchemaViolation && f.Path == pointer {
+				return
+			}
+		}
+		t.Errorf("expected a %q finding at %q; got: %+v", findings.CodeSchemaViolation, pointer, r.Findings)
+	}
+
+	accepted := map[string]map[string]any{
+		"a minimal cut-to-length block": {"order_unit": "cut_to_length_run"},
+		// A sectional family chooses its lengths from the enumerated set its
+		// applicability axis already publishes, so it carries no order_increment.
+		"a minimal fixed-section block": {"order_unit": "fixed_length_section"},
+		"an empty block":                {},
+		// One member on the block and a different one in a row. The split is an
+		// authoring rule the schema deliberately does not enforce, so this case
+		// models the correct shape rather than pinning a rejection.
+		"a block splitting an invariant member from a per-configuration one": {
+			"order_unit":         "cut_to_length_run",
+			"max_continuous_run": runLimit(),
+			"declared_by_configuration": []any{
+				map[string]any{"configuration_refs": []any{"A2"}, "cut_increment": cutModule()},
+			},
+		},
+	}
+	for name, block := range accepted {
+		t.Run("accepts "+name, func(t *testing.T) {
+			if r := validate(block); r.HasErrors() {
+				t.Errorf("expected a valid ordering block; got: %+v", r.Findings)
+			}
+		})
+	}
+
+	rejected := map[string]struct {
+		block   map[string]any
+		pointer string
+	}{
+		"an unlisted order unit": {
+			block:   map[string]any{"order_unit": "linear_foot"},
+			pointer: "/ordering/order_unit",
+		},
+		"a length carrying only its SI leaf": {
+			block:   map[string]any{"cut_increment": map[string]any{"mm": 40}},
+			pointer: "/ordering/cut_increment",
+		},
+		"per-configuration rows carried as an object": {
+			block:   map[string]any{"declared_by_configuration": map[string]any{}},
+			pointer: "/ordering/declared_by_configuration",
+		},
+	}
+	for name, tc := range rejected {
+		t.Run("rejects "+name, func(t *testing.T) {
+			r := validate(tc.block)
+			if !r.HasErrors() {
+				t.Fatalf("expected a schema error for %s, got none", name)
+			}
+			wantViolationAt(t, r, tc.pointer)
+		})
+	}
+
+	rejectedRows := map[string]map[string]any{
+		"a row naming no configurations":  {"order_increment": cutModule(), "cut_increment": cutModule()},
+		"a row carrying no value":         {"configuration_refs": []any{"A1"}},
+		"a row scoped to no order code":   {"configuration_refs": []any{}, "order_increment": cutModule()},
+		"a row scoped to an empty string": {"configuration_refs": []any{""}, "order_increment": cutModule()},
+	}
+	for name, row := range rejectedRows {
+		t.Run("rejects "+name, func(t *testing.T) {
+			if r := validateRow(row); !r.HasErrors() {
+				t.Errorf("expected a schema error for %s, got none", name)
+			}
+		})
+	}
+}
+
 // TestSchemaFormatDeclarationsAreAsserted guards the two properties that make
 // a declared format load-bearing, at every site in both schema documents.
 // First, the format name is one the compiler actually asserts: an unrecognized
