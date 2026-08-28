@@ -33,7 +33,7 @@ Nothing to do. Records that omit `ordering` validate and grade exactly as before
 ### Schema
 
 - New optional top-level `ordering` block (`$defs/Ordering`), with per-configuration `declared_by_configuration` rows (`$defs/OrderingRule`) scoped by order codes.
-- New closed taxonomy vocabulary `OrderUnit` (`cut_to_length_run`, `fixed_length_section`), widening additively when real ordering documentation requires it.
+- New closed taxonomy vocabulary `OrderUnit` (`cut_to_length_run`, `fixed_length_section`), widening additively when real ordering documentation requires it. It is descriptive vocabulary: it gates no conformance tier and feeds no rubric row.
 - Three shipped descriptions gain a clarifying sentence: `discontinued_at` and `superseded_by` now state that they speak for every configuration the record covers, and `conditions_document` now states that a document also listed in `source_files` is referenced independently in each place.
 
 ### Docs
