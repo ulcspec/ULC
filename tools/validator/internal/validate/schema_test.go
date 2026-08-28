@@ -944,6 +944,12 @@ func TestValidatorConstrainsOrdering(t *testing.T) {
 				map[string]any{"configuration_refs": []any{"A2"}, "cut_increment": cutModule()},
 			},
 		},
+		"a block carrying every member": {
+			"order_unit":         "cut_to_length_run",
+			"order_increment":    cutModule(),
+			"cut_increment":      cutModule(),
+			"max_continuous_run": runLimit(),
+		},
 	}
 	for name, block := range accepted {
 		t.Run("accepts "+name, func(t *testing.T) {
@@ -965,6 +971,16 @@ func TestValidatorConstrainsOrdering(t *testing.T) {
 			block:   map[string]any{"cut_increment": map[string]any{"mm": 40}},
 			pointer: "/ordering/cut_increment",
 		},
+		"an order increment carrying only its SI leaf": {
+			block:   map[string]any{"order_increment": map[string]any{"mm": 40}},
+			pointer: "/ordering/order_increment",
+		},
+		"a row run limit carrying only its SI leaf": {
+			block: map[string]any{"declared_by_configuration": []any{
+				map[string]any{"configuration_refs": []any{"A1"}, "max_continuous_run": map[string]any{"mm": 12000}},
+			}},
+			pointer: "/ordering/declared_by_configuration/0/max_continuous_run",
+		},
 		"per-configuration rows carried as an object": {
 			block:   map[string]any{"declared_by_configuration": map[string]any{}},
 			pointer: "/ordering/declared_by_configuration",
@@ -980,17 +996,34 @@ func TestValidatorConstrainsOrdering(t *testing.T) {
 		})
 	}
 
-	rejectedRows := map[string]map[string]any{
-		"a row naming no configurations":  {"order_increment": cutModule(), "cut_increment": cutModule()},
-		"a row carrying no value":         {"configuration_refs": []any{"A1"}},
-		"a row scoped to no order code":   {"configuration_refs": []any{}, "order_increment": cutModule()},
-		"a row scoped to an empty string": {"configuration_refs": []any{""}, "order_increment": cutModule()},
+	rejectedRows := map[string]struct {
+		row     map[string]any
+		pointer string
+	}{
+		"a row naming no configurations": {
+			row:     map[string]any{"order_increment": cutModule(), "cut_increment": cutModule()},
+			pointer: "/ordering/declared_by_configuration/0",
+		},
+		"a row carrying no value": {
+			row:     map[string]any{"configuration_refs": []any{"A1"}},
+			pointer: "/ordering/declared_by_configuration/0",
+		},
+		"a row scoped to no order code": {
+			row:     map[string]any{"configuration_refs": []any{}, "order_increment": cutModule()},
+			pointer: "/ordering/declared_by_configuration/0/configuration_refs",
+		},
+		"a row scoped to an empty string": {
+			row:     map[string]any{"configuration_refs": []any{""}, "order_increment": cutModule()},
+			pointer: "/ordering/declared_by_configuration/0/configuration_refs/0",
+		},
 	}
-	for name, row := range rejectedRows {
+	for name, tc := range rejectedRows {
 		t.Run("rejects "+name, func(t *testing.T) {
-			if r := validateRow(row); !r.HasErrors() {
-				t.Errorf("expected a schema error for %s, got none", name)
+			r := validateRow(tc.row)
+			if !r.HasErrors() {
+				t.Fatalf("expected a schema error for %s, got none", name)
 			}
+			wantViolationAt(t, r, tc.pointer)
 		})
 	}
 }
