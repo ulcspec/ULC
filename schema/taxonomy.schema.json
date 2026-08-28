@@ -1202,6 +1202,27 @@
       ]
     },
 
+    "CustomizationAxis": {
+      "title": "Customization axis",
+      "description": "Axis of a product family a manufacturer can declare open to customization requests beyond the published order-code menu. A token names the AXIS, never any value on it. Each non-`other` token anchors to the ULC surface that carries the axis's schema-typed data: `cct` anchors to NominalCCT and colorimetry.nominal_cct_k; `cri` to CriTier and configuration.tested_axes.cri_tier; `finish` to product_family.shared_mechanical.finish_color_options, covering any published color or finish axis, cordsets included; `optic` to DistributionType and BeamFamily via photometry.distribution_type and photometry.beam_family; `mounting` to MountingType and product_family.mounting_types; `mechanical` to product_family.shared_mechanical (structure, housing, material: a custom housing or a non-standard material files here); `dimensions` to product_family.physical_dimensions; `driver` to ControlGearType and electrical.control_gear_type (the driver hardware, deliberately not the signaling layer); `controls` to DimmingProtocol and electrical.driver_protocol (the control and signaling layer, deliberately not the driver hardware); `light_source` to ColorTunabilityCapability and configuration.tested_axes.color_tunability, covering light-source technology beyond the published menu (tunable-white classes, color-mixing and spectrally tuned sources), as distinct from a different fixed color temperature, which is cct; `output` to the photometry flux surfaces (photometry.total_luminous_flux_lm, photometry.led_module_luminous_flux_lm), covering requests for an output level the published menu does not offer; `emergency` to EmergencyRole and the emergency block, covering factory emergency-power options beyond the menu. `other` carries the manufacturer's own axis_label and files a demand signal for the next token. The authoritative token-to-surface binding table lives in docs/authoring-patterns.md; this description is its summary. This vocabulary is customization-scoped: the ordering grammar's vocabulary is separate and neither reuses the other's. The set widens additively when real datasheets require it.",
+      "type": "string",
+      "enum": [
+        "cct",
+        "cri",
+        "finish",
+        "optic",
+        "mounting",
+        "mechanical",
+        "dimensions",
+        "driver",
+        "controls",
+        "light_source",
+        "output",
+        "emergency",
+        "other"
+      ]
+    },
+
     "ComparisonOperator": {
       "title": "Comparison operator",
       "description": "Used on manufacturer-declared bound values (for example flicker upper bounds) when the manufacturer claims `value <= X` rather than a specific measured value. `eq` means exact equality (the scalar itself); `lte` means the declared value is an upper bound; `lt` is strict upper bound. Pairs with a `ProvenancedNumber` to describe bound-expression quantities.",

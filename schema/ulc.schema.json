@@ -667,6 +667,54 @@
       ]
     },
 
+    "CustomizationOpening": {
+      "title": "Customization opening",
+      "description": "One axis the manufacturer states it will entertain requests on, beyond the published order-code menu. At most one entry per axis token, except `other`, which may repeat when each entry carries a distinct axis_label.",
+      "type": "object",
+      "properties": {
+        "axis": {
+          "description": "The axis stated open, from the CustomizationAxis vocabulary. The token names the axis, never any value on it.",
+          "$ref": "taxonomy.schema.json#/$defs/CustomizationAxis"
+        },
+        "axis_label": {
+          "description": "The manufacturer's own name for this axis. Required when axis is `other`; optional detail elsewhere, where it may carry the manufacturer's narrower name for the opening without changing which token facets. A name only: never a value list, and never a relabeling of a listed axis to evade its token.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "statement": {
+          "description": "The manufacturer's own on-request wording (for example 'other color temperatures on request'). An attribution snippet, never a value list: authors MUST NOT enumerate available custom values, prices, lead times, or minimum quantities here. When the printed line itself enumerates values, the no-enumeration rule wins: cite the document via published_in_ref and omit or elide the enumerating clause.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "published_in_ref": {
+          "description": "Filename of the document where this openness is published, with or without a transcribed statement, in the vocabulary of the record's source_files entries and product_family.cutsheet (the typical carrier). Present for openness printed on the sheet. A filename only; the validator does not resolve it, resolution against any one record's file manifest is a courtesy rather than a contract, and nothing checks that the named document carries the statement. Name only documents the manufacturer publishes or has cleared for reference: a non-public document's name can disclose more than the manufacturer intends.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "contact_reference": {
+          "description": "Where a request on this axis is directed, as the manufacturer publishes or states it: a role or department routing the manufacturer already makes public, never a named individual's personal contact details. Carries the same meaning as attestation verification type requires_manufacturer_confirmation: the manufacturer confirms each request per project, and consumers must not propagate openness as an accepted request. A routing string, never a value list.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": ["axis"],
+      "anyOf": [
+        { "required": ["published_in_ref"] },
+        { "required": ["contact_reference"] }
+      ],
+      "if": {
+        "properties": { "axis": { "const": "other" } },
+        "required": ["axis"]
+      },
+      "then": {
+        "required": ["axis_label"]
+      }
+    },
+
     "ProductFamily": {
       "title": "Product family",
       "description": "Cutsheet-level identity and metadata shared by every ULC record in the family.",
@@ -823,6 +871,12 @@
               "$ref": "#/$defs/FileReference"
             }
           }
+        },
+        "customization_openness": {
+          "description": "Axes of this family the manufacturer states are open to requests beyond the published order-code menu, as printed on the cutsheet ('other color temperatures on request', a published modifications list) or as the manufacturer states directly. Declares OPENNESS ONLY: it never enumerates what the custom choices are, never implies price, lead time, minimum quantity, or that any specific request will be accepted, and never widens any record's applicability. A configuration obtained through such a request is outside the record's covered configuration range and inherits none of the record's measured values, derivations, or attestations, and consumers must never compose or extend an order code for one. An axis absent from this list is UNSTATED: never a stated refusal, and never an implied openness; only axes listed here may be presented as open. Family-scoped: authored identically in every record of the family. Tracked, not graded.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/CustomizationOpening" }
         },
         "shared_attestations": {
           "description": "Attestations that apply to every SKU in the family without qualification. SKU-specific or option-conditional attestations live in the top-level `attestations[]` array instead.",
