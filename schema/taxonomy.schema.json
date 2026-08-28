@@ -1192,6 +1192,16 @@
       ]
     },
 
+    "OrderUnit": {
+      "title": "Order unit",
+      "description": "The unit in which a linear or continuous-run product is sold. `cut_to_length_run` is a continuous product ordered at a specified length and cut to that length, whether the factory cuts it before shipment or the installer cuts it in the field. `fixed_length_section` is a discrete section or luminaire whose length is chosen from an enumerated set of order codes and joined with its siblings into a continuous row on site; the enumerated length set itself lives where those order codes already live, on the record's applicability axes. The set widens additively when real ordering documentation requires a unit it cannot express. The concept follows the industry's durable-record precedent: product catalogs carry the unit a thing is bought in, never the price or availability of buying it.",
+      "type": "string",
+      "enum": [
+        "cut_to_length_run",
+        "fixed_length_section"
+      ]
+    },
+
     "ComparisonOperator": {
       "title": "Comparison operator",
       "description": "Used on manufacturer-declared bound values (for example flicker upper bounds) when the manufacturer claims `value <= X` rather than a specific measured value. `eq` means exact equality (the scalar itself); `lte` means the declared value is an upper bound; `lt` is strict upper bound. Pairs with a `ProvenancedNumber` to describe bound-expression quantities.",

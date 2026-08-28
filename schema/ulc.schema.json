@@ -34,12 +34,12 @@
     },
 
     "superseded_by": {
-      "description": "Pointer to the successor product for a record whose product has been replaced by a newer SKU. Complements record_status: the `superseded` status token says the product was replaced, and this field names its replacement. The supersession fact is monotonic: set once when the supersession occurs and never retargeted, so it can appear but cannot go stale. A later record revision may add identifiers for the same successor (for example a record_id once the successor record is published).",
+      "description": "Pointer to the successor product for a record whose product has been replaced by a newer SKU. Complements record_status: the `superseded` status token says the product was replaced, and this field names its replacement. The supersession fact is monotonic: set once when the supersession occurs and never retargeted, so it can appear but cannot go stale. A later record revision may add identifiers for the same successor (for example a record_id once the successor record is published). The pointer speaks for every configuration the record covers: the record, which can be narrower than the family, is its scope.",
       "$ref": "#/$defs/SupersessionReference"
     },
 
     "discontinued_at": {
-      "description": "Effective calendar date on which the product's commercial availability ends or ended. ISO 8601 date (YYYY-MM-DD). Distinct from record_status_as_of, which records when the status was last verified, not when it took effect; the family-level counterpart introduced_at lives in product_family, while this date sits at the record envelope beside the record_status token it qualifies, because availability can end per configuration, not only per family. Recorded once, when the end of availability is fixed; unlike a lead time or a price, it does not drift with the market. Precedent: GDSN carries a discontinuation date inside the master trade-item record.",
+      "description": "Effective calendar date on which the product's commercial availability ends or ended. ISO 8601 date (YYYY-MM-DD). Distinct from record_status_as_of, which records when the status was last verified, not when it took effect; the family-level counterpart introduced_at lives in product_family, while this date sits at the record envelope beside the record_status token it qualifies, because availability can end per configuration, not only per family. Recorded once, when the end of availability is fixed; unlike a lead time or a price, it does not drift with the market. Precedent: GDSN carries a discontinuation date inside the master trade-item record. When present, the date speaks for every configuration the record covers: the record, which can be narrower than the family, is its scope.",
       "type": "string",
       "format": "date"
     },
@@ -180,6 +180,11 @@
       "description": "Pointer-only manifest of the visual assets that document this product: product photographs, application photographs, and dimensional drawings. Entries reference each asset by filename, IANA media type, and SHA-256 content hash; no image data is ever embedded. Deliberately separate from source_files: a media asset documents the product's appearance and geometry for presentation, while source_files names the documents a record derives data from, so a media entry can never become a provenance source for a measured value.",
       "type": "array",
       "items": { "$ref": "#/$defs/MediaAsset" }
+    },
+
+    "ordering": {
+      "description": "How the product is ordered, for products sold by length or assembled from sections: the grammar of ordering, never the numbers of a transaction. Carries the unit the product is sold as, the increments orders and field cuts obey, and the maximum continuous run, as the manufacturer's own ordering documentation publishes them. Lead times, stock levels, and prices are deliberately out of scope: those are transactional facts that belong to the sales channel, and a hash-anchored record would only ever preserve them stale. Values that hold across everything the record covers sit directly on the block; values that vary by configuration sit in declared_by_configuration rows scoped by order codes.",
+      "$ref": "#/$defs/Ordering"
     },
 
     "extensions": {
@@ -601,6 +606,67 @@
       "required": ["role", "reference", "media_type"]
     },
 
+    "Ordering": {
+      "title": "Ordering grammar",
+      "description": "The grammar of how a linear or continuous-run product is ordered. These are invariant product facts printed on the family's ordering documentation: they change only when the product changes, so they belong in the durable record. Transactional facts never appear here. Each of the three length members lives in exactly one place: directly on this block when one value holds for everything the record covers, or in declared_by_configuration rows when the manufacturer publishes it per configuration (a maximum run that varies by output tier, a cut module that varies by color class). Carrying the same member in both places is an authoring error.",
+      "type": "object",
+      "properties": {
+        "order_unit": {
+          "description": "The unit in which the product is sold, from the OrderUnit vocabulary. `cut_to_length_run` covers products ordered at a specified length; `fixed_length_section` covers discrete sections joined into runs on site.",
+          "$ref": "taxonomy.schema.json#/$defs/OrderUnit"
+        },
+        "order_increment": {
+          "description": "The granularity at which lengths may be ordered, when the manufacturer publishes one. Distinct from cut_increment: a product may be orderable to the inch while field cuts obey a coarser electrical module. Invariant across everything this record covers; per-configuration values live in declared_by_configuration rows instead.",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "cut_increment": {
+          "description": "The repeating module at which the product may be cut, as published: the spacing of marked cut points on a continuous product. Its presence states the product may be cut at this module; the record does not state who performs the cut, and its absence states nothing about cuttability. Invariant across everything this record covers; per-configuration values live in declared_by_configuration rows instead.",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "max_continuous_run": {
+          "description": "The maximum electrically continuous run the manufacturer publishes for the product. Distinct from any maximum orderable quantity: an order may comprise several runs, each within this limit. The value carries no statement of feed position or feed count, so consumers must not derive feed counts from it. Invariant across everything this record covers; per-configuration values live in declared_by_configuration rows instead.",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "declared_by_configuration": {
+          "description": "Ordering-grammar values the manufacturer publishes per configuration. Each row names the configurations it covers by order codes and carries the values that vary there. Rows carry only the varying members; rows carrying the same member must name disjoint configurations; a configuration matched by no row has no published value for that member, which means not published, never unconstrained. Unlike the photometric declared_by arrays, these rows carry published ordering facts, not values derived from a tested baseline.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/OrderingRule" }
+        }
+      }
+    },
+
+    "OrderingRule": {
+      "title": "Per-configuration ordering rule",
+      "description": "Ordering-grammar values for the specific configurations the row names. A row must carry at least one value beside the configurations it names.",
+      "type": "object",
+      "properties": {
+        "configuration_refs": {
+          "description": "Order codes naming the configurations this row's values apply to: either a full catalog number, in the vocabulary of configuration.catalog_number, or a single option value as the applicability block's fixed_axes and covered_axes publish them, matched against that axis alone. An option value that appears in more than one of the record's published axes is ambiguous; use full catalog numbers there instead. Codes are never matched as substrings of a catalog number or of an option value.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "order_increment": {
+          "description": "Order granularity for the named configurations.",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "cut_increment": {
+          "description": "Cut module for the named configurations.",
+          "$ref": "#/$defs/DualUnitLength"
+        },
+        "max_continuous_run": {
+          "description": "Maximum electrically continuous run for the named configurations.",
+          "$ref": "#/$defs/DualUnitLength"
+        }
+      },
+      "required": ["configuration_refs"],
+      "anyOf": [
+        { "required": ["order_increment"] },
+        { "required": ["cut_increment"] },
+        { "required": ["max_continuous_run"] }
+      ]
+    },
+
     "ProductFamily": {
       "title": "Product family",
       "description": "Cutsheet-level identity and metadata shared by every ULC record in the family.",
@@ -753,7 +819,7 @@
               "deprecated": true
             },
             "conditions_document": {
-              "description": "Reference to the manufacturer's published warranty-conditions document, by filename and content hash, carrying the revision label and date when the document states them. The document holds the exclusions, conditional extensions, and per-accessory variations that qualify term_years, so the conditions travel with the headline number instead of being lost. Preferred over the deprecated free-text conditions_reference.",
+              "description": "Reference to the manufacturer's published warranty-conditions document, by filename and content hash, carrying the revision label and date when the document states them. The document holds the exclusions, conditional extensions, and per-accessory variations that qualify term_years, so the conditions travel with the headline number instead of being lost. Preferred over the deprecated free-text conditions_reference. The same document may also appear in source_files; the two references are authored independently.",
               "$ref": "#/$defs/FileReference"
             }
           }
