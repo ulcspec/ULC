@@ -23,7 +23,7 @@ changed `required[]`) requires the next major, v2.0.0. Pre-1.0 releases generall
 aimed for additive changes; compatibility-tightening changes occurred only when
 documented in the changelog (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.6.x
+## Active version: v1.7.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -77,6 +77,16 @@ media entry can never serve as the provenance source for a measured value.
 The manifest is tracked, not graded; the generated index is unchanged, so
 stored records need no re-stamp. Example records gain media entries when
 manufacturers supply real imagery with written usage rights.
+
+v1.7.0 adds the ordering grammar: an optional top-level `ordering` block
+for products sold by length or assembled from sections, carrying the unit
+the product is sold as, order and cut increments, and the maximum
+continuous run, with per-configuration values scoped by order codes. The
+block carries the grammar of ordering, never the numbers of a transaction:
+lead times, stock, and prices stay permanently out of the record. The
+block is tracked, not graded; the generated index is unchanged, so stored
+records need no re-stamp. Example records gain ordering blocks when
+manufacturers supply real ordering documentation.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
@@ -260,6 +270,11 @@ do not propose them:
 - **Image quality grading**. The media manifest is tracked, not graded. No
   conformance tier and no achievement theme reads imagery, so the presence
   or quality of a photograph can never move a computed grade.
+- **Transactional commercial data**. Lead times, stock levels, prices, and
+  minimum-order quantities are facts of a transaction, not of the product:
+  they change with the market, and a hash-anchored record would only ever
+  preserve them stale. The `ordering` block carries the grammar of
+  ordering; the numbers belong to the sales channel.
 - **Vendor-specific extensions in the core schema**. Handled via the
   `extensions` field, not normative.
 - **Project-level lighting-design metadata**. Belongs in design tools or

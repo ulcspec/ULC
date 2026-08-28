@@ -20,6 +20,28 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.7.0 (2026-08-28)
+
+The ordering grammar. A record for a product sold by length or assembled from sections gains an optional top-level `ordering` block carrying the grammar of how the product is ordered: the unit it is sold as (`order_unit`, on the new closed `OrderUnit` vocabulary), the granularity at which lengths may be ordered (`order_increment`), the module at which the product may be cut (`cut_increment`), and the maximum electrically continuous run (`max_continuous_run`), each length in the record's standard dual-unit form. Values the manufacturer publishes per configuration sit in `declared_by_configuration` rows scoped by order codes, the order-code vocabulary the record already speaks. The block carries the grammar of ordering, never the numbers of a transaction: lead times, stock levels, and prices remain permanently out of scope, because a hash-anchored record could only preserve them stale. Industry precedent for carrying exactly this split is long-standing: durable product catalogs carry order units and increments (BMEcat's mandatory ORDER_UNIT, GDSN's orderable-unit flags and sizing factors) while transactional numbers travel on live channels.
+
+Every addition is an optional field: no `required` set changes, nothing is removed or narrowed, no conformance grade or achievement state moves, and the generated index is untouched, so the builder version does not bump and no stored record needs re-stamping. Every example record and golden file is byte-identical.
+
+### For consumers
+
+Nothing to do. Records that omit `ordering` validate and grade exactly as before; records that carry it validate against the new definitions. The block is tracked, not graded: it gates no conformance tier and changes no computed value. `ulc from-sheet` gains no ordering columns in this release; workbook authoring for the block arrives with the first real ordering-bearing records, designed against real files rather than guessed.
+
+### Schema
+
+- New optional top-level `ordering` block (`$defs/Ordering`), with per-configuration `declared_by_configuration` rows (`$defs/OrderingRule`) scoped by order codes.
+- New closed taxonomy vocabulary `OrderUnit` (`cut_to_length_run`, `fixed_length_section`), widening additively when real ordering documentation requires it.
+- Three shipped descriptions gain a clarifying sentence: `discontinued_at` and `superseded_by` now state that they speak for every configuration the record covers, and `conditions_document` now states that a document also listed in `source_files` is referenced independently in each place.
+
+### Docs
+
+- `docs/authoring-patterns.md` gains an `ordering` primitive entry beside the applicability primitive it pairs with.
+- The schema directory README's scope list names the ordering grammar.
+- README and ROADMAP updated for the release, including a ROADMAP out-of-scope entry making the transactional-data exclusion explicit.
+
 ## 1.6.0 (2026-08-15)
 
 The media manifest. A record gains an optional pointer-only `media[]` array naming the visual assets that document the product: product photographs, application photographs, and dimensional drawings, each referenced by filename, IANA media type, and SHA-256 content hash. Entries are pointers, never bytes: no image data enters a record. Every addition is an optional field: no `required` set changes, nothing is removed or narrowed, no conformance grade or achievement state moves, and the generated index is untouched, so the builder version does not bump and no stored record needs re-stamping. Every example record and golden file is byte-identical.
