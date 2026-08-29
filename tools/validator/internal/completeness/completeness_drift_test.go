@@ -305,6 +305,72 @@ func TestEmergencyPhotometryReferencePathResolves(t *testing.T) {
 	}
 }
 
+// TestCustomizationAxisAnchorsResolve guards the customization-axis bindings:
+// each bound data path resolves to a real schema field, each bound taxonomy
+// def exists, and the binding table's token set matches the enum. It stops
+// path rot, not semantic drift; the authoritative binding table lives in
+// docs/authoring-patterns.md.
+func TestCustomizationAxisAnchorsResolve(t *testing.T) {
+	ulc := loadJSONSchema(t, "ulc.schema.json")
+	ulcDefs, _ := mapOf(ulc["$defs"])
+	tax := loadJSONSchema(t, "taxonomy.schema.json")
+	taxDefs, ok := mapOf(tax["$defs"])
+	if !ok {
+		t.Fatal("taxonomy.schema.json has no $defs")
+	}
+
+	// Each token's bound surfaces: the schema data paths carrying the axis's
+	// data, and the taxonomy vocabularies typing it. `other` is the escape
+	// hatch and has no anchor, so it carries no row.
+	bindings := map[string]struct {
+		paths [][]string
+		defs  []string
+	}{
+		"cct":          {paths: [][]string{{"colorimetry", "nominal_cct_k"}}, defs: []string{"NominalCCT"}},
+		"cri":          {paths: [][]string{{"configuration", "tested_axes", "cri_tier"}}, defs: []string{"CriTier"}},
+		"finish":       {paths: [][]string{{"product_family", "shared_mechanical", "finish_color_options"}}},
+		"optic":        {paths: [][]string{{"photometry", "distribution_type"}, {"photometry", "beam_family"}}, defs: []string{"DistributionType", "BeamFamily"}},
+		"mounting":     {paths: [][]string{{"product_family", "mounting_types"}}, defs: []string{"MountingType"}},
+		"mechanical":   {paths: [][]string{{"product_family", "shared_mechanical"}}},
+		"dimensions":   {paths: [][]string{{"product_family", "physical_dimensions"}}},
+		"driver":       {paths: [][]string{{"electrical", "control_gear_type"}}, defs: []string{"ControlGearType"}},
+		"controls":     {paths: [][]string{{"electrical", "driver_protocol"}}, defs: []string{"DimmingProtocol"}},
+		"light_source": {paths: [][]string{{"configuration", "tested_axes", "color_tunability"}}, defs: []string{"ColorTunabilityCapability"}},
+		"output":       {paths: [][]string{{"photometry", "total_luminous_flux_lm"}, {"photometry", "led_module_luminous_flux_lm"}}},
+		"emergency":    {paths: [][]string{{"emergency", "emergency_role"}}, defs: []string{"EmergencyRole"}},
+	}
+
+	for token, b := range bindings {
+		for _, comps := range b.paths {
+			if _, ok := resolveDataPath(ulc, comps, ulcDefs); !ok {
+				t.Errorf("token %q: bound data path %q does not resolve in ulc.schema.json (a rotted binding)",
+					token, strings.Join(comps, "."))
+			}
+		}
+		for _, name := range b.defs {
+			if _, ok := mapOf(taxDefs[name]); !ok {
+				t.Errorf("token %q: bound taxonomy def %q does not exist in taxonomy.schema.json", token, name)
+			}
+		}
+	}
+
+	// Coverage both ways: a token minted without an anchor row, or a row naming
+	// a token the vocabulary does not carry, reddens here rather than passing
+	// silently.
+	members := loadEnumMembers(t, taxDefs, "CustomizationAxis")
+	delete(members, "other")
+	for token := range members {
+		if _, ok := bindings[token]; !ok {
+			t.Errorf("CustomizationAxis token %q has no binding row; add its anchors here and to the table in docs/authoring-patterns.md", token)
+		}
+	}
+	for token := range bindings {
+		if !members[token] {
+			t.Errorf("binding row %q is not a CustomizationAxis enum member", token)
+		}
+	}
+}
+
 // rubricTaxonomies is the set of taxonomy enum $defs the rubric maps (via each
 // row's taxonomy field).
 func rubricTaxonomies() map[string]bool {
@@ -393,6 +459,12 @@ var descriptiveAllowlist = map[string]bool{
 	// product is sold. Ordering stays tracked, not graded, so no ordering
 	// fact can ever move a conformance tier.
 	"OrderUnit": true,
+
+	// --- v1.8.0 customization openness class ---
+	// Customization-axis vocabulary: a token names an axis the family states
+	// is open to requests beyond the published menu. Openness stays tracked,
+	// not graded, so declaring it can never move a conformance tier.
+	"CustomizationAxis": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from

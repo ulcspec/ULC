@@ -1028,6 +1028,151 @@ func TestValidatorConstrainsOrdering(t *testing.T) {
 	}
 }
 
+// TestValidatorConstrainsCustomization pins the customization-openness keywords:
+// the closed axis vocabulary, the traceability anyOf, the conditional label on
+// `other`, the array floor, and the four prose caps with their minLength floors.
+// Each rejection case isolates exactly one keyword and asserts where it fires.
+func TestValidatorConstrainsCustomization(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	// Synthetic constraint fixtures: these values are constructed for keyword
+	// isolation and state nothing about the manufacturer whose record is loaded.
+	validate := func(list any) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		m, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		fam, ok := m["product_family"].(map[string]any)
+		if !ok {
+			t.Fatalf("product_family is not an object")
+		}
+		fam["customization_openness"] = list
+		r := findings.NewReport()
+		v.Validate(m, r)
+		return r
+	}
+	// Assert the pointer and the code only: the library owns the message text.
+	wantViolationAt := func(t *testing.T, r *findings.Report, pointer string) {
+		t.Helper()
+		for _, f := range r.Findings {
+			if f.Code == findings.CodeSchemaViolation && f.Path == pointer {
+				return
+			}
+		}
+		t.Errorf("expected a %q finding at %q; got: %+v", findings.CodeSchemaViolation, pointer, r.Findings)
+	}
+
+	accepted := map[string]any{
+		"a printed opening": []any{map[string]any{"axis": "cct", "published_in_ref": "family-cutsheet.pdf"}},
+		"a stated opening":  []any{map[string]any{"axis": "mounting", "contact_reference": "requests@manufacturer.example"}},
+		"a labelled other opening": []any{map[string]any{
+			"axis": "other", "axis_label": "sensor options", "contact_reference": "requests@manufacturer.example",
+		}},
+		// All five properties, with a label that narrows the finish axis rather
+		// than relabeling a different one.
+		"a fully populated opening": []any{map[string]any{
+			"axis":              "finish",
+			"axis_label":        "premium finishes",
+			"statement":         "Additional colors available on request.",
+			"published_in_ref":  "family-cutsheet.pdf",
+			"contact_reference": "requests@manufacturer.example",
+		}},
+		"two other entries with distinct labels": []any{
+			map[string]any{"axis": "other", "axis_label": "sensor options", "contact_reference": "requests@manufacturer.example"},
+			map[string]any{"axis": "other", "axis_label": "acoustic options", "contact_reference": "requests@manufacturer.example"},
+		},
+	}
+	for name, list := range accepted {
+		t.Run("accepts "+name, func(t *testing.T) {
+			if r := validate(list); r.HasErrors() {
+				t.Errorf("expected a valid customization openness list; got: %+v", r.Findings)
+			}
+		})
+	}
+
+	rejected := map[string]struct {
+		list    any
+		pointer string
+	}{
+		// The probe token is deliberately never mintable, so widening the
+		// vocabulary later cannot redden this case.
+		"an unlisted axis token": {
+			list:    []any{map[string]any{"axis": "custom", "published_in_ref": "family-cutsheet.pdf"}},
+			pointer: "/product_family/customization_openness/0/axis",
+		},
+		"a missing axis": {
+			list:    []any{map[string]any{"published_in_ref": "family-cutsheet.pdf"}},
+			pointer: "/product_family/customization_openness/0",
+		},
+		"an untraceable entry": {
+			list:    []any{map[string]any{"axis": "cct"}},
+			pointer: "/product_family/customization_openness/0",
+		},
+		"an unlabelled other": {
+			list:    []any{map[string]any{"axis": "other", "contact_reference": "requests@manufacturer.example"}},
+			pointer: "/product_family/customization_openness/0",
+		},
+		"an empty list": {
+			list:    []any{},
+			pointer: "/product_family/customization_openness",
+		},
+		"a list carried as an object": {
+			list:    map[string]any{},
+			pointer: "/product_family/customization_openness",
+		},
+		"an empty statement": {
+			list:    []any{map[string]any{"axis": "cct", "statement": "", "published_in_ref": "family-cutsheet.pdf"}},
+			pointer: "/product_family/customization_openness/0/statement",
+		},
+		"a statement over its cap": {
+			list:    []any{map[string]any{"axis": "cct", "statement": strings.Repeat("a", 201), "published_in_ref": "family-cutsheet.pdf"}},
+			pointer: "/product_family/customization_openness/0/statement",
+		},
+		"an axis label over its cap": {
+			list:    []any{map[string]any{"axis": "other", "axis_label": strings.Repeat("a", 81), "contact_reference": "requests@manufacturer.example"}},
+			pointer: "/product_family/customization_openness/0/axis_label",
+		},
+		"a published_in_ref over its cap": {
+			list:    []any{map[string]any{"axis": "cct", "published_in_ref": strings.Repeat("a", 256)}},
+			pointer: "/product_family/customization_openness/0/published_in_ref",
+		},
+		"a contact_reference over its cap": {
+			list:    []any{map[string]any{"axis": "cct", "contact_reference": strings.Repeat("a", 201)}},
+			pointer: "/product_family/customization_openness/0/contact_reference",
+		},
+		// required checks presence, not validity, so the empty string satisfies
+		// the traceability anyOf and only the minLength floor rejects it.
+		"an empty published_in_ref": {
+			list:    []any{map[string]any{"axis": "cct", "published_in_ref": ""}},
+			pointer: "/product_family/customization_openness/0/published_in_ref",
+		},
+		// The conditional's required is satisfied by presence too, so an empty
+		// label clears the `other` conditional and only the floor rejects it.
+		"an empty axis_label": {
+			list:    []any{map[string]any{"axis": "other", "axis_label": "", "contact_reference": "requests@manufacturer.example"}},
+			pointer: "/product_family/customization_openness/0/axis_label",
+		},
+		// Presence satisfies the anyOf, mirroring the empty published_in_ref case.
+		"an empty contact_reference": {
+			list:    []any{map[string]any{"axis": "cct", "contact_reference": ""}},
+			pointer: "/product_family/customization_openness/0/contact_reference",
+		},
+	}
+	for name, tc := range rejected {
+		t.Run("rejects "+name, func(t *testing.T) {
+			r := validate(tc.list)
+			if !r.HasErrors() {
+				t.Fatalf("expected a schema error for %s, got none", name)
+			}
+			wantViolationAt(t, r, tc.pointer)
+		})
+	}
+}
+
 // TestSchemaFormatDeclarationsAreAsserted guards the two properties that make
 // a declared format load-bearing, at every site in both schema documents.
 // First, the format name is one the compiler actually asserts: an unrecognized

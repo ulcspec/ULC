@@ -65,6 +65,8 @@ func TestReproducibleInputsKitchenSink(t *testing.T) {
 		"product_family": map[string]any{
 			"shared_attestations": sharedAtts,
 			"primary_category":    "panel_troffer",
+			// Non-input family member: openness never moves an achievement.
+			"customization_openness": []any{map[string]any{"axis": "cct", "contact_reference": "sentinel"}},
 		},
 		// Every non-input top-level key, with sentinel content Compute must ignore.
 		"emergency":          map[string]any{"emergency_role": "emergency_power_option", "power_source": "battery_integral"},
@@ -125,6 +127,24 @@ func TestCompletenessIgnoresAchievementInputs(t *testing.T) {
 	if completeness.AchievedLevel(base) != completeness.AchievedLevel(withExtra) {
 		t.Errorf("AchievedLevel moved when achievements-only inputs were added: base=%s withExtra=%s",
 			completeness.AchievedLevel(base), completeness.AchievedLevel(withExtra))
+	}
+}
+
+// 5.9 Completeness isolation: AchievedLevel is byte-identical with and without a
+// customization-openness list. Openness is tracked, not graded, so declaring it can
+// never move a conformance grade.
+func TestCompletenessIgnoresCustomizationOpenness(t *testing.T) {
+	base := loadRecord(t, exampleByName(t, "erco-quintessence-30416-023.ulc"))
+	withOpenness := deepCopyRecord(t, base)
+	fam, ok := withOpenness["product_family"].(map[string]any)
+	if !ok {
+		t.Fatalf("product_family is not an object")
+	}
+	fam["customization_openness"] = []any{map[string]any{"axis": "cct", "contact_reference": "sentinel"}}
+
+	if completeness.AchievedLevel(base) != completeness.AchievedLevel(withOpenness) {
+		t.Errorf("AchievedLevel moved when a customization-openness list was added: base=%s withOpenness=%s",
+			completeness.AchievedLevel(base), completeness.AchievedLevel(withOpenness))
 	}
 }
 

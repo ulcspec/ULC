@@ -10,20 +10,24 @@ ULC uses [SemVer](https://semver.org/). The version a record conforms to is
 declared in its `ulc_version` field.
 
 - **Major**: either a breaking schema change (a removed field, a narrowed type,
-  a removed enum value, a changed `required[]`), or a milestone that marks a
-  backward-compatibility commitment with an additive-only surface. v1.0.0 is the
-  second kind: it adds a whole grading axis and removes nothing.
+  a removed enum value, a changed `required[]` in either direction), or a
+  milestone that marks a backward-compatibility commitment with an additive-only
+  surface. v1.0.0 is the second kind: it adds a whole grading axis and removes
+  nothing.
 - **Minor**: backward-compatible additions and clarifications.
 - **Patch**: corrections and non-structural edits.
 
 v1.0.0 is the first formal backward-compatibility commitment for the schema
 surface. From v1.0.0 forward the schema surface is additive-only across minors;
 any breaking change (a removed field, a narrowed type, a removed enum value, a
-changed `required[]`) requires the next major, v2.0.0. Pre-1.0 releases generally
-aimed for additive changes; compatibility-tightening changes occurred only when
-documented in the changelog (as with the v0.3.0 `cri_tier` enum tightening).
+changed `required[]`) requires the next major, v2.0.0. A changed `required[]` is
+breaking in either direction: a relaxation leaves previously-valid records
+valid, but it changes what consumers may rely on being present, so it too waits
+for the next major. Pre-1.0 releases generally aimed for additive changes;
+compatibility-tightening changes occurred only when documented in the changelog
+(as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.7.x
+## Active version: v1.8.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -87,6 +91,20 @@ lead times, stock, and prices stay permanently out of the record. The
 block is tracked, not graded; the generated index is unchanged, so stored
 records need no re-stamp. Example records gain ordering blocks when
 manufacturers supply real ordering documentation.
+
+v1.8.0 adds customization openness: an optional `customization_openness`
+array inside `product_family` naming the axes the manufacturer states are
+open to requests beyond the published order-code menu, on the new closed
+`CustomizationAxis` vocabulary with a labelled `other` escape hatch. Every
+entry must cite the document where the openness is published or name the
+routing the manufacturer states for requests. The marker declares openness
+only: it never enumerates the custom choices, never implies price, lead
+time, minimum quantity, or acceptance of any specific request, and never
+widens a record's applicability; an axis absent from the list is unstated,
+never a refusal. The marker is tracked, not graded; the generated index is
+unchanged, so stored records need no re-stamp. Example records gain
+openness entries when manufacturers supply real statements with written
+usage rights.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
@@ -251,6 +269,16 @@ foreclosed to the next major, v2.0.0; minors stay additive-only.
   present is held until a real facet or search consumer needs it, because
   any new index member bumps the builder version and marks every stored
   record's index stale until re-stamped.
+- **Customization-axis vocabulary growth.** The `CustomizationAxis`
+  vocabulary widens additively as real datasheets file axes through the
+  labelled `other` entry. A dedicated accessories axis is a known
+  candidate, held until real records disambiguate it against the
+  `compatible_accessories` block.
+- **Customization-openness index projection.** The openness list is short
+  enough for consumers to walk directly. A generated index projection of
+  the open axes is held until a real search consumer needs it, because
+  any new index member bumps the builder version and marks every stored
+  record's index stale until re-stamped.
 
 ## Explicitly out of scope
 
@@ -275,6 +303,12 @@ do not propose them:
   they change with the market, and a hash-anchored record would only ever
   preserve them stale. The `ordering` block carries the grammar of
   ordering; the numbers belong to the sales channel.
+- **Custom option enumerations**. The `customization_openness` marker
+  declares which axes of a family are open to requests; it never lists
+  what the custom choices are, their prices, their lead times, or their
+  minimum quantities. Option matrices and configurator logic belong to
+  manufacturer sales channels and downstream tools, never to a
+  hash-anchored record.
 - **Vendor-specific extensions in the core schema**. Handled via the
   `extensions` field, not normative.
 - **Project-level lighting-design metadata**. Belongs in design tools or
