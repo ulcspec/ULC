@@ -172,8 +172,8 @@ measured override. Every records-sheet `base_attestation_ref` follows its field'
 Supplementary fields enforce their declared family for both automatic and explicit selection.
 
 TM-21 projection hours remain rated because they are extrapolated, not direct measurements. The
-converter refuses a measured override for that field while allowing measured overrides on actual
-test quantities such as maintenance test hours when their evidence resolves.
+converter refuses measured and nominal overrides for that field while allowing measured overrides
+on actual test quantities such as maintenance test hours when their evidence resolves.
 Likewise, `scaled`, `optical_simulation`, and `extended_photometry` are derived methods and require
 `value_type=rated`; the converter refuses measured and nominal values paired with any of them.
 

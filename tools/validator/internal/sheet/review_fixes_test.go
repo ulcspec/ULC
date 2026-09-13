@@ -96,7 +96,7 @@ func TestRecordsSheetCrossFamilyExceptionIsNarrow(t *testing.T) {
 		{name: "measured photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__attestation_ref": maintenanceID}},
 		{name: "rated photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__attestation_ref": maintenanceID}},
 		{name: "derived photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__prov_method": "scaled", "total_luminous_flux_lm__base_attestation_ref": maintenanceID}},
-		{name: "measured maintenance claim", want: "cannot use value_type=measured", col: Column{Header: "lm_claimed_hours", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"}, row: Row{"lm_claimed_hours__value_type": "measured", "lm_claimed_hours__attestation_ref": maintenanceID}},
+		{name: "measured maintenance claim", want: "requires value_type=rated", col: Column{Header: "lm_claimed_hours", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"}, row: Row{"lm_claimed_hours__value_type": "measured", "lm_claimed_hours__attestation_ref": maintenanceID}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

@@ -21,11 +21,11 @@ type provenanceContext struct {
 }
 
 type provenanceDefaults struct {
-	valueType        string
-	source           string
-	method           string
-	family           attestationFamily
-	disallowMeasured bool
+	valueType         string
+	source            string
+	method            string
+	family            attestationFamily
+	requiredValueType string
 }
 
 func (ctx provenanceContext) singleAnchorID(family attestationFamily) string {
@@ -53,17 +53,17 @@ type resolvedProvenance struct {
 // for the batch close-out rather than being hidden in a prefix rule.
 func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProvenance, error) {
 	family := attestationFamilyPhotometric
-	disallowMeasured := false
+	requiredValueType := ""
 	if col.Header == "lm_claimed_hours" {
 		family = attestationFamilyMaintenance
-		disallowMeasured = true
+		requiredValueType = "rated"
 	}
 	return resolveProvenanceForField(col.Header, provenanceDefaults{
-		valueType:        col.ProvValueType,
-		source:           col.ProvSource,
-		method:           col.ProvMethod,
-		family:           family,
-		disallowMeasured: disallowMeasured,
+		valueType:         col.ProvValueType,
+		source:            col.ProvSource,
+		method:            col.ProvMethod,
+		family:            family,
+		requiredValueType: requiredValueType,
 	}, row, ctx)
 }
 
@@ -75,8 +75,8 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 	if v, ok := row[field+"__value_type"]; ok {
 		valueType = v
 	}
-	if defaults.disallowMeasured && valueType == "measured" {
-		return resolvedProvenance{}, fmt.Errorf("column %q is a projection and cannot use value_type=measured; use rated", field)
+	if defaults.requiredValueType != "" && valueType != defaults.requiredValueType {
+		return resolvedProvenance{}, fmt.Errorf("column %q requires value_type=%s; got %s", field, defaults.requiredValueType, valueType)
 	}
 	source := defaults.source
 	sourceOverridden := false

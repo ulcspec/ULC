@@ -85,9 +85,10 @@ the maintenance family, so its explicit `attestation_ref` can name only LM-80
 or TM-21 evidence, and the manufacturer-rated claim refuses a measured
 override. Every records-sheet `base_attestation_ref` follows its field's family.
 
-`tm_21_projection_hours` is an extrapolated projection and cannot be marked
-`measured`; use `rated`. Actual test quantities such as `test_hours` may use a
-measured override when their maintenance evidence resolves.
+`tm_21_projection_hours` is an extrapolated projection and requires `rated`;
+both `measured` and `nominal` are refused. Actual test quantities such as
+`test_hours` may use a measured override when their maintenance evidence
+resolves.
 The derived methods `scaled`, `optical_simulation`, and `extended_photometry`
 also require `value_type=rated` and cannot be paired with `measured` or
 `nominal`.
