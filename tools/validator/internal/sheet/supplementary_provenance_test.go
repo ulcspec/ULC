@@ -139,7 +139,7 @@ func supplementaryInputs(t *testing.T, bundle string) map[string]string {
 	return map[string]string{"CSV": bundle, "XLSX": xlsx}
 }
 
-func supplementaryTestValue(t *testing.T, record map[string]any, sheet string) any {
+func supplementaryTestValue(t *testing.T, record map[string]any, sheet string, field ...string) any {
 	t.Helper()
 	switch sheet {
 	case "alpha_opic":
@@ -150,7 +150,11 @@ func supplementaryTestValue(t *testing.T, record map[string]any, sheet string) a
 		return metric["value"]
 	case "lumen_maintenance_package":
 		pkg, _ := arrayAt(t, record, "lumen_maintenance_package")[0].(map[string]any)
-		return pkg["tm_21_projection_hours"]
+		key := "tm_21_projection_hours"
+		if len(field) > 0 {
+			key = field[0]
+		}
+		return pkg[key]
 	default:
 		t.Fatalf("unknown test sheet %q", sheet)
 		return nil
@@ -159,18 +163,22 @@ func supplementaryTestValue(t *testing.T, record map[string]any, sheet string) a
 
 func TestSupplementaryProvenanceOverridesAcrossReaders(t *testing.T) {
 	tests := []struct {
-		sheet, field, source, method string
+		sheet, field, source, method, value string
 	}{
 		{sheet: "alpha_opic", field: "melanopic_der", source: "manufacturer_direct", method: "transcribed"},
 		{sheet: "flicker_metrics", field: "value", source: "manufacturer_direct", method: "transcribed"},
-		{sheet: "lumen_maintenance_package", field: "tm_21_projection_hours", source: "datasheet_pdf", method: "extracted"},
+		{sheet: "lumen_maintenance_package", field: "test_hours", source: "datasheet_pdf", method: "extracted", value: "1000"},
 	}
 	for _, test := range tests {
-		bundle := supplementaryBundleWithColumns(t, test.sheet, map[string]string{
+		columns := map[string]string{
 			test.field + "__value_type":  "nominal",
 			test.field + "__prov_source": test.source,
 			test.field + "__prov_method": test.method,
-		})
+		}
+		if test.value != "" {
+			columns[test.field] = test.value
+		}
+		bundle := supplementaryBundleWithColumns(t, test.sheet, columns)
 		for reader, input := range supplementaryInputs(t, bundle) {
 			t.Run(test.sheet+"/"+reader, func(t *testing.T) {
 				record := convertOne(t, input, PatternB, completeness.LevelStandard)
@@ -178,7 +186,7 @@ func TestSupplementaryProvenanceOverridesAcrossReaders(t *testing.T) {
 				if test.sheet == "flicker_metrics" {
 					unit = "ratio"
 				}
-				assertProvenanceDefaults(t, test.sheet, supplementaryTestValue(t, record, test.sheet), unit,
+				assertProvenanceDefaults(t, test.sheet, supplementaryTestValue(t, record, test.sheet, test.field), unit,
 					"nominal", test.source, test.method, "")
 			})
 		}
