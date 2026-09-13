@@ -90,3 +90,26 @@ func TestScanTrackedTreeDoesNotFollowSymlinks(t *testing.T) {
 		t.Fatalf("symlink target content was scanned: %#v", result.Matches)
 	}
 }
+
+func TestReadTrackedPathRejectsOversizedFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "oversized")
+	if err := os.WriteFile(path, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Truncate(path, maxTrackedFileBytes+1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := readTrackedPath(path, "oversized"); err == nil || !strings.Contains(err.Error(), "above the") {
+		t.Fatalf("oversized file error = %v", err)
+	}
+}
+
+func TestReadTrackedPathRejectsNonRegularPath(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "directory")
+	if err := os.Mkdir(path, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := readTrackedPath(path, "directory"); err == nil || !strings.Contains(err.Error(), "not a regular file or symbolic link") {
+		t.Fatalf("non-regular path error = %v", err)
+	}
+}

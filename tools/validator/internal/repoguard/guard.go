@@ -85,27 +85,9 @@ func ScanTrackedTree(start string) (Result, error) {
 		rel := filepath.ToSlash(string(part))
 		tracked = append(tracked, rel)
 		path := filepath.Join(root, filepath.FromSlash(rel))
-		info, err := os.Lstat(path)
+		data, err := readTrackedPath(path, rel)
 		if err != nil {
-			return Result{}, fmt.Errorf("inspect tracked file %s: %w", rel, err)
-		}
-		var data []byte
-		switch {
-		case info.Mode()&os.ModeSymlink != 0:
-			target, err := os.Readlink(path)
-			if err != nil {
-				return Result{}, fmt.Errorf("read tracked symlink %s: %w", rel, err)
-			}
-			data = []byte(target)
-		case !info.Mode().IsRegular():
-			return Result{}, fmt.Errorf("tracked path %s is not a regular file or symbolic link", rel)
-		case info.Size() > maxTrackedFileBytes:
-			return Result{}, fmt.Errorf("tracked file %s is %d bytes, above the %d-byte scan limit", rel, info.Size(), maxTrackedFileBytes)
-		default:
-			data, err = os.ReadFile(path)
-			if err != nil {
-				return Result{}, fmt.Errorf("read tracked file %s: %w", rel, err)
-			}
+			return Result{}, err
 		}
 		for i, text := range strings.Split(string(data), "\n") {
 			lines = append(lines, Line{Path: rel, Number: i + 1, Text: text})
@@ -139,5 +121,30 @@ func findRepositoryRoot(start string) (string, error) {
 			return "", fmt.Errorf("no repository root containing go.mod above %s", start)
 		}
 		dir = parent
+	}
+}
+
+func readTrackedPath(path, rel string) ([]byte, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return nil, fmt.Errorf("inspect tracked file %s: %w", rel, err)
+	}
+	switch {
+	case info.Mode()&os.ModeSymlink != 0:
+		target, err := os.Readlink(path)
+		if err != nil {
+			return nil, fmt.Errorf("read tracked symlink %s: %w", rel, err)
+		}
+		return []byte(target), nil
+	case !info.Mode().IsRegular():
+		return nil, fmt.Errorf("tracked path %s is not a regular file or symbolic link", rel)
+	case info.Size() > maxTrackedFileBytes:
+		return nil, fmt.Errorf("tracked file %s is %d bytes, above the %d-byte scan limit", rel, info.Size(), maxTrackedFileBytes)
+	default:
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("read tracked file %s: %w", rel, err)
+		}
+		return data, nil
 	}
 }
