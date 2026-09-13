@@ -47,7 +47,7 @@ const (
 
 func refuseRetiredRecordName(command, path string) bool {
 	retired := finishedRecordExtension + jsonSerializationSuffix
-	if !strings.HasSuffix(filepath.Base(path), retired) {
+	if !strings.HasSuffix(strings.ToLower(filepath.Base(path)), retired) {
 		return false
 	}
 	fmt.Fprintf(os.Stderr, "ulc %s: %s uses the retired finished-record suffix %s; use %s\n", command, path, retired, finishedRecordExtension)

@@ -39,6 +39,37 @@ func TestFinishedRecordCommandsRefuseRetiredName(t *testing.T) {
 	}
 }
 
+func TestFinishedRecordCommandsRefuseRetiredNameCaseInsensitively(t *testing.T) {
+	retired := finishedRecordExtension + jsonSerializationSuffix
+	commands := []struct {
+		name string
+		run  func([]string) int
+	}{
+		{"validate", runValidate},
+		{"build-index", runBuildIndex},
+		{"scope", runScope},
+	}
+	for _, suffix := range []string{strings.ToUpper(retired), ".UlC.JsOn"} {
+		for _, command := range commands {
+			t.Run(command.name+"/"+suffix, func(t *testing.T) {
+				missing := filepath.Join(t.TempDir(), "record"+suffix)
+				_, stderr, code := captureOutErr(t, func() int {
+					return command.run([]string{missing})
+				})
+				if code != 2 {
+					t.Errorf("exit = %d, want pre-read refusal exit 2; stderr:\n%s", code, stderr)
+				}
+				if !strings.Contains(stderr, missing) || !strings.Contains(stderr, retired) {
+					t.Errorf("stderr does not name path and canonical retired suffix:\n%s", stderr)
+				}
+				if strings.Contains(stderr, "no such file") {
+					t.Errorf("command read the refused path before rejecting its name:\n%s", stderr)
+				}
+			})
+		}
+	}
+}
+
 func TestFinishedRecordCommandsRefuseOnlyRetiredName(t *testing.T) {
 	source := exampleRecord(t, vodeRecord)
 	recordBytes, err := os.ReadFile(source)
