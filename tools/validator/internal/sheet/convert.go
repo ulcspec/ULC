@@ -212,7 +212,7 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	if err != nil {
 		return nil, err
 	}
-	provCtx := provenanceContext{anchors: familyAnchors(attestations)}
+	provCtx := newProvenanceContext(attestations)
 
 	// Master-row scalar columns (identity, taxonomy, mechanical, electrical,
 	// photometry, colorimetry) via the data-driven column spec.

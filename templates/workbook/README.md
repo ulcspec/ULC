@@ -74,7 +74,8 @@ Measured values auto-link only within their evidence family: records-sheet
 photometry and zonal lumens use LM-79; alpha-opic values use RP-46; flicker
 values use LM-90-20, IEEE 1789-2015, or NEMA 77-2017; and package-maintenance
 values use LM-80 or TM-21. Supply `X__attestation_ref` when a family has more
-than one candidate. For derived photometry, `X__extension_method` names the
+than one candidate; it must name exactly one attestation in that family, and a
+confirmation-required attestation cannot anchor measured evidence. For derived photometry, `X__extension_method` names the
 scaling rule and `X__base_attestation_ref` names the base measurement. Leave a
 legal companion blank to take the default.
 

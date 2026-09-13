@@ -175,6 +175,24 @@ type attestationAnchor struct {
 	count int
 }
 
+type attestationReference struct {
+	family                      attestationFamily
+	requiresManufacturerConfirm bool
+}
+
+func newProvenanceContext(attestations []any) provenanceContext {
+	return provenanceContext{
+		anchors:    familyAnchors(attestations),
+		references: attestationReferences(attestations),
+	}
+}
+
+func requiresManufacturerConfirmation(attestation map[string]any) bool {
+	verification, _ := attestation["verification"].(map[string]any)
+	typeName, _ := verification["type"].(string)
+	return typeName == "requires_manufacturer_confirmation"
+}
+
 // familyAnchors groups attestations through the authored program table and
 // sorts each family's ids so resolution stays deterministic.
 func familyAnchors(attestations []any) map[attestationFamily]attestationAnchor {
@@ -186,7 +204,7 @@ func familyAnchors(attestations []any) map[attestationFamily]attestationAnchor {
 		}
 		program, _ := attestation["program"].(string)
 		family, anchorsValues := programFamilies[program]
-		if !anchorsValues {
+		if !anchorsValues || requiresManufacturerConfirmation(attestation) {
 			continue
 		}
 		anchor := anchors[family]
@@ -201,4 +219,24 @@ func familyAnchors(attestations []any) map[attestationFamily]attestationAnchor {
 		anchors[family] = anchor
 	}
 	return anchors
+}
+
+func attestationReferences(attestations []any) map[string][]attestationReference {
+	references := map[string][]attestationReference{}
+	for _, value := range attestations {
+		attestation, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		id, _ := attestation["attestation_id"].(string)
+		if id == "" {
+			continue
+		}
+		program, _ := attestation["program"].(string)
+		references[id] = append(references[id], attestationReference{
+			family:                      programFamilies[program],
+			requiresManufacturerConfirm: requiresManufacturerConfirmation(attestation),
+		})
+	}
+	return references
 }

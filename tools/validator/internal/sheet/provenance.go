@@ -16,7 +16,8 @@ var derivedBaseMethods = map[string]bool{
 // provenanceContext carries the per-record anchor candidates grouped by the
 // authored AttestationProgram families.
 type provenanceContext struct {
-	anchors map[attestationFamily]attestationAnchor
+	anchors    map[attestationFamily]attestationAnchor
+	references map[string][]attestationReference
 }
 
 type provenanceDefaults struct {
@@ -93,6 +94,9 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 		prov["extension_method"] = v
 	}
 	if v, ok := row[field+"__base_attestation_ref"]; ok {
+		if err := ctx.validateExplicitReference(field, "base_attestation_ref", v, defaults.family, derivedBaseMethods[method]); err != nil {
+			return resolvedProvenance{}, err
+		}
 		prov["base_attestation_ref"] = v
 	}
 
@@ -113,6 +117,9 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 
 	// attestation_ref: explicit override wins; otherwise auto-link when measured.
 	if v, ok := row[field+"__attestation_ref"]; ok {
+		if err := ctx.validateExplicitReference(field, "attestation_ref", v, defaults.family, valueType == "measured"); err != nil {
+			return resolvedProvenance{}, err
+		}
 		prov["attestation_ref"] = v
 	} else if valueType == "measured" {
 		ref, err := ctx.measuredAttestationRefForFamily(field, defaults.family)
@@ -123,6 +130,26 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 	}
 
 	return resolvedProvenance{valueType: valueType, provenance: prov}, nil
+}
+
+func (ctx provenanceContext) validateExplicitReference(field, kind, reference string, family attestationFamily, measurementEvidence bool) error {
+	candidates := ctx.references[reference]
+	description := familyDescription(family)
+	switch len(candidates) {
+	case 0:
+		return fmt.Errorf("column %q explicitly names %s %q, but no attestation with that id exists", field, kind, reference)
+	case 1:
+		candidate := candidates[0]
+		if candidate.family != family {
+			return fmt.Errorf("column %q explicitly names %s %q from a different evidence family; use an attestation from the %s family", field, kind, reference, description)
+		}
+		if measurementEvidence && candidate.requiresManufacturerConfirm {
+			return fmt.Errorf("column %q explicitly names %s %q, but that attestation requires manufacturer confirmation and cannot anchor measured evidence", field, kind, reference)
+		}
+		return nil
+	default:
+		return fmt.Errorf("column %q explicitly names %s %q, but that id is declared by %d attestations", field, kind, reference, len(candidates))
+	}
 }
 
 func familyDescription(family attestationFamily) string {

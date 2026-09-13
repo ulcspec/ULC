@@ -211,6 +211,35 @@ func TestSupplementaryExplicitAttestationDisambiguatesAcrossReaders(t *testing.T
 	}
 }
 
+func TestSupplementaryExplicitAttestationRejectsWrongFamilyAcrossReaders(t *testing.T) {
+	bundle := supplementaryBundleWithColumns(t, "flicker_metrics", map[string]string{})
+	attestationRows := readCSVRows(t, filepath.Join(bundle, "attestations.csv"))
+	if len(attestationRows) < 2 || len(attestationRows[1]) < 2 {
+		t.Fatal("attestations fixture has no reference row")
+	}
+	wrongFamilyRef := attestationRows[1][1]
+	path := filepath.Join(bundle, "flicker_metrics.csv")
+	rows := readCSVRows(t, path)
+	rows[0] = append(rows[0], "value__value_type", "value__attestation_ref")
+	for i := 1; i < len(rows); i++ {
+		rows[i] = append(rows[i], "measured", wrongFamilyRef)
+	}
+	writeCSVRows(t, path, rows)
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			_, err := Convert(input, Options{})
+			if err == nil {
+				t.Fatal("wrong-family explicit attestation reference converted")
+			}
+			for _, want := range []string{"attestation_ref", "different evidence family", "flicker"} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("error %q does not contain %q", err, want)
+				}
+			}
+		})
+	}
+}
+
 func TestFlickerMetricUnitRuleIsTotalAndValidatesAuthoredUnits(t *testing.T) {
 	enum := taxonomyEnum(t, "FlickerMetric")
 	if len(flickerMetricUnits) != len(enum) {

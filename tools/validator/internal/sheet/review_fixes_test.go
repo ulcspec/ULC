@@ -9,10 +9,15 @@ import (
 
 func testProvenanceContext(id string, count int) provenanceContext {
 	anchor := attestationAnchor{count: count}
+	references := map[string][]attestationReference{}
 	if id != "" {
 		anchor.ids = []string{id}
+		references[id] = []attestationReference{{family: attestationFamilyPhotometric}}
 	}
-	return provenanceContext{anchors: map[attestationFamily]attestationAnchor{attestationFamilyPhotometric: anchor}}
+	return provenanceContext{
+		anchors:    map[attestationFamily]attestationAnchor{attestationFamilyPhotometric: anchor},
+		references: references,
+	}
 }
 
 // TestResolveProvenanceDerivedMethodRequiresBase locks the rule that a derived
@@ -43,7 +48,7 @@ func TestResolveProvenanceDerivedMethodRequiresBase(t *testing.T) {
 	// Explicit base override wins, no lm_79 anchor needed.
 	rp, err = resolveProvenance(col,
 		Row{"total_luminous_flux_lm__prov_method": "optical_simulation", "total_luminous_flux_lm__base_attestation_ref": "BASE-9"},
-		testProvenanceContext("", 0))
+		testProvenanceContext("BASE-9", 1))
 	if err != nil {
 		t.Fatalf("unexpected error with explicit base override: %v", err)
 	}

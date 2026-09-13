@@ -158,3 +158,64 @@ func TestResolverSelectsOnlyTheDeclaredProgramFamily(t *testing.T) {
 		}
 	}
 }
+
+func TestConfirmationRequiredAttestationCannotAnchorMeasuredEvidence(t *testing.T) {
+	attestations := []any{
+		map[string]any{
+			"program":        "lm_90_20",
+			"attestation_id": "case-flicker",
+			"verification":   map[string]any{"type": "requires_manufacturer_confirmation"},
+		},
+	}
+	ctx := newProvenanceContext(attestations)
+	_, err := resolveProvenanceForField("value", provenanceDefaults{
+		valueType: "measured",
+		source:    "test_report",
+		method:    "extracted",
+		family:    attestationFamilyFlicker,
+	}, Row{}, ctx)
+	if err == nil || !strings.Contains(err.Error(), "no flicker") {
+		t.Fatalf("automatic case-by-case anchor error = %v", err)
+	}
+
+	_, err = resolveProvenanceForField("value", provenanceDefaults{
+		valueType: "measured",
+		source:    "test_report",
+		method:    "extracted",
+		family:    attestationFamilyFlicker,
+	}, Row{"value__attestation_ref": "case-flicker"}, ctx)
+	if err == nil || !strings.Contains(err.Error(), "requires manufacturer confirmation") {
+		t.Fatalf("explicit case-by-case anchor error = %v", err)
+	}
+}
+
+func TestExplicitReferencesMustNameOneAttestationInTheDeclaredFamily(t *testing.T) {
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "lm_79_24", "attestation_id": "photometric"},
+		map[string]any{"program": "lm_90_20", "attestation_id": "duplicate"},
+		map[string]any{"program": "nema_77_2017", "attestation_id": "duplicate"},
+	})
+	tests := []struct {
+		name string
+		row  Row
+		want string
+	}{
+		{name: "missing direct", row: Row{"value__attestation_ref": "missing"}, want: "no attestation"},
+		{name: "wrong family direct", row: Row{"value__attestation_ref": "photometric"}, want: "different evidence family"},
+		{name: "duplicate direct", row: Row{"value__attestation_ref": "duplicate"}, want: "declared by 2 attestations"},
+		{name: "wrong family base", row: Row{"value__value_type": "rated", "value__prov_method": "scaled", "value__base_attestation_ref": "photometric"}, want: "different evidence family"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := resolveProvenanceForField("value", provenanceDefaults{
+				valueType: "measured",
+				source:    "test_report",
+				method:    "extracted",
+				family:    attestationFamilyFlicker,
+			}, test.row, ctx)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}

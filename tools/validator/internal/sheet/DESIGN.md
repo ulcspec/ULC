@@ -167,7 +167,9 @@ non-anchoring residue.
 
 Any effective `value_type=measured` MUST carry an `attestation_ref`. The converter auto-links
 only to a single attestation in the value's declared family and hard-errors on zero or multiple
-candidates unless the author supplies the companion explicitly. A non-measured override on an
+candidates unless the author supplies the companion explicitly. An explicit reference must name
+exactly one attestation in that same family. A confirmation-required attestation cannot anchor
+measured evidence, whether selection is automatic or explicit. A non-measured override on an
 IES-defaulted value switches the default source to `datasheet_pdf` unless the author also
 overrides the source. Derived methods require `base_attestation_ref` under the same family rule.
 An unsupported provenance token passes through assembly and is refused by schema validation,
