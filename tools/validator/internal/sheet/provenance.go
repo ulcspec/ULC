@@ -83,6 +83,9 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 	if v, ok := row[field+"__prov_method"]; ok {
 		method = v
 	}
+	if valueType == "measured" && derivedBaseMethods[method] {
+		return resolvedProvenance{}, fmt.Errorf("column %q uses derived method %q and cannot use value_type=measured; use rated", field, method)
+	}
 
 	// A non-measured value did not come from an IES measurement. When the author
 	// overrides the default value_type to rated/nominal (the IES-free path) without
