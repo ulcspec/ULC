@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func attestationProgramEnum(t *testing.T) map[string]bool {
+func taxonomyEnum(t *testing.T, definition string) map[string]bool {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join(filepath.Dir(schemaDir(t)), "schema", "taxonomy.schema.json"))
 	if err != nil {
@@ -24,9 +24,9 @@ func attestationProgramEnum(t *testing.T) map[string]bool {
 	if err := json.Unmarshal(data, &schema); err != nil {
 		t.Fatalf("parse taxonomy schema: %v", err)
 	}
-	values := schema.Defs["AttestationProgram"].Enum
+	values := schema.Defs[definition].Enum
 	if len(values) == 0 {
-		t.Fatal("AttestationProgram enum is empty")
+		t.Fatalf("%s enum is empty", definition)
 	}
 	out := map[string]bool{}
 	for _, value := range values {
@@ -53,7 +53,7 @@ func TestProgramFamiliesAreExactAndExhaustive(t *testing.T) {
 		t.Errorf("program families = %#v, want %#v", gotFamilies, wantFamilies)
 	}
 
-	enum := attestationProgramEnum(t)
+	enum := taxonomyEnum(t, "AttestationProgram")
 	covered := map[string]bool{}
 	for token := range programFamilies {
 		if !enum[token] {

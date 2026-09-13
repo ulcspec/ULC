@@ -8,9 +8,10 @@ type supplementaryValueKey struct {
 }
 
 type supplementaryValueColumn struct {
-	unit       string
-	unitColumn string
-	defaults   provenanceDefaults
+	unit         string
+	unitColumn   string
+	unitByMetric bool
+	defaults     provenanceDefaults
 }
 
 // supplementaryValueColumns declares every provenanced value authored by a
@@ -26,9 +27,9 @@ var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColu
 		defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "extracted", family: attestationFamilyMelanopic},
 	},
 	{sheet: "flicker_metrics", field: "value"}: {
-		unit:       "ratio",
-		unitColumn: "unit",
-		defaults:   provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "extracted", family: attestationFamilyFlicker},
+		unitColumn:   "unit",
+		unitByMetric: true,
+		defaults:     provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "extracted", family: attestationFamilyFlicker},
 	},
 	{sheet: "lumen_maintenance_package", field: "tm_21_projection_hours"}: {
 		unit:     "h",
@@ -50,6 +51,14 @@ var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColu
 		unit:     "lm",
 		defaults: provenanceDefaults{valueType: "measured", source: "ies", method: "extracted", family: attestationFamilyPhotometric},
 	},
+}
+
+var flickerMetricUnits = map[string]string{
+	"pst_lm":           "ratio",
+	"svm":              "ratio",
+	"percent_flicker":  "percent",
+	"flicker_index":    "ratio",
+	"modulation_depth": "ratio",
 }
 
 func supplementaryProvenancedNumber(sheet, field string, row Row, ctx provenanceContext) (map[string]any, error) {
@@ -75,7 +84,17 @@ func supplementaryProvenancedNumber(sheet, field string, row Row, ctx provenance
 		"provenance": resolved.provenance,
 	}
 	unit := column.unit
-	if column.unitColumn != "" && row[column.unitColumn] != "" {
+	if column.unitByMetric {
+		metric := row["metric"]
+		expected, ok := flickerMetricUnits[metric]
+		if !ok {
+			return nil, fmt.Errorf("metric %q has no declared unit rule", metric)
+		}
+		unit = expected
+		if authored := row[column.unitColumn]; authored != "" && authored != expected {
+			return nil, fmt.Errorf("unit %q is not valid for metric %q; use %q", authored, metric, expected)
+		}
+	} else if column.unitColumn != "" && row[column.unitColumn] != "" {
 		unit = row[column.unitColumn]
 	}
 	if unit != "" {

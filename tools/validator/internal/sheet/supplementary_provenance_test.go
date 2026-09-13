@@ -17,11 +17,12 @@ import (
 func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 	want := map[supplementaryValueKey]struct {
 		unit, unitColumn string
+		unitByMetric     bool
 		family           attestationFamily
 	}{
 		{sheet: "alpha_opic", field: "melanopic_der"}:                         {unit: "ratio", family: attestationFamilyMelanopic},
 		{sheet: "alpha_opic", field: "efficacy"}:                              {unit: "ratio", family: attestationFamilyMelanopic},
-		{sheet: "flicker_metrics", field: "value"}:                            {unit: "ratio", unitColumn: "unit", family: attestationFamilyFlicker},
+		{sheet: "flicker_metrics", field: "value"}:                            {unitColumn: "unit", unitByMetric: true, family: attestationFamilyFlicker},
 		{sheet: "lumen_maintenance_package", field: "tm_21_projection_hours"}: {unit: "h", family: attestationFamilyMaintenance},
 		{sheet: "lumen_maintenance_package", field: "test_hours"}:             {unit: "h", family: attestationFamilyMaintenance},
 		{sheet: "lumen_maintenance_package", field: "drive_current_ma"}:       {unit: "mA", family: attestationFamilyMaintenance},
@@ -37,8 +38,8 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 			t.Errorf("supplementary value table missing %#v", key)
 			continue
 		}
-		if got.unit != expected.unit || got.unitColumn != expected.unitColumn || got.defaults.family != expected.family {
-			t.Errorf("supplementary value table %#v = unit %q, unit column %q, family %q; want %q, %q, %q", key, got.unit, got.unitColumn, got.defaults.family, expected.unit, expected.unitColumn, expected.family)
+		if got.unit != expected.unit || got.unitColumn != expected.unitColumn || got.unitByMetric != expected.unitByMetric || got.defaults.family != expected.family {
+			t.Errorf("supplementary value table %#v = unit %q, unit column %q, metric rule %t, family %q; want %q, %q, %t, %q", key, got.unit, got.unitColumn, got.unitByMetric, got.defaults.family, expected.unit, expected.unitColumn, expected.unitByMetric, expected.family)
 		}
 	}
 }
@@ -172,10 +173,50 @@ func TestSupplementaryProvenanceOverridesAcrossReaders(t *testing.T) {
 		for reader, input := range supplementaryInputs(t, bundle) {
 			t.Run(test.sheet+"/"+reader, func(t *testing.T) {
 				record := convertOne(t, input, PatternB, completeness.LevelStandard)
-				assertProvenanceDefaults(t, test.sheet, supplementaryTestValue(t, record, test.sheet),
-					supplementaryValueColumns[supplementaryValueKey{sheet: test.sheet, field: test.field}].unit,
+				unit := supplementaryValueColumns[supplementaryValueKey{sheet: test.sheet, field: test.field}].unit
+				if test.sheet == "flicker_metrics" {
+					unit = "ratio"
+				}
+				assertProvenanceDefaults(t, test.sheet, supplementaryTestValue(t, record, test.sheet), unit,
 					"nominal", test.source, test.method, "")
 			})
+		}
+	}
+}
+
+func TestFlickerMetricUnitRuleIsTotalAndValidatesAuthoredUnits(t *testing.T) {
+	enum := taxonomyEnum(t, "FlickerMetric")
+	if len(flickerMetricUnits) != len(enum) {
+		t.Errorf("flicker unit table has %d rows, schema enum has %d", len(flickerMetricUnits), len(enum))
+	}
+	for metric := range enum {
+		unit, ok := flickerMetricUnits[metric]
+		if !ok {
+			t.Errorf("FlickerMetric %q has no unit rule", metric)
+			continue
+		}
+		value, err := supplementaryProvenancedNumber("flicker_metrics", "value", Row{"metric": metric, "value": "25"}, provenanceContext{})
+		if err != nil {
+			t.Errorf("metric %q blank unit: %v", metric, err)
+			continue
+		}
+		if got := value["unit"]; got != unit {
+			t.Errorf("metric %q blank unit became %v, want %q", metric, got, unit)
+		}
+		if _, err := supplementaryProvenancedNumber("flicker_metrics", "value", Row{"metric": metric, "value": "25", "unit": unit}, provenanceContext{}); err != nil {
+			t.Errorf("metric %q refused its declared unit %q: %v", metric, unit, err)
+		}
+		wrong := "ratio"
+		if unit == wrong {
+			wrong = "percent"
+		}
+		if _, err := supplementaryProvenancedNumber("flicker_metrics", "value", Row{"metric": metric, "value": "25", "unit": wrong}, provenanceContext{}); err == nil {
+			t.Errorf("metric %q accepted invalid authored unit %q, want %q", metric, wrong, unit)
+		}
+	}
+	for metric := range flickerMetricUnits {
+		if !enum[metric] {
+			t.Errorf("unit table metric %q is not declared by FlickerMetric", metric)
 		}
 	}
 }
