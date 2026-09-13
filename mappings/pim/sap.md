@@ -176,7 +176,7 @@ def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
     }
     # Both CLIs are file-based. Write the record to a temp file, run
     # build-index in place, then validate against the same path.
-    with tempfile.NamedTemporaryFile("w", suffix=".ulc.json", delete=False) as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".ulc", delete=False) as f:
         json.dump(record, f)
         tmp_path = f.name
     subprocess.run(["ulc", "build-index", tmp_path], check=True)

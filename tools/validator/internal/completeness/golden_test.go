@@ -67,7 +67,7 @@ func TestGoldenCompat(t *testing.T) {
 			gotTxt, gotJSON := renderGolden(t, v, path, name)
 			// The baselines are rendered report output, not ULC records, so
 			// their filenames drop the .ulc suffix. Keeping it would collide
-			// with the record-index parity guard's *.ulc / *.ulc.json glob
+			// with the record-index parity guard's *.ulc glob
 			// (pre-commit hook and CI), which would try to build-index a
 			// report as if it were a record. The bytes are unchanged: name is
 			// still passed to renderGolden, so the record path embedded in the

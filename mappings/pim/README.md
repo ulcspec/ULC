@@ -100,7 +100,7 @@ An `exit_sign` record grades against the exit-sign dataset (legend, illumination
 ULC's `index` block is a denormalized projection of values from the deep blocks. It must NOT be hand-authored; the reference `ulc build-index` CLI produces it deterministically. The PIM emitter pipeline looks like:
 
 ```
-PIM data → transform to deep blocks → write record to a temp .ulc.json file
+PIM data → transform to deep blocks → write record to a temporary .ulc file
          → run `ulc build-index <tmpfile>` (writes the computed index in place)
          → run `ulc validate <tmpfile>` (exits 1 on ERROR findings)
          → on success, publish the file

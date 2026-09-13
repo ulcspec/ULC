@@ -153,7 +153,7 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         'colorimetry' => mapColorimetry($variant),
         'source_files' => buildSourceFiles($product->getAssets()),
     ];
-    // Write $record to a temp .ulc.json file, run `ulc build-index <path>`
+    // Write $record to a temporary .ulc file, run `ulc build-index <path>`
     // (writes the computed index back in place), then `ulc validate <path>`.
     // Both CLIs take a file path; neither reads stdin.
     $tmpPath = writeTempUlcRecord($record);
