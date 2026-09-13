@@ -78,7 +78,7 @@ safety-listing requirements documented in `docs/methodology.md`. Schema structur
 identity/cutsheet/scenario fields:
 
 ```
-record_id, ulc_version(=1.4.0 default), record_status(=active),
+record_id, ulc_version(=SpecVersion default), record_status(=active),
 family_id, manufacturer_slug, manufacturer_display_name, catalog_model,
 cutsheet_file        (-> sha256 + cutsheet/source_files dual-write),
 primary_category     (indexing anchor),
@@ -89,7 +89,7 @@ total_luminous_flux_lm (indexing anchor)
 ```
 
 Plus, for measured photometry, a `source_files` row `{record_id, file_type=ies, filename}`. The converter supplies the
-`ulc_version` default, dual-unit companions, both `sha256` values, the cutsheet dual-write,
+`ulc_version` default from the converter's `SpecVersion` constant, dual-unit companions, both `sha256` values, the cutsheet dual-write,
 default provenance, and the whole `index`. Because the two photometric anchors default to
 `value_type=measured`, the schema then wants an `attestation_ref`, satisfied by one `attestations`
 row with an `lm_79*` program (or, to stay attestation-free, set `input_power_w__value_type=rated`

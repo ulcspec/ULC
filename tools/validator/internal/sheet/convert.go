@@ -196,13 +196,11 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	rec := map[string]any{
 		"record_id": id,
 	}
-	// ulc_version default per DESIGN.md (overridable by the records column).
-	// Tracks the specification version whose authorable fields the converter's
-	// column set targets, which is not necessarily the current release: it is
-	// bumped with each release that adds authorable schema fields, and a
-	// release that adds none leaves it alone. Guarded by the version-guard
-	// test in this package.
-	rec["ulc_version"] = "1.4.0"
+	// New records declare the current released specification version. An
+	// authored records-sheet value may replace it, subject to the converter's
+	// compiled specification bound. The release workflows keep SpecVersion
+	// aligned with the version they publish.
+	rec["ulc_version"] = SpecVersion
 	// record_status default: active (overridable below).
 	rec["record_status"] = "active"
 
