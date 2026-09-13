@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -73,6 +74,37 @@ func TestRecordsSheetExplicitReferenceMayNameNonPhotometricFamily(t *testing.T) 
 	}
 	if got := resolved.provenance["attestation_ref"]; got != maintenanceID {
 		t.Errorf("attestation_ref = %v, want %q", got, maintenanceID)
+	}
+}
+
+func TestRecordsSheetCrossFamilyExceptionIsNarrow(t *testing.T) {
+	const maintenanceID = "maintenance-evidence"
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "tm_21_21", "attestation_id": maintenanceID},
+	})
+	photometric := Column{
+		Header:        "total_luminous_flux_lm",
+		ProvSource:    "ies",
+		ProvMethod:    "extracted",
+		ProvValueType: "measured",
+	}
+	tests := []struct {
+		name string
+		col  Column
+		row  Row
+	}{
+		{name: "measured photometry", col: photometric, row: Row{"total_luminous_flux_lm__attestation_ref": maintenanceID}},
+		{name: "rated photometry", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__attestation_ref": maintenanceID}},
+		{name: "derived photometry", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__prov_method": "scaled", "total_luminous_flux_lm__base_attestation_ref": maintenanceID}},
+		{name: "measured maintenance claim", col: Column{Header: "lm_claimed_hours", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"}, row: Row{"lm_claimed_hours__value_type": "measured", "lm_claimed_hours__attestation_ref": maintenanceID}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := resolveProvenance(test.col, test.row, ctx)
+			if err == nil || !strings.Contains(err.Error(), "different evidence family") {
+				t.Fatalf("cross-family error = %v", err)
+			}
+		})
 	}
 }
 

@@ -58,7 +58,7 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 		source:                   col.ProvSource,
 		method:                   col.ProvMethod,
 		family:                   attestationFamilyPhotometric,
-		allowExplicitCrossFamily: true,
+		allowExplicitCrossFamily: col.Header == "lm_claimed_hours",
 	}, row, ctx)
 }
 
@@ -111,7 +111,7 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 		prov["extension_method"] = v
 	}
 	if v, ok := row[field+"__base_attestation_ref"]; ok {
-		if err := ctx.validateReference(field, "base_attestation_ref", v, defaults.family, !defaults.allowExplicitCrossFamily, derivedBaseMethods[method]); err != nil {
+		if err := ctx.validateReference(field, "base_attestation_ref", v, defaults.family, true, derivedBaseMethods[method]); err != nil {
 			return resolvedProvenance{}, err
 		}
 		prov["base_attestation_ref"] = v
@@ -134,7 +134,8 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 
 	// attestation_ref: explicit override wins; otherwise auto-link when measured.
 	if v, ok := row[field+"__attestation_ref"]; ok {
-		if err := ctx.validateReference(field, "attestation_ref", v, defaults.family, !defaults.allowExplicitCrossFamily, valueType == "measured"); err != nil {
+		enforceFamily := !defaults.allowExplicitCrossFamily || valueType == "measured"
+		if err := ctx.validateReference(field, "attestation_ref", v, defaults.family, enforceFamily, valueType == "measured"); err != nil {
 			return resolvedProvenance{}, err
 		}
 		prov["attestation_ref"] = v

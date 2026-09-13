@@ -79,10 +79,11 @@ confirmation-required attestation cannot anchor measured evidence. For derived p
 scaling rule and `X__base_attestation_ref` names the base measurement. Leave a
 legal companion blank to take the default.
 
-The family restriction above applies to the declared supplementary fields. A
-records-sheet explicit reference remains author-directed so a rated field can
-name non-photometric evidence; automatic records-sheet selection remains
-photometric until those fields gain their own family declarations.
+The family restriction above applies to the declared supplementary fields and
+to records-sheet photometry. The one records-sheet exception is a rated
+`lm_claimed_hours` value, whose explicit `attestation_ref` may name maintenance
+evidence. A measured override on that field and every records-sheet
+`base_attestation_ref` still enforce the photometric family.
 
 `tm_21_projection_hours` is an extrapolated projection and cannot be marked
 `measured`; use `rated`. Actual test quantities such as `test_hours` may use a
