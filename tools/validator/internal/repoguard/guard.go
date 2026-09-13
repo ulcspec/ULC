@@ -64,6 +64,22 @@ func FindRetiredRecordNames(lines []Line, exemptions map[string]bool) []Line {
 	return matches
 }
 
+// FindRetiredRecordPaths returns tracked paths whose base name uses the retired
+// finished-record suffix. Path matches use line number zero because the name is
+// not part of the file content.
+func FindRetiredRecordPaths(paths []string, exemptions map[string]bool) []Line {
+	needle := strings.ToLower(retiredRecordToken())
+	var matches []Line
+	for _, path := range paths {
+		path = filepath.ToSlash(path)
+		if exemptions[path] || !strings.HasSuffix(strings.ToLower(filepath.Base(path)), needle) {
+			continue
+		}
+		matches = append(matches, Line{Path: path, Text: "tracked filename uses the retired finished-record suffix"})
+	}
+	return matches
+}
+
 // ScanTrackedTree locates the repository containing start, enumerates its
 // tracked files with git, and checks their original lines with the matcher.
 func ScanTrackedTree(start string) (Result, error) {
@@ -99,7 +115,10 @@ func ScanTrackedTree(start string) (Result, error) {
 	return Result{
 		Root:         root,
 		TrackedFiles: tracked,
-		Matches:      FindRetiredRecordNames(lines, legitimateRetiredNameExemptions),
+		Matches: append(
+			FindRetiredRecordPaths(tracked, legitimateRetiredNameExemptions),
+			FindRetiredRecordNames(lines, legitimateRetiredNameExemptions)...,
+		),
 	}, nil
 }
 

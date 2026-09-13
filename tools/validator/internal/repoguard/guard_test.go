@@ -32,6 +32,19 @@ func TestFindRetiredRecordNamesNormalizesTrackedText(t *testing.T) {
 	}
 }
 
+func TestFindRetiredRecordPathsChecksTheBaseName(t *testing.T) {
+	retired := "record" + retiredRecordToken()
+	paths := []string{
+		"examples/" + retired,
+		"examples/record.ulc",
+		"history/" + retired,
+	}
+	matches := FindRetiredRecordPaths(paths, map[string]bool{"history/" + retired: true})
+	if len(matches) != 1 || matches[0].Path != paths[0] || matches[0].Number != 0 {
+		t.Fatalf("path matches = %#v, want only %q", matches, paths[0])
+	}
+}
+
 func TestScanTrackedTreeHasNoRetiredRecordName(t *testing.T) {
 	result, err := ScanTrackedTree(".")
 	if err != nil {
@@ -111,5 +124,33 @@ func TestReadTrackedPathRejectsNonRegularPath(t *testing.T) {
 	}
 	if _, err := readTrackedPath(path, "directory"); err == nil || !strings.Contains(err.Error(), "not a regular file or symbolic link") {
 		t.Fatalf("non-regular path error = %v", err)
+	}
+}
+
+func TestScanTrackedTreeRejectsRetiredRecordFilename(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.test/guard\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	retired := "record" + retiredRecordToken()
+	if err := os.Mkdir(filepath.Join(root, "examples"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "examples", retired), []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"init", "-q"}, {"add", "go.mod", filepath.Join("examples", retired)}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = root
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, output)
+		}
+	}
+	result, err := ScanTrackedTree(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Matches) != 1 || result.Matches[0].Path != filepath.ToSlash(filepath.Join("examples", retired)) || result.Matches[0].Number != 0 {
+		t.Fatalf("retired filename matches = %#v", result.Matches)
 	}
 }
