@@ -84,6 +84,10 @@ records-sheet explicit reference remains author-directed so a rated field can
 name non-photometric evidence; automatic records-sheet selection remains
 photometric until those fields gain their own family declarations.
 
+`tm_21_projection_hours` is an extrapolated projection and cannot be marked
+`measured`; use `rated`. Actual test quantities such as `test_hours` may use a
+measured override when their maintenance evidence resolves.
+
 File-reference revision metadata uses a separate companion family:
 `X__revision_label` and `X__revision_date` are legal for `cutsheet_file` and
 `warranty_conditions_file` on `records`, `filename` on `source_files`, and

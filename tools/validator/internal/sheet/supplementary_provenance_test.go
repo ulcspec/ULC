@@ -19,11 +19,12 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 		unit, unitColumn string
 		unitByMetric     bool
 		family           attestationFamily
+		disallowMeasured bool
 	}{
 		{sheet: "alpha_opic", field: "melanopic_der"}:                         {unit: "ratio", family: attestationFamilyMelanopic},
 		{sheet: "alpha_opic", field: "efficacy"}:                              {unit: "ratio", family: attestationFamilyMelanopic},
 		{sheet: "flicker_metrics", field: "value"}:                            {unitColumn: "unit", unitByMetric: true, family: attestationFamilyFlicker},
-		{sheet: "lumen_maintenance_package", field: "tm_21_projection_hours"}: {unit: "h", family: attestationFamilyMaintenance},
+		{sheet: "lumen_maintenance_package", field: "tm_21_projection_hours"}: {unit: "h", family: attestationFamilyMaintenance, disallowMeasured: true},
 		{sheet: "lumen_maintenance_package", field: "test_hours"}:             {unit: "h", family: attestationFamilyMaintenance},
 		{sheet: "lumen_maintenance_package", field: "drive_current_ma"}:       {unit: "mA", family: attestationFamilyMaintenance},
 		{sheet: "zonal_lumens", field: "lumens"}:                              {unit: "lm", family: attestationFamilyPhotometric},
@@ -38,8 +39,8 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 			t.Errorf("supplementary value table missing %#v", key)
 			continue
 		}
-		if got.unit != expected.unit || got.unitColumn != expected.unitColumn || got.unitByMetric != expected.unitByMetric || got.defaults.family != expected.family {
-			t.Errorf("supplementary value table %#v = unit %q, unit column %q, metric rule %t, family %q; want %q, %q, %t, %q", key, got.unit, got.unitColumn, got.unitByMetric, got.defaults.family, expected.unit, expected.unitColumn, expected.unitByMetric, expected.family)
+		if got.unit != expected.unit || got.unitColumn != expected.unitColumn || got.unitByMetric != expected.unitByMetric || got.defaults.family != expected.family || got.defaults.disallowMeasured != expected.disallowMeasured {
+			t.Errorf("supplementary value table %#v = unit %q, unit column %q, metric rule %t, family %q, disallow measured %t; want %q, %q, %t, %q, %t", key, got.unit, got.unitColumn, got.unitByMetric, got.defaults.family, got.defaults.disallowMeasured, expected.unit, expected.unitColumn, expected.unitByMetric, expected.family, expected.disallowMeasured)
 		}
 	}
 }
@@ -295,6 +296,46 @@ func TestFlickerMetricRejectsUnknownMetric(t *testing.T) {
 					t.Errorf("error %q does not contain %q", err, want)
 				}
 			}
+		})
+	}
+}
+
+func TestTM21ProjectionHoursRejectMeasuredOverrideAcrossReaders(t *testing.T) {
+	bundle := supplementaryBundleWithColumns(t, "lumen_maintenance_package", map[string]string{
+		"tm_21_projection_hours__value_type": "measured",
+	})
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			_, err := Convert(input, Options{})
+			if err == nil {
+				t.Fatal("measured TM-21 projection converted")
+			}
+			for _, want := range []string{"tm_21_projection_hours", "projection", "measured", "rated"} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("error %q does not contain %q", err, want)
+				}
+			}
+		})
+	}
+}
+
+func TestMaintenanceTestHoursMayBeMeasuredAcrossReaders(t *testing.T) {
+	const maintenanceID = "maintenance-measurement"
+	bundle := supplementaryBundleWithColumns(t, "lumen_maintenance_package", map[string]string{
+		"test_hours":             "1000",
+		"test_hours__value_type": "measured",
+	})
+	attestations := filepath.Join(bundle, "attestations.csv")
+	rows := readCSVRows(t, attestations)
+	if len(rows) < 2 || len(rows[1]) == 0 {
+		t.Fatal("attestations fixture has no record row")
+	}
+	appendCSVRow(t, attestations, []string{rows[1][0], maintenanceID, "lm_80_21", "verified", "measured", "", "", "", "unconditional"})
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			record := convertOne(t, input, PatternB, completeness.LevelStandard)
+			pkg, _ := arrayAt(t, record, "lumen_maintenance_package")[0].(map[string]any)
+			assertProvenanceDefaults(t, "test_hours", pkg["test_hours"], "h", "measured", "manufacturer_direct", "transcribed", maintenanceID)
 		})
 	}
 }

@@ -170,6 +170,10 @@ references remain author-directed so a rated non-photometric field can name its 
 until records-sheet fields gain their own family declarations. Supplementary fields enforce their
 declared family for both automatic and explicit selection.
 
+TM-21 projection hours remain rated because they are extrapolated, not direct measurements. The
+converter refuses a measured override for that field while allowing measured overrides on actual
+test quantities such as maintenance test hours when their evidence resolves.
+
 Any effective `value_type=measured` MUST carry an `attestation_ref`. The converter auto-links
 only to a single attestation in the value's declared family and hard-errors on zero or multiple
 candidates unless the author supplies the companion explicitly. An explicit reference must name

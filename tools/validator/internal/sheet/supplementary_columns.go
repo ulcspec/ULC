@@ -33,7 +33,7 @@ var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColu
 	},
 	{sheet: "lumen_maintenance_package", field: "tm_21_projection_hours"}: {
 		unit:     "h",
-		defaults: provenanceDefaults{valueType: "rated", source: "manufacturer_direct", method: "transcribed", family: attestationFamilyMaintenance},
+		defaults: provenanceDefaults{valueType: "rated", source: "manufacturer_direct", method: "transcribed", family: attestationFamilyMaintenance, disallowMeasured: true},
 	},
 	{sheet: "lumen_maintenance_package", field: "test_hours"}: {
 		unit:     "h",

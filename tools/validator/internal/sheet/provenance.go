@@ -26,6 +26,7 @@ type provenanceDefaults struct {
 	method                   string
 	family                   attestationFamily
 	allowExplicitCrossFamily bool
+	disallowMeasured         bool
 }
 
 func (ctx provenanceContext) singleAnchorID(family attestationFamily) string {
@@ -68,6 +69,9 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 	valueType := defaults.valueType
 	if v, ok := row[field+"__value_type"]; ok {
 		valueType = v
+	}
+	if defaults.disallowMeasured && valueType == "measured" {
+		return resolvedProvenance{}, fmt.Errorf("column %q is a projection and cannot use value_type=measured; use rated", field)
 	}
 	source := defaults.source
 	sourceOverridden := false
