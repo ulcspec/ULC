@@ -565,14 +565,10 @@ USAGE
 		}
 	}
 
-	// Build the validator once and reuse it across records. Prefer an in-repo
-	// schema directory; fall back to the embedded schemas for released binaries.
-	var v *validate.Validator
-	if dir, ferr := validate.FindSchemaDir("", input); ferr == nil {
-		v, err = validate.NewValidator(dir)
-	} else {
-		v, err = validate.NewValidatorEmbedded()
-	}
+	// Build the validator once and reuse it across records. Conversion stamps the
+	// converter's compiled SpecVersion, so validate against the schemas compiled
+	// into that same binary rather than a discoverable schema from the environment.
+	v, err := validate.NewValidatorEmbedded()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
 		return 1

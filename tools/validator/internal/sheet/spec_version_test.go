@@ -1,7 +1,9 @@
 package sheet
 
 import (
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -280,4 +282,85 @@ func TestFromSheetBlankVersionCellUsesSpecVersionAcrossReaders(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReadmeCurrentReleaseMatchesSpecVersion(t *testing.T) {
+	readme, err := os.ReadFile(filepath.Join(filepath.Dir(schemaDir(t)), "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	matches := regexp.MustCompile(`(?m)^The current release is `+"`"+`([0-9]+\.[0-9]+\.[0-9]+)`+"`"+`\.`).FindAllStringSubmatch(string(readme), -1)
+	if len(matches) != 1 {
+		t.Fatalf("README current-release statements = %d, want 1", len(matches))
+	}
+	if got := matches[0][1]; got != SpecVersion {
+		t.Errorf("README current release = %s, converter SpecVersion = %s", got, SpecVersion)
+	}
+}
+
+func TestCheckSpecVersionScript(t *testing.T) {
+	repoRoot := filepath.Dir(schemaDir(t))
+	script := filepath.Join(repoRoot, "tools", "validator", "check-spec-version.sh")
+	testRoot := t.TempDir()
+	constantDir := filepath.Join(testRoot, "tools", "validator", "internal", "sheet")
+	if err := os.MkdirAll(constantDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	constantPath := filepath.Join(constantDir, "specversion.go")
+	writeConstant := func(t *testing.T, body string) {
+		t.Helper()
+		if err := os.WriteFile(constantPath, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	run := func(args ...string) (string, int) {
+		cmd := exec.Command("sh", append([]string{script}, args...)...)
+		cmd.Dir = testRoot
+		output, err := cmd.CombinedOutput()
+		if err == nil {
+			return string(output), 0
+		}
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			t.Fatalf("run version guard: %v", err)
+		}
+		return string(output), exitErr.ExitCode()
+	}
+
+	t.Run("usage", func(t *testing.T) {
+		output, code := run()
+		if code != 2 || !strings.Contains(output, "usage:") {
+			t.Fatalf("exit %d, output %q; want usage exit 2", code, output)
+		}
+	})
+	t.Run("missing constant", func(t *testing.T) {
+		if err := os.Remove(constantPath); err != nil && !os.IsNotExist(err) {
+			t.Fatal(err)
+		}
+		output, code := run(SpecVersion)
+		if code != 1 || !strings.Contains(output, "could not read exactly one version") {
+			t.Fatalf("exit %d, output %q; want missing-constant refusal", code, output)
+		}
+	})
+	t.Run("duplicate constant", func(t *testing.T) {
+		writeConstant(t, "const SpecVersion = \"1.9.0\"\nconst SpecVersion = \"1.9.0\"\n")
+		output, code := run(SpecVersion)
+		if code != 1 || !strings.Contains(output, "could not read exactly one version") {
+			t.Fatalf("exit %d, output %q; want duplicate-constant refusal", code, output)
+		}
+	})
+	t.Run("mismatch", func(t *testing.T) {
+		writeConstant(t, "const SpecVersion = \"1.9.0\"\n")
+		output, code := run("1.8.0")
+		if code != 1 || !strings.Contains(output, "SpecVersion mismatch") {
+			t.Fatalf("exit %d, output %q; want mismatch refusal", code, output)
+		}
+	})
+	t.Run("match", func(t *testing.T) {
+		writeConstant(t, "const SpecVersion = \"1.9.0\"\n")
+		output, code := run(SpecVersion)
+		if code != 0 || !strings.Contains(output, "matches release version") {
+			t.Fatalf("exit %d, output %q; want matching success", code, output)
+		}
+	})
 }

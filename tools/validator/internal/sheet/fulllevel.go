@@ -118,7 +118,7 @@ func assembleAlphaOpic(wb Workbook, id string, rec map[string]any, ctx provenanc
 
 // assembleFlickerMeasurements builds flicker_measurements.metrics[] from the
 // flicker_metrics sheet (one row per metric). Each metric carries a rated
-// ProvenancedNumber value (default unit ratio, overridable per row) and an
+// ProvenancedNumber value whose unit is determined by the metric, plus an
 // optional bound_operator. The block name is flicker_measurements; the closed
 // metric enum (svm, pst_lm, percent_flicker, ...) is validated by the schema.
 func assembleFlickerMeasurements(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {

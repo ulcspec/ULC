@@ -1,6 +1,8 @@
 package repoguard
 
 import (
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -57,5 +59,34 @@ func TestScanTrackedTreeRequiresRepositoryRoot(t *testing.T) {
 	start := filepath.Join(t.TempDir(), "outside")
 	if _, err := ScanTrackedTree(start); err == nil {
 		t.Fatal("ScanTrackedTree succeeded without a go.mod ancestor")
+	}
+}
+
+func TestScanTrackedTreeDoesNotFollowSymlinks(t *testing.T) {
+	root := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "outside.txt")
+	if err := os.WriteFile(outside, []byte("marker"+retiredRecordToken()+" AUDIT_SENTINEL\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.test/guard\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "tracked-link")); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"init", "-q"}, {"add", "go.mod", "tracked-link"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = root
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, output)
+		}
+	}
+
+	result, err := ScanTrackedTree(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Matches) != 0 {
+		t.Fatalf("symlink target content was scanned: %#v", result.Matches)
 	}
 }

@@ -184,6 +184,33 @@ func TestSupplementaryProvenanceOverridesAcrossReaders(t *testing.T) {
 	}
 }
 
+func TestSupplementaryExplicitAttestationDisambiguatesAcrossReaders(t *testing.T) {
+	const selected = "flicker-selected"
+	bundle := supplementaryBundleWithColumns(t, "flicker_metrics", map[string]string{
+		"value__value_type":      "measured",
+		"value__attestation_ref": selected,
+	})
+	attestations := filepath.Join(bundle, "attestations.csv")
+	attestationRows := readCSVRows(t, attestations)
+	if len(attestationRows) < 2 || len(attestationRows[1]) == 0 {
+		t.Fatal("attestations fixture has no record row")
+	}
+	recordID := attestationRows[1][0]
+	for _, row := range [][]string{
+		{recordID, selected, "lm_90_20", "verified", "measured", "", "", "", ""},
+		{recordID, "flicker-other", "nema_77_2017", "verified", "measured", "", "", "", ""},
+	} {
+		appendCSVRow(t, attestations, row)
+	}
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			record := convertOne(t, input, PatternB, completeness.LevelStandard)
+			value := supplementaryTestValue(t, record, "flicker_metrics")
+			assertProvenanceDefaults(t, "flicker_metrics", value, "ratio", "measured", "datasheet_pdf", "extracted", selected)
+		})
+	}
+}
+
 func TestFlickerMetricUnitRuleIsTotalAndValidatesAuthoredUnits(t *testing.T) {
 	enum := taxonomyEnum(t, "FlickerMetric")
 	if len(flickerMetricUnits) != len(enum) {
@@ -218,6 +245,28 @@ func TestFlickerMetricUnitRuleIsTotalAndValidatesAuthoredUnits(t *testing.T) {
 		if !enum[metric] {
 			t.Errorf("unit table metric %q is not declared by FlickerMetric", metric)
 		}
+	}
+}
+
+func TestFlickerMetricRejectsUnknownMetric(t *testing.T) {
+	const unsupported = "unsupported_metric"
+	bundle := supplementaryBundleWithColumns(t, "flicker_metrics", map[string]string{})
+	path := filepath.Join(bundle, "flicker_metrics.csv")
+	rows := readCSVRows(t, path)
+	rows[1][1] = unsupported
+	writeCSVRows(t, path, rows)
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			_, err := Convert(input, Options{})
+			if err == nil {
+				t.Fatal("unsupported flicker metric converted")
+			}
+			for _, want := range []string{unsupported, "no declared unit rule"} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("error %q does not contain %q", err, want)
+				}
+			}
+		})
 	}
 }
 

@@ -125,9 +125,6 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 	return resolvedProvenance{valueType: valueType, provenance: prov}, nil
 }
 
-// measuredAttestationRef retains the photometric adapter for the zonal resolver
-// until item 3 routes zonal values through resolveProvenanceForField.
-
 func familyDescription(family attestationFamily) string {
 	switch family {
 	case attestationFamilyPhotometric:
@@ -143,10 +140,6 @@ func familyDescription(family attestationFamily) string {
 	}
 }
 
-func (ctx provenanceContext) measuredAttestationRef(header string) (string, error) {
-	return ctx.measuredAttestationRefForFamily(header, attestationFamilyPhotometric)
-}
-
 func (ctx provenanceContext) measuredAttestationRefForFamily(header string, family attestationFamily) (string, error) {
 	anchor := ctx.anchors[family]
 	description := familyDescription(family)
@@ -160,12 +153,6 @@ func (ctx provenanceContext) measuredAttestationRefForFamily(header string, fami
 	default:
 		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares %d %s attestation rows; disambiguate with an explicit %s__attestation_ref column", header, anchor.count, description, header)
 	}
-}
-
-// baseAttestationRef retains the photometric adapter for the zonal resolver
-// until item 3 routes zonal values through resolveProvenanceForField.
-func (ctx provenanceContext) baseAttestationRef(header, method string) (string, error) {
-	return ctx.baseAttestationRefForFamily(header, method, attestationFamilyPhotometric)
 }
 
 func (ctx provenanceContext) baseAttestationRefForFamily(header, method string, family attestationFamily) (string, error) {

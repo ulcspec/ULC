@@ -307,6 +307,24 @@ func TestFromSheetWritesFinishedRecordsNamedUlc(t *testing.T) {
 	}
 }
 
+func TestFromSheetUsesSchemaCompiledIntoTheConverter(t *testing.T) {
+	bundleDir := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
+	if _, err := os.Stat(bundleDir); err != nil {
+		t.Skipf("bundle fixture not available: %v", err)
+	}
+	externalSchema := t.TempDir()
+	for _, name := range []string{"ulc.schema.json", "taxonomy.schema.json"} {
+		if err := os.WriteFile(filepath.Join(externalSchema, name), []byte("not json\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("ULC_SCHEMA_DIR", externalSchema)
+
+	if rc := runFromSheet([]string{"--out", t.TempDir(), bundleDir}); rc != 0 {
+		t.Fatalf("from-sheet exit = %d, want embedded-schema success", rc)
+	}
+}
+
 // TestFromSheetWrittenBytesMatchAcrossInputShapes proves the CLI writes the
 // same file names and record bytes for the equivalent CSV and XLSX inputs.
 func TestFromSheetWrittenBytesMatchAcrossInputShapes(t *testing.T) {
