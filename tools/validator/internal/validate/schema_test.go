@@ -109,8 +109,9 @@ func TestValidatorRejectsTopLevelConformanceLevel(t *testing.T) {
 
 // TestValidatorConstrainsPhotometryFormatToPhotometricFiles asserts the v0.9.0
 // SourceFile conditional: photometry_format is only valid on a photometric source
-// file (ies / ldt / tm33). A photometry_format on a non-photometric entry (for example
-// datasheet_pdf) is a schema error; on an ies entry it validates.
+// file (ies / ldt / tm33). A photometry_format on a non-photometric entry is a
+// schema error, including the format-independent manufacturer_data_export;
+// on an ies entry it validates.
 func TestValidatorConstrainsPhotometryFormatToPhotometricFiles(t *testing.T) {
 	root := repoRoot(t)
 	v, err := NewValidator(filepath.Join(root, "schema"))
@@ -135,14 +136,32 @@ func TestValidatorConstrainsPhotometryFormatToPhotometricFiles(t *testing.T) {
 		}
 		t.Fatalf("no source_files entry of type %q to mutate", fileType)
 	}
+	setFirstFileType := func(m map[string]any, fileType string) {
+		sf, _ := m["source_files"].([]any)
+		entry, _ := sf[0].(map[string]any)
+		entry["file_type"] = fileType
+	}
 
-	// Bad: photometry_format on a datasheet_pdf entry -> schema error.
-	bad := load()
-	setFormatOn(bad, "datasheet_pdf")
-	rBad := findings.NewReport()
-	v.Validate(bad, rBad)
-	if !rBad.HasErrors() {
-		t.Error("expected a schema error for photometry_format on a datasheet_pdf source file, got none")
+	for _, fileType := range []string{"datasheet_pdf", "manufacturer_data_export"} {
+		t.Run("reject_"+fileType, func(t *testing.T) {
+			bad := load()
+			setFirstFileType(bad, fileType)
+			setFormatOn(bad, fileType)
+			rBad := findings.NewReport()
+			v.Validate(bad, rBad)
+			if !rBad.HasErrors() {
+				t.Errorf("expected a schema error for photometry_format on a %s source file, got none", fileType)
+			}
+		})
+	}
+
+	// The export token itself is valid when no photometric format is claimed.
+	export := load()
+	setFirstFileType(export, "manufacturer_data_export")
+	rExport := findings.NewReport()
+	v.Validate(export, rExport)
+	if rExport.HasErrors() {
+		t.Errorf("manufacturer_data_export without photometry_format must validate; got: %+v", rExport.Findings)
 	}
 
 	// Good: photometry_format on an ies entry -> valid.

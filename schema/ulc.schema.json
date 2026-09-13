@@ -271,7 +271,7 @@
           "items": { "type": "string" }
         },
         "source_file_types_present": {
-          "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, ULD, GLDF) exist for this record without walking the full `source_files` array.",
+          "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, ULD, GLDF, and manufacturer data exports) exist for this record without walking the full `source_files` array.",
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" }
         },
