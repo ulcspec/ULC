@@ -175,7 +175,7 @@ TM-21 projection hours remain rated because they are extrapolated, not direct me
 converter refuses a measured override for that field while allowing measured overrides on actual
 test quantities such as maintenance test hours when their evidence resolves.
 Likewise, `scaled`, `optical_simulation`, and `extended_photometry` are derived methods and require
-`value_type=rated`; the converter refuses a measured value paired with any of them.
+`value_type=rated`; the converter refuses measured and nominal values paired with any of them.
 
 Any effective `value_type=measured` MUST carry an `attestation_ref`. The converter auto-links
 only to a single attestation in the value's declared family and hard-errors on zero or multiple

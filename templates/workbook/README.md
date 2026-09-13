@@ -89,7 +89,8 @@ override. Every records-sheet `base_attestation_ref` follows its field's family.
 `measured`; use `rated`. Actual test quantities such as `test_hours` may use a
 measured override when their maintenance evidence resolves.
 The derived methods `scaled`, `optical_simulation`, and `extended_photometry`
-also require `value_type=rated` and cannot be paired with `measured`.
+also require `value_type=rated` and cannot be paired with `measured` or
+`nominal`.
 
 File-reference revision metadata uses a separate companion family:
 `X__revision_label` and `X__revision_date` are legal for `cutsheet_file` and

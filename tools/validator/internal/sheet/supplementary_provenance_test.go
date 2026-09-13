@@ -360,6 +360,26 @@ func TestDerivedSupplementaryValueRejectsMeasuredAcrossReaders(t *testing.T) {
 	}
 }
 
+func TestDerivedSupplementaryValueRejectsNominalAcrossReaders(t *testing.T) {
+	bundle := supplementaryBundleWithColumns(t, "alpha_opic", map[string]string{
+		"melanopic_der__value_type":  "nominal",
+		"melanopic_der__prov_method": "scaled",
+	})
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			_, err := Convert(input, Options{})
+			if err == nil {
+				t.Fatal("nominal derived alpha-opic value converted")
+			}
+			for _, want := range []string{"melanopic_der", "scaled", "nominal", "rated"} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("error %q does not contain %q", err, want)
+				}
+			}
+		})
+	}
+}
+
 func TestFlickerBoundOperatorSurvivesBothReaders(t *testing.T) {
 	bundle := supplementaryBundleWithColumns(t, "flicker_metrics", map[string]string{})
 	for reader, input := range supplementaryInputs(t, bundle) {
