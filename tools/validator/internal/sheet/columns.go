@@ -188,7 +188,7 @@ var baseRecordColumns = []Column{
 	{Header: "maximum_intensity_cd", Path: "photometry.maximum_intensity_cd", Kind: KindProvNumber, Unit: "cd", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "beam_angle_deg", Path: "photometry.beam_angle_deg", Kind: KindProvNumber, Unit: "deg", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "field_angle_deg", Path: "photometry.field_angle_deg", Kind: KindProvNumber, Unit: "deg", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "nominal"},
-	{Header: "ugr_4h_8h", Path: "photometry.ugr_4h_8h", Kind: KindProvNumber, Unit: "ratio", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "ugr_4h_8h", Path: "photometry.ugr_4h_8h", Kind: KindProvNumber, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 	{Header: "ugr_4h_8h_bound_operator", Path: "photometry.ugr_4h_8h_bound_operator", Kind: KindEnum},
 	{Header: "beam_family", Path: "photometry.beam_family", Kind: KindEnum},
 	{Header: "distribution_type_photometry", Path: "photometry.distribution_type", Kind: KindEnum},
@@ -211,9 +211,9 @@ var baseRecordColumns = []Column{
 
 	// --- colorimetry ---
 	{Header: "nominal_cct_k", Path: "colorimetry.nominal_cct_k", Kind: KindEnum},
-	{Header: "cri_ra", Path: "colorimetry.cri_ra", Kind: KindProvNumber, Unit: "ratio", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
-	{Header: "duv", Path: "colorimetry.duv", Kind: KindProvNumber, Unit: "ratio", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
-	{Header: "sdcm_step", Path: "colorimetry.sdcm_step", Kind: KindProvNumber, Unit: "ratio", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "cri_ra", Path: "colorimetry.cri_ra", Kind: KindProvNumber, ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
+	{Header: "duv", Path: "colorimetry.duv", Kind: KindProvNumber, ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
+	{Header: "sdcm_step", Path: "colorimetry.sdcm_step", Kind: KindProvNumber, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 
 	// --- outdoor_classification (full-level gate for outdoor products) ---
 	{Header: "bug_b", Path: "outdoor_classification.bug_rating.b", Kind: KindNumber},

@@ -231,7 +231,6 @@
         "method": "extracted",
         "source": "datasheet_pdf"
       },
-      "unit": "ratio",
       "value": 80,
       "value_type": "rated"
     },
@@ -242,7 +241,6 @@
         "method": "extracted",
         "source": "datasheet_pdf"
       },
-      "unit": "ratio",
       "value": 3,
       "value_type": "rated"
     }
