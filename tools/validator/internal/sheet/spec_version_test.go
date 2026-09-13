@@ -213,3 +213,71 @@ func TestRecordsSheetHeadersMatchTemplateContract(t *testing.T) {
 			"current sorted headers:\n\t%s", strings.Join(got, "\n\t"))
 	}
 }
+
+func TestSpecificationVersionGreaterComparesComponents(t *testing.T) {
+	tests := []struct {
+		candidate string
+		bound     string
+		want      bool
+	}{
+		{candidate: "1.9.0", bound: "1.10.0", want: false},
+		{candidate: "1.10.0", bound: "1.9.0", want: true},
+		{candidate: "1.9.0", bound: "1.9.0", want: false},
+	}
+	for _, test := range tests {
+		got, err := specificationVersionGreater(test.candidate, test.bound)
+		if err != nil {
+			t.Fatalf("specificationVersionGreater(%q, %q): %v", test.candidate, test.bound, err)
+		}
+		if got != test.want {
+			t.Errorf("specificationVersionGreater(%q, %q) = %t, want %t", test.candidate, test.bound, got, test.want)
+		}
+	}
+}
+
+func TestFromSheetVersionCellBound(t *testing.T) {
+	for _, malformed := range []string{"1.8", "v1.8.0", "1.8.0.1", "1.x.0"} {
+		_, err := Convert(bundleWithColumns(t, map[string]string{"ulc_version": malformed}), Options{})
+		if err == nil {
+			t.Errorf("ulc_version %q converted, want malformed-cell refusal", malformed)
+			continue
+		}
+		for _, want := range []string{"records", "ulc_version cell", malformed, "three dot-separated integers"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("ulc_version %q error %q does not contain %q", malformed, err, want)
+			}
+		}
+	}
+
+	future := "2.0.0"
+	_, err := Convert(bundleWithColumns(t, map[string]string{"ulc_version": future}), Options{})
+	if err == nil {
+		t.Fatal("future ulc_version converted, want refusal")
+	}
+	for _, want := range []string{future, SpecVersion, "newer"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("future-version error %q does not contain %q", err, want)
+		}
+	}
+
+	older := "1.7.0"
+	res := convertOneRecord(t, bundleWithColumns(t, map[string]string{"ulc_version": older}), Options{})
+	if got := res.Record["ulc_version"]; got != older {
+		t.Errorf("older authored ulc_version = %v, want %s", got, older)
+	}
+}
+
+func TestFromSheetBlankVersionCellUsesSpecVersionAcrossReaders(t *testing.T) {
+	bundle := bundleWithColumns(t, map[string]string{"ulc_version": ""})
+	xlsx := filepath.Join(bundle, "blank-version.xlsx")
+	buildXLSX(t, xlsx, bundleToXLSXSheets(t, bundle))
+
+	for name, input := range map[string]string{"CSV": bundle, "XLSX": xlsx} {
+		t.Run(name, func(t *testing.T) {
+			res := convertOneRecord(t, input, Options{})
+			if got := res.Record["ulc_version"]; got != SpecVersion {
+				t.Errorf("blank ulc_version cell stamped %v, want %s", got, SpecVersion)
+			}
+		})
+	}
+}

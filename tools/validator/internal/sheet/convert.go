@@ -217,6 +217,18 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	if err := applyColumns(rec, master, provCtx); err != nil {
 		return nil, err
 	}
+	declaredVersion, _ := rec["ulc_version"].(string)
+	newer, err := specificationVersionGreater(declaredVersion, SpecVersion)
+	if err != nil {
+		return nil, fmt.Errorf("records: ulc_version cell %q must be three dot-separated integers (X.Y.Z)", declaredVersion)
+	}
+	if newer {
+		return nil, fmt.Errorf("records: ulc_version cell %q is newer than this converter's specification version %s", declaredVersion, SpecVersion)
+	}
+	// An older declaration is legal and can target an older consumer, but this
+	// binary does not check it against that older release. The binary embeds one
+	// schema, the current release's, and validates and builds the index against
+	// that schema alone, so older declarations may still carry newer blocks.
 
 	// extensions_json: optional per-record vendor-data overflow that lands at
 	// extensions.manufacturer_specific.<slug>. Supports the Pattern C (and any)
