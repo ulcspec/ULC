@@ -25,10 +25,13 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
 
 - `record_id` is the join key on every sheet. Unique on `records` (primary key); a repeatable
   foreign key on related sheets.
-- **ProvenancedNumber columns** appear as a value column plus, where load-bearing, companion
-  `*__value_type`, `*__prov_source`, `*__prov_method`, `*__attestation_ref` columns. Where a
-  column has a sensible per-pattern default (see section 3.3) the provenance columns may be left
-  blank and the converter fills them.
+- **ProvenancedNumber columns** use declared per-column defaults and, where the converter
+  declares the value as companion-capable, the six optional companions `*__value_type`,
+  `*__prov_source`, `*__prov_method`, `*__extension_method`, `*__base_attestation_ref`, and
+  `*__attestation_ref`. Every provenanced records-sheet column is companion-capable, as are the
+  eight values declared in `supplementaryValueColumns`. Authored `declared_by_length` rows keep
+  their fixed defaults and have no companion headers in this release. A declared companion may
+  be blank; any unsupported double-underscore header is refused before assembly.
 - **DualUnit columns** are authored on **exactly one side per field**: the SI column (`*_mm`,
   `*_kg`, `*_kg_per_m`) or its generated Imperial companion column (`*_in`, `*_lb`,
   `*_lb_per_ft`). The header names the authored leaf explicitly; the converter writes both
@@ -152,18 +155,30 @@ entry (de-duplicated on filename). The manufacturer lists the cutsheet once.
 
 ### 3.3 Provenance (per-column defaults, overridable)
 Every ProvenancedNumber/DualUnit needs `provenance {source, method}` + `value_type`. The converter
-applies per-column defaults, overridable by optional `*__value_type` / `*__prov_source` /
-`*__prov_method` / `*__attestation_ref` / `*__extension_method` / `*__base_attestation_ref`
-columns. Load-bearing rule: any column whose effective `value_type=measured` MUST carry an
-`attestation_ref`; the converter auto-links it to the record's single `lm_79*` attestation and
-hard-errors if there are zero or more-than-one (the manufacturer then disambiguates explicitly).
+applies per-column defaults, overridable on declared bases by optional `*__value_type` /
+`*__prov_source` / `*__prov_method` / `*__attestation_ref` / `*__extension_method` /
+`*__base_attestation_ref` columns. Records-sheet values retain the photometric LM-79 family.
+The supplementary table declares eight values across `alpha_opic`, `flicker_metrics`,
+`lumen_maintenance_package`, `zonal_lumens`, and `lcs_zonal_lumens`, with their unit rule,
+three defaults, and one of four attestation families: photometric LM-79, maintenance LM-80 or
+TM-21, flicker LM-90-20 or IEEE 1789-2015 or NEMA 77-2017, and melanopic RP-46. The authored
+program-family table is exhaustive against the taxonomy; every other program is declared as
+non-anchoring residue.
+
+Any effective `value_type=measured` MUST carry an `attestation_ref`. The converter auto-links
+only to a single attestation in the value's declared family and hard-errors on zero or multiple
+candidates unless the author supplies the companion explicitly. A non-measured override on an
+IES-defaulted value switches the default source to `datasheet_pdf` unless the author also
+overrides the source. Derived methods require `base_attestation_ref` under the same family rule.
+An unsupported provenance token passes through assembly and is refused by schema validation,
+which remains the single owner of the enum domain.
 
 ## 4. Resolved implementer decisions (the design's 10 open questions)
 
 1. **KV-map cells** (`fixed_axes`, attestation `required_constraints`, `excluded.axes`): JSON-in-cell, converter-validated.
 2. **`covered_axes` rationale**: axis-level; error on two non-identical non-blank rationales for one `(record_id, axis_key)`.
 3. **`declared_by_length` author-vs-generate**: authored sheet wins; WARN when a row diverges from `rate*length` by > 2%.
-4. **`attestation_ref` with multiple LM-79 rows**: require the explicit `*__attestation_ref` column; hard-error rather than guess. Attestations are emitted as unconditional (the default), case-by-case (`verification_type=requires_manufacturer_confirmation`, which the converter forbids from also being `value_type=measured`), or family-wide (shared). Option-conditional attestation applicability is supported via the `required_order_code_options` (`;`-list) and `required_constraints_json` (JSON object) columns, emitted as `attestation.applicability`.
+4. **`attestation_ref` with multiple rows in the required evidence family**: require the explicit `*__attestation_ref` column; hard-error rather than guess. Attestations are emitted as unconditional (the default), case-by-case (`verification_type=requires_manufacturer_confirmation`, which the converter forbids from also being `value_type=measured`), or family-wide (shared). Option-conditional attestation applicability is supported via the `required_order_code_options` (`;`-list) and `required_constraints_json` (JSON object) columns, emitted as `attestation.applicability`.
 5. **Pattern C provenance**: supported via the per-column companion columns (`*__value_type`, `*__prov_source`, `*__prov_method`, `*__extension_method`, `*__base_attestation_ref`, `*__attestation_ref`). A `provenance_overrides` long sheet keyed by `(record_id, ulc_field_path)` was considered but is NOT implemented in v1.
 6. **Enum validation**: enum cell values pass through as authored, and the schema validator (run after assembly) rejects unknown tokens. A converter-side enum-domain preload from `ulc.schema.json` with offending cell coordinates was considered but is NOT implemented in v1. Programs with no `AttestationProgram` enum (IP/IK/etc.) route to `extensions_json`, not `attestations`.
    The voltage columns follow the schema's separate contracts: `input_voltage_v` is a provenanced number, while `input_voltage_class` and `input_voltage_at_test` are open strings for a supply class or published range. Their schema examples do not close either string domain.

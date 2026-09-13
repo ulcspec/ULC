@@ -50,7 +50,7 @@ func checkCompanionHeaders(wb Workbook) error {
 				if legal == "" {
 					legal = "(none)"
 				}
-				return fmt.Errorf("sheet %q: companion column %q has no legal base on this sheet; legal bases in header order: %s", sheet, header, legal)
+				return fmt.Errorf("sheet %q: companion column %q has no legal base on this sheet; legal bases in template order: %s", sheet, header, legal)
 			}
 			if !containsString(CompanionHeaderSuffixes[family], suffix) {
 				return fmt.Errorf("sheet %q: companion column %q has unsupported suffix %q; base %q accepts: %s", sheet, header, suffix, base, strings.Join(CompanionHeaderSuffixes[family], ", "))
