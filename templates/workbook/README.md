@@ -125,6 +125,15 @@ When you author the supersession columns (`superseded_by_record_id`,
 `record_status` to `superseded`: the converter's blank-cell default is
 `active`.
 
+Leave the `ulc_version` cell blank to stamp the converter's current released
+specification version from its compiled `SpecVersion` constant. You may author
+an older three-part version for an older consumer, but the converter does not
+check the record against that older release: it embeds the current schema and
+validates and builds the index against that schema alone. A version newer than
+the converter's compiled specification version is refused. A delivery path must
+also require records produced by its build to declare exactly the release of
+the `ulc` engine it pins.
+
 ## Notes for `.xlsx` authors
 
 The `.xlsx` reader is faithful to the cell text, not to Excel's display formatting,

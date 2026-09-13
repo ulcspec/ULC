@@ -2,7 +2,7 @@
 
 All notable changes to the ULC specification are recorded here.
 
-ULC uses semantic versioning. Major versions indicate breaking changes to record structure or required behavior. Minor versions indicate backward-compatible additions or clarifications. Patch versions indicate corrections and non-structural edits.
+ULC uses the semantic-versioning model defined in [ROADMAP.md](ROADMAP.md#versioning-model). Major versions indicate the breaking schema changes and compatibility milestones defined there. Minor versions indicate backward-compatible additions, clarifications, and CLI-observable behavior changes. Every CLI-observable behavior change is named in that release's consumer notes. Patch versions indicate corrections and non-structural edits.
 
 Each ULC record declares the specification version it conforms to via the `ulc_version` field.
 
