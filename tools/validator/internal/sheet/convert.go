@@ -209,8 +209,7 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	if err != nil {
 		return nil, err
 	}
-	lm79ID, lm79Count := lm79Anchor(attestations)
-	provCtx := provenanceContext{lm79AttestationID: lm79ID, lm79Count: lm79Count}
+	provCtx := provenanceContext{anchors: familyAnchors(attestations)}
 
 	// Master-row scalar columns (identity, taxonomy, mechanical, electrical,
 	// photometry, colorimetry) via the data-driven column spec.
@@ -292,6 +291,7 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	// Patterns B and D: the applicability block and the derivation-generated
 	// photometry tables. A and C are fixed-axes pins and need neither.
 	if pattern == PatternB || pattern == PatternD {
+		lm79ID := provCtx.singleAnchorID(attestationFamilyPhotometric)
 		if err := assembleCoveredAxisRecord(wb, id, master, rec, lm79ID, hasher); err != nil {
 			return nil, err
 		}
@@ -837,31 +837,4 @@ func copyIf(dst map[string]any, row Row, src, key string) {
 	if v, ok := row[src]; ok {
 		dst[key] = v
 	}
-}
-
-// lm79Anchor returns the single LM-79-family attestation id used for the
-// measured -> attestation_ref auto-link, and the count of LM-79 rows found. The
-// id is meaningful only when the count is exactly 1; the provenance resolver
-// hard-errors on 0 or >1 when an auto-link is actually needed.
-func lm79Anchor(attestations []any) (id string, count int) {
-	ids := []string{}
-	for _, a := range attestations {
-		m, ok := a.(map[string]any)
-		if !ok {
-			continue
-		}
-		prog, _ := m["program"].(string)
-		if !strings.HasPrefix(prog, "lm_79") {
-			continue
-		}
-		count++
-		if aid, ok := m["attestation_id"].(string); ok && aid != "" {
-			ids = append(ids, aid)
-		}
-	}
-	sort.Strings(ids)
-	if count == 1 && len(ids) == 1 {
-		return ids[0], count
-	}
-	return "", count
 }

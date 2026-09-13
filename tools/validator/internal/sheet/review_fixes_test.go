@@ -7,6 +7,14 @@ import (
 	"testing"
 )
 
+func testProvenanceContext(id string, count int) provenanceContext {
+	anchor := attestationAnchor{count: count}
+	if id != "" {
+		anchor.ids = []string{id}
+	}
+	return provenanceContext{anchors: map[attestationFamily]attestationAnchor{attestationFamilyPhotometric: anchor}}
+}
+
 // TestResolveProvenanceDerivedMethodRequiresBase locks the rule that a derived
 // method (extended_photometry / optical_simulation / scaled) must resolve a
 // non-empty provenance.base_attestation_ref: an explicit override wins, else the
@@ -17,14 +25,14 @@ func TestResolveProvenanceDerivedMethodRequiresBase(t *testing.T) {
 	// extended_photometry with no base override and no lm_79 anchor -> hard error.
 	if _, err := resolveProvenance(col,
 		Row{"total_luminous_flux_lm__prov_method": "extended_photometry"},
-		provenanceContext{lm79Count: 0}); err == nil {
+		testProvenanceContext("", 0)); err == nil {
 		t.Fatal("expected error for derived method with no base attestation and no lm_79 anchor")
 	}
 
 	// extended_photometry with a single lm_79 -> auto-links base_attestation_ref.
 	rp, err := resolveProvenance(col,
 		Row{"total_luminous_flux_lm__prov_method": "extended_photometry"},
-		provenanceContext{lm79AttestationID: "att-lm79-1", lm79Count: 1})
+		testProvenanceContext("att-lm79-1", 1))
 	if err != nil {
 		t.Fatalf("unexpected error with single lm_79 anchor: %v", err)
 	}
@@ -35,7 +43,7 @@ func TestResolveProvenanceDerivedMethodRequiresBase(t *testing.T) {
 	// Explicit base override wins, no lm_79 anchor needed.
 	rp, err = resolveProvenance(col,
 		Row{"total_luminous_flux_lm__prov_method": "optical_simulation", "total_luminous_flux_lm__base_attestation_ref": "BASE-9"},
-		provenanceContext{lm79Count: 0})
+		testProvenanceContext("", 0))
 	if err != nil {
 		t.Fatalf("unexpected error with explicit base override: %v", err)
 	}
@@ -94,11 +102,11 @@ func TestParseJSONObjectCellRejectsTrailing(t *testing.T) {
 func TestMeasuredLumensDerivedRequiresBase(t *testing.T) {
 	row := Row{"lumens": "1200", "lumens__value_type": "rated", "lumens__prov_method": "scaled", "lumens__extension_method": "cct_multiplier"}
 
-	if _, err := measuredLumens(row, "lumens", provenanceContext{lm79Count: 0}); err == nil {
+	if _, err := measuredLumens(row, "lumens", testProvenanceContext("", 0)); err == nil {
 		t.Error("expected error: derived zonal lumen with no base attestation and no lm_79 anchor")
 	}
 
-	pn, err := measuredLumens(row, "lumens", provenanceContext{lm79AttestationID: "L1", lm79Count: 1})
+	pn, err := measuredLumens(row, "lumens", testProvenanceContext("L1", 1))
 	if err != nil {
 		t.Fatalf("unexpected error with single lm_79 anchor: %v", err)
 	}
@@ -218,7 +226,7 @@ func TestRatedOverrideSwitchesSourceOffIES(t *testing.T) {
 		t.Errorf("explicit prov_source=ies should be honored even when rated, got %v", rp.provenance["source"])
 	}
 
-	rp, err = resolveProvenance(col, Row{}, provenanceContext{lm79AttestationID: "L1", lm79Count: 1})
+	rp, err = resolveProvenance(col, Row{}, testProvenanceContext("L1", 1))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -232,7 +240,7 @@ func TestRatedOverrideSwitchesSourceOffIES(t *testing.T) {
 // an empty attestation_ref).
 func TestAnchorRequiresAttestationID(t *testing.T) {
 	col := Column{Header: "total_luminous_flux_lm", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"}
-	if _, err := resolveProvenance(col, Row{}, provenanceContext{lm79Count: 1, lm79AttestationID: ""}); err == nil {
+	if _, err := resolveProvenance(col, Row{}, testProvenanceContext("", 1)); err == nil {
 		t.Error("expected error: single lm_79 anchor with no attestation_id")
 	}
 }
