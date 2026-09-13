@@ -51,22 +51,22 @@ Imperial-first conversion (for US-only manufacturer PIMs) follows the same polic
 
 ### 3. Provenance
 
-Every unit-bearing field in a ULC record carries a `provenance` object: `source` (for example `datasheet_pdf`, `ies`, `manufacturer_direct`) and `method` (`extracted`, `computed`, `transcribed`, `optical_simulation`).
+Every unit-bearing field in a ULC record carries a `provenance` object: `source` (for example `datasheet_pdf`, `ies`, `manufacturer_data_export`, `manufacturer_direct`) and `method` (`extracted`, `computed`, `transcribed`, `optical_simulation`).
 
-For PIM-sourced values, the default provenance is:
+Provenance follows the evidence artefact, not merely the system an emitter read. When an emit run retains and hashes a structured export, use:
 
 ```json
 "provenance": {
-  "source": "manufacturer_direct",
-  "method": "transcribed"
+  "source": "manufacturer_data_export",
+  "method": "extracted"
 }
 ```
 
-More specific provenance applies when the PIM tracks the original source. If the PIM has a field like "source document: lab report LU-04412", the emitter should set `source: "ies"` or `source: "datasheet_pdf"` with an `attestation_ref` pointing at the attestation-id for that lab report. See the per-PIM guides for attribute-lineage patterns.
+List that export in `source_files[]` with the same token and its computed hash. Use `{source: "manufacturer_direct", method: "transcribed"}` only when the manufacturer stated the value and no attachable export or source document underlies it. More specific provenance applies when the PIM tracks the original source. If the PIM has a field like "source document: lab report LU-04412", the emitter should set `source: "test_report"` with an `attestation_ref` pointing at the attestation-id for that lab report. See the per-PIM guides for attribute-lineage patterns.
 
 ### 4. Source file references
 
-ULC's `source_files[]` array requires a SHA-256 hash for every source file (cutsheet PDF, IES, LDT, TM-33, ULD). PIMs rarely store hashes natively. The emitter must:
+ULC's `source_files[]` array requires a SHA-256 hash for every source file (cutsheet PDF, IES, LDT, TM-33, ULD, GLDF, and manufacturer data export). PIMs rarely store hashes natively. The emitter must:
 
 - **Stream the file from PIM asset storage** at emit time.
 - **Compute SHA-256** and include it in the `reference.sha256` field.

@@ -38,7 +38,7 @@ A ULC record is the machine-readable union of data a manufacturer publishes acro
 
 ### The source documents
 
-ULC draws from the full document set a manufacturer produces, not the cutsheet alone. The two documents most often conflated are the IES/LDT photometric file and the accredited test report, and they are distinct. The IES (LM-63) file encodes a candela distribution at one operating point plus header keyword metadata. It does not encode measurement uncertainty, the list of correction factors applied, thermal-derating curves, TM-30 per-hue-bin detail, or lumen-maintenance projections. Those live only in the separate accredited test reports. A manufacturer can publish an IES file and still lack test-report depth.
+ULC draws from the full document set a manufacturer produces, not the cutsheet alone. The two documents most often conflated are the IES/LDT photometric file and the accredited test report, and they are distinct. The IES (LM-63) file encodes a candela distribution at one operating point plus header keyword metadata. It does not encode measurement uncertainty, the list of correction factors applied, thermal-derating curves, TM-30 per-hue-bin detail, or lumen-maintenance projections. Those live only in the separate accredited test reports. A manufacturer can publish an IES file and still lack test-report depth. The table below is total over `SourceFileType`: every token appears exactly once.
 
 | Document | SourceFileType token | What it carries |
 | --- | --- | --- |
@@ -46,10 +46,15 @@ ULC draws from the full document set a manufacturer produces, not the cutsheet a
 | Driver / LED-driver cutsheet | `driver_datasheet_pdf` | LED-driver electrical specifications (input voltage range, drive current, power factor, THD, dimming protocol and method, standby power, wiring) when the manufacturer publishes the driver on a separate sheet rather than folding it into the marketing cutsheet. It is an alternate source for the electrical fields and is needed only when those values are not already carried on the `datasheet_pdf`. |
 | IES photometric file | `ies` | The candela distribution (maximum intensity, zonal lumens, coordinate system, symmetry, beam angle) plus LM-63-2019 header keywords (catalog, lamp, dimensions, absolute input watts, and lab name, report id, accreditation scheme). |
 | EULUMDAT file | `ldt` | The European photometric distribution interchange. Distribution only for ULC: it corroborates flux, symmetry, coordinate system, and luminous-area dimensions, and carries no colorimetry, electrical, maintenance, or thermal depth. |
+| TM-33 data file | `tm33` | Structured XML or JSON luminaire optical data, including photometry and the metadata defined by the declared TM-33 format revision. |
+| ULD luminaire data bundle | `uld` | A proprietary luminaire data bundle that can carry geometry, materials, light-emitting surfaces, a thumbnail, and photometry for design-tool consumers. ULC references the bundle but does not parse it. |
+| GLDF luminaire data bundle | `gldf` | An open-standard luminaire data bundle that can carry geometry, product metadata, variants, and photometry for design-tool consumers. ULC references the bundle but does not parse it. |
+| Manufacturer data export | `manufacturer_data_export` | A structured manufacturer-published data artefact retained as an attachable source with a filename and content hash. It can supply field-level provenance without claiming a PDF or photometric format. |
 | Installation instructions | `installation_instructions_pdf` | The authoritative mounting, wiring, ceiling cutout, recess geometry, and weight detail that the datasheet summarizes only coarsely. |
 | Compliance documents | `compliance_documents` | Safety and QPL listings, sustainability declarations (Declare, EPD, HPD), origin letters (BAA, TAA, BABA), RoHS and REACH declarations, and verification of IP, IK, and hazardous-location ratings. |
 | Accredited test reports | `test_report` | The lab reports behind the cutsheet: LM-79 (full photometric and electrical, uncertainty, corrections), LM-80 with TM-21, LM-84 with TM-28, LM-82 (thermal), TM-30 (color rendition), TM-35 (chromaticity shift), and LM-90 (flicker). |
 | Supplementary bulletins | `supplementary_pdf`, `article_text` | Manufacturer technical bulletins and computed photometric road reports (for example outdoor LCS and BUG tabulations). |
+| Commercial terms | `commercial_terms_pdf` | A published lead-time, ordering-terms, or freight-terms document. The record anchors its revision by hash but does not copy changing transactional values into the record. |
 
 ### Standards corpus reviewed
 
