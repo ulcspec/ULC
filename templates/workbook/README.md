@@ -79,6 +79,11 @@ confirmation-required attestation cannot anchor measured evidence. For derived p
 scaling rule and `X__base_attestation_ref` names the base measurement. Leave a
 legal companion blank to take the default.
 
+The family restriction above applies to the declared supplementary fields. A
+records-sheet explicit reference remains author-directed so a rated field can
+name non-photometric evidence; automatic records-sheet selection remains
+photometric until those fields gain their own family declarations.
+
 File-reference revision metadata uses a separate companion family:
 `X__revision_label` and `X__revision_date` are legal for `cutsheet_file` and
 `warranty_conditions_file` on `records`, `filename` on `source_files`, and

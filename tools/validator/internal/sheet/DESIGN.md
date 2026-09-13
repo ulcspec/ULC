@@ -165,6 +165,11 @@ TM-21, flicker LM-90-20 or IEEE 1789-2015 or NEMA 77-2017, and melanopic RP-46. 
 program-family table is exhaustive against the taxonomy; every other program is declared as
 non-anchoring residue.
 
+Records-sheet fields retain the photometric family only for automatic selection. Their explicit
+references remain author-directed so a rated non-photometric field can name its proper evidence
+until records-sheet fields gain their own family declarations. Supplementary fields enforce their
+declared family for both automatic and explicit selection.
+
 Any effective `value_type=measured` MUST carry an `attestation_ref`. The converter auto-links
 only to a single attestation in the value's declared family and hard-errors on zero or multiple
 candidates unless the author supplies the companion explicitly. An explicit reference must name

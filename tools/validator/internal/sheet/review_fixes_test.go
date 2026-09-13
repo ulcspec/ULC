@@ -57,6 +57,25 @@ func TestResolveProvenanceDerivedMethodRequiresBase(t *testing.T) {
 	}
 }
 
+func TestRecordsSheetExplicitReferenceMayNameNonPhotometricFamily(t *testing.T) {
+	const maintenanceID = "maintenance-evidence"
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "tm_21_21", "attestation_id": maintenanceID},
+	})
+	resolved, err := resolveProvenance(Column{
+		Header:        "lm_claimed_hours",
+		ProvSource:    "manufacturer_direct",
+		ProvMethod:    "transcribed",
+		ProvValueType: "rated",
+	}, Row{"lm_claimed_hours__attestation_ref": maintenanceID}, ctx)
+	if err != nil {
+		t.Fatalf("maintenance reference on records-sheet value: %v", err)
+	}
+	if got := resolved.provenance["attestation_ref"]; got != maintenanceID {
+		t.Errorf("attestation_ref = %v, want %q", got, maintenanceID)
+	}
+}
+
 // TestHashFileRejectsAbsoluteAndTraversal locks that referenced files must be
 // relative paths under the assets root: absolute paths and ".." traversal are
 // rejected (so no local path leaks into a FileReference and no file outside the

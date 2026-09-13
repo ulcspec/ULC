@@ -21,16 +21,20 @@ type provenanceContext struct {
 }
 
 type provenanceDefaults struct {
-	valueType string
-	source    string
-	method    string
-	family    attestationFamily
+	valueType                string
+	source                   string
+	method                   string
+	family                   attestationFamily
+	allowExplicitCrossFamily bool
 }
 
 func (ctx provenanceContext) singleAnchorID(family attestationFamily) string {
 	anchor := ctx.anchors[family]
 	if anchor.count == 1 && len(anchor.ids) == 1 {
-		return anchor.ids[0]
+		id := anchor.ids[0]
+		if ctx.validateReference("generated photometry", "attestation_ref", id, family, true, true) == nil {
+			return id
+		}
 	}
 	return ""
 }
@@ -48,7 +52,13 @@ type resolvedProvenance struct {
 // therefore still select a photometric anchor; that residue remains explicit
 // for the batch close-out rather than being hidden in a prefix rule.
 func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProvenance, error) {
-	return resolveProvenanceForField(col.Header, provenanceDefaults{valueType: col.ProvValueType, source: col.ProvSource, method: col.ProvMethod, family: attestationFamilyPhotometric}, row, ctx)
+	return resolveProvenanceForField(col.Header, provenanceDefaults{
+		valueType:                col.ProvValueType,
+		source:                   col.ProvSource,
+		method:                   col.ProvMethod,
+		family:                   attestationFamilyPhotometric,
+		allowExplicitCrossFamily: true,
+	}, row, ctx)
 }
 
 // resolveProvenanceForField applies a field's defaults and companion overrides,
@@ -94,7 +104,7 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 		prov["extension_method"] = v
 	}
 	if v, ok := row[field+"__base_attestation_ref"]; ok {
-		if err := ctx.validateExplicitReference(field, "base_attestation_ref", v, defaults.family, derivedBaseMethods[method]); err != nil {
+		if err := ctx.validateReference(field, "base_attestation_ref", v, defaults.family, !defaults.allowExplicitCrossFamily, derivedBaseMethods[method]); err != nil {
 			return resolvedProvenance{}, err
 		}
 		prov["base_attestation_ref"] = v
@@ -117,7 +127,7 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 
 	// attestation_ref: explicit override wins; otherwise auto-link when measured.
 	if v, ok := row[field+"__attestation_ref"]; ok {
-		if err := ctx.validateExplicitReference(field, "attestation_ref", v, defaults.family, valueType == "measured"); err != nil {
+		if err := ctx.validateReference(field, "attestation_ref", v, defaults.family, !defaults.allowExplicitCrossFamily, valueType == "measured"); err != nil {
 			return resolvedProvenance{}, err
 		}
 		prov["attestation_ref"] = v
@@ -132,23 +142,23 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 	return resolvedProvenance{valueType: valueType, provenance: prov}, nil
 }
 
-func (ctx provenanceContext) validateExplicitReference(field, kind, reference string, family attestationFamily, measurementEvidence bool) error {
+func (ctx provenanceContext) validateReference(field, kind, reference string, family attestationFamily, enforceFamily, measurementEvidence bool) error {
 	candidates := ctx.references[reference]
 	description := familyDescription(family)
 	switch len(candidates) {
 	case 0:
-		return fmt.Errorf("column %q explicitly names %s %q, but no attestation with that id exists", field, kind, reference)
+		return fmt.Errorf("column %q names %s %q, but no attestation with that id exists", field, kind, reference)
 	case 1:
 		candidate := candidates[0]
-		if candidate.family != family {
-			return fmt.Errorf("column %q explicitly names %s %q from a different evidence family; use an attestation from the %s family", field, kind, reference, description)
+		if enforceFamily && candidate.family != family {
+			return fmt.Errorf("column %q names %s %q from a different evidence family; use an attestation from the %s family", field, kind, reference, description)
 		}
 		if measurementEvidence && candidate.requiresManufacturerConfirm {
-			return fmt.Errorf("column %q explicitly names %s %q, but that attestation requires manufacturer confirmation and cannot anchor measured evidence", field, kind, reference)
+			return fmt.Errorf("column %q names %s %q, but that attestation requires manufacturer confirmation and cannot anchor measured evidence", field, kind, reference)
 		}
 		return nil
 	default:
-		return fmt.Errorf("column %q explicitly names %s %q, but that id is declared by %d attestations", field, kind, reference, len(candidates))
+		return fmt.Errorf("column %q names %s %q, but that id is declared by %d attestations", field, kind, reference, len(candidates))
 	}
 }
 
@@ -174,7 +184,11 @@ func (ctx provenanceContext) measuredAttestationRefForFamily(header string, fami
 	case anchor.count == 1 && len(anchor.ids) == 0:
 		return "", fmt.Errorf("column %q would auto-link to the record's single %s attestation, but that row has no attestation_id to reference; add an attestation_id to that attestations row", header, description)
 	case anchor.count == 1 && len(anchor.ids) == 1:
-		return anchor.ids[0], nil
+		ref := anchor.ids[0]
+		if err := ctx.validateReference(header, "attestation_ref", ref, family, true, true); err != nil {
+			return "", err
+		}
+		return ref, nil
 	case anchor.count == 0:
 		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares no %s attestation row to link; add that attestation row or set %s__value_type=rated", header, description, header)
 	default:
@@ -189,7 +203,11 @@ func (ctx provenanceContext) baseAttestationRefForFamily(header, method string, 
 	case anchor.count == 1 && len(anchor.ids) == 0:
 		return "", fmt.Errorf("column %q (derived method %q) would anchor base_attestation_ref to the record's single %s attestation, but that row has no attestation_id; add an attestation_id to that attestations row", header, method, description)
 	case anchor.count == 1 && len(anchor.ids) == 1:
-		return anchor.ids[0], nil
+		ref := anchor.ids[0]
+		if err := ctx.validateReference(header, "base_attestation_ref", ref, family, true, true); err != nil {
+			return "", err
+		}
+		return ref, nil
 	case anchor.count == 0:
 		return "", fmt.Errorf("column %q uses derived method %q but the record declares no %s attestation to anchor provenance.base_attestation_ref; add that attestation row or set %s__base_attestation_ref explicitly", header, method, description, header)
 	default:

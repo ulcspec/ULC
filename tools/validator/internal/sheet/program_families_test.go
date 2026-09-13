@@ -111,9 +111,9 @@ func TestFamilyAnchorsUseAuthoredFamiliesAndSortedIDs(t *testing.T) {
 }
 
 func TestResidueProgramCannotAnchorMeasuredValue(t *testing.T) {
-	ctx := provenanceContext{anchors: familyAnchors([]any{
+	ctx := newProvenanceContext([]any{
 		map[string]any{"program": "cie_13", "attestation_id": "not-a-flicker-anchor"},
-	})}
+	})
 	_, err := resolveProvenanceForField("flicker_value", provenanceDefaults{
 		valueType: "measured",
 		source:    "test_report",
@@ -131,12 +131,12 @@ func TestResidueProgramCannotAnchorMeasuredValue(t *testing.T) {
 }
 
 func TestResolverSelectsOnlyTheDeclaredProgramFamily(t *testing.T) {
-	ctx := provenanceContext{anchors: familyAnchors([]any{
+	ctx := newProvenanceContext([]any{
 		map[string]any{"program": "lm_79_24", "attestation_id": "photometric"},
 		map[string]any{"program": "lm_80_21", "attestation_id": "maintenance"},
 		map[string]any{"program": "lm_90_20", "attestation_id": "flicker"},
 		map[string]any{"program": "rp_46_23", "attestation_id": "melanopic"},
-	})}
+	})
 	for family, want := range map[attestationFamily]string{
 		attestationFamilyPhotometric: "photometric",
 		attestationFamilyMaintenance: "maintenance",
@@ -217,5 +217,24 @@ func TestExplicitReferencesMustNameOneAttestationInTheDeclaredFamily(t *testing.
 				t.Fatalf("error = %v, want %q", err, test.want)
 			}
 		})
+	}
+}
+
+func TestAutomaticReferencesRejectDuplicateIDsAcrossFamilies(t *testing.T) {
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "lm_79_24", "attestation_id": "shared-id"},
+		map[string]any{"program": "lm_90_20", "attestation_id": "shared-id"},
+	})
+	_, err := resolveProvenanceForField("value", provenanceDefaults{
+		valueType: "measured",
+		source:    "test_report",
+		method:    "extracted",
+		family:    attestationFamilyFlicker,
+	}, Row{}, ctx)
+	if err == nil || !strings.Contains(err.Error(), "declared by 2 attestations") {
+		t.Fatalf("automatic duplicate-id error = %v", err)
+	}
+	if got := ctx.singleAnchorID(attestationFamilyPhotometric); got != "" {
+		t.Fatalf("generated selection accepted duplicate id %q", got)
 	}
 }
