@@ -44,6 +44,11 @@ jobs:
             exit 1
           fi
 
+      - name: Verify converter specification version
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: sh tools/validator/check-spec-version.sh "$VERSION"
+
       - name: Verify tag does not already exist
         env:
           VERSION: ${{ steps.ver.outputs.version }}

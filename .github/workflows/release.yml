@@ -67,6 +67,11 @@ jobs:
           ref: ${{ steps.resolve.outputs.target_ref }}
           fetch-depth: 0
 
+      - name: Verify converter specification version
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: sh tools/validator/check-spec-version.sh "$VERSION"
+
       - name: Compose release body from CHANGELOG
         env:
           VERSION: ${{ steps.resolve.outputs.version }}
