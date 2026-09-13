@@ -147,7 +147,7 @@ func decodeReport(t *testing.T, out string) jsonReport {
 // countULCRecords counts written records in an --out directory.
 func countULCRecords(t *testing.T, dir string) int {
 	t.Helper()
-	matches, err := filepath.Glob(filepath.Join(dir, "*.ulc.json"))
+	matches, err := filepath.Glob(filepath.Join(dir, "*"+finishedRecordExtension))
 	if err != nil {
 		t.Fatalf("glob %s: %v", dir, err)
 	}

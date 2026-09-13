@@ -279,11 +279,11 @@ func TestCLIMissingIdentityIsRejected(t *testing.T) {
 	}
 }
 
-// TestCLIFromSheetWritesRecord guards the from-sheet write path: a converted record
+// TestFromSheetWritesFinishedRecordsNamedUlc guards the from-sheet write path: a converted record
 // is WRITTEN to --out and the run exits 0 (the converter no longer skips records on
 // data completeness). Uses the canonical CSV bundle fixture, whose referenced files
 // resolve against the bundle directory by default.
-func TestCLIFromSheetWritesRecord(t *testing.T) {
+func TestFromSheetWritesFinishedRecordsNamedUlc(t *testing.T) {
 	bundleDir := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
 	if _, err := os.Stat(bundleDir); err != nil {
 		t.Skipf("bundle fixture not available: %v", err)
@@ -298,14 +298,12 @@ func TestCLIFromSheetWritesRecord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read out dir: %v", err)
 	}
-	wrote := 0
-	for _, e := range entries {
-		if filepath.Ext(e.Name()) == ".json" {
-			wrote++
-		}
+	want := "acme-orbit-1200-4000k" + finishedRecordExtension
+	if len(entries) != 1 {
+		t.Fatalf("from-sheet wrote %d files, want 1", len(entries))
 	}
-	if wrote == 0 {
-		t.Error("from-sheet wrote no records to --out; the converter should write, not skip")
+	if entries[0].Name() != want {
+		t.Errorf("from-sheet wrote %q, want %q", entries[0].Name(), want)
 	}
 }
 
@@ -343,7 +341,7 @@ func TestCLIFromSheetWritesIncompleteRecord(t *testing.T) {
 	}
 	written := ""
 	for _, e := range entries {
-		if filepath.Ext(e.Name()) == ".json" {
+		if strings.HasSuffix(e.Name(), finishedRecordExtension) {
 			written = filepath.Join(outDir, e.Name())
 		}
 	}

@@ -39,6 +39,11 @@ import (
 // -ldflags -X main.CLIVersion=<tag>.
 var CLIVersion = "0.4.0-dev"
 
+const (
+	finishedRecordExtension = ".ulc"
+	draftRecordExtension    = ".draft.json"
+)
+
 func main() {
 	if len(os.Args) < 2 {
 		usage(os.Stderr)
@@ -449,20 +454,20 @@ func patternToken(p sheet.Pattern) string {
 // runFromSheet converts a CSV bundle directory or a native .xlsx workbook into
 // validated ULC records. For each assembled record it builds the index (which
 // stamps conformance_level), checks the required index keys, writes
-// <out>/<record_id>.ulc.json only after schema validation passes, runs the
+// <out>/<record_id>.ulc only after schema validation passes, runs the
 // schema validator plus the conformance report, and prints a one-line summary.
 // A record carrying placeholder hashes is a DRAFT: it is never written to
-// --out, and --draft-out saves it as <record_id>.draft.json instead. --json
+// --out, and --draft-out saves it with draftRecordExtension instead. --json
 // replaces the summary lines with one machine-readable report on stdout. It
 // exits non-zero if any record fails schema validation or any draft exists.
 func runFromSheet(args []string) int {
 	fs := flag.NewFlagSet("from-sheet", flag.ExitOnError)
 	var outDir, assetsDir, draftDir string
 	var allowMissing, jsonOut bool
-	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>.ulc.json files into.")
+	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>"+finishedRecordExtension+" files into.")
 	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, warranty conditions, IES, attestation docs) resolve against. Defaults to the bundle directory.")
 	fs.BoolVar(&allowMissing, "allow-missing-files", false, "When a referenced file is absent on disk, stamp the 64-zero sentinel SHA-256 and treat the record as a DRAFT (reported, not written to --out; the run exits non-zero) instead of erroring immediately.")
-	fs.StringVar(&draftDir, "draft-out", "", "Directory to write DRAFT records into as <record_id>.draft.json. Only meaningful with --allow-missing-files; drafts are never written to --out and the run still exits non-zero.")
+	fs.StringVar(&draftDir, "draft-out", "", "Directory to write DRAFT records into as <record_id>"+draftRecordExtension+". Only meaningful with --allow-missing-files; drafts are never written to --out and the run still exits non-zero.")
 	fs.BoolVar(&jsonOut, "json", false, "Emit one machine-readable JSON conversion report to stdout instead of the per-record summary lines.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a manufacturer workbook into validated ULC records.
@@ -594,13 +599,13 @@ USAGE
 		}
 		res.Record["index"] = built
 
-		outPath := filepath.Join(outDir, res.RecordID+".ulc.json")
+		outPath := filepath.Join(outDir, res.RecordID+finishedRecordExtension)
 
 		// A record that references files not present on disk carries placeholder
 		// (zero-sentinel) hashes under --allow-missing-files. It is a DRAFT, not a
 		// validated record, so it is never written to --out (the run also exits
 		// non-zero below). With --draft-out it is saved under a distinct
-		// .draft.json suffix so it cannot be mistaken for a validated record.
+		// distinct draft suffix so it cannot be mistaken for a validated record.
 		// The draft write happens before schema validation, so the record_id has
 		// not yet been checked against the schema's slug pattern; a draft
 		// filename is never built from an unchecked cell.
@@ -616,7 +621,7 @@ USAGE
 					failed = true
 					continue
 				}
-				draftPath := filepath.Join(draftDir, res.RecordID+".draft.json")
+				draftPath := filepath.Join(draftDir, res.RecordID+draftRecordExtension)
 				draftBytes, merr := marshalRecord(res.Record)
 				if merr != nil {
 					fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", merr)
