@@ -31,7 +31,9 @@ var CompanionHeaderSuffixes = map[string][]string{
 func checkCompanionHeaders(wb Workbook) error {
 	sheets := make([]string, 0, len(wb.Headers))
 	for sheet := range wb.Headers {
-		sheets = append(sheets, sheet)
+		if sheet == "records" || consumedRelatedSheets[sheet] {
+			sheets = append(sheets, sheet)
+		}
 	}
 	sort.Strings(sheets)
 	for _, sheet := range sheets {

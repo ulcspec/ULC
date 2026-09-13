@@ -66,6 +66,19 @@ func TestImperialProvenanceCompanionIsLegalAcrossReaders(t *testing.T) {
 	}
 }
 
+func TestIgnoredSheetCompanionHeadersAreIgnoredAcrossReaders(t *testing.T) {
+	bundle := t.TempDir()
+	copyBundle(t, filepath.Join("testdata", "bundle"), bundle)
+	writeFile(t, filepath.Join(bundle, "auxiliary.csv"), "power__value\n1\n")
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			if _, err := Convert(input, Options{}); err != nil {
+				t.Errorf("ignored sheet affected conversion: %v", err)
+			}
+		})
+	}
+}
+
 func writeTemplateHeaderBundle(t *testing.T) string {
 	t.Helper()
 	repoRoot := filepath.Dir(schemaDir(t))
