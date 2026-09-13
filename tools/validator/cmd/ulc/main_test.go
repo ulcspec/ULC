@@ -307,6 +307,53 @@ func TestFromSheetWritesFinishedRecordsNamedUlc(t *testing.T) {
 	}
 }
 
+// TestFromSheetWrittenBytesMatchAcrossInputShapes proves the CLI writes the
+// same file names and record bytes for the equivalent CSV and XLSX inputs.
+func TestFromSheetWrittenBytesMatchAcrossInputShapes(t *testing.T) {
+	bundleDir := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
+	xlsxPath := filepath.Join(bundleDir, "acme-orbit-1200.xlsx")
+	if _, err := os.Stat(xlsxPath); err != nil {
+		t.Fatalf("XLSX parity fixture unavailable: %v", err)
+	}
+
+	csvOut := t.TempDir()
+	xlsxOut := t.TempDir()
+	if rc := runFromSheet([]string{"--out", csvOut, bundleDir}); rc != 0 {
+		t.Fatalf("CSV from-sheet exit = %d, want 0", rc)
+	}
+	if rc := runFromSheet([]string{"--out", xlsxOut, xlsxPath}); rc != 0 {
+		t.Fatalf("XLSX from-sheet exit = %d, want 0", rc)
+	}
+
+	csvEntries, err := os.ReadDir(csvOut)
+	if err != nil {
+		t.Fatalf("read CSV output: %v", err)
+	}
+	xlsxEntries, err := os.ReadDir(xlsxOut)
+	if err != nil {
+		t.Fatalf("read XLSX output: %v", err)
+	}
+	if len(csvEntries) != len(xlsxEntries) {
+		t.Fatalf("written file count: CSV=%d XLSX=%d", len(csvEntries), len(xlsxEntries))
+	}
+	for i, csvEntry := range csvEntries {
+		if csvEntry.Name() != xlsxEntries[i].Name() {
+			t.Fatalf("written file %d: CSV=%q XLSX=%q", i, csvEntry.Name(), xlsxEntries[i].Name())
+		}
+		csvBytes, err := os.ReadFile(filepath.Join(csvOut, csvEntry.Name()))
+		if err != nil {
+			t.Fatalf("read CSV output %s: %v", csvEntry.Name(), err)
+		}
+		xlsxBytes, err := os.ReadFile(filepath.Join(xlsxOut, xlsxEntries[i].Name()))
+		if err != nil {
+			t.Fatalf("read XLSX output %s: %v", xlsxEntries[i].Name(), err)
+		}
+		if !bytes.Equal(csvBytes, xlsxBytes) {
+			t.Errorf("written record bytes differ for %s", csvEntry.Name())
+		}
+	}
+}
+
 // TestCLIFromSheetWritesIncompleteRecord pins the headline from-sheet promise at the
 // CLI seam: a workbook record with no cutsheet is WRITTEN to --out (not skipped),
 // exits 0, and lands with conformance_level "incomplete".
