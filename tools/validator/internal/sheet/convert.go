@@ -212,7 +212,11 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	if err != nil {
 		return nil, err
 	}
-	provCtx := newProvenanceContext(attestations)
+	shared, err := assembleSharedAttestations(wb, id)
+	if err != nil {
+		return nil, err
+	}
+	provCtx := newProvenanceContext(attestations, shared)
 
 	// Master-row scalar columns (identity, taxonomy, mechanical, electrical,
 	// photometry, colorimetry) via the data-driven column spec.
@@ -280,10 +284,6 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 
 	if len(attestations) > 0 {
 		rec["attestations"] = attestations
-	}
-	shared, err := assembleSharedAttestations(wb, id)
-	if err != nil {
-		return nil, err
 	}
 	if len(shared) > 0 {
 		if err := setPath(rec, "product_family.shared_attestations", shared); err != nil {

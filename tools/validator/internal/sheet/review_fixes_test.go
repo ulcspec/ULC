@@ -76,6 +76,28 @@ func TestRecordsSheetExplicitReferenceMayNameNonPhotometricFamily(t *testing.T) 
 	}
 }
 
+func TestExplicitReferenceMayNameSharedAttestation(t *testing.T) {
+	const sharedID = "shared-evidence"
+	ctx := newProvenanceContext(nil, []any{
+		map[string]any{"program": "tm_21_21", "attestation_id": sharedID},
+	})
+	resolved, err := resolveProvenance(Column{
+		Header:        "lm_claimed_hours",
+		ProvSource:    "manufacturer_direct",
+		ProvMethod:    "transcribed",
+		ProvValueType: "rated",
+	}, Row{"lm_claimed_hours__attestation_ref": sharedID}, ctx)
+	if err != nil {
+		t.Fatalf("shared attestation reference: %v", err)
+	}
+	if got := resolved.provenance["attestation_ref"]; got != sharedID {
+		t.Errorf("attestation_ref = %v, want %q", got, sharedID)
+	}
+	if got := ctx.singleAnchorID(attestationFamilyMaintenance); got != "" {
+		t.Errorf("shared attestation became automatic anchor %q", got)
+	}
+}
+
 // TestHashFileRejectsAbsoluteAndTraversal locks that referenced files must be
 // relative paths under the assets root: absolute paths and ".." traversal are
 // rejected (so no local path leaks into a FileReference and no file outside the

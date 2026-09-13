@@ -180,10 +180,14 @@ type attestationReference struct {
 	requiresManufacturerConfirm bool
 }
 
-func newProvenanceContext(attestations []any) provenanceContext {
+func newProvenanceContext(attestations []any, shared ...[]any) provenanceContext {
+	referenceAttestations := append([]any{}, attestations...)
+	for _, group := range shared {
+		referenceAttestations = append(referenceAttestations, group...)
+	}
 	return provenanceContext{
 		anchors:    familyAnchors(attestations),
-		references: attestationReferences(attestations),
+		references: attestationReferences(referenceAttestations),
 	}
 }
 

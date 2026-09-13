@@ -93,7 +93,7 @@ Most taxonomy data is datasheet-sourced. The photometric distribution and a band
 - From published summaries in a datasheet or supplementary technical document: rated or nominal alpha-opic values, flicker metrics, and headline lumen-maintenance claims may be transcribed when that document is the evidence actually available. Their value type and provenance must name that lower rung rather than implying a measurement report.
 - From a direct manufacturer statement: a value with no attachable source document may use `manufacturer_direct` with a method that describes how the statement entered the record. This is the last rung, not a substitute for an available file or test report.
 
-The converter applies this ladder per value. Measured alpha-opic values anchor only to the RP-46 family, measured flicker values only to LM-90-20, IEEE 1789-2015, or NEMA 77-2017, package-maintenance values only to LM-80 or TM-21, and measured photometry only to LM-79. An attestation from another family never supplies the link.
+The converter's automatic selection applies this ladder per value. Measured alpha-opic values select only the RP-46 family, measured flicker values only LM-90-20, IEEE 1789-2015, or NEMA 77-2017, package-maintenance values only LM-80 or TM-21, and measured photometry only LM-79. Explicit references on supplementary fields obey the same family boundary. Records-sheet explicit references remain author-directed until those fields gain their own per-field family declarations.
 
 ### Compliance programs
 
