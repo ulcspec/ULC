@@ -42,7 +42,17 @@ var CLIVersion = "0.4.0-dev"
 const (
 	finishedRecordExtension = ".ulc"
 	draftRecordExtension    = ".draft.json"
+	jsonSerializationSuffix = ".json"
 )
+
+func refuseRetiredRecordName(command, path string) bool {
+	retired := finishedRecordExtension + jsonSerializationSuffix
+	if !strings.HasSuffix(filepath.Base(path), retired) {
+		return false
+	}
+	fmt.Fprintf(os.Stderr, "ulc %s: %s uses the retired finished-record suffix %s; use %s\n", command, path, retired, finishedRecordExtension)
+	return true
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -154,6 +164,9 @@ USAGE
 		return 2
 	}
 	recordPath := fs.Arg(0)
+	if refuseRetiredRecordName("validate", recordPath) {
+		return 2
+	}
 
 	// The expiry flags are meaningful only with --expiry. Resolve the as-of default and
 	// validate the flag values here so a usage error exits 2 before any work is done. The
@@ -314,6 +327,11 @@ The index block is a deterministic projection of the record's deep blocks. It
 is forbidden by spec to hand-author the index. Default mode writes the computed
 index back into the record in place.
 
+Exit codes:
+  0   index written, printed, or confirmed current
+  1   the record could not be read, parsed, or indexed
+  2   usage error
+
 USAGE
     ulc build-index <record.ulc>              # write in place
     ulc build-index <record.ulc> --stdout     # print built index, do not modify
@@ -330,6 +348,9 @@ USAGE
 		return 2
 	}
 	recordPath := fs.Arg(0)
+	if refuseRetiredRecordName("build-index", recordPath) {
+		return 2
+	}
 	record, err := readRecord(recordPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ulc build-index: %v\n", err)
@@ -893,6 +914,9 @@ USAGE
 		return 2
 	}
 	recordPath := fs.Arg(0)
+	if refuseRetiredRecordName("scope", recordPath) {
+		return 2
+	}
 
 	record, err := readRecord(recordPath)
 	if err != nil {
