@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -136,47 +137,79 @@ var recordColumnHeaders = []string{
 	"watts_per_foot",
 }
 
-// TestFromSheetDefaultVersionGuard guards the from-sheet ulc_version default in
-// the two ways it can go wrong. First, the version the converter actually
-// stamps must be one this repository documents: it has to appear as a dated
-// CHANGELOG heading, so a typo or a never-documented version fails. That is a
-// changelogged-version check, not a released-version check: a CHANGELOG heading
-// proves the version is spelled correctly and is one this repo documents, not
-// that it is tagged.
-//
-// Second, the records-sheet column set is pinned, so a release that adds
-// authorable columns cannot silently forget to re-decide the default. The
-// tripwire fires on any header-set change and cannot judge whether a bump is
-// due; that stays a human decision this red test forces.
-func TestFromSheetDefaultVersionGuard(t *testing.T) {
-	// Read the default the converter actually stamps, rather than the literal
-	// in convert.go, so the production constant stays independently pinned by
-	// TestConvertPatternA.
-	res := convertOneRecord(t, bundleWithColumns(t, map[string]string{}), Options{})
-	stamped, _ := res.Record["ulc_version"].(string)
-	if stamped == "" {
-		t.Fatal("a converted record carries no ulc_version")
-	}
+type datedChangelogVersion struct {
+	raw                 string
+	major, minor, patch int
+}
 
+func datedChangelogVersions(t *testing.T) []datedChangelogVersion {
+	t.Helper()
 	repoRoot := filepath.Dir(schemaDir(t))
 	changelog, err := os.ReadFile(filepath.Join(repoRoot, "CHANGELOG.md"))
 	if err != nil {
 		t.Fatalf("read CHANGELOG.md: %v", err)
 	}
-	heading := regexp.MustCompile(`(?m)^## ` + regexp.QuoteMeta(stamped) + ` \(\d{4}-\d{2}-\d{2}\)$`)
-	if !heading.Match(changelog) {
-		t.Errorf("the from-sheet ulc_version default is %q, which has no dated `## %s (YYYY-MM-DD)` section in CHANGELOG.md; "+
-			"the default must name a version this repository documents", stamped, stamped)
+	heading := regexp.MustCompile(`(?m)^## (\d+)\.(\d+)\.(\d+) \(\d{4}-\d{2}-\d{2}\)$`)
+	matches := heading.FindAllStringSubmatch(string(changelog), -1)
+	if len(matches) == 0 {
+		t.Fatal("CHANGELOG.md has no dated release headings")
 	}
+	versions := make([]datedChangelogVersion, 0, len(matches))
+	for _, match := range matches {
+		major, _ := strconv.Atoi(match[1])
+		minor, _ := strconv.Atoi(match[2])
+		patch, _ := strconv.Atoi(match[3])
+		versions = append(versions, datedChangelogVersion{
+			raw: match[1] + "." + match[2] + "." + match[3], major: major, minor: minor, patch: patch,
+		})
+	}
+	return versions
+}
 
+func assertCurrentDocumentedPatch(t *testing.T, stamped string) {
+	t.Helper()
+	parts := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`).FindStringSubmatch(stamped)
+	if parts == nil {
+		t.Fatalf("stamped ulc_version %q is not three dot-separated integers", stamped)
+	}
+	major, _ := strconv.Atoi(parts[1])
+	minor, _ := strconv.Atoi(parts[2])
+	patch, _ := strconv.Atoi(parts[3])
+	found := false
+	for _, version := range datedChangelogVersions(t) {
+		if version.raw == stamped {
+			found = true
+		}
+		if version.major == major && version.minor == minor && version.patch > patch {
+			t.Errorf("from-sheet stamps %s, but CHANGELOG.md documents newer patch %s on the same %d.%d line", stamped, version.raw, major, minor)
+		}
+	}
+	if !found {
+		t.Errorf("from-sheet stamps %s, which has no dated CHANGELOG.md release heading", stamped)
+	}
+}
+
+// TestFromSheetDefaultVersionGuard requires the converter's actual default to
+// be a documented release and the newest patch on its own major.minor line.
+func TestFromSheetDefaultVersionGuard(t *testing.T) {
+	res := convertOneRecord(t, bundleWithColumns(t, map[string]string{}), Options{})
+	stamped, _ := res.Record["ulc_version"].(string)
+	if stamped == "" {
+		t.Fatal("a converted record carries no ulc_version")
+	}
+	assertCurrentDocumentedPatch(t, stamped)
+}
+
+// TestRecordsSheetHeadersMatchTemplateContract pins the sorted records-sheet
+// header set so converter and workbook-template edits cannot drift silently.
+func TestRecordsSheetHeadersMatchTemplateContract(t *testing.T) {
 	got := make([]string, 0, len(recordColumns))
 	for _, c := range recordColumns {
 		got = append(got, c.Header)
 	}
 	sort.Strings(got)
 	if strings.Join(got, "\n") != strings.Join(recordColumnHeaders, "\n") {
-		t.Errorf("the records-sheet column set changed; re-decide the from-sheet ulc_version default in convert.go "+
-			"(bump it when the new columns author fields introduced after the current default) and update this pin.\n"+
+		t.Errorf("the records-sheet column set changed; reconcile converter and workbook-template column parity, then update this sorted pin.\n"+
 			"current sorted headers:\n\t%s", strings.Join(got, "\n\t"))
 	}
 }

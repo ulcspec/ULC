@@ -52,6 +52,8 @@ func TestConvertPatternA(t *testing.T) {
 	// A converted record with no ulc_version column stamps the current-spec default.
 	if got, _ := res.Record["ulc_version"].(string); got != SpecVersion {
 		t.Fatalf("converted record ulc_version = %q, want %s (from-sheet default)", got, SpecVersion)
+	} else {
+		assertCurrentDocumentedPatch(t, got)
 	}
 
 	// Build the index: this stamps the index block and grades conformance_level.
