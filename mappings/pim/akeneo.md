@@ -142,7 +142,7 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         return null;
     }
     $record = [
-        'ulc_version' => '1.0.0',
+        'ulc_version' => '1.9.0',
         'record_id' => slug("{$product->getBrand()}-{$product->getIdentifier()}-{$variant->getScenarioSlug()}"),
         'record_status' => 'active',
         'record_status_as_of' => date('Y-m-d'), // the emit/edit date; drives record-relative expiry
@@ -153,7 +153,7 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         'colorimetry' => mapColorimetry($variant),
         'source_files' => buildSourceFiles($product->getAssets()),
     ];
-    // Write $record to a temp .ulc.json file, run `ulc build-index <path>`
+    // Write $record to a temporary .ulc file, run `ulc build-index <path>`
     // (writes the computed index back in place), then `ulc validate <path>`.
     // Both CLIs take a file path; neither reads stdin.
     $tmpPath = writeTempUlcRecord($record);

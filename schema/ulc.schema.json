@@ -14,7 +14,7 @@
     },
 
     "record_id": {
-      "description": "Stable identifier for this record. Convention: `<manufacturer-slug>-<catalog-slug>-<scenario-slug>` with lowercase ASCII and hyphens. By repository convention matches the filename stem, regardless of whether the file is `.ulc` (canonical records) or `.ulc.json` (authoring templates). Must be unique within a manufacturer's namespace.",
+      "description": "Stable identifier for this record. Convention: `<manufacturer-slug>-<catalog-slug>-<scenario-slug>` with lowercase ASCII and hyphens. By repository convention it matches the filename stem of the finished `.ulc` record. Must be unique within a manufacturer's namespace.",
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
       "minLength": 3,
@@ -271,7 +271,7 @@
           "items": { "type": "string" }
         },
         "source_file_types_present": {
-          "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, ULD, GLDF) exist for this record without walking the full `source_files` array.",
+          "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, ULD, GLDF, and manufacturer data exports) exist for this record without walking the full `source_files` array.",
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" }
         },

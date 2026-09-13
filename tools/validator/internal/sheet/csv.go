@@ -22,7 +22,7 @@ import (
 func ReadCSVBundle(dir string) (Workbook, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("read bundle dir %s: %w", dir, err)
+		return Workbook{}, fmt.Errorf("read bundle dir %s: %w", dir, err)
 	}
 	// Sort entries so sheet discovery is deterministic regardless of the
 	// filesystem's directory ordering.
@@ -37,14 +37,15 @@ func ReadCSVBundle(dir string) (Workbook, error) {
 	}
 	sort.Strings(names)
 
-	wb := Workbook{}
+	wb := newWorkbook()
 	for _, name := range names {
 		sheetName := strings.TrimSuffix(name, filepath.Ext(name))
-		rows, err := readCSVFile(filepath.Join(dir, name))
+		header, rows, err := readCSVFile(filepath.Join(dir, name))
 		if err != nil {
-			return nil, fmt.Errorf("read sheet %q: %w", sheetName, err)
+			return Workbook{}, fmt.Errorf("read sheet %q: %w", sheetName, err)
 		}
-		wb[sheetName] = rows
+		wb.Headers[sheetName] = header
+		wb.Rows[sheetName] = rows
 	}
 	return wb, nil
 }
@@ -53,10 +54,10 @@ func ReadCSVBundle(dir string) (Workbook, error) {
 // columns; each subsequent record becomes a Row. Trailing empty data rows
 // (every cell blank) are skipped so a spreadsheet export's padding does not
 // produce phantom records.
-func readCSVFile(path string) ([]Row, error) {
+func readCSVFile(path string) ([]string, []Row, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", path, err)
+		return nil, nil, fmt.Errorf("open %s: %w", path, err)
 	}
 	defer f.Close()
 
@@ -67,9 +68,9 @@ func readCSVFile(path string) ([]Row, error) {
 	header, err := r.Read()
 	if err != nil {
 		if err == io.EOF {
-			return []Row{}, nil // empty file: a sheet with no header and no rows
+			return []string{}, []Row{}, nil // empty file: a sheet with no header and no rows
 		}
-		return nil, fmt.Errorf("read header: %w", err)
+		return nil, nil, fmt.Errorf("read header: %w", err)
 	}
 	for i := range header {
 		header[i] = strings.TrimSpace(header[i])
@@ -82,7 +83,7 @@ func readCSVFile(path string) ([]Row, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("read record: %w", err)
+			return nil, nil, fmt.Errorf("read record: %w", err)
 		}
 		row := Row{}
 		allBlank := true
@@ -102,5 +103,5 @@ func readCSVFile(path string) ([]Row, error) {
 		}
 		rows = append(rows, row)
 	}
-	return rows, nil
+	return header, rows, nil
 }

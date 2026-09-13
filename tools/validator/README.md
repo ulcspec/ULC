@@ -1,12 +1,12 @@
 # `ulc`: reference validator for ULC
 
-The `ulc` command-line tool is the reference implementation of the ULC specification's validation and index-building logic. It is the authoritative check that a ULC record (files with a `.ulc` or `.ulc.json` extension, both accepted by all subcommands) is well-formed, conforms to the schema, and has a correctly-computed `index` block.
+The `ulc` command-line tool is the reference implementation of the ULC specification's validation and index-building logic. It is the authoritative check that a finished `.ulc` record is well-formed, conforms to the schema, and has a correctly-computed `index` block.
 
 ## Shipped features
 
 The `ulc` CLI provides:
 
-- [x] `ulc build-index <record>`: deterministic index projection (`<record>` is any `.ulc` or `.ulc.json` file)
+- [x] `ulc build-index <record>`: deterministic index projection for a finished `.ulc` record
 - [x] `ulc build-index <record> --check`: verify stored index matches the builder; exit 1 on drift
 - [x] `ulc build-index <record> --stdout`: print computed index without modifying the record
 - [x] `ulc validate <record>`: JSON Schema Draft 2020-12 validation via [`santhosh-tekuri/jsonschema/v6`](https://github.com/santhosh-tekuri/jsonschema) with cross-file `$ref` resolution, asserting the schema's declared string formats (`format: date` fields must be ISO 8601 `YYYY-MM-DD` dates, `format: uri` fields must be absolute URIs; a violation is reported at the field's JSON Pointer)

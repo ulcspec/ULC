@@ -28,18 +28,28 @@ package sheet
 // distinguish "authored" from "absent".
 type Row map[string]string
 
-// Workbook is a format-agnostic model of a manufacturer workbook: a map from
-// sheet name (for example "records", "source_files") to that sheet's rows in
-// file order. Both readers (the CSV bundle in csv.go and the native .xlsx
-// reader in xlsx.go) produce this same model, so the assembler is decoupled
-// from the input format.
-type Workbook map[string][]Row
+// Workbook is the format-agnostic model both readers produce. Headers remain
+// available even when every cell below one is blank, while Rows preserves the
+// existing trimmed, sparse data model used by the assembler.
+type Workbook struct {
+	Rows    map[string][]Row
+	Headers map[string][]string
+}
+
+func newWorkbook() Workbook {
+	return Workbook{Rows: map[string][]Row{}, Headers: map[string][]string{}}
+}
 
 // Sheet returns the rows for the named sheet and whether the sheet exists.
 // A sheet that exists but has no data rows returns an empty, non-nil slice.
 func (w Workbook) Sheet(name string) ([]Row, bool) {
-	rows, ok := w[name]
+	rows, ok := w.Rows[name]
 	return rows, ok
+}
+
+// Header returns a copy of the named sheet's ordered header row.
+func (w Workbook) Header(name string) []string {
+	return append([]string(nil), w.Headers[name]...)
 }
 
 // RowsFor returns the rows of the named sheet whose record_id column equals id,
@@ -48,7 +58,7 @@ func (w Workbook) Sheet(name string) ([]Row, bool) {
 // rows.
 func (w Workbook) RowsFor(name, id string) []Row {
 	out := []Row{}
-	for _, r := range w[name] {
+	for _, r := range w.Rows[name] {
 		if r["record_id"] == id {
 			out = append(out, r)
 		}

@@ -36,7 +36,7 @@ jobs:
       - name: Verify generated index on example records
         run: |
           shopt -s globstar nullglob
-          records=(examples/**/*.ulc examples/**/*.ulc.json)
+          records=(examples/**/*.ulc)
           if [ "${#records[@]}" -eq 0 ]; then
             echo "No example ULC records found; skipping index parity check."
             exit 0

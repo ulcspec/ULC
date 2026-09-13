@@ -22,7 +22,7 @@
 #      across taxonomy.schema.json and ulc.schema.json. Aborts the commit
 #      on any dangling reference.
 #
-#   3. Record-index parity guard. When any *.ulc or *.ulc.json record is
+#   3. Record-index parity guard. When any *.ulc record is
 #      staged, runs `ulc build-index --check` against each to confirm its
 #      `index` block matches what the builder would produce. Uses the Go
 #      reference CLI at tools/validator/bin/ulc (built from source when
@@ -65,7 +65,7 @@ fi
 # version does not get local parity results that diverge from CI. When Go is
 # available, we rebuild from source on every invocation to guarantee the
 # hook runs the same builder logic as the current checkout.
-record_files=$(echo "$staged" | grep -E "\.ulc(\.json)?$" || true)
+record_files=$(echo "$staged" | grep -E "\.ulc$" || true)
 if [ -n "$record_files" ]; then
   ulc_bin=""
   if command -v go >/dev/null 2>&1; then

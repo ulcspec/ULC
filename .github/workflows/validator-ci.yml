@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s globstar nullglob
-          records=(examples/**/*.ulc examples/**/*.ulc.json)
+          records=(examples/**/*.ulc)
           if [ "${#records[@]}" -eq 0 ]; then
             echo "No example ULC records found; skipping validation."
             exit 0

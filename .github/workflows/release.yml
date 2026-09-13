@@ -67,6 +67,17 @@ jobs:
           ref: ${{ steps.resolve.outputs.target_ref }}
           fetch-depth: 0
 
+      - name: Verify converter specification version
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+          TAG_EXISTS: ${{ steps.resolve.outputs.tag_exists }}
+        run: |
+          if [ "$TAG_EXISTS" = "true" ] && [ ! -f tools/validator/check-spec-version.sh ]; then
+            echo "Existing tag v${VERSION} predates the converter specification guard; continuing the release retry."
+            exit 0
+          fi
+          sh tools/validator/check-spec-version.sh "$VERSION"
+
       - name: Compose release body from CHANGELOG
         env:
           VERSION: ${{ steps.resolve.outputs.version }}

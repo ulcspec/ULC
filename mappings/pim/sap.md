@@ -163,7 +163,7 @@ In practice, ABAP handles data extraction (CDS views or SAP CAP/RAP) and a Pytho
 def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
     primary_category = CLASS_TO_ULC_CATEGORY[material['class']]
     record = {
-        "ulc_version": "1.0.0",
+        "ulc_version": "1.9.0",
         "record_id": slug(f"{material['brand_slug']}-{material['matnr']}-{variant['scenario_slug']}"),
         "record_status": "active",
         "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
@@ -176,7 +176,7 @@ def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
     }
     # Both CLIs are file-based. Write the record to a temp file, run
     # build-index in place, then validate against the same path.
-    with tempfile.NamedTemporaryFile("w", suffix=".ulc.json", delete=False) as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".ulc", delete=False) as f:
         json.dump(record, f)
         tmp_path = f.name
     subprocess.run(["ulc", "build-index", tmp_path], check=True)

@@ -39,6 +39,21 @@ import (
 // -ldflags -X main.CLIVersion=<tag>.
 var CLIVersion = "0.4.0-dev"
 
+const (
+	finishedRecordExtension = ".ulc"
+	draftRecordExtension    = ".draft.json"
+	jsonSerializationSuffix = ".json"
+)
+
+func refuseRetiredRecordName(command, path string) bool {
+	retired := finishedRecordExtension + jsonSerializationSuffix
+	if !strings.HasSuffix(strings.ToLower(filepath.Base(path)), retired) {
+		return false
+	}
+	fmt.Fprintf(os.Stderr, "ulc %s: %s uses the retired finished-record suffix %s; use %s\n", command, path, retired, finishedRecordExtension)
+	return true
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		usage(os.Stderr)
@@ -149,6 +164,9 @@ USAGE
 		return 2
 	}
 	recordPath := fs.Arg(0)
+	if refuseRetiredRecordName("validate", recordPath) {
+		return 2
+	}
 
 	// The expiry flags are meaningful only with --expiry. Resolve the as-of default and
 	// validate the flag values here so a usage error exits 2 before any work is done. The
@@ -309,6 +327,11 @@ The index block is a deterministic projection of the record's deep blocks. It
 is forbidden by spec to hand-author the index. Default mode writes the computed
 index back into the record in place.
 
+Exit codes:
+  0   index written, printed, or confirmed current
+  1   the record could not be read, parsed, or indexed
+  2   usage error
+
 USAGE
     ulc build-index <record.ulc>              # write in place
     ulc build-index <record.ulc> --stdout     # print built index, do not modify
@@ -325,6 +348,9 @@ USAGE
 		return 2
 	}
 	recordPath := fs.Arg(0)
+	if refuseRetiredRecordName("build-index", recordPath) {
+		return 2
+	}
 	record, err := readRecord(recordPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ulc build-index: %v\n", err)
@@ -449,20 +475,20 @@ func patternToken(p sheet.Pattern) string {
 // runFromSheet converts a CSV bundle directory or a native .xlsx workbook into
 // validated ULC records. For each assembled record it builds the index (which
 // stamps conformance_level), checks the required index keys, writes
-// <out>/<record_id>.ulc.json only after schema validation passes, runs the
+// <out>/<record_id>.ulc only after schema validation passes, runs the
 // schema validator plus the conformance report, and prints a one-line summary.
 // A record carrying placeholder hashes is a DRAFT: it is never written to
-// --out, and --draft-out saves it as <record_id>.draft.json instead. --json
+// --out, and --draft-out saves it with draftRecordExtension instead. --json
 // replaces the summary lines with one machine-readable report on stdout. It
 // exits non-zero if any record fails schema validation or any draft exists.
 func runFromSheet(args []string) int {
 	fs := flag.NewFlagSet("from-sheet", flag.ExitOnError)
 	var outDir, assetsDir, draftDir string
 	var allowMissing, jsonOut bool
-	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>.ulc.json files into.")
+	fs.StringVar(&outDir, "out", ".", "Directory to write <record_id>"+finishedRecordExtension+" files into.")
 	fs.StringVar(&assetsDir, "assets", "", "Directory referenced files (cutsheet, warranty conditions, IES, attestation docs) resolve against. Defaults to the bundle directory.")
 	fs.BoolVar(&allowMissing, "allow-missing-files", false, "When a referenced file is absent on disk, stamp the 64-zero sentinel SHA-256 and treat the record as a DRAFT (reported, not written to --out; the run exits non-zero) instead of erroring immediately.")
-	fs.StringVar(&draftDir, "draft-out", "", "Directory to write DRAFT records into as <record_id>.draft.json. Only meaningful with --allow-missing-files; drafts are never written to --out and the run still exits non-zero.")
+	fs.StringVar(&draftDir, "draft-out", "", "Directory to write DRAFT records into as <record_id>"+draftRecordExtension+". Only meaningful with --allow-missing-files; drafts are never written to --out and the run still exits non-zero.")
 	fs.BoolVar(&jsonOut, "json", false, "Emit one machine-readable JSON conversion report to stdout instead of the per-record summary lines.")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, `ulc from-sheet -- convert a manufacturer workbook into validated ULC records.
@@ -539,14 +565,10 @@ USAGE
 		}
 	}
 
-	// Build the validator once and reuse it across records. Prefer an in-repo
-	// schema directory; fall back to the embedded schemas for released binaries.
-	var v *validate.Validator
-	if dir, ferr := validate.FindSchemaDir("", input); ferr == nil {
-		v, err = validate.NewValidator(dir)
-	} else {
-		v, err = validate.NewValidatorEmbedded()
-	}
+	// Build the validator once and reuse it across records. Conversion stamps the
+	// converter's compiled SpecVersion, so validate against the schemas compiled
+	// into that same binary rather than a discoverable schema from the environment.
+	v, err := validate.NewValidatorEmbedded()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", err)
 		return 1
@@ -594,13 +616,13 @@ USAGE
 		}
 		res.Record["index"] = built
 
-		outPath := filepath.Join(outDir, res.RecordID+".ulc.json")
+		outPath := filepath.Join(outDir, res.RecordID+finishedRecordExtension)
 
 		// A record that references files not present on disk carries placeholder
 		// (zero-sentinel) hashes under --allow-missing-files. It is a DRAFT, not a
 		// validated record, so it is never written to --out (the run also exits
 		// non-zero below). With --draft-out it is saved under a distinct
-		// .draft.json suffix so it cannot be mistaken for a validated record.
+		// distinct draft suffix so it cannot be mistaken for a validated record.
 		// The draft write happens before schema validation, so the record_id has
 		// not yet been checked against the schema's slug pattern; a draft
 		// filename is never built from an unchecked cell.
@@ -616,7 +638,7 @@ USAGE
 					failed = true
 					continue
 				}
-				draftPath := filepath.Join(draftDir, res.RecordID+".draft.json")
+				draftPath := filepath.Join(draftDir, res.RecordID+draftRecordExtension)
 				draftBytes, merr := marshalRecord(res.Record)
 				if merr != nil {
 					fmt.Fprintf(os.Stderr, "ulc from-sheet: %v\n", merr)
@@ -888,6 +910,9 @@ USAGE
 		return 2
 	}
 	recordPath := fs.Arg(0)
+	if refuseRetiredRecordName("scope", recordPath) {
+		return 2
+	}
 
 	record, err := readRecord(recordPath)
 	if err != nil {

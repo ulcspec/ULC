@@ -149,7 +149,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 # Illustrative pseudocode, not a working implementation.
 def emit_ulc_from_salsify(product, scenario):
     record = {
-        "ulc_version": "1.0.0",
+        "ulc_version": "1.9.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
         "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
@@ -162,7 +162,7 @@ def emit_ulc_from_salsify(product, scenario):
     }
     # Both CLIs are file-based; write a temp file, run build-index in place,
     # then run validate against the same path.
-    with tempfile.NamedTemporaryFile("w", suffix=".ulc.json", delete=False) as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".ulc", delete=False) as f:
         json.dump(record, f)
         tmp_path = f.name
     subprocess.run(["ulc", "build-index", tmp_path], check=True)

@@ -4,8 +4,22 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func testProvenanceContext(id string, count int) provenanceContext {
+	anchor := attestationAnchor{count: count}
+	references := map[string][]attestationReference{}
+	if id != "" {
+		anchor.ids = []string{id}
+		references[id] = []attestationReference{{family: attestationFamilyPhotometric}}
+	}
+	return provenanceContext{
+		anchors:    map[attestationFamily]attestationAnchor{attestationFamilyPhotometric: anchor},
+		references: references,
+	}
+}
 
 // TestResolveProvenanceDerivedMethodRequiresBase locks the rule that a derived
 // method (extended_photometry / optical_simulation / scaled) must resolve a
@@ -17,14 +31,14 @@ func TestResolveProvenanceDerivedMethodRequiresBase(t *testing.T) {
 	// extended_photometry with no base override and no lm_79 anchor -> hard error.
 	if _, err := resolveProvenance(col,
 		Row{"total_luminous_flux_lm__prov_method": "extended_photometry"},
-		provenanceContext{lm79Count: 0}); err == nil {
+		testProvenanceContext("", 0)); err == nil {
 		t.Fatal("expected error for derived method with no base attestation and no lm_79 anchor")
 	}
 
 	// extended_photometry with a single lm_79 -> auto-links base_attestation_ref.
 	rp, err := resolveProvenance(col,
 		Row{"total_luminous_flux_lm__prov_method": "extended_photometry"},
-		provenanceContext{lm79AttestationID: "att-lm79-1", lm79Count: 1})
+		testProvenanceContext("att-lm79-1", 1))
 	if err != nil {
 		t.Fatalf("unexpected error with single lm_79 anchor: %v", err)
 	}
@@ -35,12 +49,99 @@ func TestResolveProvenanceDerivedMethodRequiresBase(t *testing.T) {
 	// Explicit base override wins, no lm_79 anchor needed.
 	rp, err = resolveProvenance(col,
 		Row{"total_luminous_flux_lm__prov_method": "optical_simulation", "total_luminous_flux_lm__base_attestation_ref": "BASE-9"},
-		provenanceContext{lm79Count: 0})
+		testProvenanceContext("BASE-9", 1))
 	if err != nil {
 		t.Fatalf("unexpected error with explicit base override: %v", err)
 	}
 	if got := rp.provenance["base_attestation_ref"]; got != "BASE-9" {
 		t.Fatalf("base_attestation_ref = %v, want BASE-9", got)
+	}
+}
+
+func TestRecordsSheetExplicitReferenceMayNameNonPhotometricFamily(t *testing.T) {
+	const maintenanceID = "maintenance-evidence"
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "tm_21_21", "attestation_id": maintenanceID},
+	})
+	resolved, err := resolveProvenance(Column{
+		Header:        "lm_claimed_hours",
+		ProvSource:    "manufacturer_direct",
+		ProvMethod:    "transcribed",
+		ProvValueType: "rated",
+	}, Row{"lm_claimed_hours__attestation_ref": maintenanceID}, ctx)
+	if err != nil {
+		t.Fatalf("maintenance reference on records-sheet value: %v", err)
+	}
+	if got := resolved.provenance["attestation_ref"]; got != maintenanceID {
+		t.Errorf("attestation_ref = %v, want %q", got, maintenanceID)
+	}
+}
+
+func TestRecordsSheetCrossFamilyExceptionIsNarrow(t *testing.T) {
+	const maintenanceID = "maintenance-evidence"
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "tm_21_21", "attestation_id": maintenanceID},
+	})
+	photometric := Column{
+		Header:        "total_luminous_flux_lm",
+		ProvSource:    "ies",
+		ProvMethod:    "extracted",
+		ProvValueType: "measured",
+	}
+	tests := []struct {
+		name, want string
+		col        Column
+		row        Row
+	}{
+		{name: "measured photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__attestation_ref": maintenanceID}},
+		{name: "rated photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__attestation_ref": maintenanceID}},
+		{name: "derived photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__prov_method": "scaled", "total_luminous_flux_lm__base_attestation_ref": maintenanceID}},
+		{name: "measured maintenance claim", want: "requires value_type=rated", col: Column{Header: "lm_claimed_hours", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"}, row: Row{"lm_claimed_hours__value_type": "measured", "lm_claimed_hours__attestation_ref": maintenanceID}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := resolveProvenance(test.col, test.row, ctx)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("cross-family error = %v", err)
+			}
+		})
+	}
+}
+
+func TestRecordsSheetMaintenanceClaimRejectsUnrelatedFamily(t *testing.T) {
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "lm_90_20", "attestation_id": "flicker-evidence"},
+	})
+	_, err := resolveProvenance(Column{
+		Header:        "lm_claimed_hours",
+		ProvSource:    "manufacturer_direct",
+		ProvMethod:    "transcribed",
+		ProvValueType: "rated",
+	}, Row{"lm_claimed_hours__attestation_ref": "flicker-evidence"}, ctx)
+	if err == nil || !strings.Contains(err.Error(), "maintenance") {
+		t.Fatalf("unrelated maintenance-claim evidence error = %v", err)
+	}
+}
+
+func TestExplicitReferenceMayNameSharedAttestation(t *testing.T) {
+	const sharedID = "shared-evidence"
+	ctx := newProvenanceContext(nil, []any{
+		map[string]any{"program": "tm_21_21", "attestation_id": sharedID},
+	})
+	resolved, err := resolveProvenance(Column{
+		Header:        "lm_claimed_hours",
+		ProvSource:    "manufacturer_direct",
+		ProvMethod:    "transcribed",
+		ProvValueType: "rated",
+	}, Row{"lm_claimed_hours__attestation_ref": sharedID}, ctx)
+	if err != nil {
+		t.Fatalf("shared attestation reference: %v", err)
+	}
+	if got := resolved.provenance["attestation_ref"]; got != sharedID {
+		t.Errorf("attestation_ref = %v, want %q", got, sharedID)
+	}
+	if got := ctx.singleAnchorID(attestationFamilyMaintenance); got != "" {
+		t.Errorf("shared attestation became automatic anchor %q", got)
 	}
 }
 
@@ -94,11 +195,11 @@ func TestParseJSONObjectCellRejectsTrailing(t *testing.T) {
 func TestMeasuredLumensDerivedRequiresBase(t *testing.T) {
 	row := Row{"lumens": "1200", "lumens__value_type": "rated", "lumens__prov_method": "scaled", "lumens__extension_method": "cct_multiplier"}
 
-	if _, err := measuredLumens(row, "lumens", provenanceContext{lm79Count: 0}); err == nil {
+	if _, err := supplementaryProvenancedNumber("zonal_lumens", "lumens", row, testProvenanceContext("", 0)); err == nil {
 		t.Error("expected error: derived zonal lumen with no base attestation and no lm_79 anchor")
 	}
 
-	pn, err := measuredLumens(row, "lumens", provenanceContext{lm79AttestationID: "L1", lm79Count: 1})
+	pn, err := supplementaryProvenancedNumber("zonal_lumens", "lumens", row, testProvenanceContext("L1", 1))
 	if err != nil {
 		t.Fatalf("unexpected error with single lm_79 anchor: %v", err)
 	}
@@ -132,13 +233,13 @@ func TestRejectCaseByCaseMeasuredAttestation(t *testing.T) {
 func TestCheckRelatedSheetIDs(t *testing.T) {
 	records := []Row{{"record_id": "r1"}}
 
-	if err := checkRelatedSheetIDs(Workbook{"records": records, "source_files": {{"record_id": "r2", "filename": "x.ies"}}}, records); err == nil {
+	if err := checkRelatedSheetIDs(Workbook{Rows: map[string][]Row{"records": records, "source_files": {{"record_id": "r2", "filename": "x.ies"}}}}, records); err == nil {
 		t.Error("expected error: source_files record_id r2 not in records")
 	}
-	if err := checkRelatedSheetIDs(Workbook{"records": records, "attestations": {{"program": "lm_79"}}}, records); err == nil {
+	if err := checkRelatedSheetIDs(Workbook{Rows: map[string][]Row{"records": records, "attestations": {{"program": "lm_79"}}}}, records); err == nil {
 		t.Error("expected error: attestations row missing record_id")
 	}
-	if err := checkRelatedSheetIDs(Workbook{"records": records, "instructions": {{"note": "fill this in"}}, "source_files": {{"record_id": "r1", "filename": "x.ies"}}}, records); err != nil {
+	if err := checkRelatedSheetIDs(Workbook{Rows: map[string][]Row{"records": records, "instructions": {{"note": "fill this in"}}, "source_files": {{"record_id": "r1", "filename": "x.ies"}}}}, records); err != nil {
 		t.Errorf("valid workbook with an ignored extra tab should pass: %v", err)
 	}
 }
@@ -218,7 +319,7 @@ func TestRatedOverrideSwitchesSourceOffIES(t *testing.T) {
 		t.Errorf("explicit prov_source=ies should be honored even when rated, got %v", rp.provenance["source"])
 	}
 
-	rp, err = resolveProvenance(col, Row{}, provenanceContext{lm79AttestationID: "L1", lm79Count: 1})
+	rp, err = resolveProvenance(col, Row{}, testProvenanceContext("L1", 1))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -232,7 +333,7 @@ func TestRatedOverrideSwitchesSourceOffIES(t *testing.T) {
 // an empty attestation_ref).
 func TestAnchorRequiresAttestationID(t *testing.T) {
 	col := Column{Header: "total_luminous_flux_lm", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"}
-	if _, err := resolveProvenance(col, Row{}, provenanceContext{lm79Count: 1, lm79AttestationID: ""}); err == nil {
+	if _, err := resolveProvenance(col, Row{}, testProvenanceContext("", 1)); err == nil {
 		t.Error("expected error: single lm_79 anchor with no attestation_id")
 	}
 }
@@ -244,12 +345,12 @@ func TestAssembleSourceFilesCutsheetConflict(t *testing.T) {
 	h := &fileHasher{allowMissing: true} // no real files on disk
 	cutRef := map[string]any{"filename": "cut.pdf", "sha256": zeroSHA256}
 
-	conflict := Workbook{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "ies"}}}
+	conflict := Workbook{Rows: map[string][]Row{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "ies"}}}}
 	if _, err := assembleSourceFiles(conflict, "r1", "cut.pdf", cutRef, h); err == nil {
 		t.Error("expected error: cutsheet filename listed with conflicting file_type=ies")
 	}
 
-	ok := Workbook{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "datasheet_pdf"}}}
+	ok := Workbook{Rows: map[string][]Row{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "datasheet_pdf"}}}}
 	out, err := assembleSourceFiles(ok, "r1", "cut.pdf", cutRef, h)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

@@ -164,14 +164,17 @@ func colLetters(ci int) string {
 }
 
 // TestReadXLSXMatchesCSVBundle is the parity contract: an .xlsx whose tabs mirror
-// the Pattern-A CSV bundle's sheets, cell for cell, must read into a Workbook
-// byte-identical to ReadCSVBundle of that bundle. This locks the promise that a
-// manufacturer may hand the converter either input shape.
+// the comprehensive CSV bundle's sheets, cell for cell and across shared,
+// numeric, boolean, and inline string cells, must read into a Workbook identical
+// to ReadCSVBundle of that bundle.
 func TestReadXLSXMatchesCSVBundle(t *testing.T) {
-	bundle := filepath.Join("testdata", "bundle")
+	bundle := filepath.Join("testdata", "bundle-b")
 
 	xlsxPath := filepath.Join(t.TempDir(), "bundle.xlsx")
-	buildXLSX(t, xlsxPath, bundleToXLSXSheets(t, bundle))
+	sheets := bundleToXLSXSheets(t, bundle)
+	assertFixtureCellTypes(t, sheets, "records")
+	assertFixtureCellTypes(t, sheets, "cct_multipliers")
+	buildXLSX(t, xlsxPath, sheets)
 
 	got, err := ReadXLSX(xlsxPath)
 	if err != nil {
@@ -182,13 +185,33 @@ func TestReadXLSXMatchesCSVBundle(t *testing.T) {
 		t.Fatalf("ReadCSVBundle: %v", err)
 	}
 	if !reflect.DeepEqual(got, want) {
-		for name, wrows := range want {
-			grows := got[name]
+		for name, wrows := range want.Rows {
+			grows := got.Rows[name]
 			if !reflect.DeepEqual(grows, wrows) {
 				t.Errorf("sheet %q differs:\n  xlsx: %v\n  csv:  %v", name, grows, wrows)
 			}
 		}
-		t.Fatalf("ReadXLSX != ReadCSVBundle (sheets: xlsx=%d csv=%d)", len(got), len(want))
+		t.Fatalf("ReadXLSX != ReadCSVBundle (sheets: xlsx=%d csv=%d)", len(got.Rows), len(want.Rows))
+	}
+}
+
+func assertFixtureCellTypes(t *testing.T, sheets []xsheet, sheetName string) {
+	t.Helper()
+	seen := map[string]bool{}
+	for _, sh := range sheets {
+		if sh.name != sheetName {
+			continue
+		}
+		for _, row := range sh.rows {
+			for _, cell := range row {
+				seen[cell.typ] = true
+			}
+		}
+	}
+	for _, typ := range []string{"s", "n", "b", "i"} {
+		if !seen[typ] {
+			t.Errorf("sheet %q has no %q cell in XLSX parity fixture", sheetName, typ)
+		}
 	}
 }
 
@@ -244,8 +267,9 @@ func TestConvertFromXLSX(t *testing.T) {
 }
 
 // bundleToXLSXSheets reads every <sheet>.csv in a bundle directory (sorted, like
-// ReadCSVBundle) and turns each into an xsheet of shared-string cells, dropping
-// blank cells so the mirrored xlsx matches the CSV reader's density.
+// ReadCSVBundle) and turns each into an xsheet using the cell types a spreadsheet
+// export produces. It drops blank cells so the mirrored xlsx matches the CSV
+// reader's density.
 func bundleToXLSXSheets(t *testing.T, bundleDir string) []xsheet {
 	t.Helper()
 	entries, err := os.ReadDir(bundleDir)
@@ -266,20 +290,56 @@ func bundleToXLSXSheets(t *testing.T, bundleDir string) []xsheet {
 	sheets := make([]xsheet, 0, len(names))
 	for _, n := range names {
 		grid := readRawCSV(t, filepath.Join(bundleDir, n))
-		sh := xsheet{name: strings.TrimSuffix(n, filepath.Ext(n))}
-		for _, rec := range grid {
+		sheetName := strings.TrimSuffix(n, filepath.Ext(n))
+		sh := xsheet{name: sheetName}
+		for ri, rec := range grid {
 			row := xrow{}
 			for ci, val := range rec {
 				if strings.TrimSpace(val) == "" {
 					continue // sparse, mirroring the CSV reader's blank-cell drop
 				}
-				row = append(row, xcell{col: colLetters(ci), typ: "s", text: val})
+				typ, text := xlsxFixtureCell(sheetName, grid[0][ci], ri, ci, val)
+				row = append(row, xcell{col: colLetters(ci), typ: typ, text: text})
 			}
 			sh.rows = append(sh.rows, row)
 		}
 		sheets = append(sheets, sh)
 	}
 	return sheets
+}
+
+var xlsxNumericColumns = map[string]map[string]bool{
+	"alpha_opic":                {"melanopic_der": true, "efficacy": true},
+	"cct_multipliers":           {"cct": true, "multiplier": true},
+	"cie97_llmf":                {"hours": true, "llmf": true, "lsf": true},
+	"cie97_lmf":                 {"cleaning_interval_years": true, "lmf": true},
+	"flicker_metrics":           {"value": true},
+	"lcs_zonal_lumens":          {"lumens": true},
+	"lumen_maintenance_package": {"flux_maintenance_threshold": true, "tm_21_projection_hours": true},
+	"zonal_lumens":              {"lumens": true},
+}
+
+func xlsxFixtureCell(sheetName, header string, rowIndex, columnIndex int, value string) (string, string) {
+	if rowIndex == 0 && columnIndex == 0 {
+		return "i", value
+	}
+	if strings.EqualFold(value, "TRUE") {
+		return "b", "1"
+	}
+	if strings.EqualFold(value, "FALSE") {
+		return "b", "0"
+	}
+	if sheetName == "records" {
+		for _, col := range recordColumns {
+			if col.Header == header && (col.Kind == KindNumber || col.Kind == KindProvNumber || col.Kind == KindDualUnitSI || col.Kind == KindDualUnitImperial) {
+				return "n", value
+			}
+		}
+	}
+	if xlsxNumericColumns[sheetName][header] {
+		return "n", value
+	}
+	return "s", value
 }
 
 // TestReadXLSXCellTypes exercises every cellValue branch and the sparse-cell /
@@ -307,10 +367,13 @@ func TestReadXLSXCellTypes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadXLSX: %v", err)
 	}
-	want := Workbook{"records": []Row{
-		{"record_id": "r1", "active": "TRUE", "note": "hello"},
-		{"record_id": "r2", "input_power_w": "42", "note": "spaced"},
-	}}
+	want := Workbook{
+		Rows: map[string][]Row{"records": {
+			{"record_id": "r1", "active": "TRUE", "note": "hello"},
+			{"record_id": "r2", "input_power_w": "42", "note": "spaced"},
+		}},
+		Headers: map[string][]string{"records": {"record_id", "input_power_w", "active", "note"}},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("cell-type mismatch:\n got: %v\nwant: %v", got, want)
 	}
@@ -416,9 +479,10 @@ func TestReadXLSXRealExcelShapes(t *testing.T) {
 	}
 	// Header is [record_id, note, status, maker]. The data row: A=r1; B is an
 	// error cell (absent); C="ok"; D=rich-run shared string "AcmeCo" (rPh dropped).
-	want := Workbook{"records": []Row{
-		{"record_id": "r1", "status": "ok", "maker": "AcmeCo"},
-	}}
+	want := Workbook{
+		Rows:    map[string][]Row{"records": {{"record_id": "r1", "status": "ok", "maker": "AcmeCo"}}},
+		Headers: map[string][]string{"records": {"record_id", "note", "status", "maker"}},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("real-Excel shapes mismatch:\n got: %v\nwant: %v", got, want)
 	}
@@ -479,7 +543,13 @@ func TestReadXLSXOutOfRangeColumnReference(t *testing.T) {
 	}
 	// The out-of-range cell is skipped; the legal XFD column beside it survives,
 	// so the bound rejects only what the format itself cannot address.
-	want := Workbook{"records": []Row{{"record_id": "r1", "note": "kept"}}}
+	header := make([]string, 16384)
+	header[0] = "record_id"
+	header[len(header)-1] = "note"
+	want := Workbook{
+		Rows:    map[string][]Row{"records": {{"record_id": "r1", "note": "kept"}}},
+		Headers: map[string][]string{"records": header},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("out-of-range column mismatch:\n got: %v\nwant: %v", got, want)
 	}

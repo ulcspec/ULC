@@ -279,11 +279,11 @@ func TestCLIMissingIdentityIsRejected(t *testing.T) {
 	}
 }
 
-// TestCLIFromSheetWritesRecord guards the from-sheet write path: a converted record
+// TestFromSheetWritesFinishedRecordsNamedUlc guards the from-sheet write path: a converted record
 // is WRITTEN to --out and the run exits 0 (the converter no longer skips records on
 // data completeness). Uses the canonical CSV bundle fixture, whose referenced files
 // resolve against the bundle directory by default.
-func TestCLIFromSheetWritesRecord(t *testing.T) {
+func TestFromSheetWritesFinishedRecordsNamedUlc(t *testing.T) {
 	bundleDir := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
 	if _, err := os.Stat(bundleDir); err != nil {
 		t.Skipf("bundle fixture not available: %v", err)
@@ -298,14 +298,77 @@ func TestCLIFromSheetWritesRecord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read out dir: %v", err)
 	}
-	wrote := 0
-	for _, e := range entries {
-		if filepath.Ext(e.Name()) == ".json" {
-			wrote++
+	want := "acme-orbit-1200-4000k" + finishedRecordExtension
+	if len(entries) != 1 {
+		t.Fatalf("from-sheet wrote %d files, want 1", len(entries))
+	}
+	if entries[0].Name() != want {
+		t.Errorf("from-sheet wrote %q, want %q", entries[0].Name(), want)
+	}
+}
+
+func TestFromSheetUsesSchemaCompiledIntoTheConverter(t *testing.T) {
+	bundleDir := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
+	if _, err := os.Stat(bundleDir); err != nil {
+		t.Skipf("bundle fixture not available: %v", err)
+	}
+	externalSchema := t.TempDir()
+	for _, name := range []string{"ulc.schema.json", "taxonomy.schema.json"} {
+		if err := os.WriteFile(filepath.Join(externalSchema, name), []byte("not json\n"), 0o600); err != nil {
+			t.Fatal(err)
 		}
 	}
-	if wrote == 0 {
-		t.Error("from-sheet wrote no records to --out; the converter should write, not skip")
+	t.Setenv("ULC_SCHEMA_DIR", externalSchema)
+
+	if rc := runFromSheet([]string{"--out", t.TempDir(), bundleDir}); rc != 0 {
+		t.Fatalf("from-sheet exit = %d, want embedded-schema success", rc)
+	}
+}
+
+// TestFromSheetWrittenBytesMatchAcrossInputShapes proves the CLI writes the
+// same file names and record bytes for the equivalent CSV and XLSX inputs.
+func TestFromSheetWrittenBytesMatchAcrossInputShapes(t *testing.T) {
+	bundleDir := filepath.Join(repoRoot(t), "tools", "validator", "internal", "sheet", "testdata", "bundle")
+	xlsxPath := filepath.Join(bundleDir, "acme-orbit-1200.xlsx")
+	if _, err := os.Stat(xlsxPath); err != nil {
+		t.Fatalf("XLSX parity fixture unavailable: %v", err)
+	}
+
+	csvOut := t.TempDir()
+	xlsxOut := t.TempDir()
+	if rc := runFromSheet([]string{"--out", csvOut, bundleDir}); rc != 0 {
+		t.Fatalf("CSV from-sheet exit = %d, want 0", rc)
+	}
+	if rc := runFromSheet([]string{"--out", xlsxOut, xlsxPath}); rc != 0 {
+		t.Fatalf("XLSX from-sheet exit = %d, want 0", rc)
+	}
+
+	csvEntries, err := os.ReadDir(csvOut)
+	if err != nil {
+		t.Fatalf("read CSV output: %v", err)
+	}
+	xlsxEntries, err := os.ReadDir(xlsxOut)
+	if err != nil {
+		t.Fatalf("read XLSX output: %v", err)
+	}
+	if len(csvEntries) != len(xlsxEntries) {
+		t.Fatalf("written file count: CSV=%d XLSX=%d", len(csvEntries), len(xlsxEntries))
+	}
+	for i, csvEntry := range csvEntries {
+		if csvEntry.Name() != xlsxEntries[i].Name() {
+			t.Fatalf("written file %d: CSV=%q XLSX=%q", i, csvEntry.Name(), xlsxEntries[i].Name())
+		}
+		csvBytes, err := os.ReadFile(filepath.Join(csvOut, csvEntry.Name()))
+		if err != nil {
+			t.Fatalf("read CSV output %s: %v", csvEntry.Name(), err)
+		}
+		xlsxBytes, err := os.ReadFile(filepath.Join(xlsxOut, xlsxEntries[i].Name()))
+		if err != nil {
+			t.Fatalf("read XLSX output %s: %v", xlsxEntries[i].Name(), err)
+		}
+		if !bytes.Equal(csvBytes, xlsxBytes) {
+			t.Errorf("written record bytes differ for %s", csvEntry.Name())
+		}
 	}
 }
 
@@ -343,7 +406,7 @@ func TestCLIFromSheetWritesIncompleteRecord(t *testing.T) {
 	}
 	written := ""
 	for _, e := range entries {
-		if filepath.Ext(e.Name()) == ".json" {
+		if strings.HasSuffix(e.Name(), finishedRecordExtension) {
 			written = filepath.Join(outDir, e.Name())
 		}
 	}

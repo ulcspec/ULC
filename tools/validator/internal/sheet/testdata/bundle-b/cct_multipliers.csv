@@ -1,5 +1,5 @@
-record_id,cct,multiplier
-lumos-skyline-sr-ho-3000k,2700,0.93
-lumos-skyline-sr-ho-3000k,3000,1.00
-lumos-skyline-sr-ho-3000k,3500,1.00
-lumos-skyline-sr-ho-3000k,4000,1.07
+record_id,cct,multiplier,export_boolean
+lumos-skyline-sr-ho-3000k,2700,0.93,TRUE
+lumos-skyline-sr-ho-3000k,3000,1.00,TRUE
+lumos-skyline-sr-ho-3000k,3500,1.00,TRUE
+lumos-skyline-sr-ho-3000k,4000,1.07,TRUE

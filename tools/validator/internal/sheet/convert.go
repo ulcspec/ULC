@@ -54,7 +54,7 @@ type Result struct {
 func readWorkbook(input string) (Workbook, string, error) {
 	info, err := os.Stat(input)
 	if err != nil {
-		return nil, "", fmt.Errorf("read input %s: %w", input, err)
+		return Workbook{}, "", fmt.Errorf("read input %s: %w", input, err)
 	}
 	if info.IsDir() {
 		wb, err := ReadCSVBundle(input)
@@ -64,7 +64,7 @@ func readWorkbook(input string) (Workbook, string, error) {
 		wb, err := ReadXLSX(input)
 		return wb, filepath.Dir(input), err
 	}
-	return nil, "", fmt.Errorf("unsupported input %q: expected a CSV bundle directory or an .xlsx file", input)
+	return Workbook{}, "", fmt.Errorf("unsupported input %q: expected a CSV bundle directory or an .xlsx file", input)
 }
 
 // Convert reads a CSV bundle directory or an .xlsx workbook from input,
@@ -83,6 +83,9 @@ func readWorkbook(input string) (Workbook, string, error) {
 func Convert(input string, opts Options) ([]Result, error) {
 	wb, assetsDefault, err := readWorkbook(input)
 	if err != nil {
+		return nil, err
+	}
+	if err := checkCompanionHeaders(wb); err != nil {
 		return nil, err
 	}
 	records, ok := wb.Sheet("records")
@@ -161,15 +164,15 @@ func checkRelatedSheetIDs(wb Workbook, records []Row) error {
 			ids[id] = struct{}{}
 		}
 	}
-	names := make([]string, 0, len(wb))
-	for name := range wb {
+	names := make([]string, 0, len(wb.Rows))
+	for name := range wb.Rows {
 		if name != "records" && consumedRelatedSheets[name] {
 			names = append(names, name)
 		}
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		for i, r := range wb[name] {
+		for i, r := range wb.Rows[name] {
 			id := r["record_id"]
 			if id == "" {
 				return fmt.Errorf("sheet %q row %d: missing record_id (rows here are joined to the records sheet by record_id and would otherwise be silently dropped)", name, i+1)
@@ -196,13 +199,11 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	rec := map[string]any{
 		"record_id": id,
 	}
-	// ulc_version default per DESIGN.md (overridable by the records column).
-	// Tracks the specification version whose authorable fields the converter's
-	// column set targets, which is not necessarily the current release: it is
-	// bumped with each release that adds authorable schema fields, and a
-	// release that adds none leaves it alone. Guarded by the version-guard
-	// test in this package.
-	rec["ulc_version"] = "1.4.0"
+	// New records declare the current released specification version. An
+	// authored records-sheet value may replace it, subject to the converter's
+	// compiled specification bound. The release workflows keep SpecVersion
+	// aligned with the version they publish.
+	rec["ulc_version"] = SpecVersion
 	// record_status default: active (overridable below).
 	rec["record_status"] = "active"
 
@@ -211,14 +212,29 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	if err != nil {
 		return nil, err
 	}
-	lm79ID, lm79Count := lm79Anchor(attestations)
-	provCtx := provenanceContext{lm79AttestationID: lm79ID, lm79Count: lm79Count}
+	shared, err := assembleSharedAttestations(wb, id)
+	if err != nil {
+		return nil, err
+	}
+	provCtx := newProvenanceContext(attestations, shared)
 
 	// Master-row scalar columns (identity, taxonomy, mechanical, electrical,
 	// photometry, colorimetry) via the data-driven column spec.
 	if err := applyColumns(rec, master, provCtx); err != nil {
 		return nil, err
 	}
+	declaredVersion, _ := rec["ulc_version"].(string)
+	newer, err := specificationVersionGreater(declaredVersion, SpecVersion)
+	if err != nil {
+		return nil, fmt.Errorf("records: ulc_version cell %q must be three dot-separated integers (X.Y.Z)", declaredVersion)
+	}
+	if newer {
+		return nil, fmt.Errorf("records: ulc_version cell %q is newer than this converter's specification version %s", declaredVersion, SpecVersion)
+	}
+	// An older declaration is legal and can target an older consumer, but this
+	// binary does not check it against that older release. The binary embeds one
+	// schema, the current release's, and validates and builds the index against
+	// that schema alone, so older declarations may still carry newer blocks.
 
 	// extensions_json: optional per-record vendor-data overflow that lands at
 	// extensions.manufacturer_specific.<slug>. Supports the Pattern C (and any)
@@ -269,10 +285,6 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	if len(attestations) > 0 {
 		rec["attestations"] = attestations
 	}
-	shared, err := assembleSharedAttestations(wb, id)
-	if err != nil {
-		return nil, err
-	}
 	if len(shared) > 0 {
 		if err := setPath(rec, "product_family.shared_attestations", shared); err != nil {
 			return nil, err
@@ -282,6 +294,7 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	// Patterns B and D: the applicability block and the derivation-generated
 	// photometry tables. A and C are fixed-axes pins and need neither.
 	if pattern == PatternB || pattern == PatternD {
+		lm79ID := provCtx.singleAnchorID(attestationFamilyPhotometric)
 		if err := assembleCoveredAxisRecord(wb, id, master, rec, lm79ID, hasher); err != nil {
 			return nil, err
 		}
@@ -827,31 +840,4 @@ func copyIf(dst map[string]any, row Row, src, key string) {
 	if v, ok := row[src]; ok {
 		dst[key] = v
 	}
-}
-
-// lm79Anchor returns the single LM-79-family attestation id used for the
-// measured -> attestation_ref auto-link, and the count of LM-79 rows found. The
-// id is meaningful only when the count is exactly 1; the provenance resolver
-// hard-errors on 0 or >1 when an auto-link is actually needed.
-func lm79Anchor(attestations []any) (id string, count int) {
-	ids := []string{}
-	for _, a := range attestations {
-		m, ok := a.(map[string]any)
-		if !ok {
-			continue
-		}
-		prog, _ := m["program"].(string)
-		if !strings.HasPrefix(prog, "lm_79") {
-			continue
-		}
-		count++
-		if aid, ok := m["attestation_id"].(string); ok && aid != "" {
-			ids = append(ids, aid)
-		}
-	}
-	sort.Strings(ids)
-	if count == 1 && len(ids) == 1 {
-		return ids[0], count
-	}
-	return "", count
 }

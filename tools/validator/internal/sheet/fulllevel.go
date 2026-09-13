@@ -31,17 +31,16 @@ import (
 // the records sheet via recordColumns; this assembler only adds its ingredient
 // roster, which coexists with those scalars under the same parent.
 //
-// ctx carries the record's single LM-79 anchor so the measured zonal-lumen
-// values can auto-link their attestation_ref, exactly like the headline
-// photometry.
+// ctx carries the record's per-program-family anchors for every provenanced
+// supplementary value.
 func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
-	if err := assembleAlphaOpic(wb, id, rec); err != nil {
+	if err := assembleAlphaOpic(wb, id, rec, ctx); err != nil {
 		return err
 	}
-	if err := assembleFlickerMeasurements(wb, id, rec); err != nil {
+	if err := assembleFlickerMeasurements(wb, id, rec, ctx); err != nil {
 		return err
 	}
-	if err := assembleLumenMaintenancePackage(wb, id, rec); err != nil {
+	if err := assembleLumenMaintenancePackage(wb, id, rec, ctx); err != nil {
 		return err
 	}
 	if err := assembleZonalLumens(wb, id, rec, ctx); err != nil {
@@ -56,57 +55,28 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 	return assembleCIE97Table(wb, id, rec)
 }
 
-// ratedRatioProvNumber builds the {value, unit, value_type:rated, provenance}
-// shape the rated datasheet ratios use (alpha-opic efficacy, melanopic DER,
-// flicker metrics). The provenance is the datasheet default {datasheet_pdf,
-// extracted}; these are manufacturer-published values, not direct measurements,
-// so no attestation_ref auto-link fires.
-func ratedRatioProvNumber(value float64, unit string) map[string]any {
-	obj := map[string]any{
-		"value":      numberLeaf(value),
-		"value_type": "rated",
-		"provenance": map[string]any{"source": "datasheet_pdf", "method": "extracted"},
-	}
-	if unit != "" {
-		obj["unit"] = unit
-	}
-	return obj
-}
-
-// transcribedProvNumber builds the {value, unit, value_type:rated, provenance}
-// shape the lumen-maintenance package quantities use: a value transcribed from
-// the manufacturer's published LM-80 / TM-21 figures ({manufacturer_direct,
-// transcribed}), matching the erco example.
-func transcribedProvNumber(value float64, unit string) map[string]any {
-	obj := map[string]any{
-		"value":      numberLeaf(value),
-		"value_type": "rated",
-		"provenance": map[string]any{"source": "manufacturer_direct", "method": "transcribed"},
-	}
-	if unit != "" {
-		obj["unit"] = unit
-	}
-	return obj
-}
-
 // assembleAlphaOpic builds the alpha_opic_metrics block from the alpha_opic
 // sheet. The block-level scalars (reference_illuminant, standard_observer,
 // melanopic_der) are axis-level (first non-blank cell across the record's rows,
 // like the covered_axes rationale); each row that names a channel contributes a
 // per_channel entry. The block lives at the record root (a sibling of
 // photometry / colorimetry), not under photometry.
-func assembleAlphaOpic(wb Workbook, id string, rec map[string]any) error {
+func assembleAlphaOpic(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
 	rows := wb.RowsFor("alpha_opic", id)
 	if len(rows) == 0 {
 		return nil
 	}
 	block := map[string]any{}
 	var refIllum, stdObs, melDER string
+	var melDERRow Row
 	perChannel := []any{}
 	for i, row := range rows {
 		firstNonBlank(&refIllum, row["reference_illuminant"])
 		firstNonBlank(&stdObs, row["standard_observer"])
-		firstNonBlank(&melDER, row["melanopic_der"])
+		if melDER == "" && row["melanopic_der"] != "" {
+			melDER = row["melanopic_der"]
+			melDERRow = row
+		}
 		ch := row["channel"]
 		if ch == "" {
 			continue
@@ -115,13 +85,13 @@ func assembleAlphaOpic(wb Workbook, id string, rec map[string]any) error {
 		if raw == "" {
 			return fmt.Errorf("alpha_opic row %d for %q: channel %q has no efficacy", i+1, id, ch)
 		}
-		eff, err := parseFloat(raw)
+		eff, err := supplementaryProvenancedNumber("alpha_opic", "efficacy", row, ctx)
 		if err != nil {
-			return fmt.Errorf("alpha_opic row %d for %q: invalid efficacy %q: %w", i+1, id, raw, err)
+			return fmt.Errorf("alpha_opic row %d for %q: %w", i+1, id, err)
 		}
 		perChannel = append(perChannel, map[string]any{
 			"channel":  ch,
-			"efficacy": ratedRatioProvNumber(eff, "ratio"),
+			"efficacy": eff,
 		})
 	}
 	if refIllum != "" {
@@ -131,11 +101,11 @@ func assembleAlphaOpic(wb Workbook, id string, rec map[string]any) error {
 		block["standard_observer"] = stdObs
 	}
 	if melDER != "" {
-		v, err := parseFloat(melDER)
+		v, err := supplementaryProvenancedNumber("alpha_opic", "melanopic_der", melDERRow, ctx)
 		if err != nil {
-			return fmt.Errorf("alpha_opic for %q: invalid melanopic_der %q: %w", id, melDER, err)
+			return fmt.Errorf("alpha_opic for %q: %w", id, err)
 		}
-		block["melanopic_der"] = ratedRatioProvNumber(v, "ratio")
+		block["melanopic_der"] = v
 	}
 	if len(perChannel) > 0 {
 		block["per_channel"] = perChannel
@@ -148,10 +118,10 @@ func assembleAlphaOpic(wb Workbook, id string, rec map[string]any) error {
 
 // assembleFlickerMeasurements builds flicker_measurements.metrics[] from the
 // flicker_metrics sheet (one row per metric). Each metric carries a rated
-// ProvenancedNumber value (default unit ratio, overridable per row) and an
+// ProvenancedNumber value whose unit is determined by the metric, plus an
 // optional bound_operator. The block name is flicker_measurements; the closed
 // metric enum (svm, pst_lm, percent_flicker, ...) is validated by the schema.
-func assembleFlickerMeasurements(wb Workbook, id string, rec map[string]any) error {
+func assembleFlickerMeasurements(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
 	rows := wb.RowsFor("flicker_metrics", id)
 	if len(rows) == 0 {
 		return nil
@@ -164,15 +134,11 @@ func assembleFlickerMeasurements(wb Workbook, id string, rec map[string]any) err
 		}
 		entry := map[string]any{"metric": metric}
 		if raw := row["value"]; raw != "" {
-			v, err := parseFloat(raw)
+			v, err := supplementaryProvenancedNumber("flicker_metrics", "value", row, ctx)
 			if err != nil {
-				return fmt.Errorf("flicker_metrics row %d for %q: invalid value %q: %w", i+1, id, raw, err)
+				return fmt.Errorf("flicker_metrics row %d for %q: %w", i+1, id, err)
 			}
-			unit := row["unit"]
-			if unit == "" {
-				unit = "ratio"
-			}
-			entry["value"] = ratedRatioProvNumber(v, unit)
+			entry["value"] = v
 		}
 		if bo := row["bound_operator"]; bo != "" {
 			entry["bound_operator"] = bo
@@ -189,7 +155,7 @@ func assembleFlickerMeasurements(wb Workbook, id string, rec map[string]any) err
 // method-backed projection the full-tier conformance gate looks for (a
 // tm_21_projection_hours present means the record carries more than a bare
 // manufacturer claim).
-func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any) error {
+func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
 	rows := wb.RowsFor("lumen_maintenance_package", id)
 	if len(rows) == 0 {
 		return nil
@@ -216,20 +182,20 @@ func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any)
 		// {c,f}. That schema inconsistency is a schema-level decision; until it is
 		// reconciled, the converter does not author test_temperature_c rather than
 		// ship a value that conflicts with the dual-unit temperature policy.
-		for _, q := range []struct{ col, key, unit string }{
-			{"tm_21_projection_hours", "tm_21_projection_hours", "h"},
-			{"test_hours", "test_hours", "h"},
-			{"drive_current_ma", "drive_current_ma", "mA"},
+		for _, q := range []struct{ col, key string }{
+			{"tm_21_projection_hours", "tm_21_projection_hours"},
+			{"test_hours", "test_hours"},
+			{"drive_current_ma", "drive_current_ma"},
 		} {
 			raw := row[q.col]
 			if raw == "" {
 				continue
 			}
-			v, err := parseFloat(raw)
+			v, err := supplementaryProvenancedNumber("lumen_maintenance_package", q.col, row, ctx)
 			if err != nil {
-				return fmt.Errorf("lumen_maintenance_package for %q: invalid %s %q: %w", id, q.col, raw, err)
+				return fmt.Errorf("lumen_maintenance_package for %q: %w", id, err)
 			}
-			entry[q.key] = transcribedProvNumber(v, q.unit)
+			entry[q.key] = v
 		}
 		out = append(out, entry)
 	}
@@ -271,7 +237,7 @@ func assembleZonalLumens(wb Workbook, id string, rec map[string]any, ctx provena
 		if zone == "" {
 			return fmt.Errorf("zonal_lumens row %d for %q: missing zone_label", i+1, id)
 		}
-		lumens, err := measuredLumens(row, "lumens", ctx)
+		lumens, err := supplementaryProvenancedNumber("zonal_lumens", "lumens", row, ctx)
 		if err != nil {
 			return fmt.Errorf("zonal_lumens row %d for %q (%s): %w", i+1, id, zone, err)
 		}
@@ -295,79 +261,13 @@ func assembleLCSZonalLumens(wb Workbook, id string, rec map[string]any, ctx prov
 		if zone == "" {
 			return fmt.Errorf("lcs_zonal_lumens row %d for %q: missing zone", i+1, id)
 		}
-		lumens, err := measuredLumens(row, "lumens", ctx)
+		lumens, err := supplementaryProvenancedNumber("lcs_zonal_lumens", "lumens", row, ctx)
 		if err != nil {
 			return fmt.Errorf("lcs_zonal_lumens row %d for %q (%s): %w", i+1, id, zone, err)
 		}
 		out = append(out, map[string]any{"zone": zone, "lumens": lumens})
 	}
 	return setPath(rec, "outdoor_classification.lcs_zonal_lumens", out)
-}
-
-// measuredLumens builds a measured-lumen ProvenancedNumber for a zonal cell. The
-// default provenance is {ies, extracted, measured}, which triggers the same
-// LM-79 attestation_ref auto-link the headline photometry uses; the per-row
-// override columns (`<field>__value_type`, `__prov_source`, `__prov_method`,
-// `__attestation_ref`) and an optional `conflict_notes` cell let the author
-// override the defaults or record a reconstruction note.
-func measuredLumens(row Row, field string, ctx provenanceContext) (map[string]any, error) {
-	raw := row[field]
-	if raw == "" {
-		return nil, fmt.Errorf("missing %s", field)
-	}
-	v, err := parseFloat(raw)
-	if err != nil {
-		return nil, fmt.Errorf("invalid %s %q: %w", field, raw, err)
-	}
-	valueType := "measured"
-	if vt := row[field+"__value_type"]; vt != "" {
-		valueType = vt
-	}
-	source := "ies"
-	if s := row[field+"__prov_source"]; s != "" {
-		source = s
-	}
-	method := "extracted"
-	if m := row[field+"__prov_method"]; m != "" {
-		method = m
-	}
-	prov := map[string]any{"source": source, "method": method}
-	if em := row[field+"__extension_method"]; em != "" {
-		prov["extension_method"] = em
-	}
-	if ref := row[field+"__attestation_ref"]; ref != "" {
-		prov["attestation_ref"] = ref
-	} else if valueType == "measured" {
-		ref, err := ctx.measuredAttestationRef(field)
-		if err != nil {
-			return nil, err
-		}
-		prov["attestation_ref"] = ref
-	}
-	// A zonal lumen overridden to a derived method (scaled / optical_simulation /
-	// extended_photometry) must name its base attestation, same as every other
-	// derived value: explicit override wins, else auto-link to the single LM-79.
-	if ref := row[field+"__base_attestation_ref"]; ref != "" {
-		prov["base_attestation_ref"] = ref
-	}
-	if derivedBaseMethods[method] {
-		if base, _ := prov["base_attestation_ref"].(string); base == "" {
-			ref, err := ctx.baseAttestationRef(field, method)
-			if err != nil {
-				return nil, err
-			}
-			prov["base_attestation_ref"] = ref
-		}
-	}
-	if cn := row["conflict_notes"]; cn != "" {
-		prov["conflict_notes"] = cn
-	}
-	return map[string]any{
-		"value":      numberLeaf(v),
-		"unit":       "lm",
-		"value_type": valueType,
-		"provenance": prov,
-	}, nil
 }
 
 // assembleIngredientList builds sustainability_declaration.ingredient_list[]

@@ -155,3 +155,48 @@ func TestImperialCompanionColumns(t *testing.T) {
 			len(recordColumns), len(baseRecordColumns), len(companions))
 	}
 }
+
+// TestDimensionlessRecordColumnsOmitUnit pins the four dimensionless records
+// fields at both declarations that control conversion: the column table carries
+// no literal unit, and the common ProvenancedNumber write site leaves the unit
+// member absent. The field label already names each quantity.
+func TestDimensionlessRecordColumnsOmitUnit(t *testing.T) {
+	want := map[string]bool{
+		"ugr_4h_8h": false,
+		"cri_ra":    false,
+		"duv":       false,
+		"sdcm_step": false,
+	}
+	for _, col := range recordColumns {
+		if _, ok := want[col.Header]; !ok {
+			continue
+		}
+		want[col.Header] = true
+		if col.Kind != KindProvNumber {
+			t.Errorf("column %q kind = %d, want KindProvNumber", col.Header, col.Kind)
+		}
+		if col.Unit != "" {
+			t.Errorf("column %q unit = %q, want no unit for a dimensionless quantity", col.Header, col.Unit)
+		}
+
+		row := Row{}
+		if col.ProvValueType == "measured" {
+			// Avoid manufacturing an attestation context for this unit-only
+			// write-site test. The value-type override does not affect unit logic.
+			row[col.Header+"__value_type"] = "rated"
+		}
+		raw, err := coerceColumn(col, "1", row, provenanceContext{})
+		if err != nil {
+			t.Fatalf("coerce %q: %v", col.Header, err)
+		}
+		value, _ := raw.(map[string]any)
+		if _, present := value["unit"]; present {
+			t.Errorf("converted column %q wrote a unit: %#v", col.Header, value)
+		}
+	}
+	for header, seen := range want {
+		if !seen {
+			t.Errorf("dimensionless column %q is not declared", header)
+		}
+	}
+}

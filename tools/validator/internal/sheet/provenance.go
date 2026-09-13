@@ -13,14 +13,30 @@ var derivedBaseMethods = map[string]bool{
 	"scaled":              true,
 }
 
-// provenanceContext carries the per-record facts the provenance resolver needs:
-// the single LM-79 attestation id used for the measured -> attestation_ref
-// auto-link, and how many LM-79 rows the record declared (so the resolver can
-// hard-error on the ambiguous 0-or-many case only when an auto-link is actually
-// needed).
+// provenanceContext carries the per-record anchor candidates grouped by the
+// authored AttestationProgram families.
 type provenanceContext struct {
-	lm79AttestationID string
-	lm79Count         int
+	anchors    map[attestationFamily]attestationAnchor
+	references map[string][]attestationReference
+}
+
+type provenanceDefaults struct {
+	valueType         string
+	source            string
+	method            string
+	family            attestationFamily
+	requiredValueType string
+}
+
+func (ctx provenanceContext) singleAnchorID(family attestationFamily) string {
+	anchor := ctx.anchors[family]
+	if anchor.count == 1 && len(anchor.ids) == 1 {
+		id := anchor.ids[0]
+		if ctx.validateReference("generated photometry", "attestation_ref", id, family, true, true) == nil {
+			return id
+		}
+	}
+	return ""
 }
 
 // resolvedProvenance is the value_type plus provenance block the assembler
@@ -30,28 +46,50 @@ type resolvedProvenance struct {
 	provenance map[string]any
 }
 
-// resolveProvenance computes the effective value_type and provenance block for a
-// provenanced column, applying the per-column defaults and the optional
-// companion-column overrides (`*__value_type`, `*__prov_source`,
-// `*__prov_method`, `*__attestation_ref`). It enforces the load-bearing rule
-// from DESIGN.md section 3.3: any value whose effective value_type is "measured"
-// MUST carry an attestation_ref, auto-linked to the record's single LM-79
-// attestation, and it hard-errors when there are zero or more than one LM-79
-// rows unless the manufacturer supplies an explicit `*__attestation_ref`.
+// resolveProvenance is the records-sheet adapter. Records-sheet columns retain
+// the photometric family the original LM-79 resolver used, which keeps current
+// records byte-identical. A measured non-photometric records-sheet quantity can
+// therefore still select a photometric anchor; that residue remains explicit
+// for the batch close-out rather than being hidden in a prefix rule.
 func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProvenance, error) {
-	valueType := col.ProvValueType
-	if v, ok := row[col.Header+"__value_type"]; ok {
+	family := attestationFamilyPhotometric
+	requiredValueType := ""
+	if col.Header == "lm_claimed_hours" {
+		family = attestationFamilyMaintenance
+		requiredValueType = "rated"
+	}
+	return resolveProvenanceForField(col.Header, provenanceDefaults{
+		valueType:         col.ProvValueType,
+		source:            col.ProvSource,
+		method:            col.ProvMethod,
+		family:            family,
+		requiredValueType: requiredValueType,
+	}, row, ctx)
+}
+
+// resolveProvenanceForField applies a field's defaults and companion overrides,
+// then resolves measured and derived references against its declared program
+// family. An explicit reference always wins.
+func resolveProvenanceForField(field string, defaults provenanceDefaults, row Row, ctx provenanceContext) (resolvedProvenance, error) {
+	valueType := defaults.valueType
+	if v, ok := row[field+"__value_type"]; ok {
 		valueType = v
 	}
-	source := col.ProvSource
+	if defaults.requiredValueType != "" && valueType != defaults.requiredValueType {
+		return resolvedProvenance{}, fmt.Errorf("column %q requires value_type=%s; got %s", field, defaults.requiredValueType, valueType)
+	}
+	source := defaults.source
 	sourceOverridden := false
-	if v, ok := row[col.Header+"__prov_source"]; ok {
+	if v, ok := row[field+"__prov_source"]; ok {
 		source = v
 		sourceOverridden = true
 	}
-	method := col.ProvMethod
-	if v, ok := row[col.Header+"__prov_method"]; ok {
+	method := defaults.method
+	if v, ok := row[field+"__prov_method"]; ok {
 		method = v
+	}
+	if derivedBaseMethods[method] && valueType != "rated" {
+		return resolvedProvenance{}, fmt.Errorf("column %q uses derived method %q and requires value_type=rated; got %s", field, method, valueType)
 	}
 
 	// A non-measured value did not come from an IES measurement. When the author
@@ -74,10 +112,13 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 	// extension points the C and D patterns lean on (extended_photometry,
 	// optical_simulation, scaled). Pattern C supplies them on the headline
 	// photometry columns; the generated B/D derivation tables set them directly.
-	if v, ok := row[col.Header+"__extension_method"]; ok {
+	if v, ok := row[field+"__extension_method"]; ok {
 		prov["extension_method"] = v
 	}
-	if v, ok := row[col.Header+"__base_attestation_ref"]; ok {
+	if v, ok := row[field+"__base_attestation_ref"]; ok {
+		if err := ctx.validateReference(field, "base_attestation_ref", v, defaults.family, true, derivedBaseMethods[method]); err != nil {
+			return resolvedProvenance{}, err
+		}
 		prov["base_attestation_ref"] = v
 	}
 
@@ -88,7 +129,7 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 	// hard-erroring on the 0-or-many case exactly like measured -> attestation_ref.
 	if derivedBaseMethods[method] {
 		if base, _ := prov["base_attestation_ref"].(string); base == "" {
-			ref, err := ctx.baseAttestationRef(col.Header, method)
+			ref, err := ctx.baseAttestationRefForFamily(field, method, defaults.family)
 			if err != nil {
 				return resolvedProvenance{}, err
 			}
@@ -97,10 +138,13 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 	}
 
 	// attestation_ref: explicit override wins; otherwise auto-link when measured.
-	if v, ok := row[col.Header+"__attestation_ref"]; ok {
+	if v, ok := row[field+"__attestation_ref"]; ok {
+		if err := ctx.validateReference(field, "attestation_ref", v, defaults.family, true, valueType == "measured"); err != nil {
+			return resolvedProvenance{}, err
+		}
 		prov["attestation_ref"] = v
 	} else if valueType == "measured" {
-		ref, err := ctx.measuredAttestationRef(col.Header)
+		ref, err := ctx.measuredAttestationRefForFamily(field, defaults.family)
 		if err != nil {
 			return resolvedProvenance{}, err
 		}
@@ -110,35 +154,75 @@ func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProv
 	return resolvedProvenance{valueType: valueType, provenance: prov}, nil
 }
 
-// measuredAttestationRef returns the attestation id a measured value links to,
-// hard-erroring when the record carries zero or more than one LM-79 attestation
-// (the manufacturer must then disambiguate with an explicit `*__attestation_ref`
-// column on the offending field).
-func (ctx provenanceContext) measuredAttestationRef(header string) (string, error) {
-	switch {
-	case ctx.lm79Count == 1 && ctx.lm79AttestationID == "":
-		return "", fmt.Errorf("column %q would auto-link to the record's single lm_79* attestation, but that row has no attestation_id to reference; add an attestation_id to the lm_79* attestations row", header)
-	case ctx.lm79Count == 1:
-		return ctx.lm79AttestationID, nil
-	case ctx.lm79Count == 0:
-		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares no lm_79* attestation row to link; add an lm_79* attestations row or set %s__value_type=rated", header, header)
+func (ctx provenanceContext) validateReference(field, kind, reference string, family attestationFamily, enforceFamily, measurementEvidence bool) error {
+	candidates := ctx.references[reference]
+	description := familyDescription(family)
+	switch len(candidates) {
+	case 0:
+		return fmt.Errorf("column %q names %s %q, but no attestation with that id exists", field, kind, reference)
+	case 1:
+		candidate := candidates[0]
+		if enforceFamily && candidate.family != family {
+			return fmt.Errorf("column %q names %s %q from a different evidence family; use an attestation from the %s family", field, kind, reference, description)
+		}
+		if measurementEvidence && candidate.requiresManufacturerConfirm {
+			return fmt.Errorf("column %q names %s %q, but that attestation requires manufacturer confirmation and cannot anchor measured evidence", field, kind, reference)
+		}
+		return nil
 	default:
-		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares %d lm_79* attestation rows; disambiguate with an explicit %s__attestation_ref column", header, ctx.lm79Count, header)
+		return fmt.Errorf("column %q names %s %q, but that id is declared by %d attestations", field, kind, reference, len(candidates))
 	}
 }
 
-// baseAttestationRef returns the attestation id a derived value links to as its
-// base, with the same single-LM-79 resolution and 0-or-many hard error as the
-// measured auto-link.
-func (ctx provenanceContext) baseAttestationRef(header, method string) (string, error) {
-	switch {
-	case ctx.lm79Count == 1 && ctx.lm79AttestationID == "":
-		return "", fmt.Errorf("column %q (derived method %q) would anchor base_attestation_ref to the record's single lm_79* attestation, but that row has no attestation_id; add an attestation_id to the lm_79* attestations row", header, method)
-	case ctx.lm79Count == 1:
-		return ctx.lm79AttestationID, nil
-	case ctx.lm79Count == 0:
-		return "", fmt.Errorf("column %q uses derived method %q but the record declares no lm_79* attestation to anchor provenance.base_attestation_ref; add an lm_79* attestations row or set %s__base_attestation_ref explicitly", header, method, header)
+func familyDescription(family attestationFamily) string {
+	switch family {
+	case attestationFamilyPhotometric:
+		return "photometric lm_79*"
+	case attestationFamilyMaintenance:
+		return "maintenance lm_80* or tm_21*"
+	case attestationFamilyFlicker:
+		return "flicker lm_90_20, ieee_1789_2015, or nema_77_2017"
+	case attestationFamilyMelanopic:
+		return "melanopic rp_46 or rp_46_23"
 	default:
-		return "", fmt.Errorf("column %q uses derived method %q but the record declares %d lm_79* attestation rows; disambiguate with an explicit %s__base_attestation_ref column", header, method, ctx.lm79Count, header)
+		return string(family)
+	}
+}
+
+func (ctx provenanceContext) measuredAttestationRefForFamily(header string, family attestationFamily) (string, error) {
+	anchor := ctx.anchors[family]
+	description := familyDescription(family)
+	switch {
+	case anchor.count == 1 && len(anchor.ids) == 0:
+		return "", fmt.Errorf("column %q would auto-link to the record's single %s attestation, but that row has no attestation_id to reference; add an attestation_id to that attestations row", header, description)
+	case anchor.count == 1 && len(anchor.ids) == 1:
+		ref := anchor.ids[0]
+		if err := ctx.validateReference(header, "attestation_ref", ref, family, true, true); err != nil {
+			return "", err
+		}
+		return ref, nil
+	case anchor.count == 0:
+		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares no %s attestation row to link; add that attestation row or set %s__value_type=rated", header, description, header)
+	default:
+		return "", fmt.Errorf("column %q has effective value_type=measured but the record declares %d %s attestation rows; disambiguate with an explicit %s__attestation_ref column", header, anchor.count, description, header)
+	}
+}
+
+func (ctx provenanceContext) baseAttestationRefForFamily(header, method string, family attestationFamily) (string, error) {
+	anchor := ctx.anchors[family]
+	description := familyDescription(family)
+	switch {
+	case anchor.count == 1 && len(anchor.ids) == 0:
+		return "", fmt.Errorf("column %q (derived method %q) would anchor base_attestation_ref to the record's single %s attestation, but that row has no attestation_id; add an attestation_id to that attestations row", header, method, description)
+	case anchor.count == 1 && len(anchor.ids) == 1:
+		ref := anchor.ids[0]
+		if err := ctx.validateReference(header, "base_attestation_ref", ref, family, true, true); err != nil {
+			return "", err
+		}
+		return ref, nil
+	case anchor.count == 0:
+		return "", fmt.Errorf("column %q uses derived method %q but the record declares no %s attestation to anchor provenance.base_attestation_ref; add that attestation row or set %s__base_attestation_ref explicitly", header, method, description, header)
+	default:
+		return "", fmt.Errorf("column %q uses derived method %q but the record declares %d %s attestation rows; disambiguate with an explicit %s__base_attestation_ref column", header, method, anchor.count, description, header)
 	}
 }

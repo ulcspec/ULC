@@ -97,7 +97,6 @@
         "method": "extracted",
         "source": "ies"
       },
-      "unit": "ratio",
       "value": 92,
       "value_type": "measured"
     },
@@ -107,7 +106,6 @@
         "method": "extracted",
         "source": "datasheet_pdf"
       },
-      "unit": "ratio",
       "value": 1.5,
       "value_type": "rated"
     }
