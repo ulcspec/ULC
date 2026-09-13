@@ -27,7 +27,7 @@ for the next major. Pre-1.0 releases generally aimed for additive changes;
 compatibility-tightening changes occurred only when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.8.x
+## Active version: v1.9.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -105,6 +105,20 @@ never a refusal. The marker is tracked, not graded; the generated index is
 unchanged, so stored records need no re-stamp. Example records gain
 openness entries when manufacturers supply real statements with written
 usage rights.
+
+v1.9.0 aligns the finished-record, converter-version, workbook-provenance,
+flicker-unit, and records-sheet dimensionless-unit contracts. Finished records
+use the `.ulc` extension, new conversions
+declare the specification release that performed the conversion, and authored
+version cells are bounded by that release. Supplementary sheets gain explicit
+provenance companions with program-family attestation anchors, flicker units
+default by metric, and unsupported companion headers are refused. The
+additive `manufacturer_data_export` source type distinguishes an attachable
+structured data artefact from a direct statement with no file behind it.
+Dimensionless glare, colour-rendering, chromaticity-difference, and step-count
+values no longer carry a false `ratio` unit. No required schema set, grade,
+achievement state, or generated index member changes, so the builder version
+does not move.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator

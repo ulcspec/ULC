@@ -20,6 +20,35 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.9.0 (2026-09-13)
+
+This release aligns the finished-record name, converter version, workbook provenance, source traceability, flicker-unit defaults, and records-sheet dimensionless-unit contracts. It adds one backward-compatible source vocabulary token and changes CLI-observable authoring behavior without changing any required schema set, conformance grade, achievement state, or generated index member. The builder remains 0.7.0.
+
+### For consumers
+
+Finished records written by `ulc from-sheet` now use the `.ulc` extension. Finished-record inputs to `ulc validate`, `ulc build-index`, and `ulc scope` refuse the retired `.ulc.json` name before reading the file; other suffixes remain accepted for documented temporary-file flows. The five integration recipes now use `.ulc`, and repositories that copied this project's pre-commit hook should copy it again to receive the same finished-record checks. A newly converted record now declares 1.9.0, the specification release that converted it, so `from-sheet` output is intentionally not byte-stable across releases. An authored workbook `ulc_version` cell must contain three dot-separated integers and must not name a version above the converter's compiled specification version; malformed and future values are refused. An unsupported double-underscore companion header is now a hard error, including an otherwise blank column; plain unknown headers remain ignored. A blank flicker unit now defaults from the metric: `percent_flicker` uses `percent`, while `pst_lm`, `svm`, `flicker_index`, and `modulation_depth` use `ratio`; an authored conflicting unit is refused. The `ugr_4h_8h`, `cri_ra`, `duv`, and `sdcm_step` workbook columns no longer stamp a `ratio` unit because those quantities are dimensionless and their field labels already identify them. Three supplementary templates gained optional provenance companion columns; an older workbook with only some of those columns remains valid because every new column is optional, so keep the workbook and fill only the overrides it needs. The new `manufacturer_data_export` token is available in both `SourceFileType` and `ProvenanceSource` for a structured data artefact attached by filename and content hash. A record using that token fails validation against an engine pinned to 1.8.0 or earlier and must wait for the consumer's reviewed engine bump.
+
+The authored schema change is additive: no required set changes and no field or token is removed or narrowed. Grades and achievement states do not move. The generated index is untouched, so the builder version does not bump and stored records need no index re-stamp. Three stored examples change only by removing six false `ratio` members from dimensionless values; the other five stored examples are byte-identical.
+
+### Schema
+
+- `SourceFileType` and its per-field `ProvenanceSource` mirror gain `manufacturer_data_export`, defined as an attachable structured manufacturer data artefact. `manufacturer_direct` remains the source for a manufacturer statement with no attachable file behind it.
+- The generated `source_file_types_present` description names manufacturer data exports. The `photometry_format` conditional still admits only `ies`, `ldt`, and `tm33`, and executable coverage proves that the new token remains outside that set.
+
+### Validator and workbook
+
+- `ulc from-sheet` writes finished records as `<record_id>.ulc`; the validator, index builder, and scope command refuse only the retired finished-record name. The help, integration recipes, hook, and CI examples use the finished extension, and a tracked-tree guard keeps active guidance aligned.
+- The converter stamps the compiled `SpecVersion` into a blank workbook version cell and refuses malformed or future authored values. Release workflows require that constant to match the release branch and dated changelog section before publishing.
+- Alpha-opic, flicker, lumen-maintenance package, zonal-lumen, and LCS zonal-lumen rows resolve provenance through declared field rules and program-family attestation anchors. The alpha-opic, flicker, and lumen-maintenance package templates gain optional provenance companions. Authored companion headers are checked against the exact suffix and base-column contract before conversion.
+- Flicker units default by metric and authored units must match that metric. The four dimensionless records-sheet values named above omit `unit` entirely.
+- CSV and XLSX inputs preserve the same `manufacturer_data_export` reference and provenance semantics. A withheld export can retain its converter-generated hash and validate with one informational local-file finding when its bytes are not published beside the record.
+
+### Documentation
+
+- Workbook guidance names the finished extension, version-cell bound, open voltage strings, provenance companions, attestation-family anchors, flicker-unit rule, unsupported-header refusal, and unchanged fixed provenance for per-length generated values.
+- The source-document table is total over `SourceFileType`, and PIM guidance uses `manufacturer_data_export` for retained and hashed exports while reserving `manufacturer_direct` for statements with no attachable file.
+- The release process and integration examples bind releases to the compiled converter specification version.
+
 ## 1.8.0 (2026-08-28)
 
 Customization openness. A product family gains an optional `customization_openness` array inside `product_family`: the axes (color temperature, finish, mounting, and the rest of a closed vocabulary) the manufacturer states are open to requests beyond the published order-code menu, as cutsheets already print in prose ("other color temperatures on request", a published modifications list). A specifier whose requirement falls outside the published menu can then see the closest published record together with the axes its manufacturer states are open, instead of no match at all. Each entry names its axis from the new closed `CustomizationAxis` vocabulary (twelve named axes plus a labelled `other`), may carry the manufacturer's own on-request wording (`statement`) and axis name (`axis_label`), and must carry at least one of a citation to the document where the openness is published (`published_in_ref`) or the routing the manufacturer names for such requests (`contact_reference`). The marker declares openness only: it never enumerates what the custom choices are, never implies price, lead time, minimum quantity, or acceptance of any specific request, and never widens a record's applicability, so a configuration obtained through a request inherits none of the record's measured values, derivations, or attestations. An axis absent from the list is unstated, never a refusal.
