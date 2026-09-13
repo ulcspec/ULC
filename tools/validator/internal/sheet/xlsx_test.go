@@ -185,13 +185,13 @@ func TestReadXLSXMatchesCSVBundle(t *testing.T) {
 		t.Fatalf("ReadCSVBundle: %v", err)
 	}
 	if !reflect.DeepEqual(got, want) {
-		for name, wrows := range want {
-			grows := got[name]
+		for name, wrows := range want.Rows {
+			grows := got.Rows[name]
 			if !reflect.DeepEqual(grows, wrows) {
 				t.Errorf("sheet %q differs:\n  xlsx: %v\n  csv:  %v", name, grows, wrows)
 			}
 		}
-		t.Fatalf("ReadXLSX != ReadCSVBundle (sheets: xlsx=%d csv=%d)", len(got), len(want))
+		t.Fatalf("ReadXLSX != ReadCSVBundle (sheets: xlsx=%d csv=%d)", len(got.Rows), len(want.Rows))
 	}
 }
 
@@ -367,10 +367,13 @@ func TestReadXLSXCellTypes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadXLSX: %v", err)
 	}
-	want := Workbook{"records": []Row{
-		{"record_id": "r1", "active": "TRUE", "note": "hello"},
-		{"record_id": "r2", "input_power_w": "42", "note": "spaced"},
-	}}
+	want := Workbook{
+		Rows: map[string][]Row{"records": {
+			{"record_id": "r1", "active": "TRUE", "note": "hello"},
+			{"record_id": "r2", "input_power_w": "42", "note": "spaced"},
+		}},
+		Headers: map[string][]string{"records": {"record_id", "input_power_w", "active", "note"}},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("cell-type mismatch:\n got: %v\nwant: %v", got, want)
 	}
@@ -476,9 +479,10 @@ func TestReadXLSXRealExcelShapes(t *testing.T) {
 	}
 	// Header is [record_id, note, status, maker]. The data row: A=r1; B is an
 	// error cell (absent); C="ok"; D=rich-run shared string "AcmeCo" (rPh dropped).
-	want := Workbook{"records": []Row{
-		{"record_id": "r1", "status": "ok", "maker": "AcmeCo"},
-	}}
+	want := Workbook{
+		Rows:    map[string][]Row{"records": {{"record_id": "r1", "status": "ok", "maker": "AcmeCo"}}},
+		Headers: map[string][]string{"records": {"record_id", "note", "status", "maker"}},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("real-Excel shapes mismatch:\n got: %v\nwant: %v", got, want)
 	}
@@ -539,7 +543,13 @@ func TestReadXLSXOutOfRangeColumnReference(t *testing.T) {
 	}
 	// The out-of-range cell is skipped; the legal XFD column beside it survives,
 	// so the bound rejects only what the format itself cannot address.
-	want := Workbook{"records": []Row{{"record_id": "r1", "note": "kept"}}}
+	header := make([]string, 16384)
+	header[0] = "record_id"
+	header[len(header)-1] = "note"
+	want := Workbook{
+		Rows:    map[string][]Row{"records": {{"record_id": "r1", "note": "kept"}}},
+		Headers: map[string][]string{"records": header},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("out-of-range column mismatch:\n got: %v\nwant: %v", got, want)
 	}

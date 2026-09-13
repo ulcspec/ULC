@@ -140,13 +140,13 @@ func TestRejectCaseByCaseMeasuredAttestation(t *testing.T) {
 func TestCheckRelatedSheetIDs(t *testing.T) {
 	records := []Row{{"record_id": "r1"}}
 
-	if err := checkRelatedSheetIDs(Workbook{"records": records, "source_files": {{"record_id": "r2", "filename": "x.ies"}}}, records); err == nil {
+	if err := checkRelatedSheetIDs(Workbook{Rows: map[string][]Row{"records": records, "source_files": {{"record_id": "r2", "filename": "x.ies"}}}}, records); err == nil {
 		t.Error("expected error: source_files record_id r2 not in records")
 	}
-	if err := checkRelatedSheetIDs(Workbook{"records": records, "attestations": {{"program": "lm_79"}}}, records); err == nil {
+	if err := checkRelatedSheetIDs(Workbook{Rows: map[string][]Row{"records": records, "attestations": {{"program": "lm_79"}}}}, records); err == nil {
 		t.Error("expected error: attestations row missing record_id")
 	}
-	if err := checkRelatedSheetIDs(Workbook{"records": records, "instructions": {{"note": "fill this in"}}, "source_files": {{"record_id": "r1", "filename": "x.ies"}}}, records); err != nil {
+	if err := checkRelatedSheetIDs(Workbook{Rows: map[string][]Row{"records": records, "instructions": {{"note": "fill this in"}}, "source_files": {{"record_id": "r1", "filename": "x.ies"}}}}, records); err != nil {
 		t.Errorf("valid workbook with an ignored extra tab should pass: %v", err)
 	}
 }
@@ -252,12 +252,12 @@ func TestAssembleSourceFilesCutsheetConflict(t *testing.T) {
 	h := &fileHasher{allowMissing: true} // no real files on disk
 	cutRef := map[string]any{"filename": "cut.pdf", "sha256": zeroSHA256}
 
-	conflict := Workbook{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "ies"}}}
+	conflict := Workbook{Rows: map[string][]Row{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "ies"}}}}
 	if _, err := assembleSourceFiles(conflict, "r1", "cut.pdf", cutRef, h); err == nil {
 		t.Error("expected error: cutsheet filename listed with conflicting file_type=ies")
 	}
 
-	ok := Workbook{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "datasheet_pdf"}}}
+	ok := Workbook{Rows: map[string][]Row{"source_files": {{"record_id": "r1", "filename": "cut.pdf", "file_type": "datasheet_pdf"}}}}
 	out, err := assembleSourceFiles(ok, "r1", "cut.pdf", cutRef, h)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

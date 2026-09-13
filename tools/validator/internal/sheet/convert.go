@@ -54,7 +54,7 @@ type Result struct {
 func readWorkbook(input string) (Workbook, string, error) {
 	info, err := os.Stat(input)
 	if err != nil {
-		return nil, "", fmt.Errorf("read input %s: %w", input, err)
+		return Workbook{}, "", fmt.Errorf("read input %s: %w", input, err)
 	}
 	if info.IsDir() {
 		wb, err := ReadCSVBundle(input)
@@ -64,7 +64,7 @@ func readWorkbook(input string) (Workbook, string, error) {
 		wb, err := ReadXLSX(input)
 		return wb, filepath.Dir(input), err
 	}
-	return nil, "", fmt.Errorf("unsupported input %q: expected a CSV bundle directory or an .xlsx file", input)
+	return Workbook{}, "", fmt.Errorf("unsupported input %q: expected a CSV bundle directory or an .xlsx file", input)
 }
 
 // Convert reads a CSV bundle directory or an .xlsx workbook from input,
@@ -83,6 +83,9 @@ func readWorkbook(input string) (Workbook, string, error) {
 func Convert(input string, opts Options) ([]Result, error) {
 	wb, assetsDefault, err := readWorkbook(input)
 	if err != nil {
+		return nil, err
+	}
+	if err := checkCompanionHeaders(wb); err != nil {
 		return nil, err
 	}
 	records, ok := wb.Sheet("records")
@@ -161,15 +164,15 @@ func checkRelatedSheetIDs(wb Workbook, records []Row) error {
 			ids[id] = struct{}{}
 		}
 	}
-	names := make([]string, 0, len(wb))
-	for name := range wb {
+	names := make([]string, 0, len(wb.Rows))
+	for name := range wb.Rows {
 		if name != "records" && consumedRelatedSheets[name] {
 			names = append(names, name)
 		}
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		for i, r := range wb[name] {
+		for i, r := range wb.Rows[name] {
 			id := r["record_id"]
 			if id == "" {
 				return fmt.Errorf("sheet %q row %d: missing record_id (rows here are joined to the records sheet by record_id and would otherwise be silently dropped)", name, i+1)

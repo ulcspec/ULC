@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -100,10 +101,10 @@ func textPad(n int) []byte {
 func wantArchiveLimit(t *testing.T, wb Workbook, err error, limit string) *ArchiveLimitError {
 	t.Helper()
 	if err == nil {
-		t.Fatalf("expected an archive limit error, got a workbook with %d sheets", len(wb))
+		t.Fatalf("expected an archive limit error, got a workbook with %d sheets", len(wb.Rows))
 	}
-	if wb != nil {
-		t.Errorf("expected no workbook alongside the error, got %d sheets", len(wb))
+	if len(wb.Rows) != 0 || len(wb.Headers) != 0 {
+		t.Errorf("expected no workbook alongside the error, got %d sheets", len(wb.Rows))
 	}
 	var lim *ArchiveLimitError
 	if !errors.As(err, &lim) {
@@ -287,10 +288,10 @@ func TestReadXLSXUnderClaimingPartFailsAsFormatError(t *testing.T) {
 
 	wb, err := ReadXLSX(out)
 	if err == nil {
-		t.Fatalf("expected an error from the under-claiming part, got %d sheets", len(wb))
+		t.Fatalf("expected an error from the under-claiming part, got %d sheets", len(wb.Rows))
 	}
-	if wb != nil {
-		t.Errorf("expected no workbook alongside the error, got %d sheets", len(wb))
+	if len(wb.Rows) != 0 || len(wb.Headers) != 0 {
+		t.Errorf("expected no workbook alongside the error, got %d sheets", len(wb.Rows))
 	}
 	var lim *ArchiveLimitError
 	if errors.As(err, &lim) {
@@ -415,10 +416,10 @@ func TestReadXLSXAcceptsLegalWorkbook(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a legal workbook must not trip a cap: %v", err)
 	}
-	if len(wb["records"]) != 1 {
-		t.Fatalf("records = %d data rows, want 1 (the first row is the header)", len(wb["records"]))
+	if len(wb.Rows["records"]) != 1 {
+		t.Fatalf("records = %d data rows, want 1 (the first row is the header)", len(wb.Rows["records"]))
 	}
-	if got := wb["records"][0]["catalog_number"]; got != "ORB-1200" {
+	if got := wb.Rows["records"][0]["catalog_number"]; got != "ORB-1200" {
 		t.Errorf("catalog_number = %q, want %q", got, "ORB-1200")
 	}
 }
@@ -454,11 +455,14 @@ func TestReadXLSXRealExcelFixture(t *testing.T) {
 	}
 
 	// (a) sheet for sheet, cell for cell.
-	if len(fromXLSX) != len(fromCSV) {
-		t.Fatalf("workbook has %d sheets, the CSV bundle has %d", len(fromXLSX), len(fromCSV))
+	if len(fromXLSX.Rows) != len(fromCSV.Rows) {
+		t.Fatalf("workbook has %d sheets, the CSV bundle has %d", len(fromXLSX.Rows), len(fromCSV.Rows))
 	}
-	for name, csvRows := range fromCSV {
-		xlsxRows, ok := fromXLSX[name]
+	for name, csvRows := range fromCSV.Rows {
+		if !reflect.DeepEqual(fromXLSX.Headers[name], fromCSV.Headers[name]) {
+			t.Errorf("%s headers differ: workbook=%v CSV=%v", name, fromXLSX.Headers[name], fromCSV.Headers[name])
+		}
+		xlsxRows, ok := fromXLSX.Rows[name]
 		if !ok {
 			t.Errorf("workbook has no %q tab", name)
 			continue
@@ -642,7 +646,7 @@ func TestReadXLSXSharedStringWithManyRunsIsLinear(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadXLSX: %v", err)
 	}
-	if _, ok := wb["records"]; !ok {
+	if _, ok := wb.Rows["records"]; !ok {
 		t.Errorf("workbook has no records sheet")
 	}
 

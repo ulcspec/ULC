@@ -36,12 +36,12 @@ import (
 func ReadXLSX(filePath string) (Workbook, error) {
 	zr, err := zip.OpenReader(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("open xlsx %s: %w", filePath, err)
+		return Workbook{}, fmt.Errorf("open xlsx %s: %w", filePath, err)
 	}
 	defer zr.Close()
 
 	if err := checkEntryCount(filePath, len(zr.File)); err != nil {
-		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
+		return Workbook{}, fmt.Errorf("xlsx %s: %w", filePath, err)
 	}
 	budget := newArchiveBudget(filePath)
 
@@ -52,7 +52,7 @@ func ReadXLSX(filePath string) (Workbook, error) {
 
 	var wbXML xlWorkbook
 	if err := decodeXMLPart(files, "xl/workbook.xml", &wbXML, budget); err != nil {
-		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
+		return Workbook{}, fmt.Errorf("xlsx %s: %w", filePath, err)
 	}
 
 	// The relationships map (r:id -> worksheet part path) is how a sheet's
@@ -66,7 +66,7 @@ func ReadXLSX(filePath string) (Workbook, error) {
 	err = decodeXMLPart(files, "xl/_rels/workbook.xml.rels", &rels, budget)
 	var lim *ArchiveLimitError
 	if errors.As(err, &lim) {
-		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
+		return Workbook{}, fmt.Errorf("xlsx %s: %w", filePath, err)
 	}
 	if err == nil {
 		for _, r := range rels.Relationships {
@@ -79,30 +79,32 @@ func ReadXLSX(filePath string) (Workbook, error) {
 
 	table, err := readSharedStrings(files, budget)
 	if err != nil {
-		return nil, fmt.Errorf("xlsx %s: %w", filePath, err)
+		return Workbook{}, fmt.Errorf("xlsx %s: %w", filePath, err)
 	}
 
-	wb := Workbook{}
+	wb := newWorkbook()
 	for _, s := range wbXML.Sheets {
 		target, ok := relTarget[s.RID]
 		if !ok {
-			return nil, fmt.Errorf("xlsx %s: sheet %q references relationship %q with no target", filePath, s.Name, s.RID)
+			return Workbook{}, fmt.Errorf("xlsx %s: sheet %q references relationship %q with no target", filePath, s.Name, s.RID)
 		}
 		partPath := resolveWorkbookRel(target)
 		f, ok := files[partPath]
 		if !ok {
-			return nil, fmt.Errorf("xlsx %s: sheet %q worksheet part %q not found", filePath, s.Name, partPath)
+			return Workbook{}, fmt.Errorf("xlsx %s: sheet %q worksheet part %q not found", filePath, s.Name, partPath)
 		}
 		rc, err := openPart(f, budget)
 		if err != nil {
-			return nil, fmt.Errorf("xlsx %s: open worksheet %q: %w", filePath, partPath, err)
+			return Workbook{}, fmt.Errorf("xlsx %s: open worksheet %q: %w", filePath, partPath, err)
 		}
-		rows, err := readWorksheet(rc, table)
+		header, rows, err := readWorksheet(rc, table)
 		rc.Close()
 		if err != nil {
-			return nil, fmt.Errorf("xlsx %s: sheet %q: %w", filePath, s.Name, err)
+			return Workbook{}, fmt.Errorf("xlsx %s: sheet %q: %w", filePath, s.Name, err)
 		}
-		wb[strings.TrimSpace(s.Name)] = rows
+		name := strings.TrimSpace(s.Name)
+		wb.Headers[name] = header
+		wb.Rows[name] = rows
 	}
 	return wb, nil
 }
@@ -257,7 +259,7 @@ func readSharedStrings(files map[string]*zip.File, budget *archiveBudget) ([]str
 // are densified from their A1 cell references and run through the same trim /
 // drop-blank-cell / skip-blank-row logic as the CSV reader, so an .xlsx and an
 // equivalent CSV bundle yield identical Rows.
-func readWorksheet(rc io.Reader, table []string) ([]Row, error) {
+func readWorksheet(rc io.Reader, table []string) ([]string, []Row, error) {
 	dec := xml.NewDecoder(rc)
 	var header []string // nil until the first data row is seen
 	rows := []Row{}
@@ -269,7 +271,7 @@ func readWorksheet(rc io.Reader, table []string) ([]Row, error) {
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			return nil, nil, err
 		}
 		switch se := tok.(type) {
 		case xml.StartElement:
@@ -290,7 +292,7 @@ func readWorksheet(rc io.Reader, table []string) ([]Row, error) {
 			}
 			var xr xlRow
 			if err := dec.DecodeElement(&xr, &se); err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			// Densify: column index -> logical (untrimmed) value. Missing cells
@@ -335,7 +337,7 @@ func readWorksheet(rc io.Reader, table []string) ([]Row, error) {
 			}
 		}
 	}
-	return rows, nil
+	return header, rows, nil
 }
 
 // buildHeader turns the densified first row into a positional header slice
