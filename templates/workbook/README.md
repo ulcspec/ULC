@@ -134,6 +134,15 @@ the converter's compiled specification version is refused. A delivery path must
 also require records produced by its build to declare exactly the release of
 the `ulc` engine it pins.
 
+## Voltage columns
+
+Use `input_voltage_v` for one numeric input-voltage value. It is a provenanced
+number and accepts the same provenance companion columns as other records-sheet
+measurements. Use `input_voltage_class` for the supply class or published range
+the product supports, and `input_voltage_at_test` for the supply class or
+published range used during the test. Those two columns are open strings: the
+values shown in the schema are examples, not a closed vocabulary.
+
 ## Notes for `.xlsx` authors
 
 The `.xlsx` reader is faithful to the cell text, not to Excel's display formatting,
