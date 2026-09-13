@@ -49,7 +49,8 @@ func TestFinishedRecordCommandsRefuseRetiredNameCaseInsensitively(t *testing.T) 
 		{"build-index", runBuildIndex},
 		{"scope", runScope},
 	}
-	for _, suffix := range []string{strings.ToUpper(retired), ".UlC.JsOn"} {
+	mixedCase := strings.ToUpper(retired[:2]) + retired[2:]
+	for _, suffix := range []string{strings.ToUpper(retired), mixedCase} {
 		for _, command := range commands {
 			t.Run(command.name+"/"+suffix, func(t *testing.T) {
 				missing := filepath.Join(t.TempDir(), "record"+suffix)
