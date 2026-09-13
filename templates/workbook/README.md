@@ -80,10 +80,10 @@ scaling rule and `X__base_attestation_ref` names the base measurement. Leave a
 legal companion blank to take the default.
 
 The family restriction above applies to the declared supplementary fields and
-to records-sheet photometry. The one records-sheet exception is a rated
-`lm_claimed_hours` value, whose explicit `attestation_ref` may name maintenance
-evidence. A measured override on that field and every records-sheet
-`base_attestation_ref` still enforce the photometric family.
+to records-sheet photometry. The records-sheet `lm_claimed_hours` field declares
+the maintenance family, so its explicit `attestation_ref` can name only LM-80
+or TM-21 evidence, and the manufacturer-rated claim refuses a measured
+override. Every records-sheet `base_attestation_ref` follows its field's family.
 
 `tm_21_projection_hours` is an extrapolated projection and cannot be marked
 `measured`; use `rated`. Actual test quantities such as `test_hours` may use a

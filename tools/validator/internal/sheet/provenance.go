@@ -21,12 +21,11 @@ type provenanceContext struct {
 }
 
 type provenanceDefaults struct {
-	valueType                string
-	source                   string
-	method                   string
-	family                   attestationFamily
-	allowExplicitCrossFamily bool
-	disallowMeasured         bool
+	valueType        string
+	source           string
+	method           string
+	family           attestationFamily
+	disallowMeasured bool
 }
 
 func (ctx provenanceContext) singleAnchorID(family attestationFamily) string {
@@ -53,12 +52,18 @@ type resolvedProvenance struct {
 // therefore still select a photometric anchor; that residue remains explicit
 // for the batch close-out rather than being hidden in a prefix rule.
 func resolveProvenance(col Column, row Row, ctx provenanceContext) (resolvedProvenance, error) {
+	family := attestationFamilyPhotometric
+	disallowMeasured := false
+	if col.Header == "lm_claimed_hours" {
+		family = attestationFamilyMaintenance
+		disallowMeasured = true
+	}
 	return resolveProvenanceForField(col.Header, provenanceDefaults{
-		valueType:                col.ProvValueType,
-		source:                   col.ProvSource,
-		method:                   col.ProvMethod,
-		family:                   attestationFamilyPhotometric,
-		allowExplicitCrossFamily: col.Header == "lm_claimed_hours",
+		valueType:        col.ProvValueType,
+		source:           col.ProvSource,
+		method:           col.ProvMethod,
+		family:           family,
+		disallowMeasured: disallowMeasured,
 	}, row, ctx)
 }
 
@@ -134,8 +139,7 @@ func resolveProvenanceForField(field string, defaults provenanceDefaults, row Ro
 
 	// attestation_ref: explicit override wins; otherwise auto-link when measured.
 	if v, ok := row[field+"__attestation_ref"]; ok {
-		enforceFamily := !defaults.allowExplicitCrossFamily || valueType == "measured"
-		if err := ctx.validateReference(field, "attestation_ref", v, defaults.family, enforceFamily, valueType == "measured"); err != nil {
+		if err := ctx.validateReference(field, "attestation_ref", v, defaults.family, true, valueType == "measured"); err != nil {
 			return resolvedProvenance{}, err
 		}
 		prov["attestation_ref"] = v

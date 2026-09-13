@@ -165,12 +165,11 @@ TM-21, flicker LM-90-20 or IEEE 1789-2015 or NEMA 77-2017, and melanopic RP-46. 
 program-family table is exhaustive against the taxonomy; every other program is declared as
 non-anchoring residue.
 
-Records-sheet fields retain the photometric family for automatic and explicit selection. The one
-narrow exception is the rated `lm_claimed_hours` field, whose explicit `attestation_ref` may name
-maintenance evidence until records-sheet fields gain their own family declarations. A measured
-override on that field and every records-sheet `base_attestation_ref` still enforce the photometric
-family. Supplementary fields enforce their declared family for both automatic and explicit
-selection.
+Records-sheet fields retain the photometric family for automatic and explicit selection. The
+`lm_claimed_hours` field instead declares the maintenance family, so its explicit
+`attestation_ref` can name only LM-80 or TM-21 evidence. That manufacturer-rated claim refuses a
+measured override. Every records-sheet `base_attestation_ref` follows its field's declared family.
+Supplementary fields enforce their declared family for both automatic and explicit selection.
 
 TM-21 projection hours remain rated because they are extrapolated, not direct measurements. The
 converter refuses a measured override for that field while allowing measured overrides on actual

@@ -89,22 +89,37 @@ func TestRecordsSheetCrossFamilyExceptionIsNarrow(t *testing.T) {
 		ProvValueType: "measured",
 	}
 	tests := []struct {
-		name string
-		col  Column
-		row  Row
+		name, want string
+		col        Column
+		row        Row
 	}{
-		{name: "measured photometry", col: photometric, row: Row{"total_luminous_flux_lm__attestation_ref": maintenanceID}},
-		{name: "rated photometry", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__attestation_ref": maintenanceID}},
-		{name: "derived photometry", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__prov_method": "scaled", "total_luminous_flux_lm__base_attestation_ref": maintenanceID}},
-		{name: "measured maintenance claim", col: Column{Header: "lm_claimed_hours", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"}, row: Row{"lm_claimed_hours__value_type": "measured", "lm_claimed_hours__attestation_ref": maintenanceID}},
+		{name: "measured photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__attestation_ref": maintenanceID}},
+		{name: "rated photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__attestation_ref": maintenanceID}},
+		{name: "derived photometry", want: "different evidence family", col: photometric, row: Row{"total_luminous_flux_lm__value_type": "rated", "total_luminous_flux_lm__prov_method": "scaled", "total_luminous_flux_lm__base_attestation_ref": maintenanceID}},
+		{name: "measured maintenance claim", want: "cannot use value_type=measured", col: Column{Header: "lm_claimed_hours", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"}, row: Row{"lm_claimed_hours__value_type": "measured", "lm_claimed_hours__attestation_ref": maintenanceID}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := resolveProvenance(test.col, test.row, ctx)
-			if err == nil || !strings.Contains(err.Error(), "different evidence family") {
+			if err == nil || !strings.Contains(err.Error(), test.want) {
 				t.Fatalf("cross-family error = %v", err)
 			}
 		})
+	}
+}
+
+func TestRecordsSheetMaintenanceClaimRejectsUnrelatedFamily(t *testing.T) {
+	ctx := newProvenanceContext([]any{
+		map[string]any{"program": "lm_90_20", "attestation_id": "flicker-evidence"},
+	})
+	_, err := resolveProvenance(Column{
+		Header:        "lm_claimed_hours",
+		ProvSource:    "manufacturer_direct",
+		ProvMethod:    "transcribed",
+		ProvValueType: "rated",
+	}, Row{"lm_claimed_hours__attestation_ref": "flicker-evidence"}, ctx)
+	if err == nil || !strings.Contains(err.Error(), "maintenance") {
+		t.Fatalf("unrelated maintenance-claim evidence error = %v", err)
 	}
 }
 
