@@ -1,1 +1,1 @@
-record_id,metric,value,unit,bound_operator
+record_id,metric,value,unit,bound_operator,value__value_type,value__prov_source,value__prov_method,value__extension_method,value__base_attestation_ref,value__attestation_ref

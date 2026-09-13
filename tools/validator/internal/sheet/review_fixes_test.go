@@ -102,11 +102,11 @@ func TestParseJSONObjectCellRejectsTrailing(t *testing.T) {
 func TestMeasuredLumensDerivedRequiresBase(t *testing.T) {
 	row := Row{"lumens": "1200", "lumens__value_type": "rated", "lumens__prov_method": "scaled", "lumens__extension_method": "cct_multiplier"}
 
-	if _, err := measuredLumens(row, "lumens", testProvenanceContext("", 0)); err == nil {
+	if _, err := supplementaryProvenancedNumber("zonal_lumens", "lumens", row, testProvenanceContext("", 0)); err == nil {
 		t.Error("expected error: derived zonal lumen with no base attestation and no lm_79 anchor")
 	}
 
-	pn, err := measuredLumens(row, "lumens", testProvenanceContext("L1", 1))
+	pn, err := supplementaryProvenancedNumber("zonal_lumens", "lumens", row, testProvenanceContext("L1", 1))
 	if err != nil {
 		t.Fatalf("unexpected error with single lm_79 anchor: %v", err)
 	}

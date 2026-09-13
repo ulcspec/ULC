@@ -129,3 +129,32 @@ func TestResidueProgramCannotAnchorMeasuredValue(t *testing.T) {
 		}
 	}
 }
+
+func TestResolverSelectsOnlyTheDeclaredProgramFamily(t *testing.T) {
+	ctx := provenanceContext{anchors: familyAnchors([]any{
+		map[string]any{"program": "lm_79_24", "attestation_id": "photometric"},
+		map[string]any{"program": "lm_80_21", "attestation_id": "maintenance"},
+		map[string]any{"program": "lm_90_20", "attestation_id": "flicker"},
+		map[string]any{"program": "rp_46_23", "attestation_id": "melanopic"},
+	})}
+	for family, want := range map[attestationFamily]string{
+		attestationFamilyPhotometric: "photometric",
+		attestationFamilyMaintenance: "maintenance",
+		attestationFamilyFlicker:     "flicker",
+		attestationFamilyMelanopic:   "melanopic",
+	} {
+		resolved, err := resolveProvenanceForField("measured_value", provenanceDefaults{
+			valueType: "measured",
+			source:    "test_report",
+			method:    "extracted",
+			family:    family,
+		}, Row{}, ctx)
+		if err != nil {
+			t.Errorf("family %s: %v", family, err)
+			continue
+		}
+		if got := resolved.provenance["attestation_ref"]; got != want {
+			t.Errorf("family %s selected %v, want %q", family, got, want)
+		}
+	}
+}
