@@ -101,6 +101,38 @@ func TestConvertPatternA(t *testing.T) {
 	assertMeasuredAttestationRef(t, res.Record)
 }
 
+func TestConvertMarketsColumn(t *testing.T) {
+	dir := t.TempDir()
+	writeFixtureCopy(t, dir)
+
+	lines := strings.Split(strings.TrimSpace(readFixture(t, "records.csv")), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("records fixture has %d lines, want 2", len(lines))
+	}
+	lines[0] += ",markets"
+	lines[1] += ",north_america;united_kingdom"
+	writeFile(t, filepath.Join(dir, "records.csv"), strings.Join(lines, "\n")+"\n")
+
+	results, err := Convert(dir, Options{})
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	got, ok := getPath(results[0].Record, "product_family.markets")
+	if !ok {
+		t.Fatal("converted record has no product_family.markets")
+	}
+	markets, ok := got.([]any)
+	if !ok {
+		t.Fatalf("product_family.markets = %T, want []any", got)
+	}
+	if len(markets) != 2 || markets[0] != "north_america" || markets[1] != "united_kingdom" {
+		t.Errorf("product_family.markets = %#v, want [north_america united_kingdom]", markets)
+	}
+}
+
 // numberTree re-encodes a Go-native record and decodes it with UseNumber so the
 // schema validator sees json.Number, matching its documented input contract.
 func numberTree(t *testing.T, record map[string]any) any {

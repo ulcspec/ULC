@@ -749,8 +749,13 @@
         },
         "indoor_outdoor": { "$ref": "taxonomy.schema.json#/$defs/IndoorOutdoor" },
         "technical_region": {
-          "description": "Market-region configuration of the fixture. Captures the voltage and frequency variant of the SKU family. Many product families ship parallel North American, European, and Japanese variants sharing optics and light engines but with different drivers and certifications; this field makes the market variant explicit for consumer filter UIs.",
+          "description": "Market-region configuration of the fixture. Captures the voltage and frequency variant of the SKU family. Many product families ship parallel North American, European, and Japanese variants sharing optics and light engines but with different drivers and certifications; this field makes the market variant explicit for consumer filter UIs. Sales markets are declared separately in `markets`.",
           "$ref": "taxonomy.schema.json#/$defs/TechnicalRegion"
+        },
+        "markets": {
+          "description": "Markets into which the product family is sold for evidence applicability. This authored sales-market declaration is distinct from `technical_region`, which describes an electrical configuration.",
+          "type": "array",
+          "items": { "$ref": "taxonomy.schema.json#/$defs/Market" }
         },
         "mounting_types": {
           "type": "array",

@@ -1418,6 +1418,20 @@
       ]
     },
 
+    "Market": {
+      "title": "Sales market",
+      "description": "A market into which the product family is sold, used to determine which market-specific evidence applies. This authored sales-market declaration is distinct from `TechnicalRegion`, which describes an electrical configuration. `north_america` covers Canada, Mexico, and the United States. `united_kingdom` covers the United Kingdom. `european_union` covers European Union member states. `japan` covers Japan. `australia_new_zealand` covers Australia and New Zealand. `other` covers a sales market not named by another token. In this release only `north_america` is read by an applicability predicate; the other tokens preserve the authored declaration for presentation and later rules.",
+      "type": "string",
+      "enum": [
+        "north_america",
+        "united_kingdom",
+        "european_union",
+        "japan",
+        "australia_new_zealand",
+        "other"
+      ]
+    },
+
     "CriTier": {
       "title": "CRI tier",
       "description": "Catalog-code grade of color-rendering index offered by a fixture's configurable LED binning. `cri_70` covers low-CRI bins including the BioRed and similar narrowband color options (Selux Aya BioRed 2200K falls here). `cri_80` is the IES-standard 80+ CRI minimum that most interior and exterior architectural white fixtures meet. `cri_90` is the 90+ CRI grade typical of spec-grade interior architectural products. `cri_95` is the highest grade available in catalog configurators, typical of museum and hospitality specifications.",

@@ -107,6 +107,51 @@ func TestValidatorRejectsTopLevelConformanceLevel(t *testing.T) {
 	}
 }
 
+func TestValidatorConstrainsMarkets(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	validateMarkets := func(markets any) *findings.Report {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		record, ok := doc.(map[string]any)
+		if !ok {
+			t.Fatalf("record is not an object")
+		}
+		family, ok := record["product_family"].(map[string]any)
+		if !ok {
+			t.Fatalf("product_family is not an object")
+		}
+		family["markets"] = markets
+		report := findings.NewReport()
+		v.Validate(record, report)
+		return report
+	}
+
+	for name, markets := range map[string]any{
+		"all declared tokens": []any{"north_america", "united_kingdom", "european_union", "japan", "australia_new_zealand", "other"},
+		"an empty list":       []any{},
+	} {
+		t.Run("accepts "+name, func(t *testing.T) {
+			if report := validateMarkets(markets); report.HasErrors() {
+				t.Errorf("expected valid markets; got: %+v", report.Findings)
+			}
+		})
+	}
+
+	report := validateMarkets([]any{"atlantic"})
+	if !report.HasErrors() {
+		t.Fatal("expected an unknown market token to fail schema validation")
+	}
+	for _, finding := range report.Findings {
+		if finding.Code == findings.CodeSchemaViolation && finding.Path == "/product_family/markets/0" {
+			return
+		}
+	}
+	t.Errorf("expected a schema violation at /product_family/markets/0; got: %+v", report.Findings)
+}
+
 // TestValidatorConstrainsPhotometryFormatToPhotometricFiles asserts the v0.9.0
 // SourceFile conditional: photometry_format is only valid on a photometric source
 // file (ies / ldt / tm33). A photometry_format on a non-photometric entry is a

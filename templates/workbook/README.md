@@ -162,6 +162,16 @@ the converter's compiled specification version is refused. A delivery path must
 also require records produced by its build to declare exactly the release of
 the `ulc` engine it pins.
 
+## Market columns
+
+Use `markets` to declare the sales markets into which the product family is
+sold. For more than one market, separate tokens with semicolons, for example
+`north_america;united_kingdom`. The allowed tokens are `north_america`,
+`united_kingdom`, `european_union`, `japan`, `australia_new_zealand`, and
+`other`. This field controls market-specific evidence applicability and is
+distinct from `technical_region`, which describes the fixture's electrical
+configuration.
+
 ## Voltage columns
 
 Use `input_voltage_v` for one numeric input-voltage value. It is a provenanced

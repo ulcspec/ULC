@@ -465,6 +465,10 @@ var descriptiveAllowlist = map[string]bool{
 	// is open to requests beyond the published menu. Openness stays tracked,
 	// not graded, so declaring it can never move a conformance tier.
 	"CustomizationAxis": true,
+
+	// Sales-market vocabulary is predicate input, not a graded field. Declaring
+	// a market cannot by itself move a conformance tier.
+	"Market": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from

@@ -80,6 +80,7 @@ var recordColumnHeaders = []string{
 	"luminous_opening_shape",
 	"manufacturer_display_name",
 	"manufacturer_slug",
+	"markets",
 	"maximum_intensity_cd",
 	"measurement_regime",
 	"mounting_at_test",
