@@ -127,8 +127,9 @@ excludes North America. An absent or empty list preserves the earlier scope.
 The release also exposes flicker conflict notes in the workbook template and
 requires alpha-opic efficacy authors to state either `W/lm` or `mW/lm`, since
 the converter cannot infer the scale. The authored schema addition is optional,
-the generated index is unchanged, and all eight published examples retain their
-grades and scope output.
+and the generated index has no markets projection. Builder version 0.8.0 marks
+the changed conformance calculation; existing examples re-stamp only that marker
+and retain their grades and scope output.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator

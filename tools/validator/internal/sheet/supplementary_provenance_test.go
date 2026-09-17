@@ -159,6 +159,52 @@ func TestAlphaOpicEfficacyUnitIsRequiredAcrossReaders(t *testing.T) {
 	}
 }
 
+func TestAlphaOpicEfficacyCannotBeDiscardedByBlankChannel(t *testing.T) {
+	tests := []struct {
+		name, unit, want string
+	}{
+		{name: "blank unit", want: "efficacy_unit"},
+		{name: "authored unit", unit: "mW/lm", want: "channel"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			bundle := t.TempDir()
+			copyBundle(t, filepath.Join("testdata", "bundle-b"), bundle)
+			setSupplementaryCell(t, bundle, "alpha_opic", "channel", "")
+			setSupplementaryCell(t, bundle, "alpha_opic", "efficacy_unit", test.unit)
+			for reader, input := range supplementaryInputs(t, bundle) {
+				t.Run(reader, func(t *testing.T) {
+					_, err := Convert(input, Options{})
+					if err == nil {
+						t.Fatal("filled efficacy with a blank channel was silently discarded")
+					}
+					if !strings.Contains(err.Error(), test.want) {
+						t.Errorf("error %q does not name %s", err, test.want)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestFlickerConflictNotesSurviveBothReaders(t *testing.T) {
+	const note = "source discrepancy"
+	bundle := supplementaryBundleWithColumns(t, "flicker_metrics", map[string]string{"conflict_notes": note})
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			record := convertOne(t, input, PatternB, completeness.LevelStandard)
+			for i, item := range arrayAt(t, record, "flicker_measurements.metrics") {
+				metric, _ := item.(map[string]any)
+				value, _ := metric["value"].(map[string]any)
+				provenance, _ := value["provenance"].(map[string]any)
+				if got := provenance["conflict_notes"]; got != note {
+					t.Errorf("metric %d conflict_notes = %v, want %q", i, got, note)
+				}
+			}
+		})
+	}
+}
+
 func setSupplementaryCell(t *testing.T, bundle, sheet, column, value string) {
 	t.Helper()
 	path := filepath.Join(bundle, sheet+".csv")

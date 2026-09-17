@@ -1381,15 +1381,12 @@ func TestAttestationCoverageObservation(t *testing.T) {
 
 // --- determinism + panic-safety ---
 
-// TestPredicatesReadOnlyCoreFields asserts the GATING-row applicability predicates
-// read only core fields: stripping every standard/full field leaves each predicate's
-// value unchanged. coreBase and fullBase share identical core fields, so every gating
-// row's predicate must agree across them, for a neutral, an outdoor-site, and a
-// directional fixture. Rubric-driven so it automatically covers every gating row and
-// naturally EXEMPTS enrichment/observation rows (which may read parent-block presence
-// because they never affect the level; see the applicability-predicates note in
-// completeness.go). This replaces the former hand-enumerated predicate map.
-func TestPredicatesReadOnlyCoreFields(t *testing.T) {
+// TestGatingPredicatesIgnoreStandardAndFullFields asserts that stripping every
+// standard and full field leaves each gating predicate's value unchanged.
+// coreBase and fullBase share identical core and applicability fields, so every
+// gating row's predicate must agree across them. Rubric-driven so it automatically
+// covers every gating row and naturally exempts enrichment and observation rows.
+func TestGatingPredicatesIgnoreStandardAndFullFields(t *testing.T) {
 	check := func(t *testing.T, core, full map[string]any) {
 		for _, ru := range rubric {
 			switch ru.level {
@@ -1415,6 +1412,22 @@ func TestPredicatesReadOnlyCoreFields(t *testing.T) {
 		of["product_family"].(map[string]any)["primary_category"] = "flood_area_site"
 		of["product_family"].(map[string]any)["indoor_outdoor"] = "outdoor"
 		check(t, oc, of)
+	})
+	t.Run("outdoor-site-markets", func(t *testing.T) {
+		for name, markets := range map[string][]any{
+			"contains north america": {"north_america", "european_union"},
+			"excludes north america": {"european_union"},
+		} {
+			t.Run(name, func(t *testing.T) {
+				oc := coreBase()
+				oc["product_family"].(map[string]any)["primary_category"] = "flood_area_site"
+				oc["product_family"].(map[string]any)["markets"] = markets
+				of := fullBase()
+				of["product_family"].(map[string]any)["primary_category"] = "flood_area_site"
+				of["product_family"].(map[string]any)["markets"] = markets
+				check(t, oc, of)
+			})
+		}
 	})
 	t.Run("directional", func(t *testing.T) {
 		dc := coreBase()

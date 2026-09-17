@@ -466,8 +466,8 @@ var descriptiveAllowlist = map[string]bool{
 	// not graded, so declaring it can never move a conformance tier.
 	"CustomizationAxis": true,
 
-	// Sales-market vocabulary is predicate input, not a graded field. Declaring
-	// a market cannot by itself move a conformance tier.
+	// Sales-market vocabulary is predicate input, not a graded field with its
+	// own roadmap row. It can still change which market-specific rows apply.
 	"Market": true,
 }
 
