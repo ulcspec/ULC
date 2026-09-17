@@ -1102,9 +1102,9 @@ func TestPvfCodeCompoundApplicability(t *testing.T) {
 // This pins the release's central compatibility promise (grades and
 // index.conformance_level do not move) at the field level, and catches a future edit
 // that accidentally moved an enrichment field into the gating walk or gave a row a
-// gating level. It complements TestPredicatesReadOnlyCoreFields, which only proves the
-// gating predicates read core fields (not that a populated enrichment field can lift a
-// grade).
+// gating level. It complements TestGatingPredicatesIgnoreStandardAndFullFields,
+// which proves the gating predicates do not read higher-tier fields (not that a
+// populated enrichment field can lift a grade).
 func TestEnrichmentFieldsDoNotGate(t *testing.T) {
 	pf := func(r map[string]any) map[string]any { return r["product_family"].(map[string]any) }
 	phot := func(r map[string]any) map[string]any { return r["photometry"].(map[string]any) }

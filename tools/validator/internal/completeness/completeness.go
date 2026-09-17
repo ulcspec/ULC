@@ -378,11 +378,12 @@ func asFloat(v any) (float64, bool) {
 // --- applicability predicates ---
 //
 // Determinism note: GATING-row (Core/Standard/Full) applicability predicates read
-// ONLY core fields, so the gating walk is order-independent (enforced by
-// TestPredicatesReadOnlyCoreFields). Enrichment and observation rows are non-gating,
-// so their applicability predicates MAY read parent-block presence (blockPresent and
-// the has* block closures): a sub-field nudge fires only when its parent block is
-// genuinely present, never affecting the achieved level.
+// only core fields or explicit applicability declarations, never standard or full
+// fields, so the gating walk is order-independent (enforced by
+// TestGatingPredicatesIgnoreStandardAndFullFields). Enrichment and observation rows
+// are non-gating, so their applicability predicates may read parent-block presence
+// (blockPresent and the has* block closures): a sub-field nudge fires only when its
+// parent block is genuinely present, never affecting the achieved level.
 
 func category(r map[string]any) string { return getString(r, "product_family", "primary_category") }
 
