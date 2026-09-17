@@ -10,6 +10,7 @@ type supplementaryValueKey struct {
 type supplementaryValueColumn struct {
 	unit         string
 	unitColumn   string
+	allowedUnits map[string]bool
 	unitByMetric bool
 	defaults     provenanceDefaults
 }
@@ -23,8 +24,9 @@ var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColu
 		defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "extracted", family: attestationFamilyMelanopic},
 	},
 	{sheet: "alpha_opic", field: "efficacy"}: {
-		unit:     "ratio",
-		defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "extracted", family: attestationFamilyMelanopic},
+		unitColumn:   "efficacy_unit",
+		allowedUnits: map[string]bool{"W/lm": true, "mW/lm": true},
+		defaults:     provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "extracted", family: attestationFamilyMelanopic},
 	},
 	{sheet: "flicker_metrics", field: "value"}: {
 		unitColumn:   "unit",
@@ -94,8 +96,12 @@ func supplementaryProvenancedNumber(sheet, field string, row Row, ctx provenance
 		if authored := row[column.unitColumn]; authored != "" && authored != expected {
 			return nil, fmt.Errorf("unit %q is not valid for metric %q; use %q", authored, metric, expected)
 		}
-	} else if column.unitColumn != "" && row[column.unitColumn] != "" {
-		unit = row[column.unitColumn]
+	} else if column.unitColumn != "" {
+		authored := row[column.unitColumn]
+		if len(column.allowedUnits) > 0 && !column.allowedUnits[authored] {
+			return nil, fmt.Errorf("%s %q is not valid for %s", column.unitColumn, authored, field)
+		}
+		unit = authored
 	}
 	if unit != "" {
 		obj["unit"] = unit
