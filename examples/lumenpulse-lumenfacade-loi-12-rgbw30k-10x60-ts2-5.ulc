@@ -332,7 +332,7 @@
       "rohs"
     ],
     "beam_family": "asymmetric",
-    "builder_version": "0.7.0",
+    "builder_version": "0.8.0",
     "catalog_model": "Lumenfacade Inground LOI Color Changing",
     "catalog_number": "LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX",
     "color_tunability": "rgbw",

@@ -112,6 +112,7 @@ var baseRecordColumns = []Column{
 	{Header: "secondary_function", Path: "product_family.secondary_function", Kind: KindList},
 	{Header: "indoor_outdoor", Path: "product_family.indoor_outdoor", Kind: KindEnum},
 	{Header: "technical_region", Path: "product_family.technical_region", Kind: KindEnum},
+	{Header: "markets", Path: "product_family.markets", Kind: KindList},
 	{Header: "mounting_types", Path: "product_family.mounting_types", Kind: KindList},
 	{Header: "environment_rating", Path: "product_family.environment_rating", Kind: KindEnum},
 	{Header: "shape", Path: "product_family.shape", Kind: KindEnum},

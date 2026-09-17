@@ -27,7 +27,7 @@ for the next major. Pre-1.0 releases generally aimed for additive changes;
 compatibility-tightening changes occurred only when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.9.x
+## Active version: v1.10.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -119,6 +119,17 @@ Dimensionless glare, colour-rendering, chromaticity-difference, and step-count
 values no longer carry a false `ratio` unit. No required schema set, grade,
 achievement state, or generated index member changes, so the builder version
 does not move.
+
+v1.10.0 adds the optional `product_family.markets` sales-market declaration
+and uses it to omit the three North American outdoor-classification rows only
+when an outdoor-site record explicitly declares a non-empty market list that
+excludes North America. An absent or empty list preserves the earlier scope.
+The release also exposes flicker conflict notes in the workbook template and
+requires alpha-opic efficacy authors to state either `W/lm` or `mW/lm`, since
+the converter cannot infer the scale. The authored schema addition is optional,
+and the generated index has no markets projection. Builder version 0.8.0 marks
+the changed conformance calculation; existing examples re-stamp only that marker
+and retain their grades and scope output.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator

@@ -38,8 +38,11 @@ WHERE p.status = 'active'
 | Family / model-code column | `product_family.catalog_model` |
 | SKU / order-code column | `configuration.catalog_number` |
 | `series` | `product_family.catalog_line` |
+| Authored sales-markets column or family-market join | `product_family.markets` |
 | Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
 | Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
+
+Map each authored sales-market value to a `Market` token. Do not infer `markets` from locale, voltage, or `technical_region`; those describe presentation or electrical configuration rather than where the family is sold.
 
 In-house schemas vary. If the products table has one row per SKU, the SKU / order-code column maps to `configuration.catalog_number` and the family model code lives on a join (variant → parent) or on the SKU row as a duplicated attribute. If the products table has one row per family with variants on a separate table, the family row supplies `product_family.*` and each variant row supplies `configuration.catalog_number`.
 
@@ -202,7 +205,7 @@ def emit_ulc(session: Session):
         family = build_family(product, primary_category, mounting)
         for scenario in product.photometric_scenarios:
             record = {
-                "ulc_version": "1.9.0",
+                "ulc_version": "1.10.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
                 "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry

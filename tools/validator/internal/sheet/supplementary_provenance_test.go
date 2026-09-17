@@ -2,8 +2,10 @@ package sheet
 
 import (
 	"bytes"
+	"encoding/csv"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -17,12 +19,13 @@ import (
 func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 	want := map[supplementaryValueKey]struct {
 		unit, unitColumn  string
+		allowedUnits      map[string]bool
 		unitByMetric      bool
 		family            attestationFamily
 		requiredValueType string
 	}{
 		{sheet: "alpha_opic", field: "melanopic_der"}:                         {unit: "ratio", family: attestationFamilyMelanopic},
-		{sheet: "alpha_opic", field: "efficacy"}:                              {unit: "ratio", family: attestationFamilyMelanopic},
+		{sheet: "alpha_opic", field: "efficacy"}:                              {unitColumn: "efficacy_unit", allowedUnits: map[string]bool{"W/lm": true, "mW/lm": true}, family: attestationFamilyMelanopic},
 		{sheet: "flicker_metrics", field: "value"}:                            {unitColumn: "unit", unitByMetric: true, family: attestationFamilyFlicker},
 		{sheet: "lumen_maintenance_package", field: "tm_21_projection_hours"}: {unit: "h", family: attestationFamilyMaintenance, requiredValueType: "rated"},
 		{sheet: "lumen_maintenance_package", field: "test_hours"}:             {unit: "h", family: attestationFamilyMaintenance},
@@ -39,9 +42,42 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 			t.Errorf("supplementary value table missing %#v", key)
 			continue
 		}
-		if got.unit != expected.unit || got.unitColumn != expected.unitColumn || got.unitByMetric != expected.unitByMetric || got.defaults.family != expected.family || got.defaults.requiredValueType != expected.requiredValueType {
-			t.Errorf("supplementary value table %#v = unit %q, unit column %q, metric rule %t, family %q, required value type %q; want %q, %q, %t, %q, %q", key, got.unit, got.unitColumn, got.unitByMetric, got.defaults.family, got.defaults.requiredValueType, expected.unit, expected.unitColumn, expected.unitByMetric, expected.family, expected.requiredValueType)
+		if got.unit != expected.unit || got.unitColumn != expected.unitColumn || !reflect.DeepEqual(got.allowedUnits, expected.allowedUnits) || got.unitByMetric != expected.unitByMetric || got.defaults.family != expected.family || got.defaults.requiredValueType != expected.requiredValueType {
+			t.Errorf("supplementary value table %#v = unit %q, unit column %q, allowed units %#v, metric rule %t, family %q, required value type %q; want %q, %q, %#v, %t, %q, %q", key, got.unit, got.unitColumn, got.allowedUnits, got.unitByMetric, got.defaults.family, got.defaults.requiredValueType, expected.unit, expected.unitColumn, expected.allowedUnits, expected.unitByMetric, expected.family, expected.requiredValueType)
 		}
+	}
+}
+
+func TestTouchedSupplementaryTemplateHeadersExposeConsumedColumns(t *testing.T) {
+	templates, err := ReadCSVBundle(filepath.Join(filepath.Dir(schemaDir(t)), "templates", "workbook"))
+	if err != nil {
+		t.Fatalf("read workbook templates: %v", err)
+	}
+	tests := []struct {
+		sheet, after, header string
+	}{
+		{sheet: "flicker_metrics", after: "bound_operator", header: "conflict_notes"},
+		{sheet: "alpha_opic", after: "efficacy", header: "efficacy_unit"},
+	}
+	for _, test := range tests {
+		t.Run(test.sheet, func(t *testing.T) {
+			headers, ok := templates.Headers[test.sheet]
+			if !ok {
+				t.Fatalf("template has no %s sheet", test.sheet)
+			}
+			positions := map[string]int{}
+			for i, header := range headers {
+				positions[header] = i
+			}
+			after, afterOK := positions[test.after]
+			header, headerOK := positions[test.header]
+			if !afterOK || !headerOK {
+				t.Fatalf("%s headers %v must contain %q and %q", test.sheet, headers, test.after, test.header)
+			}
+			if header != after+1 {
+				t.Errorf("%s header %q is at %d, want immediately after %q at %d", test.sheet, test.header, header, test.after, after)
+			}
+		})
 	}
 }
 
@@ -54,7 +90,7 @@ func TestSupplementaryProvenanceDefaults(t *testing.T) {
 	assertProvenanceDefaults(t, "alpha_opic.melanopic_der", melDER, "ratio", "rated", "datasheet_pdf", "extracted", "")
 	channels := arrayAt(t, record, "alpha_opic_metrics.per_channel")
 	channel, _ := channels[0].(map[string]any)
-	assertProvenanceDefaults(t, "alpha_opic.efficacy", channel["efficacy"], "ratio", "rated", "datasheet_pdf", "extracted", "")
+	assertProvenanceDefaults(t, "alpha_opic.efficacy", channel["efficacy"], "mW/lm", "rated", "datasheet_pdf", "extracted", "")
 
 	metrics := arrayAt(t, record, "flicker_measurements.metrics")
 	for i, value := range metrics {
@@ -75,6 +111,143 @@ func TestSupplementaryProvenanceDefaults(t *testing.T) {
 	lcsZones := arrayAt(t, record, "outdoor_classification.lcs_zonal_lumens")
 	lcsZone, _ := lcsZones[0].(map[string]any)
 	assertProvenanceDefaults(t, "lcs_zonal_lumens.lumens", lcsZone["lumens"], "lm", "measured", "ies", "extracted", "lm79_lumos_skyline_sr_ho")
+}
+
+func TestAlphaOpicEfficacyUnitIsRequiredAndClosed(t *testing.T) {
+	for _, unit := range []string{"W/lm", "mW/lm"} {
+		t.Run("accepts "+unit, func(t *testing.T) {
+			value, err := supplementaryProvenancedNumber("alpha_opic", "efficacy", Row{"efficacy": "0.58", "efficacy_unit": unit}, provenanceContext{})
+			if err != nil {
+				t.Fatalf("unit %q was refused: %v", unit, err)
+			}
+			if got := value["unit"]; got != unit {
+				t.Errorf("unit = %v, want %q", got, unit)
+			}
+		})
+	}
+	for _, unit := range []string{"", "ratio", "w/lm"} {
+		name := unit
+		if name == "" {
+			name = "blank"
+		}
+		t.Run("rejects "+name, func(t *testing.T) {
+			_, err := supplementaryProvenancedNumber("alpha_opic", "efficacy", Row{"efficacy": "0.58", "efficacy_unit": unit}, provenanceContext{})
+			if err == nil {
+				t.Fatalf("unit %q was accepted", unit)
+			}
+			if !strings.Contains(err.Error(), "efficacy_unit") {
+				t.Errorf("error %q does not name efficacy_unit", err)
+			}
+		})
+	}
+}
+
+func TestAlphaOpicEfficacyUnitIsRequiredAcrossReaders(t *testing.T) {
+	bundle := t.TempDir()
+	copyBundle(t, filepath.Join("testdata", "bundle-b"), bundle)
+	setSupplementaryCell(t, bundle, "alpha_opic", "efficacy_unit", "")
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			_, err := Convert(input, Options{})
+			if err == nil {
+				t.Fatal("blank efficacy_unit was accepted")
+			}
+			if !strings.Contains(err.Error(), "efficacy_unit") {
+				t.Errorf("error %q does not name efficacy_unit", err)
+			}
+		})
+	}
+}
+
+func TestAlphaOpicEfficacyCannotBeDiscardedByBlankChannel(t *testing.T) {
+	tests := []struct {
+		name, unit, want string
+	}{
+		{name: "blank unit", want: "efficacy_unit"},
+		{name: "authored unit", unit: "mW/lm", want: "channel"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			bundle := t.TempDir()
+			copyBundle(t, filepath.Join("testdata", "bundle-b"), bundle)
+			setSupplementaryCell(t, bundle, "alpha_opic", "channel", "")
+			setSupplementaryCell(t, bundle, "alpha_opic", "efficacy_unit", test.unit)
+			for reader, input := range supplementaryInputs(t, bundle) {
+				t.Run(reader, func(t *testing.T) {
+					_, err := Convert(input, Options{})
+					if err == nil {
+						t.Fatal("filled efficacy with a blank channel was silently discarded")
+					}
+					if !strings.Contains(err.Error(), test.want) {
+						t.Errorf("error %q does not name %s", err, test.want)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestFlickerConflictNotesSurviveBothReaders(t *testing.T) {
+	const note = "source discrepancy"
+	bundle := supplementaryBundleWithColumns(t, "flicker_metrics", map[string]string{"conflict_notes": note})
+	for reader, input := range supplementaryInputs(t, bundle) {
+		t.Run(reader, func(t *testing.T) {
+			record := convertOne(t, input, PatternB, completeness.LevelStandard)
+			for i, item := range arrayAt(t, record, "flicker_measurements.metrics") {
+				metric, _ := item.(map[string]any)
+				value, _ := metric["value"].(map[string]any)
+				provenance, _ := value["provenance"].(map[string]any)
+				if got := provenance["conflict_notes"]; got != note {
+					t.Errorf("metric %d conflict_notes = %v, want %q", i, got, note)
+				}
+			}
+		})
+	}
+}
+
+func setSupplementaryCell(t *testing.T, bundle, sheet, column, value string) {
+	t.Helper()
+	path := filepath.Join(bundle, sheet+".csv")
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("open %s: %v", path, err)
+	}
+	records, err := csv.NewReader(file).ReadAll()
+	if closeErr := file.Close(); closeErr != nil {
+		t.Fatalf("close %s: %v", path, closeErr)
+	}
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	if len(records) == 0 {
+		t.Fatalf("%s is empty", path)
+	}
+	columnIndex := -1
+	for i, header := range records[0] {
+		if header == column {
+			columnIndex = i
+			break
+		}
+	}
+	if columnIndex < 0 {
+		t.Fatalf("%s has no %q column", path, column)
+	}
+	for i := 1; i < len(records); i++ {
+		records[i][columnIndex] = value
+	}
+	file, err = os.Create(path)
+	if err != nil {
+		t.Fatalf("create %s: %v", path, err)
+	}
+	writer := csv.NewWriter(file)
+	writer.WriteAll(records)
+	if err := writer.Error(); err != nil {
+		file.Close()
+		t.Fatalf("write %s: %v", path, err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatalf("close %s: %v", path, err)
+	}
 }
 
 func assertProvenanceDefaults(t *testing.T, name string, value any, unit, valueType, source, method, attestationRef string) {

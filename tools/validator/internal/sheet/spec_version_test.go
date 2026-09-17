@@ -80,6 +80,7 @@ var recordColumnHeaders = []string{
 	"luminous_opening_shape",
 	"manufacturer_display_name",
 	"manufacturer_slug",
+	"markets",
 	"maximum_intensity_cd",
 	"measurement_regime",
 	"mounting_at_test",
@@ -262,7 +263,7 @@ func TestFromSheetVersionCellBound(t *testing.T) {
 		}
 	}
 
-	older := "1.7.0"
+	older := "1.9.0"
 	res := convertOneRecord(t, bundleWithColumns(t, map[string]string{"ulc_version": older}), Options{})
 	if got := res.Record["ulc_version"]; got != older {
 		t.Errorf("older authored ulc_version = %v, want %s", got, older)
@@ -295,6 +296,25 @@ func TestReadmeCurrentReleaseMatchesSpecVersion(t *testing.T) {
 	}
 	if got := matches[0][1]; got != SpecVersion {
 		t.Errorf("README current release = %s, converter SpecVersion = %s", got, SpecVersion)
+	}
+}
+
+func TestPIMGuidesUseSpecVersionAndMarkets(t *testing.T) {
+	root := filepath.Dir(schemaDir(t))
+	for _, name := range []string{"akeneo.md", "salsify.md", "custom-pim.md", "sap.md"} {
+		t.Run(name, func(t *testing.T) {
+			data, err := os.ReadFile(filepath.Join(root, "mappings", "pim", name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			doc := string(data)
+			if !strings.Contains(doc, SpecVersion) {
+				t.Errorf("PIM guide does not name current SpecVersion %s", SpecVersion)
+			}
+			if !strings.Contains(doc, "product_family.markets") {
+				t.Error("PIM guide does not map product_family.markets")
+			}
+		})
 	}
 }
 
@@ -343,21 +363,21 @@ func TestCheckSpecVersionScript(t *testing.T) {
 		}
 	})
 	t.Run("duplicate constant", func(t *testing.T) {
-		writeConstant(t, "const SpecVersion = \"1.9.0\"\nconst SpecVersion = \"1.9.0\"\n")
+		writeConstant(t, "const SpecVersion = \"1.10.0\"\nconst SpecVersion = \"1.10.0\"\n")
 		output, code := run(SpecVersion)
 		if code != 1 || !strings.Contains(output, "could not read exactly one version") {
 			t.Fatalf("exit %d, output %q; want duplicate-constant refusal", code, output)
 		}
 	})
 	t.Run("mismatch", func(t *testing.T) {
-		writeConstant(t, "const SpecVersion = \"1.9.0\"\n")
-		output, code := run("1.8.0")
+		writeConstant(t, "const SpecVersion = \"1.10.0\"\n")
+		output, code := run("1.9.0")
 		if code != 1 || !strings.Contains(output, "SpecVersion mismatch") {
 			t.Fatalf("exit %d, output %q; want mismatch refusal", code, output)
 		}
 	})
 	t.Run("match", func(t *testing.T) {
-		writeConstant(t, "const SpecVersion = \"1.9.0\"\n")
+		writeConstant(t, "const SpecVersion = \"1.10.0\"\n")
 		output, code := run(SpecVersion)
 		if code != 0 || !strings.Contains(output, "matches release version") {
 			t.Fatalf("exit %d, output %q; want matching success", code, output)

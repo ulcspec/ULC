@@ -501,6 +501,53 @@ func TestOutdoorSiteGate(t *testing.T) {
 	}
 }
 
+func TestOutdoorClassificationMarketGate(t *testing.T) {
+	paths := []string{
+		"/outdoor_classification/outdoor_distribution_type",
+		"/outdoor_classification/longitudinal_distribution_range",
+		"/outdoor_classification/bug_rating",
+	}
+	marketCases := []struct {
+		name    string
+		markets []any
+		set     bool
+		allows  bool
+	}{
+		{name: "absent", allows: true},
+		{name: "empty", markets: []any{}, set: true, allows: true},
+		{name: "contains north america", markets: []any{"north_america", "united_kingdom"}, set: true, allows: true},
+		{name: "excludes north america", markets: []any{"european_union"}, set: true, allows: false},
+	}
+	categories := []struct {
+		name     string
+		category string
+		outdoor  bool
+	}{
+		{name: "outdoor category", category: "flood_area_site", outdoor: true},
+		{name: "indoor category", category: "panel_troffer", outdoor: false},
+	}
+
+	for _, category := range categories {
+		for _, marketCase := range marketCases {
+			for _, path := range paths {
+				name := category.name + "/" + marketCase.name + "/" + path
+				t.Run(name, func(t *testing.T) {
+					rec := standardBase()
+					family := rec["product_family"].(map[string]any)
+					family["primary_category"] = category.category
+					if marketCase.set {
+						family["markets"] = marketCase.markets
+					}
+					want := category.outdoor && marketCase.allows
+					if got := applicableTo(t, LevelStandard, path, rec); got != want {
+						t.Errorf("applicability = %t, want %t", got, want)
+					}
+				})
+			}
+		}
+	}
+}
+
 // TestLinearGate pins the linear conditional: a linear category makes
 // per_length_normalized + declared_by_length hard standard requirements.
 func TestLinearGate(t *testing.T) {
@@ -1055,9 +1102,9 @@ func TestPvfCodeCompoundApplicability(t *testing.T) {
 // This pins the release's central compatibility promise (grades and
 // index.conformance_level do not move) at the field level, and catches a future edit
 // that accidentally moved an enrichment field into the gating walk or gave a row a
-// gating level. It complements TestPredicatesReadOnlyCoreFields, which only proves the
-// gating predicates read core fields (not that a populated enrichment field can lift a
-// grade).
+// gating level. It complements TestGatingPredicatesIgnoreStandardAndFullFields,
+// which proves the gating predicates do not read higher-tier fields (not that a
+// populated enrichment field can lift a grade).
 func TestEnrichmentFieldsDoNotGate(t *testing.T) {
 	pf := func(r map[string]any) map[string]any { return r["product_family"].(map[string]any) }
 	phot := func(r map[string]any) map[string]any { return r["photometry"].(map[string]any) }
@@ -1334,15 +1381,12 @@ func TestAttestationCoverageObservation(t *testing.T) {
 
 // --- determinism + panic-safety ---
 
-// TestPredicatesReadOnlyCoreFields asserts the GATING-row applicability predicates
-// read only core fields: stripping every standard/full field leaves each predicate's
-// value unchanged. coreBase and fullBase share identical core fields, so every gating
-// row's predicate must agree across them, for a neutral, an outdoor-site, and a
-// directional fixture. Rubric-driven so it automatically covers every gating row and
-// naturally EXEMPTS enrichment/observation rows (which may read parent-block presence
-// because they never affect the level; see the applicability-predicates note in
-// completeness.go). This replaces the former hand-enumerated predicate map.
-func TestPredicatesReadOnlyCoreFields(t *testing.T) {
+// TestGatingPredicatesIgnoreStandardAndFullFields asserts that stripping every
+// standard and full field leaves each gating predicate's value unchanged.
+// coreBase and fullBase share identical core and applicability fields, so every
+// gating row's predicate must agree across them. Rubric-driven so it automatically
+// covers every gating row and naturally exempts enrichment and observation rows.
+func TestGatingPredicatesIgnoreStandardAndFullFields(t *testing.T) {
 	check := func(t *testing.T, core, full map[string]any) {
 		for _, ru := range rubric {
 			switch ru.level {
@@ -1368,6 +1412,22 @@ func TestPredicatesReadOnlyCoreFields(t *testing.T) {
 		of["product_family"].(map[string]any)["primary_category"] = "flood_area_site"
 		of["product_family"].(map[string]any)["indoor_outdoor"] = "outdoor"
 		check(t, oc, of)
+	})
+	t.Run("outdoor-site-markets", func(t *testing.T) {
+		for name, markets := range map[string][]any{
+			"contains north america": {"north_america", "european_union"},
+			"excludes north america": {"european_union"},
+		} {
+			t.Run(name, func(t *testing.T) {
+				oc := coreBase()
+				oc["product_family"].(map[string]any)["primary_category"] = "flood_area_site"
+				oc["product_family"].(map[string]any)["markets"] = markets
+				of := fullBase()
+				of["product_family"].(map[string]any)["primary_category"] = "flood_area_site"
+				of["product_family"].(map[string]any)["markets"] = markets
+				check(t, oc, of)
+			})
+		}
 	})
 	t.Run("directional", func(t *testing.T) {
 		dc := coreBase()

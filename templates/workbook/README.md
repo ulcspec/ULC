@@ -133,7 +133,7 @@ release 1.5.0 on.
 | `cct_multipliers` | The CCT lumen-multiplier table. | Pattern B |
 | `declared_by_length` | A verbatim per-length table with fixed provenance defaults in this release. Omit it to have the per-foot rates generate it. | Pattern D |
 | `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Patterns B and D |
-| `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. | Full enrichment |
+| `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM, percent flicker) with per-value provenance companions and a metric-specific unit rule. | Full enrichment |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed projection with companions on its three numeric values. | Full enrichment |
 | `zonal_lumens` | Angle-band zonal lumens with per-value provenance companions. | Full enrichment |
@@ -161,6 +161,16 @@ validates and builds the index against that schema alone. A version newer than
 the converter's compiled specification version is refused. A delivery path must
 also require records produced by its build to declare exactly the release of
 the `ulc` engine it pins.
+
+## Market columns
+
+Use `markets` to declare the sales markets into which the product family is
+sold. For more than one market, separate tokens with semicolons, for example
+`north_america;united_kingdom`. The allowed tokens are `north_america`,
+`united_kingdom`, `european_union`, `japan`, `australia_new_zealand`, and
+`other`. This field controls market-specific evidence applicability and is
+distinct from `technical_region`, which describes the fixture's electrical
+configuration.
 
 ## Voltage columns
 

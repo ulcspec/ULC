@@ -52,7 +52,10 @@ import (
 // themes and every other projection are byte-identical; each stored index gains a
 // domestic_content theme entry (state none on records carrying none of the three programs).
 // Stored records re-stamp on the next ulc build-index to gain the seventh theme.
-const BuilderVersion = "0.7.0"
+// 0.8.0: conformance_level now uses product_family.markets when deciding whether
+// the three North American outdoor-classification rows apply. Existing records
+// without markets keep their computed level and re-stamp only the builder version.
+const BuilderVersion = "0.8.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard

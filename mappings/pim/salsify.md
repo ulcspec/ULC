@@ -23,8 +23,11 @@ The ULC emitter is typically implemented as a Salsify channel recipe plus an ext
 | Variant external ID (SKU) | `configuration.catalog_number` |
 | Internal brand property | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | Product line / series property | `product_family.catalog_line` |
+| Parent sales-markets multiselect property | `product_family.markets` |
 | Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
 | Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
+
+Map each authored sales-market value to a `Market` token. Do not infer `markets` from locale, voltage, or `technical_region`; those describe presentation or electrical configuration rather than where the family is sold.
 
 A product family in Salsify is typically modeled as a parent product with child variants (one per orderable SKU). The parent carries cutsheet-level shared data and maps to `product_family.*`; each child variant maps to its own `configuration.catalog_number` and a distinct ULC record. See the multi-CCT handling note under "Gotchas" below for the common parent-variant pattern.
 
@@ -149,7 +152,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 # Illustrative pseudocode, not a working implementation.
 def emit_ulc_from_salsify(product, scenario):
     record = {
-        "ulc_version": "1.9.0",
+        "ulc_version": "1.10.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
         "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry

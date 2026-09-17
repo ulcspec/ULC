@@ -78,16 +78,23 @@ func assembleAlphaOpic(wb Workbook, id string, rec map[string]any, ctx provenanc
 			melDERRow = row
 		}
 		ch := row["channel"]
+		raw := row["efficacy"]
+		var eff map[string]any
+		if raw != "" {
+			var err error
+			eff, err = supplementaryProvenancedNumber("alpha_opic", "efficacy", row, ctx)
+			if err != nil {
+				return fmt.Errorf("alpha_opic row %d for %q: %w", i+1, id, err)
+			}
+		}
 		if ch == "" {
+			if raw != "" {
+				return fmt.Errorf("alpha_opic row %d for %q: efficacy has no channel", i+1, id)
+			}
 			continue
 		}
-		raw := row["efficacy"]
 		if raw == "" {
 			return fmt.Errorf("alpha_opic row %d for %q: channel %q has no efficacy", i+1, id, ch)
-		}
-		eff, err := supplementaryProvenancedNumber("alpha_opic", "efficacy", row, ctx)
-		if err != nil {
-			return fmt.Errorf("alpha_opic row %d for %q: %w", i+1, id, err)
 		}
 		perChannel = append(perChannel, map[string]any{
 			"channel":  ch,
