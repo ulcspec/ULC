@@ -501,6 +501,53 @@ func TestOutdoorSiteGate(t *testing.T) {
 	}
 }
 
+func TestOutdoorClassificationMarketGate(t *testing.T) {
+	paths := []string{
+		"/outdoor_classification/outdoor_distribution_type",
+		"/outdoor_classification/longitudinal_distribution_range",
+		"/outdoor_classification/bug_rating",
+	}
+	marketCases := []struct {
+		name    string
+		markets []any
+		set     bool
+		allows  bool
+	}{
+		{name: "absent", allows: true},
+		{name: "empty", markets: []any{}, set: true, allows: true},
+		{name: "contains north america", markets: []any{"north_america", "united_kingdom"}, set: true, allows: true},
+		{name: "excludes north america", markets: []any{"european_union"}, set: true, allows: false},
+	}
+	categories := []struct {
+		name     string
+		category string
+		outdoor  bool
+	}{
+		{name: "outdoor category", category: "flood_area_site", outdoor: true},
+		{name: "indoor category", category: "panel_troffer", outdoor: false},
+	}
+
+	for _, category := range categories {
+		for _, marketCase := range marketCases {
+			for _, path := range paths {
+				name := category.name + "/" + marketCase.name + "/" + path
+				t.Run(name, func(t *testing.T) {
+					rec := standardBase()
+					family := rec["product_family"].(map[string]any)
+					family["primary_category"] = category.category
+					if marketCase.set {
+						family["markets"] = marketCase.markets
+					}
+					want := category.outdoor && marketCase.allows
+					if got := applicableTo(t, LevelStandard, path, rec); got != want {
+						t.Errorf("applicability = %t, want %t", got, want)
+					}
+				})
+			}
+		}
+	}
+}
+
 // TestLinearGate pins the linear conditional: a linear category makes
 // per_length_normalized + declared_by_length hard standard requirements.
 func TestLinearGate(t *testing.T) {

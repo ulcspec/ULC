@@ -445,6 +445,27 @@ func directional(r map[string]any) bool { return directionalCategories[category(
 func outdoorSite(r map[string]any) bool { return outdoorSiteCategories[category(r)] }
 func linear(r map[string]any) bool      { return linearCategories[category(r)] }
 
+// northAmericanMarket preserves the existing outdoor-classification asks unless
+// the author explicitly declares a non-empty market list that excludes North
+// America. Missing, empty, or wrong-typed input is conservative and keeps the
+// rows applicable; schema validation reports a wrong type separately.
+func northAmericanMarket(r map[string]any) bool {
+	family, ok := getMap(r, "product_family")
+	if !ok {
+		return true
+	}
+	markets, ok := family["markets"].([]any)
+	if !ok || len(markets) == 0 {
+		return true
+	}
+	for _, market := range markets {
+		if market == "north_america" {
+			return true
+		}
+	}
+	return false
+}
+
 // analogPhaseDimming is the protocol set whose driver publishes a dim floor and an
 // electrical method on the cutsheet. `pwm` here is the PWM control-input protocol
 // (the controller feeds the driver a PWM duty cycle), distinct from the `pwm`
@@ -841,9 +862,9 @@ var rubric = []rule{
 	{LevelStandard, "/electrical/dimming_method", "DimmingMethod", "datasheet_pdf", "identity", "", str("electrical", "dimming_method"), requiresDimmingDetail},
 	{LevelStandard, "/electrical/dimming_range_percent", "", "datasheet_pdf", "identity", "", hasDimmingRange, requiresDimmingDetail},
 	{LevelStandard, "/product_family/shared_mechanical/ip_rating", "", "compliance_documents", "IEC 60529", "", str("product_family", "shared_mechanical", "ip_rating"), wetOrExposed},
-	{LevelStandard, "/outdoor_classification/outdoor_distribution_type", "OutdoorDistributionType", "ies", "RP-8", "", str("outdoor_classification", "outdoor_distribution_type"), outdoorSite},
-	{LevelStandard, "/outdoor_classification/longitudinal_distribution_range", "LongitudinalDistributionRange", "ies", "RP-8", "", str("outdoor_classification", "longitudinal_distribution_range"), outdoorSite},
-	{LevelStandard, "/outdoor_classification/bug_rating", "", "datasheet_pdf", "TM-15", "", hasBugRating, outdoorSite},
+	{LevelStandard, "/outdoor_classification/outdoor_distribution_type", "OutdoorDistributionType", "ies", "RP-8", "", str("outdoor_classification", "outdoor_distribution_type"), both(outdoorSite, northAmericanMarket)},
+	{LevelStandard, "/outdoor_classification/longitudinal_distribution_range", "LongitudinalDistributionRange", "ies", "RP-8", "", str("outdoor_classification", "longitudinal_distribution_range"), both(outdoorSite, northAmericanMarket)},
+	{LevelStandard, "/outdoor_classification/bug_rating", "", "datasheet_pdf", "TM-15", "", hasBugRating, both(outdoorSite, northAmericanMarket)},
 
 	// v0.10.0 exit-sign & emergency STANDARD rows (§4.2). Mode-partitioned per §2.2/§2.10a:
 	// luminance gates only for photoluminescent/self-luminous (the modes whose datasheets
