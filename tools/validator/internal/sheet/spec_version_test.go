@@ -263,7 +263,7 @@ func TestFromSheetVersionCellBound(t *testing.T) {
 		}
 	}
 
-	older := "1.7.0"
+	older := "1.9.0"
 	res := convertOneRecord(t, bundleWithColumns(t, map[string]string{"ulc_version": older}), Options{})
 	if got := res.Record["ulc_version"]; got != older {
 		t.Errorf("older authored ulc_version = %v, want %s", got, older)
@@ -344,21 +344,21 @@ func TestCheckSpecVersionScript(t *testing.T) {
 		}
 	})
 	t.Run("duplicate constant", func(t *testing.T) {
-		writeConstant(t, "const SpecVersion = \"1.9.0\"\nconst SpecVersion = \"1.9.0\"\n")
+		writeConstant(t, "const SpecVersion = \"1.10.0\"\nconst SpecVersion = \"1.10.0\"\n")
 		output, code := run(SpecVersion)
 		if code != 1 || !strings.Contains(output, "could not read exactly one version") {
 			t.Fatalf("exit %d, output %q; want duplicate-constant refusal", code, output)
 		}
 	})
 	t.Run("mismatch", func(t *testing.T) {
-		writeConstant(t, "const SpecVersion = \"1.9.0\"\n")
-		output, code := run("1.8.0")
+		writeConstant(t, "const SpecVersion = \"1.10.0\"\n")
+		output, code := run("1.9.0")
 		if code != 1 || !strings.Contains(output, "SpecVersion mismatch") {
 			t.Fatalf("exit %d, output %q; want mismatch refusal", code, output)
 		}
 	})
 	t.Run("match", func(t *testing.T) {
-		writeConstant(t, "const SpecVersion = \"1.9.0\"\n")
+		writeConstant(t, "const SpecVersion = \"1.10.0\"\n")
 		output, code := run(SpecVersion)
 		if code != 0 || !strings.Contains(output, "matches release version") {
 			t.Fatalf("exit %d, output %q; want matching success", code, output)

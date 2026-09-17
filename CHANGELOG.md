@@ -20,6 +20,30 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.10.0 (2026-09-17)
+
+This release adds authored sales markets, uses them to scope the three North American outdoor-classification requirements, exposes the flicker conflict-notes column in the workbook template, and takes each alpha-opic efficacy unit from the workbook author. The schema addition is backward compatible. The alpha-opic workbook change is deliberately breaking for a sheet that filled `efficacy` before 1.10.0 without an authored unit. The builder remains 0.7.0.
+
+### For consumers
+
+Records may now declare optional `product_family.markets` values from the new `Market` vocabulary. The field names where the family is sold for evidence applicability and is separate from `technical_region`, which remains the electrical configuration. Records that omit `markets`, or declare an empty list, retain the previous rubric scope. A non-empty list that contains `north_america` retains the three outdoor-classification requirements; a non-empty list that excludes `north_america` waives those three rows for an outdoor-site family. The rows keep their existing `path`, source-document, and standard strings, and the safety-listing rule continues to use `technical_region`.
+
+Newly converted records declare 1.10.0. The records workbook accepts `markets` as a semicolon-separated list. The generated index is unchanged, so the builder version does not move and stored records need no index re-stamp. None of the eight published examples declares `markets`; their grades, validation reports, and scope manifests remain byte-identical.
+
+Alpha-opic workbook authors must now provide `efficacy_unit` whenever `efficacy` is filled. The exact accepted tokens are `W/lm` and `mW/lm`; a blank, differently cased, or other token is refused with `efficacy_unit` named. A workbook authored before 1.10.0 that contains alpha-opic efficacy must add the column and state the scale before conversion. The melanopic DER remains a `ratio`. The released flicker template now includes the already-supported `conflict_notes` column after `bound_operator`.
+
+### Schema
+
+- `product_family.markets` is a new optional array of `Market` tokens: `north_america`, `united_kingdom`, `european_union`, `japan`, `australia_new_zealand`, and `other`.
+- The `technical_region` description now points authors to `markets` for sales-market declarations. No required set changes, no token is removed or narrowed, and the generated index has no markets projection.
+
+### Validator and workbook
+
+- `ulc from-sheet` maps the semicolon-separated `markets` column to `product_family.markets`.
+- The outdoor distribution type, longitudinal distribution range, and BUG rating standard-tier rows now apply only when the category is an outdoor-site category and the record does not explicitly exclude North America.
+- The `flicker_metrics` template exposes `conflict_notes`, and the `alpha_opic` template exposes `efficacy_unit` immediately after `efficacy`.
+- Alpha-opic efficacy writes the authored `W/lm` or `mW/lm` token instead of stamping `ratio`; blank and unsupported unit cells are refused.
+
 ## 1.9.0 (2026-09-13)
 
 This release aligns the finished-record name, converter version, workbook provenance, source traceability, flicker-unit defaults, and records-sheet dimensionless-unit contracts. It adds one backward-compatible source vocabulary token and changes CLI-observable authoring behavior without changing any required schema set, conformance grade, achievement state, or generated index member. The builder remains 0.7.0.

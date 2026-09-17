@@ -9,7 +9,7 @@ import (
 // SpecVersion is the current released ULC specification version stamped into
 // newly converted records. It is a compile-time converter policy, independent
 // of the CLI build version, so source and packaged builds stamp the same value.
-const SpecVersion = "1.9.0"
+const SpecVersion = "1.10.0"
 
 func specificationVersionGreater(candidate, bound string) (bool, error) {
 	parse := func(value string) ([3]int, error) {

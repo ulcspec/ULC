@@ -163,7 +163,7 @@ In practice, ABAP handles data extraction (CDS views or SAP CAP/RAP) and a Pytho
 def emit_ulc_from_sap(material, variant, characteristics, dms_docs):
     primary_category = CLASS_TO_ULC_CATEGORY[material['class']]
     record = {
-        "ulc_version": "1.9.0",
+        "ulc_version": "1.10.0",
         "record_id": slug(f"{material['brand_slug']}-{material['matnr']}-{variant['scenario_slug']}"),
         "record_status": "active",
         "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry

@@ -149,7 +149,7 @@ Accessory-type classification requires another PIM-to-ULC enum mapping (junction
 # Illustrative pseudocode, not a working implementation.
 def emit_ulc_from_salsify(product, scenario):
     record = {
-        "ulc_version": "1.9.0",
+        "ulc_version": "1.10.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
         "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
