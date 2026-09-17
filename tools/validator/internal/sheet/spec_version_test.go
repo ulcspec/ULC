@@ -299,6 +299,25 @@ func TestReadmeCurrentReleaseMatchesSpecVersion(t *testing.T) {
 	}
 }
 
+func TestPIMGuidesUseSpecVersionAndMarkets(t *testing.T) {
+	root := filepath.Dir(schemaDir(t))
+	for _, name := range []string{"akeneo.md", "salsify.md", "custom-pim.md", "sap.md"} {
+		t.Run(name, func(t *testing.T) {
+			data, err := os.ReadFile(filepath.Join(root, "mappings", "pim", name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			doc := string(data)
+			if !strings.Contains(doc, SpecVersion) {
+				t.Errorf("PIM guide does not name current SpecVersion %s", SpecVersion)
+			}
+			if !strings.Contains(doc, "product_family.markets") {
+				t.Error("PIM guide does not map product_family.markets")
+			}
+		})
+	}
+}
+
 func TestCheckSpecVersionScript(t *testing.T) {
 	repoRoot := filepath.Dir(schemaDir(t))
 	script := filepath.Join(repoRoot, "tools", "validator", "check-spec-version.sh")

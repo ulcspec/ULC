@@ -25,9 +25,12 @@ Older SAP ECC landscapes use **IDocs** (XML-ish envelopes) for integration. Mode
 | `MaterialDescription` (MAKT-MAKTX for chosen language) | `configuration.scenario_label` |
 | `Brand` (manufacturer-specific Z-field) | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | `ProductHierarchy` | `product_family.catalog_line` |
+| Authored sales-market characteristic or sales-area export | `product_family.markets` |
 | Material group (MARA-MATKL) | Used as input to category mapping, not a direct ULC field |
 | Derived full slug `<manufacturer>-<matnr>-<scenario>` | `record_id` |
 | Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
+
+Map each authored sales-market value to a `Market` token. Do not infer `markets` from language, voltage, or `technical_region`; those describe presentation or electrical configuration rather than where the family is sold.
 
 The "variant configuration MATNR → `configuration.catalog_number`" mapping is the Pattern A default (one record per variant). If a configurable material publishes one ULC record covering many variant configurations via a multiplier table (Pattern B) or per-foot linear scaling (Pattern D), `configuration.catalog_number` carries only the tested-baseline variant's MATNR, and the covered variant range is declared in `applicability.covered_axes.<axis>` with a per-axis derivation rule. See `docs/authoring-patterns.md` for worked examples.
 

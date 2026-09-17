@@ -25,8 +25,11 @@ The ULC emitter is typically implemented as an external service that pulls from 
 | Product model code (parent) | `product_family.family_id`, `product_family.catalog_model` |
 | Brand attribute | `product_family.manufacturer.slug`, `product_family.manufacturer.display_name` |
 | Product line / series | `product_family.catalog_line` |
+| Product-model sales-markets multiselect attribute | `product_family.markets` |
 | Derived full slug `<manufacturer>-<sku>-<scenario>` | `record_id` |
 | Derived scenario-local slug `<family>-<cct>-<distribution>` | `configuration.photometric_scenario_id` |
+
+Map each authored sales-market value to a `Market` token. Do not infer `markets` from locale, voltage, or `technical_region`; those describe presentation or electrical configuration rather than where the family is sold.
 
 The "Product `identifier` → `configuration.catalog_number`" mapping is the Pattern A default (one record per SKU). If a product-model family publishes one ULC record that covers many variant SKUs via a multiplier table (Pattern B) or per-foot linear scaling (Pattern D), `configuration.catalog_number` carries only the tested-baseline SKU, and the covered SKU range is declared in `applicability.covered_axes.<axis>` with a per-axis derivation rule. See `docs/authoring-patterns.md` for worked examples.
 
