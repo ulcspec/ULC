@@ -466,6 +466,19 @@ var descriptiveAllowlist = map[string]bool{
 	// not graded, so declaring it can never move a conformance tier.
 	"CustomizationAxis": true,
 
+	// --- v1.11.0 spectral data class ---
+	// Spectrum source kind describes evidence form; the spectrum is tracked, not graded.
+	"SpdSourceKind": true,
+
+	// --- v1.11.0 evidence qualifiers ---
+	// Spectrum unit and domestic cost basis qualify optional evidence; tracked, not graded.
+	"SpectralPowerUnit": true,
+	"DomesticContentBasis": true,
+
+	// --- v1.11.0 maintenance-claim class ---
+	// The basis qualifies a rated claim and is tracked, not graded.
+	"LumenMaintenanceClaimBasis": true,
+
 	// Sales-market vocabulary is predicate input, not a graded field with its
 	// own roadmap row. It can still change which market-specific rows apply.
 	"Market": true,

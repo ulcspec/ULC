@@ -48,6 +48,120 @@ func TestValidatorAcceptsExampleRecords(t *testing.T) {
 	}
 }
 
+// TestValidatorAcceptsSpectrumAndTM27 exercises the 87-sample form of a
+// 350 to 780 nm spectrum at 5 nm intervals, with synthetic values. It also
+// checks that a TM-27 file can be cited as both source file and provenance.
+func TestValidatorAcceptsSpectrumAndTM27(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() (map[string]any, map[string]any) {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		record := doc.(map[string]any)
+		attestations := record["attestations"].([]any)
+		lm79 := attestations[0].(map[string]any)["attestation_id"]
+		// The Intertek report's source table is on page 6; sample values here are synthetic.
+		values := make([]any, 87)
+		for i := range values {
+			values[i] = float64(i+1) / 100
+		}
+		spectrum := map[string]any{
+			"wavelength_start_nm": 350,
+			"wavelength_step_nm":  5,
+			"values":              values,
+			"unit":                "mW/nm",
+			"value_type":          "measured",
+			"provenance": map[string]any{
+				"source":          "test_report",
+				"method":          "transcribed",
+				"attestation_ref": lm79,
+			},
+			"source_kind":             "laboratory_table",
+			"measured_through_optics": true,
+		}
+		record["colorimetry"].(map[string]any)["spectral_power_distribution"] = spectrum
+		return record, spectrum
+	}
+	validate := func(record map[string]any) *findings.Report {
+		report := findings.NewReport()
+		v.Validate(record, report)
+		return report
+	}
+
+	t.Run("accepts 87 laboratory table values", func(t *testing.T) {
+		record, _ := load()
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected valid laboratory table spectrum; got: %+v", report.Findings)
+		}
+	})
+	t.Run("accepts tm27 exchange file", func(t *testing.T) {
+		record, spectrum := load()
+		spectrum["source_kind"] = "exchange_file"
+		spectrum["provenance"].(map[string]any)["source"] = "tm27"
+		record["source_files"] = append(record["source_files"].([]any), map[string]any{
+			"file_type": "tm27",
+			"reference": map[string]any{
+				"filename": "synthetic-spectrum.xml",
+				"sha256":   strings.Repeat("a", 64),
+			},
+		})
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected valid tm27 exchange file and provenance; got: %+v", report.Findings)
+		}
+	})
+	t.Run("rejects fewer than two values", func(t *testing.T) {
+		record, spectrum := load()
+		spectrum["values"] = []any{0.1}
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected a spectrum with one value to fail schema validation")
+		}
+	})
+	t.Run("rejects missing source kind", func(t *testing.T) {
+		record, spectrum := load()
+		delete(spectrum, "source_kind")
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected a spectrum without source_kind to fail schema validation")
+		}
+	})
+}
+
+// TestValidatorRejectsLowerBoundsOnUGRAndFlicker keeps existing upper-bound
+// fields from accepting the new lower-bound ComparisonOperator tokens.
+func TestValidatorRejectsLowerBoundsOnUGRAndFlicker(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		return doc.(map[string]any)
+	}
+	t.Run("rejects UGR gt", func(t *testing.T) {
+		record := load()
+		photometry := record["photometry"].(map[string]any)
+		photometry["ugr_4h_8h"] = map[string]any{"value": 19, "value_type": "rated"}
+		photometry["ugr_4h_8h_bound_operator"] = "gt"
+		report := findings.NewReport()
+		v.Validate(record, report)
+		if !report.HasErrors() {
+			t.Fatal("expected a UGR lower bound to fail schema validation")
+		}
+	})
+	t.Run("rejects flicker gt", func(t *testing.T) {
+		record := load()
+		metrics := record["flicker_measurements"].(map[string]any)["metrics"].([]any)
+		metrics[0].(map[string]any)["bound_operator"] = "gt"
+		report := findings.NewReport()
+		v.Validate(record, report)
+		if !report.HasErrors() {
+			t.Fatal("expected a flicker lower bound to fail schema validation")
+		}
+	})
+}
+
 // TestValidatorRejectsBrokenRecord asserts the validator catches a violation
 // introduced to one of the canonical records (e.g., wiping a required field).
 // This guards against silently-accepting-everything bugs in the wiring.
@@ -423,6 +537,190 @@ func TestValidatorConstrainsSustainabilityMetricCarbonScope(t *testing.T) {
 	if rNo.HasErrors() {
 		t.Errorf("a non-carbon sustainability_metric must validate; got: %+v", rNo.Findings)
 	}
+}
+
+// TestValidatorConstrainsDomesticContentPayload covers the cost-share payload
+// on a BAA attestation. The two negative cases pin the share range and the
+// requirement to name the threshold used to judge a claim.
+func TestValidatorConstrainsDomesticContentPayload(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() (map[string]any, map[string]any) {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		record := doc.(map[string]any)
+		payload := map[string]any{
+			"us_cost_share_percent":      88.50,
+			"foreign_cost_share_percent": 11.50,
+			"threshold_percent":          65,
+			"basis":                      "manufacturing_cost",
+			"provenance": map[string]any{
+				"source": "compliance_documents",
+				"method": "extracted",
+			},
+		}
+		record["attestations"] = append(record["attestations"].([]any), map[string]any{
+			"program":          "baa",
+			"status":           "claimed",
+			"value_type":       "rated",
+			"domestic_content": payload,
+		})
+		return record, payload
+	}
+	validate := func(record map[string]any) *findings.Report {
+		report := findings.NewReport()
+		v.Validate(record, report)
+		return report
+	}
+
+	t.Run("accepts stated shares and threshold", func(t *testing.T) {
+		record, _ := load()
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected valid domestic-content payload; got: %+v", report.Findings)
+		}
+	})
+	t.Run("rejects share above 100", func(t *testing.T) {
+		record, payload := load()
+		payload["foreign_cost_share_percent"] = 101
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected a foreign cost share above 100 to fail schema validation")
+		}
+	})
+	t.Run("rejects missing threshold", func(t *testing.T) {
+		record, payload := load()
+		delete(payload, "threshold_percent")
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected domestic content without threshold_percent to fail schema validation")
+		}
+	})
+}
+
+// TestValidatorAcceptsMaintenanceBoundsAndLuminance checks the additive
+// maintenance claim list and the three new number/operator pairs.
+func TestValidatorAcceptsMaintenanceBoundsAndLuminance(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		return doc.(map[string]any)
+	}
+	number := func(value float64, unit string) map[string]any {
+		return map[string]any{
+			"value":      value,
+			"unit":       unit,
+			"value_type": "rated",
+			"provenance": map[string]any{
+				"source": "datasheet_pdf",
+				"method": "extracted",
+			},
+		}
+	}
+	addClaims := func(record map[string]any) map[string]any {
+		maintenance := record["lumen_maintenance_luminaire"].(map[string]any)
+		headline := maintenance["manufacturer_rated_claim"].(map[string]any)
+		headline["claim_type"] = "L90"
+		headline["claimed_hours"] = number(34000, "h")
+		headline["basis"] = "tm_21_reported"
+		delete(headline, "failure_percent")
+		additional := map[string]any{
+			"claim_type":    "L70",
+			"claimed_hours": number(115000, "h"),
+			"basis":         "tm_21_calculated",
+		}
+		maintenance["additional_rated_claims"] = []any{additional}
+		return additional
+	}
+	addElectrical := func(record map[string]any) map[string]any {
+		electrical := record["electrical"].(map[string]any)
+		electrical["power_factor"] = number(0.9, "ratio")
+		electrical["power_factor_bound_operator"] = "gt"
+		electrical["thd_percent"] = number(20, "percent")
+		electrical["thd_percent_bound_operator"] = "lt"
+		return electrical
+	}
+	addLuminance := func(record map[string]any) map[string]any {
+		photometry := record["photometry"].(map[string]any)
+		photometry["max_surface_luminance_cd_per_m2"] = number(1600, "cd/m2")
+		photometry["max_surface_luminance_bound_operator"] = "lt"
+		return photometry
+	}
+	validate := func(record map[string]any) *findings.Report {
+		report := findings.NewReport()
+		v.Validate(record, report)
+		return report
+	}
+	expectValid := func(t *testing.T, record map[string]any) {
+		t.Helper()
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected schema acceptance; got: %+v", report.Findings)
+		}
+	}
+	expectInvalid := func(t *testing.T, record map[string]any) {
+		t.Helper()
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected schema rejection, got none")
+		}
+	}
+
+	t.Run("accepts L90 reported and L70 calculated", func(t *testing.T) {
+		record := load()
+		addClaims(record)
+		expectValid(t, record)
+	})
+	t.Run("accepts power factor and THD bounds", func(t *testing.T) {
+		record := load()
+		addElectrical(record)
+		expectValid(t, record)
+	})
+	t.Run("accepts surface luminance bound", func(t *testing.T) {
+		record := load()
+		addLuminance(record)
+		expectValid(t, record)
+	})
+	t.Run("accepts declared lower bound", func(t *testing.T) {
+		record := load()
+		electrical := addElectrical(record)
+		electrical["power_factor_bound_operator"] = "gte"
+		expectValid(t, record)
+	})
+	t.Run("rejects added claim without basis", func(t *testing.T) {
+		record := load()
+		additional := addClaims(record)
+		delete(additional, "basis")
+		expectInvalid(t, record)
+	})
+	t.Run("rejects unknown claim type", func(t *testing.T) {
+		record := load()
+		additional := addClaims(record)
+		additional["claim_type"] = "L75"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects unknown operator", func(t *testing.T) {
+		record := load()
+		electrical := addElectrical(record)
+		electrical["power_factor_bound_operator"] = "between"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects power factor operator without number", func(t *testing.T) {
+		record := load()
+		record["electrical"].(map[string]any)["power_factor_bound_operator"] = "gt"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects THD operator without number", func(t *testing.T) {
+		record := load()
+		record["electrical"].(map[string]any)["thd_percent_bound_operator"] = "lt"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects luminance operator without number", func(t *testing.T) {
+		record := load()
+		record["photometry"].(map[string]any)["max_surface_luminance_bound_operator"] = "lt"
+		expectInvalid(t, record)
+	})
 }
 
 // TestValidatorAcceptsIssuingAuthority asserts the additive descriptive field on Attestation

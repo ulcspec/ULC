@@ -377,7 +377,7 @@ func TestCheckSpecVersionScript(t *testing.T) {
 		}
 	})
 	t.Run("match", func(t *testing.T) {
-		writeConstant(t, "const SpecVersion = \"1.10.0\"\n")
+		writeConstant(t, "const SpecVersion = "+strconv.Quote(SpecVersion)+"\n")
 		output, code := run(SpecVersion)
 		if code != 0 || !strings.Contains(output, "matches release version") {
 			t.Fatalf("exit %d, output %q; want matching success", code, output)
