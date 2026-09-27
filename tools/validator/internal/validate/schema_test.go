@@ -558,6 +558,132 @@ func TestValidatorConstrainsDomesticContentPayload(t *testing.T) {
 	})
 }
 
+// TestValidatorAcceptsMaintenanceBoundsAndLuminance checks the additive
+// maintenance claim list and the three new number/operator pairs.
+func TestValidatorAcceptsMaintenanceBoundsAndLuminance(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		return doc.(map[string]any)
+	}
+	number := func(value float64, unit string) map[string]any {
+		return map[string]any{
+			"value":      value,
+			"unit":       unit,
+			"value_type": "rated",
+			"provenance": map[string]any{
+				"source": "datasheet_pdf",
+				"method": "extracted",
+			},
+		}
+	}
+	addClaims := func(record map[string]any) map[string]any {
+		maintenance := record["lumen_maintenance_luminaire"].(map[string]any)
+		headline := maintenance["manufacturer_rated_claim"].(map[string]any)
+		headline["claim_type"] = "L90"
+		headline["claimed_hours"] = number(34000, "h")
+		headline["basis"] = "tm_21_reported"
+		delete(headline, "failure_percent")
+		additional := map[string]any{
+			"claim_type":    "L70",
+			"claimed_hours": number(115000, "h"),
+			"basis":         "tm_21_calculated",
+		}
+		maintenance["additional_rated_claims"] = []any{additional}
+		return additional
+	}
+	addElectrical := func(record map[string]any) map[string]any {
+		electrical := record["electrical"].(map[string]any)
+		electrical["power_factor"] = number(0.9, "ratio")
+		electrical["power_factor_bound_operator"] = "gt"
+		electrical["thd_percent"] = number(20, "percent")
+		electrical["thd_percent_bound_operator"] = "lt"
+		return electrical
+	}
+	addLuminance := func(record map[string]any) map[string]any {
+		photometry := record["photometry"].(map[string]any)
+		photometry["max_surface_luminance_cd_per_m2"] = number(1600, "cd/m2")
+		photometry["max_surface_luminance_bound_operator"] = "lt"
+		return photometry
+	}
+	validate := func(record map[string]any) *findings.Report {
+		report := findings.NewReport()
+		v.Validate(record, report)
+		return report
+	}
+	expectValid := func(t *testing.T, record map[string]any) {
+		t.Helper()
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected schema acceptance; got: %+v", report.Findings)
+		}
+	}
+	expectInvalid := func(t *testing.T, record map[string]any) {
+		t.Helper()
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected schema rejection, got none")
+		}
+	}
+
+	t.Run("accepts L90 reported and L70 calculated", func(t *testing.T) {
+		record := load()
+		addClaims(record)
+		expectValid(t, record)
+	})
+	t.Run("accepts power factor and THD bounds", func(t *testing.T) {
+		record := load()
+		addElectrical(record)
+		expectValid(t, record)
+	})
+	t.Run("accepts surface luminance bound", func(t *testing.T) {
+		record := load()
+		addLuminance(record)
+		expectValid(t, record)
+	})
+	t.Run("accepts declared lower bound", func(t *testing.T) {
+		record := load()
+		electrical := addElectrical(record)
+		electrical["power_factor_bound_operator"] = "gte"
+		expectValid(t, record)
+	})
+	t.Run("rejects added claim without basis", func(t *testing.T) {
+		record := load()
+		additional := addClaims(record)
+		delete(additional, "basis")
+		expectInvalid(t, record)
+	})
+	t.Run("rejects unknown claim type", func(t *testing.T) {
+		record := load()
+		additional := addClaims(record)
+		additional["claim_type"] = "L75"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects unknown operator", func(t *testing.T) {
+		record := load()
+		electrical := addElectrical(record)
+		electrical["power_factor_bound_operator"] = "between"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects power factor operator without number", func(t *testing.T) {
+		record := load()
+		record["electrical"].(map[string]any)["power_factor_bound_operator"] = "gt"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects THD operator without number", func(t *testing.T) {
+		record := load()
+		record["electrical"].(map[string]any)["thd_percent_bound_operator"] = "lt"
+		expectInvalid(t, record)
+	})
+	t.Run("rejects luminance operator without number", func(t *testing.T) {
+		record := load()
+		record["photometry"].(map[string]any)["max_surface_luminance_bound_operator"] = "lt"
+		expectInvalid(t, record)
+	})
+}
+
 // TestValidatorAcceptsIssuingAuthority asserts the additive descriptive field on Attestation
 // takes a string and never affects validity.
 func TestValidatorAcceptsIssuingAuthority(t *testing.T) {

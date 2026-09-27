@@ -806,7 +806,7 @@
               "$ref": "#/$defs/DualUnitLength"
             },
             "overall_height": {
-              "description": "Overall height for pole-top, bollard, pendant, or wall-mount fixtures. For recessed fixtures, use recess_depth instead.",
+              "description": "Overall height for pole-top, bollard, pendant, or wall-mount fixtures. For recessed fixtures, use recess_depth instead. For a pendant this is the luminaire body; suspension length is an order-code axis and belongs in `applicability`, not here.",
               "$ref": "#/$defs/DualUnitLength"
             },
             "luminaire_mass": {
@@ -1071,7 +1071,15 @@
         "input_voltage_v": { "$ref": "#/$defs/ProvenancedNumber" },
         "input_voltage_class": { "type": "string", "examples": ["120v", "277v", "347v", "universal_120_277"] },
         "power_factor": { "$ref": "#/$defs/ProvenancedNumber" },
+        "power_factor_bound_operator": {
+          "description": "When present, states that power_factor is a declared bound rather than a specific measured value. Pairs with power_factor; for example gt with 0.9 records a published power factor above 0.9. Absence means the number is a point estimate.",
+          "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
+        },
         "thd_percent": { "$ref": "#/$defs/ProvenancedNumber" },
+        "thd_percent_bound_operator": {
+          "description": "When present, states that thd_percent is a declared bound rather than a specific measured value. Pairs with thd_percent; for example lt with 20 records a published THD below 20 percent. Absence means the number is a point estimate.",
+          "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
+        },
         "driver_protocol": { "$ref": "taxonomy.schema.json#/$defs/DimmingProtocol" },
         "dimming_method": {
           "description": "Underlying electrical dimming method (CCR, PWM, or hybrid). Independent of `driver_protocol`, which is the signaling layer. Authors populate this when the cutsheet publishes the method; absent if the method is not declared.",
@@ -1100,6 +1108,10 @@
           "description": "Optional LED-module-only input power (typically smaller than luminaire input due to driver losses). Useful when the cutsheet distinguishes module from luminaire.",
           "$ref": "#/$defs/ProvenancedNumber"
         }
+      },
+      "dependentRequired": {
+        "power_factor_bound_operator": ["power_factor"],
+        "thd_percent_bound_operator": ["thd_percent"]
       }
     },
 
@@ -1135,7 +1147,15 @@
           "$ref": "#/$defs/ProvenancedNumber"
         },
         "ugr_4h_8h_bound_operator": {
-          "description": "When present, indicates the UGR value is a declared bound rather than a specific measured value. Pairs with `ugr_4h_8h`. Use `lte` for manufacturer claims of the form 'UGR as low as X' where X is the best achievable value across the fixture's supported optics or dimming configurations. Absence means the UGR value is a specific point estimate at the tested scenario.",
+          "description": "When present, indicates the UGR value is a declared bound rather than a specific measured value. Pairs with `ugr_4h_8h`. Use `lte` for manufacturer claims of the form 'UGR as low as X' where X is the best achievable value across the fixture's supported optics or dimming configurations. Only the upper-bound tokens `lte` and `lt` are meaningful for glare; the lower-bound tokens are not. Absence means the UGR value is a specific point estimate at the tested scenario.",
+          "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
+        },
+        "max_surface_luminance_cd_per_m2": {
+          "description": "Maximum luminance of a luminous surface, in cd/m2. A standards-native SI single-unit quantity with no Imperial companion, as for exit-sign face luminance. Used when the manufacturer declares a surface-luminance limit rather than a point measurement.",
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "max_surface_luminance_bound_operator": {
+          "description": "When present, pairs with max_surface_luminance_cd_per_m2 to express a declared bound, such as lt with 1600 for a surface luminance below 1600 cd/m2. Absence means the number is a point estimate.",
           "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
         },
         "zonal_lumens": {
@@ -1188,6 +1208,9 @@
             "required": ["length"]
           }
         }
+      },
+      "dependentRequired": {
+        "max_surface_luminance_bound_operator": ["max_surface_luminance_cd_per_m2"]
       }
     },
 
@@ -1537,7 +1560,7 @@
           }
         },
         "manufacturer_rated_claim": {
-          "description": "Bare manufacturer claim like `L70 > 50,000h` or `L80 > 60,000h` with no cited method. Present when declaration_framework is `manufacturer_rated_claim`.",
+          "description": "A manufacturer claim like `L70 > 50,000h` or `L80 > 60,000h`, with or without a cited method. The optional basis records whether the cutsheet calls the figure TM-21 reported (`tm_21_reported`), TM-21 calculated (`tm_21_calculated`), or states it with no method (`manufacturer_stated`). Present when declaration_framework is `manufacturer_rated_claim`.",
           "type": "object",
           "properties": {
             "claim_type": {
@@ -1545,13 +1568,32 @@
               "$ref": "taxonomy.schema.json#/$defs/FluxMaintenanceThreshold"
             },
             "claimed_hours": { "$ref": "#/$defs/ProvenancedNumber" },
+            "basis": { "$ref": "taxonomy.schema.json#/$defs/LumenMaintenanceClaimBasis" },
             "failure_percent": {
               "description": "Claimed cumulative failure rate at the claimed hours (for example `0.1%` failure at 50,000 hours).",
               "$ref": "#/$defs/ProvenancedNumber"
             }
           }
+        },
+        "additional_rated_claims": {
+          "description": "Additional lumen-maintenance thresholds published beside the headline manufacturer_rated_claim. Each added claim carries its reported, calculated, or manufacturer-stated basis; the headline object retains its existing shape for readers that use it.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/LumenMaintenanceClaim" }
         }
       }
+    },
+
+    "LumenMaintenanceClaim": {
+      "title": "Additional lumen-maintenance claim",
+      "description": "One additional manufacturer-rated lumen-maintenance threshold with the basis of its hours figure.",
+      "type": "object",
+      "properties": {
+        "claim_type": { "$ref": "taxonomy.schema.json#/$defs/FluxMaintenanceThreshold" },
+        "claimed_hours": { "$ref": "#/$defs/ProvenancedNumber" },
+        "basis": { "$ref": "taxonomy.schema.json#/$defs/LumenMaintenanceClaimBasis" },
+        "failure_percent": { "$ref": "#/$defs/ProvenancedNumber" }
+      },
+      "required": ["claim_type", "claimed_hours", "basis"]
     },
 
     "ChromaticityShiftProjection": {

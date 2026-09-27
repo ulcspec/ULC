@@ -470,6 +470,10 @@ var descriptiveAllowlist = map[string]bool{
 	// Spectrum source kind describes evidence form; the spectrum is tracked, not graded.
 	"SpdSourceKind": true,
 
+	// --- v1.11.0 maintenance-claim class ---
+	// The basis qualifies a rated claim and is tracked, not graded.
+	"LumenMaintenanceClaimBasis": true,
+
 	// Sales-market vocabulary is predicate input, not a graded field with its
 	// own roadmap row. It can still change which market-specific rows apply.
 	"Market": true,
