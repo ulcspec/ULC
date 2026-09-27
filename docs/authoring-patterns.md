@@ -160,13 +160,19 @@ That makes `source_files` the right carrier for document-grade commercial refere
 
 An optional uniformly sampled spectrum carries `wavelength_start_nm`, a positive `wavelength_step_nm`, at least two `values`, a unit (`mW/nm`, `W/nm`, or `relative`), `value_type`, `source_kind`, and optional provenance and `measured_through_optics`. The last wavelength follows from the start, step, and value count. Resample a curve read from a chart to the stated step and mark it `digitized_chart`; use `laboratory_table` for a tabulated test and `exchange_file` for a spectral exchange file. A `tm27` source file may be pinned by hash. A package curve with `measured_through_optics: false` is not luminaire evidence. The record's stated color values remain authoritative.
 
+Author spectrum samples in the workbook's `spectral_power_distribution` sheet; see `templates/workbook/README.md`.
+
 ### `attestations[].domestic_content`
 
 A domestic-content attestation may carry its US and foreign cost shares, the percentage threshold used to judge the claim, an optional effective date for that threshold, a `basis` (`manufacturing_cost`, `component_cost`, or `other`), and provenance. Author the US share, threshold, and basis together. When both shares are given, they should sum to 100 percent within source rounding. The payload is meaningful on `baa`, `baba`, and `american_iron_and_steel` claims; it records their cost evidence and does not decide the claim's status.
 
+Author the payload with the workbook's `domestic_content_*` columns on `attestations` or `shared_attestations`; see `templates/workbook/README.md`.
+
 ### `lumen_maintenance_luminaire.additional_rated_claims`
 
 Keep the headline threshold in the existing `manufacturer_rated_claim` object. Its optional `basis` states `tm_21_reported`, `tm_21_calculated`, or `manufacturer_stated` when the cutsheet identifies the method. Put further thresholds in `additional_rated_claims`, each with a claim type, provenanced hours, and a required basis; a failure percentage is optional. The extra list is tracked as authored data and does not change the current grading or index projection.
+
+Author the headline through the workbook's `lm_claim_type`, `lm_claimed_hours`, and `lm_claim_basis` records columns and further claims on `additional_rated_claims`; see `templates/workbook/README.md`.
 
 ### `media`
 
