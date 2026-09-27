@@ -1276,7 +1276,7 @@
 
     "SpectralPowerDistribution": {
       "title": "Spectral power distribution",
-      "description": "Uniformly sampled spectrum at the stated wavelength step. The final wavelength is wavelength_start_nm plus wavelength_step_nm times (the number of values minus one). For a digitized chart, the author resamples the curve to this step and uses source_kind digitized_chart, so consumers can distinguish values read from a drawing from a laboratory table. A package-level curve is not luminaire evidence unless measured_through_optics is true. Stated color values remain authoritative for the record; this spectrum is the measurement from which they derive. For a measured spectrum, author provenance identifying the source report page and attestation_ref, following the traceability expected of measured values throughout the record.",
+      "description": "Uniformly sampled spectrum at the stated wavelength step. The final wavelength is wavelength_start_nm plus wavelength_step_nm times (the number of values minus one). For a digitized chart, the author resamples the curve to this step and uses source_kind digitized_chart, so consumers can distinguish values read from a drawing from a laboratory table. A package-level curve is not luminaire evidence unless measured_through_optics is true. Stated color values remain authoritative for the record; this spectrum is the measurement from which they derive. A measured spectrum carries provenance with attestation_ref, as every measured value in the record does.",
       "type": "object",
       "properties": {
         "wavelength_start_nm": { "description": "Wavelength of the first value in nanometers.", "type": "number" },

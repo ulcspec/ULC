@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## 1.11.0 (2026-09-26)
+## 1.11.0 (2026-09-27)
 
 This release adds optional homes for a sampled light spectrum, domestic-content cost shares, multiple lumen-maintenance claims, and declared electrical and surface-luminance bounds. It also clarifies pendant body height. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0.
 
@@ -28,14 +28,14 @@ This release adds optional homes for a sampled light spectrum, domestic-content 
 
 Newly converted records declare 1.11.0. The builder remains 0.8.0 because these additions do not change grading or index projection, so stored records need no index re-stamp. All eight published examples remain byte-identical and validate with the same grades and indexes.
 
-A 1.10.0 engine passes the new optional data fields unread because the data blocks do not prohibit additional properties. New vocabulary tokens still require a 1.11.0 engine when used at existing enum sites: `tm27` in `source_files[].file_type` or `provenance.source`, and `gt` or `gte` in the existing UGR or flicker bound-operator fields. Consumers should update their validator before accepting records that use those tokens.
+A 1.10.0 engine passes the new optional data fields unread because the data blocks do not prohibit additional properties. The `tm27` token in `source_files[].file_type` or `provenance.source` requires a 1.11.0 engine. The new `gt` and `gte` tokens are accepted only at the new power-factor, THD, and surface-luminance bound-operator fields; the existing UGR and flicker bound-operator fields remain restricted to `eq`, `lte`, and `lt`. Consumers should update their validator before accepting records that use the new tokens.
 
 ### Schema
 
 - `colorimetry.spectral_power_distribution` holds a uniformly sampled wavelength table, its unit, value type, provenance, source kind, and optional measured-through-optics flag. Stated color values remain authoritative. `SpectralPowerUnit` names its units, and `tm27` joins source-file and provenance vocabularies for IES TM-27 spectral exchange files.
 - `attestations[].domestic_content` holds US and foreign cost shares, the threshold used for the claim, its optional effective date, a cost basis, and provenance. The schema bounds each percentage from 0 to 100; the shares-sum rule is authoring guidance. `DomesticContentBasis` names the cost basis.
 - `lumen_maintenance_luminaire.manufacturer_rated_claim` gains an optional basis. The optional sibling `additional_rated_claims` carries further thresholds with a required basis on each added claim.
-- `electrical.power_factor_bound_operator` and `thd_percent_bound_operator` pair declared comparison operators with their numbers. `ComparisonOperator` gains `gt` and `gte`. `photometry.max_surface_luminance_cd_per_m2` and its bound operator carry a luminous-surface limit.
+- `electrical.power_factor_bound_operator` and `thd_percent_bound_operator` pair declared comparison operators with their numbers. `ComparisonOperator` gains `gt` and `gte`; the existing UGR and flicker operator fields stay restricted to the upper-bound tokens `eq`, `lte`, and `lt`. `photometry.max_surface_luminance_cd_per_m2` and its bound operator carry a luminous-surface limit.
 - The pendant `overall_height` description identifies the luminaire body and places suspension length in applicability.
 
 ### Validator and workbook
