@@ -1707,6 +1707,10 @@
           "description": "Named operator of the program, for programs run by more than one operator (for example the several EPD program operators). Optional descriptive data; it never affects the computed achievement state.",
           "type": "string"
         },
+        "domestic_content": {
+          "description": "Optional cost-share evidence behind a domestic-content attestation, such as baa, baba, or american_iron_and_steel. The payload inherits the attestation's status, evidence, applicability, and expiry. It does not itself determine whether the program's threshold is met.",
+          "$ref": "#/$defs/DomesticContentPayload"
+        },
         "sustainability_metric": {
           "title": "Sustainability metric payload",
           "description": "Optional quantitative payload for a sustainability attestation, hanging off the attestation so the numbers inherit its status, evidence, and expiry. `ceam_score` is the TM66 CEAM design score (0 to 4). `embodied_carbon_kgco2e` is a declared embodied-carbon figure; when it is present, `embodied_carbon_scope` and `embodied_carbon_functional_unit` are required so the number is never ambiguous about its life-cycle boundary or its declared unit. `c2c_overall_level` carries a Cradle to Cradle overall rating. `method_variant` records a regional or method sub-variant (for example a TM65 national annex such as TM65NA).",
@@ -1724,6 +1728,21 @@
         }
       },
       "required": ["program", "value_type"]
+    },
+
+    "DomesticContentPayload": {
+      "title": "Domestic content cost-share payload",
+      "description": "Cost shares and the threshold used for a domestic-content claim. US and foreign cost shares should sum to 100 percent within the source's rounding precision; the schema constrains each share individually but does not check their sum. The threshold is the bar against which the attestation was judged, and threshold_effective_date names when that bar took effect. Meaningful for baa, baba, and american_iron_and_steel attestations; program applicability is not restricted by this schema.",
+      "type": "object",
+      "properties": {
+        "us_cost_share_percent": { "description": "US share of the declared cost basis, from 0 to 100 percent.", "type": "number", "minimum": 0, "maximum": 100 },
+        "foreign_cost_share_percent": { "description": "Foreign share of the declared cost basis, from 0 to 100 percent. With the US share, should sum to 100 percent within source rounding.", "type": "number", "minimum": 0, "maximum": 100 },
+        "threshold_percent": { "description": "Domestic-content percentage threshold used to judge the attestation.", "type": "number", "minimum": 0, "maximum": 100 },
+        "threshold_effective_date": { "description": "Date on which the stated threshold took effect, when known. ISO 8601 date (YYYY-MM-DD).", "type": "string", "format": "date" },
+        "basis": { "description": "Cost basis used to calculate the shares.", "type": "string", "enum": ["manufacturing_cost", "component_cost", "other"] },
+        "provenance": { "$ref": "#/$defs/Provenance" }
+      },
+      "required": ["us_cost_share_percent", "threshold_percent", "basis"]
     },
 
     "Extensions": {

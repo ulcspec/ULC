@@ -500,6 +500,64 @@ func TestValidatorConstrainsSustainabilityMetricCarbonScope(t *testing.T) {
 	}
 }
 
+// TestValidatorConstrainsDomesticContentPayload covers the cost-share payload
+// on a BAA attestation. The two negative cases pin the share range and the
+// requirement to name the threshold used to judge a claim.
+func TestValidatorConstrainsDomesticContentPayload(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() (map[string]any, map[string]any) {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		record := doc.(map[string]any)
+		payload := map[string]any{
+			"us_cost_share_percent":      88.50,
+			"foreign_cost_share_percent": 11.50,
+			"threshold_percent":          65,
+			"basis":                      "manufacturing_cost",
+			"provenance": map[string]any{
+				"source": "compliance_documents",
+				"method": "extracted",
+			},
+		}
+		record["attestations"] = append(record["attestations"].([]any), map[string]any{
+			"program":          "baa",
+			"status":           "claimed",
+			"value_type":       "rated",
+			"domestic_content": payload,
+		})
+		return record, payload
+	}
+	validate := func(record map[string]any) *findings.Report {
+		report := findings.NewReport()
+		v.Validate(record, report)
+		return report
+	}
+
+	t.Run("accepts stated shares and threshold", func(t *testing.T) {
+		record, _ := load()
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected valid domestic-content payload; got: %+v", report.Findings)
+		}
+	})
+	t.Run("rejects share above 100", func(t *testing.T) {
+		record, payload := load()
+		payload["foreign_cost_share_percent"] = 101
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected a foreign cost share above 100 to fail schema validation")
+		}
+	})
+	t.Run("rejects missing threshold", func(t *testing.T) {
+		record, payload := load()
+		delete(payload, "threshold_percent")
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected domestic content without threshold_percent to fail schema validation")
+		}
+	})
+}
+
 // TestValidatorAcceptsIssuingAuthority asserts the additive descriptive field on Attestation
 // takes a string and never affects validity.
 func TestValidatorAcceptsIssuingAuthority(t *testing.T) {
