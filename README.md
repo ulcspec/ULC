@@ -40,6 +40,7 @@ A ULC record is a single JSON document that conforms to the ULC schema. It carri
 - Product identity, family, and taxonomy
 - Physical dimensions in both SI and Imperial units
 - Electrical, optical, photometric, and performance data
+- An optional sampled spectral power distribution behind the stated color values, with its unit, source kind, and optional provenance; a TM-27 spectral file can be pinned by SHA-256 hash like any source file
 - Environmental ratings, compliance markings, and accessories
 - Provenance for every extracted value, so the source of each field is always traceable
 - References to the original source files (datasheet PDF, IES, LDT) including filename, optional URL, and a SHA-256 content hash for integrity verification

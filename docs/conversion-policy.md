@@ -28,7 +28,7 @@ A manufacturer's published number appears in the record exactly as printed. Roun
 
 ### Exceptions
 
-Some unit-bearing fields are deliberately single-unit, documented in their schema descriptions: LM-82 temperature sample arrays mirror their source data in Celsius only, exit-sign face luminance is recorded in cd/m2 with no footlambert companion, illuminance values are carried in lux only, and embodied-carbon values are SI-native (kg CO2e) because life-cycle-assessment practice publishes no Imperial figure. The schema descriptions are authoritative for these exceptions.
+Some unit-bearing fields are deliberately single-unit, documented in their schema descriptions: LM-82 temperature sample arrays mirror their source data in Celsius only, exit-sign face luminance is recorded in cd/m2 with no footlambert companion, the luminous-surface luminance limit is recorded in cd/m2 with no Imperial companion, spectral values in mW/nm or W/nm have no Imperial companion, illuminance values are carried in lux only, and embodied-carbon values are SI-native (kg CO2e) because life-cycle-assessment practice publishes no Imperial figure. The schema descriptions are authoritative for these exceptions.
 
 ### Where this policy is implemented
 
