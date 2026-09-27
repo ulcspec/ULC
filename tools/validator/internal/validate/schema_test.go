@@ -60,6 +60,9 @@ func TestValidatorAcceptsSpectrumAndTM27(t *testing.T) {
 	load := func() (map[string]any, map[string]any) {
 		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
 		record := doc.(map[string]any)
+		attestations := record["attestations"].([]any)
+		lm79 := attestations[0].(map[string]any)["attestation_id"]
+		// The Intertek report's source table is on page 6; sample values here are synthetic.
 		values := make([]any, 87)
 		for i := range values {
 			values[i] = float64(i+1) / 100
@@ -71,8 +74,9 @@ func TestValidatorAcceptsSpectrumAndTM27(t *testing.T) {
 			"unit":                "mW/nm",
 			"value_type":          "measured",
 			"provenance": map[string]any{
-				"source": "test_report",
-				"method": "extracted",
+				"source":          "test_report",
+				"method":          "transcribed",
+				"attestation_ref": lm79,
 			},
 			"source_kind":             "laboratory_table",
 			"measured_through_optics": true,
@@ -119,6 +123,41 @@ func TestValidatorAcceptsSpectrumAndTM27(t *testing.T) {
 		delete(spectrum, "source_kind")
 		if report := validate(record); !report.HasErrors() {
 			t.Fatal("expected a spectrum without source_kind to fail schema validation")
+		}
+	})
+}
+
+// TestValidatorRejectsLowerBoundsOnUGRAndFlicker keeps existing upper-bound
+// fields from accepting the new lower-bound ComparisonOperator tokens.
+func TestValidatorRejectsLowerBoundsOnUGRAndFlicker(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() map[string]any {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		return doc.(map[string]any)
+	}
+	t.Run("rejects UGR gt", func(t *testing.T) {
+		record := load()
+		photometry := record["photometry"].(map[string]any)
+		photometry["ugr_4h_8h"] = map[string]any{"value": 19, "value_type": "rated"}
+		photometry["ugr_4h_8h_bound_operator"] = "gt"
+		report := findings.NewReport()
+		v.Validate(record, report)
+		if !report.HasErrors() {
+			t.Fatal("expected a UGR lower bound to fail schema validation")
+		}
+	})
+	t.Run("rejects flicker gt", func(t *testing.T) {
+		record := load()
+		metrics := record["flicker_measurements"].(map[string]any)["metrics"].([]any)
+		metrics[0].(map[string]any)["bound_operator"] = "gt"
+		report := findings.NewReport()
+		v.Validate(record, report)
+		if !report.HasErrors() {
+			t.Fatal("expected a flicker lower bound to fail schema validation")
 		}
 	})
 }

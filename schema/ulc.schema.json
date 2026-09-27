@@ -1148,7 +1148,8 @@
         },
         "ugr_4h_8h_bound_operator": {
           "description": "When present, indicates the UGR value is a declared bound rather than a specific measured value. Pairs with `ugr_4h_8h`. Use `lte` for manufacturer claims of the form 'UGR as low as X' where X is the best achievable value across the fixture's supported optics or dimming configurations. Only the upper-bound tokens `lte` and `lt` are meaningful for glare; the lower-bound tokens are not. Absence means the UGR value is a specific point estimate at the tested scenario.",
-          "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
+          "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator",
+          "enum": ["eq", "lte", "lt"]
         },
         "max_surface_luminance_cd_per_m2": {
           "description": "Maximum luminance of a luminous surface, in cd/m2. A standards-native SI single-unit quantity with no Imperial companion, as for exit-sign face luminance. Used when the manufacturer declares a surface-luminance limit rather than a point measurement.",
@@ -1275,7 +1276,7 @@
 
     "SpectralPowerDistribution": {
       "title": "Spectral power distribution",
-      "description": "Uniformly sampled spectrum at the stated wavelength step. The final wavelength is wavelength_start_nm plus wavelength_step_nm times (the number of values minus one). For a digitized chart, the author resamples the curve to this step and uses source_kind digitized_chart, so consumers can distinguish values read from a drawing from a laboratory table. A package-level curve is not luminaire evidence unless measured_through_optics is true. Stated color values remain authoritative for the record; this spectrum is the measurement from which they derive.",
+      "description": "Uniformly sampled spectrum at the stated wavelength step. The final wavelength is wavelength_start_nm plus wavelength_step_nm times (the number of values minus one). For a digitized chart, the author resamples the curve to this step and uses source_kind digitized_chart, so consumers can distinguish values read from a drawing from a laboratory table. A package-level curve is not luminaire evidence unless measured_through_optics is true. Stated color values remain authoritative for the record; this spectrum is the measurement from which they derive. For a measured spectrum, author provenance identifying the source report page and attestation_ref, following the traceability expected of measured values throughout the record.",
       "type": "object",
       "properties": {
         "wavelength_start_nm": { "description": "Wavelength of the first value in nanometers.", "type": "number" },
@@ -1336,7 +1337,8 @@
               "value": { "$ref": "#/$defs/ProvenancedNumber" },
               "bound_operator": {
                 "description": "Used when the manufacturer declares an upper bound (`<=`) rather than a specific measured value.",
-                "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator"
+                "$ref": "taxonomy.schema.json#/$defs/ComparisonOperator",
+                "enum": ["eq", "lte", "lt"]
               }
             },
             "required": ["metric"]
