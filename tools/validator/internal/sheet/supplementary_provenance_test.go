@@ -32,6 +32,7 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 		{sheet: "lumen_maintenance_package", field: "drive_current_ma"}:       {unit: "mA", family: attestationFamilyMaintenance},
 		{sheet: "zonal_lumens", field: "lumens"}:                              {unit: "lm", family: attestationFamilyPhotometric},
 		{sheet: "lcs_zonal_lumens", field: "lumens"}:                          {unit: "lm", family: attestationFamilyPhotometric},
+		{sheet: "spectral_power_distribution", field: "value"}:                {unitColumn: "unit", allowedUnits: map[string]bool{"mW/nm": true, "W/nm": true, "relative": true}, family: attestationFamilyPhotometric},
 	}
 	if len(supplementaryValueColumns) != len(want) {
 		t.Fatalf("supplementary value table has %d rows, want %d", len(supplementaryValueColumns), len(want))

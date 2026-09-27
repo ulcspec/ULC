@@ -53,6 +53,11 @@ var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColu
 		unit:     "lm",
 		defaults: provenanceDefaults{valueType: "measured", source: "ies", method: "extracted", family: attestationFamilyPhotometric},
 	},
+	{sheet: "spectral_power_distribution", field: "value"}: {
+		unitColumn:   "unit",
+		allowedUnits: map[string]bool{"mW/nm": true, "W/nm": true, "relative": true},
+		defaults:     provenanceDefaults{valueType: "measured", source: "test_report", method: "transcribed", family: attestationFamilyPhotometric},
+	},
 }
 
 var flickerMetricUnits = map[string]string{
@@ -97,11 +102,11 @@ func supplementaryProvenancedNumber(sheet, field string, row Row, ctx provenance
 			return nil, fmt.Errorf("unit %q is not valid for metric %q; use %q", authored, metric, expected)
 		}
 	} else if column.unitColumn != "" {
-		authored := row[column.unitColumn]
-		if len(column.allowedUnits) > 0 && !column.allowedUnits[authored] {
-			return nil, fmt.Errorf("%s %q is not valid for %s", column.unitColumn, authored, field)
+		var err error
+		unit, err = declaredSupplementaryUnit(column, row, field)
+		if err != nil {
+			return nil, err
 		}
-		unit = authored
 	}
 	if unit != "" {
 		obj["unit"] = unit
@@ -110,4 +115,12 @@ func supplementaryProvenancedNumber(sheet, field string, row Row, ctx provenance
 		resolved.provenance["conflict_notes"] = note
 	}
 	return obj, nil
+}
+
+func declaredSupplementaryUnit(column supplementaryValueColumn, row Row, field string) (string, error) {
+	authored := row[column.unitColumn]
+	if len(column.allowedUnits) > 0 && !column.allowedUnits[authored] {
+		return "", fmt.Errorf("%s %q is not valid for %s", column.unitColumn, authored, field)
+	}
+	return authored, nil
 }

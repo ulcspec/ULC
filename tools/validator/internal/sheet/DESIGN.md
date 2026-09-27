@@ -29,7 +29,7 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
   declares the value as companion-capable, the six optional companions `*__value_type`,
   `*__prov_source`, `*__prov_method`, `*__extension_method`, `*__base_attestation_ref`, and
   `*__attestation_ref`. Every provenanced records-sheet column is companion-capable, as are the
-  eight values declared in `supplementaryValueColumns`. Authored `declared_by_length` rows keep
+  nine values declared in `supplementaryValueColumns`. Authored `declared_by_length` rows keep
   their fixed defaults and have no companion headers in this release. A declared companion may
   be blank; any unsupported double-underscore header is refused before assembly.
 - **DualUnit columns** are authored on **exactly one side per field**: the SI column (`*_mm`,
@@ -64,6 +64,7 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
 | `cie97_lmf` / `cie97_llmf` | CIE-97 LMF grid + LLMF-by-hours | `(record_id,...)` | A (full) |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed rows | `(record_id,pkg)` | full |
 | `alpha_opic` | per-photoreceptor efficacy (assembled into `alpha_opic_metrics`) | `(record_id,channel)` | full |
+| `spectral_power_distribution` | one uniformly spaced wavelength sample per row, with block-level provenance | `(record_id,wavelength_nm)` | full |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM) | `(record_id,metric)` | full |
 | `zonal_lumens` / `lcs_zonal_lumens` | angle-band + TM-15 LCS zones | `(record_id,zone)` | B / outdoor |
 
@@ -158,12 +159,19 @@ Every ProvenancedNumber/DualUnit needs `provenance {source, method}` + `value_ty
 applies per-column defaults, overridable on declared bases by optional `*__value_type` /
 `*__prov_source` / `*__prov_method` / `*__attestation_ref` / `*__extension_method` /
 `*__base_attestation_ref` columns. Records-sheet values retain the photometric LM-79 family.
-The supplementary table declares eight values across `alpha_opic`, `flicker_metrics`,
-`lumen_maintenance_package`, `zonal_lumens`, and `lcs_zonal_lumens`, with their unit rule,
+The supplementary table declares nine values across `alpha_opic`, `flicker_metrics`,
+`lumen_maintenance_package`, `zonal_lumens`, `lcs_zonal_lumens`, and
+`spectral_power_distribution`, with their unit rule,
 three defaults, and one of four attestation families: photometric LM-79, maintenance LM-80 or
 TM-21, flicker LM-90-20 or IEEE 1789-2015 or NEMA 77-2017, and melanopic RP-46. The authored
 program-family table is exhaustive against the taxonomy; every other program is declared as
 non-anchoring residue.
+
+The spectrum sheet has one row per wavelength sample. Its `value` companions and
+other block-level cells apply to the whole spectrum: the first non-blank cell
+wins, and conflicting non-blank cells are refused. Provenance resolves once for
+the block, not once per sample. The wavelength grid must ascend at one uniform
+step, rounded to nine decimal places for the emitted step.
 
 Records-sheet fields retain the photometric family for automatic and explicit selection. The
 `lm_claimed_hours` field instead declares the maintenance family, so its explicit

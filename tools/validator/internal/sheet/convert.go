@@ -150,6 +150,7 @@ var consumedRelatedSheets = map[string]bool{
 	"cie97_lmf": true, "cie97_llmf": true, "alpha_opic": true,
 	"flicker_metrics": true, "lumen_maintenance_package": true,
 	"zonal_lumens": true, "lcs_zonal_lumens": true,
+	"spectral_power_distribution": true,
 }
 
 // checkRelatedSheetIDs is a preflight over the related sheets the converter
