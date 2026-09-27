@@ -102,6 +102,11 @@ File-reference revision metadata uses a separate companion family:
 these declared base and suffix combinations is an error even when every cell
 below it is blank. A plain unrecognized header remains ignored.
 
+The `domestic_content` payload on `attestations` and `shared_attestations`
+accepts only `domestic_content__prov_source` and
+`domestic_content__prov_method`. It has no `value_type` or attestation reference
+companions because it inherits the containing attestation's evidence.
+
 ## The smallest valid workbook
 
 `records` (one row), plus a `source_files` IES row for the default measured
@@ -165,6 +170,23 @@ LM-79 attestation. For a digitized cutsheet chart, set
 `value__value_type=rated` and `value__prov_source=datasheet_pdf`. For a TM-27
 exchange file, add it to `source_files`, set `source_kind=exchange_file`, and
 set `value__prov_source=tm27`.
+
+## Domestic-content columns
+
+On `attestations` or `shared_attestations`, fill
+`domestic_content_us_cost_share_percent`,
+`domestic_content_foreign_cost_share_percent`,
+`domestic_content_threshold_percent`,
+`domestic_content_threshold_effective_date`, and `domestic_content_basis` to
+record the cost shares and the threshold behind a domestic-content claim.
+The foreign share and effective date are optional. When any domestic-content
+cell is filled, the schema requires the US share, threshold, and basis, and
+checks percentages against 0 to 100. Set `basis` to `manufacturing_cost`,
+`component_cost`, or `other`. The payload defaults to provenance source
+`manufacturer_direct` and method `transcribed`. For a delivered manufacturer
+spreadsheet, set `domestic_content__prov_source=manufacturer_data_export`;
+`domestic_content__prov_method` can override the method independently. The
+payload belongs to its attestation and carries no separate `value_type`.
 
 The four authoring patterns are detected for you from which sheets carry rows: a
 populated `catalog_number` with no applicability sheets is a single-SKU pin

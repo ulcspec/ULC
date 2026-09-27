@@ -14,7 +14,8 @@ func TestCompanionHeaderSuffixTableIsExact(t *testing.T) {
 		CompanionFamilyProvenance: {
 			"__value_type", "__prov_source", "__prov_method", "__extension_method", "__base_attestation_ref", "__attestation_ref",
 		},
-		CompanionFamilyRevision: {"__revision_label", "__revision_date"},
+		CompanionFamilyRevision:       {"__revision_label", "__revision_date"},
+		CompanionFamilyProvenanceOnly: {"__prov_source", "__prov_method"},
 	}
 	if !reflect.DeepEqual(CompanionHeaderSuffixes, want) {
 		t.Errorf("companion suffix table = %#v, want %#v", CompanionHeaderSuffixes, want)

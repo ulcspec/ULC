@@ -759,6 +759,56 @@ func buildAttestationApplicability(row Row) (map[string]any, error) {
 	return app, nil
 }
 
+// buildDomesticContent assembles the optional cost-share payload carried by an
+// attestation. Required members and percentage ranges remain schema checks.
+func buildDomesticContent(row Row) (map[string]any, error) {
+	columns := []string{
+		"domestic_content_us_cost_share_percent",
+		"domestic_content_foreign_cost_share_percent",
+		"domestic_content_threshold_percent",
+		"domestic_content_threshold_effective_date",
+		"domestic_content_basis",
+		"domestic_content__prov_source",
+		"domestic_content__prov_method",
+	}
+	filled := false
+	for _, column := range columns {
+		if row[column] != "" {
+			filled = true
+			break
+		}
+	}
+	if !filled {
+		return nil, nil
+	}
+	payload := map[string]any{}
+	for _, field := range []struct{ column, member string }{
+		{"domestic_content_us_cost_share_percent", "us_cost_share_percent"},
+		{"domestic_content_foreign_cost_share_percent", "foreign_cost_share_percent"},
+		{"domestic_content_threshold_percent", "threshold_percent"},
+	} {
+		if raw := row[field.column]; raw != "" {
+			number, err := parseNumber(raw)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", field.column, err)
+			}
+			payload[field.member] = number
+		}
+	}
+	copyIf(payload, row, "domestic_content_threshold_effective_date", "threshold_effective_date")
+	copyIf(payload, row, "domestic_content_basis", "basis")
+	source := row["domestic_content__prov_source"]
+	if source == "" {
+		source = "manufacturer_direct"
+	}
+	method := row["domestic_content__prov_method"]
+	if method == "" {
+		method = "transcribed"
+	}
+	payload["provenance"] = map[string]any{"source": source, "method": method}
+	return payload, nil
+}
+
 // buildAttestation maps an attestations-sheet row onto an Attestation object.
 // The schema requires program and value_type; the rest are optional.
 func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
@@ -791,6 +841,13 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	}
 	if app != nil {
 		att["applicability"] = app
+	}
+	domestic, err := buildDomesticContent(row)
+	if err != nil {
+		return nil, err
+	}
+	if domestic != nil {
+		att["domestic_content"] = domestic
 	}
 
 	if doc := row["source_document_file"]; doc != "" {
@@ -826,6 +883,13 @@ func buildSharedAttestation(row Row) (map[string]any, error) {
 	att["verification"] = map[string]any{"type": vtype}
 	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
 		return nil, err
+	}
+	domestic, err := buildDomesticContent(row)
+	if err != nil {
+		return nil, err
+	}
+	if domestic != nil {
+		att["domestic_content"] = domestic
 	}
 	if att["program"] == nil {
 		return nil, errors.New("shared_attestations row missing required program")

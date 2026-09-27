@@ -7,11 +7,12 @@ import (
 )
 
 const (
-	CompanionFamilyProvenance = "provenance"
-	CompanionFamilyRevision   = "revision"
+	CompanionFamilyProvenance     = "provenance"
+	CompanionFamilyProvenanceOnly = "provenance_only"
+	CompanionFamilyRevision       = "revision"
 )
 
-// CompanionHeaderSuffixes is the single declaration of the two legal
+// CompanionHeaderSuffixes is the single declaration of the legal
 // companion families. Conversion and tests read this same table.
 var CompanionHeaderSuffixes = map[string][]string{
 	CompanionFamilyProvenance: {
@@ -25,6 +26,10 @@ var CompanionHeaderSuffixes = map[string][]string{
 	CompanionFamilyRevision: {
 		"__revision_label",
 		"__revision_date",
+	},
+	CompanionFamilyProvenanceOnly: {
+		"__prov_source",
+		"__prov_method",
 	},
 }
 
@@ -83,6 +88,9 @@ func companionBaseFamilies(sheet string, headers []string) (map[string]string, [
 	}
 	if sheet == "attestations" {
 		families["source_document_file"] = CompanionFamilyRevision
+	}
+	if sheet == "attestations" || sheet == "shared_attestations" {
+		families["domestic_content"] = CompanionFamilyProvenanceOnly
 	}
 
 	ordered := make([]string, 0, len(families))
