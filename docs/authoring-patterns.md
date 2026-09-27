@@ -156,6 +156,18 @@ The top-level array naming every manufacturer-published file the record derives 
 
 That makes `source_files` the right carrier for document-grade commercial references too. A manufacturer that publishes a lead-time or commercial-terms policy document can attach it as a `commercial_terms_pdf` entry, hashed like any other source file. The record then anchors the policy document without restating its contents; the live numbers (current lead times, stock, pricing) belong to transactional systems and never enter the record, because a hash-anchored copy of a number that changes weekly would be stale by design.
 
+### `colorimetry.spectral_power_distribution`
+
+An optional uniformly sampled spectrum carries `wavelength_start_nm`, a positive `wavelength_step_nm`, at least two `values`, a unit (`mW/nm`, `W/nm`, or `relative`), `value_type`, `source_kind`, and optional provenance and `measured_through_optics`. The last wavelength follows from the start, step, and value count. Resample a curve read from a chart to the stated step and mark it `digitized_chart`; use `laboratory_table` for a tabulated test and `exchange_file` for a spectral exchange file. A `tm27` source file may be pinned by hash. A package curve with `measured_through_optics: false` is not luminaire evidence. The record's stated color values remain authoritative.
+
+### `attestations[].domestic_content`
+
+A domestic-content attestation may carry its US and foreign cost shares, the percentage threshold used to judge the claim, an optional effective date for that threshold, a `basis` (`manufacturing_cost`, `component_cost`, or `other`), and provenance. Author the US share, threshold, and basis together. When both shares are given, they should sum to 100 percent within source rounding. The payload is meaningful on `baa`, `baba`, and `american_iron_and_steel` claims; it records their cost evidence and does not decide the claim's status.
+
+### `lumen_maintenance_luminaire.additional_rated_claims`
+
+Keep the headline threshold in the existing `manufacturer_rated_claim` object. Its optional `basis` states `tm_21_reported`, `tm_21_calculated`, or `manufacturer_stated` when the cutsheet identifies the method. Put further thresholds in `additional_rated_claims`, each with a claim type, provenanced hours, and a required basis; a failure percentage is optional. The extra list is tracked as authored data and does not change the current grading or index projection.
+
 ### `media`
 
 The optional top-level array naming the visual assets that document the product: product photographs, application photographs, and dimensional drawings. Each entry carries a `role` from the `MediaRole` vocabulary (`product_photo`, `application_photo`, `dimensional_drawing`, `other`), a `media_type` naming the format (`image/jpeg`, `image/png`, `image/svg+xml`, or `image/webp`), and a `reference` with the filename and SHA-256 content hash, exactly like a source file. Entries are pointers, never bytes: no image data enters the record. Optional descriptors cover presentation and rights: `primary` marks the preferred asset for its role (at most one per role; consumers seeing more than one fall back to document order), `alt_text` and `caption` describe the asset (for role `other`, the caption is what says what it is), `language` distinguishes localized variants of one drawing, `width_px`, `height_px`, and `size_bytes` describe the file, `rights` and `credit` carry the manufacturer's usage-rights statement and attribution as free text, `extracted_from_ref` names the `source_files` entry an extracted asset came from, and `configuration_refs` scopes an asset to specific order codes when it depicts one configuration out of the record's applicability range.

@@ -27,7 +27,7 @@ for the next major. Pre-1.0 releases generally aimed for additive changes;
 compatibility-tightening changes occurred only when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.10.x
+## Active version: v1.11.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -131,6 +131,14 @@ and the generated index has no markets projection. Builder version 0.8.0 marks
 the changed conformance calculation; existing examples re-stamp only that marker
 and retain their grades and scope output.
 
+v1.11.0 adds optional sampled spectra, domestic-content cost shares,
+additional lumen-maintenance claims, declared power-factor and THD bounds,
+and a surface-luminance limit. The pendant-height description distinguishes
+body height from suspension length. These facts are tracked, not graded:
+required sets, grades, achievement states, and generated index members stay
+unchanged. Builder version 0.8.0 remains current and stored records need no
+index re-stamp.
+
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
 hardened against real cutsheets. Two items that earlier drafts framed as 1.0
@@ -171,10 +179,13 @@ foreclosed to the next major, v2.0.0; minors stay additive-only.
   but a value like CRI Ra has two legitimate references (LM-79 data plus
   CIE 13 method). A future breaking revision may add a plural
   `attestation_refs`, or split the data-collection and method references.
-- **Multi-claim lumen maintenance.** `manufacturer_rated_claim` is
-  single-claim, but real products publish several thresholds at once (L70
-  at X hours plus L95 at Y hours). A future breaking revision may make the
-  block an array.
+- **Multi-claim lumen maintenance.** v1.11.0 adds the optional sibling
+  `additional_rated_claims` array while `manufacturer_rated_claim` remains
+  a single headline object. Replacing that object with an in-place array
+  remains a v2.0.0 question.
+- **Full-tier spectrum rubric row.** A later release will grade the
+  optional spectral power distribution for applicable white-light records
+  after a real record carries a spectrum. The 1.11.0 field is tracked only.
 - **Multi-framework lumen maintenance.** `declaration_framework` inside
   `lumen_maintenance_luminaire` is single-valued, though its description
   allows multiple frameworks to coexist. A future revision may add array
