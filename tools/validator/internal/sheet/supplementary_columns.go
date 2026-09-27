@@ -58,6 +58,14 @@ var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColu
 		allowedUnits: map[string]bool{"mW/nm": true, "W/nm": true, "relative": true},
 		defaults:     provenanceDefaults{valueType: "measured", source: "test_report", method: "transcribed", family: attestationFamilyPhotometric},
 	},
+	{sheet: "additional_rated_claims", field: "claimed_hours"}: {
+		unit:     "h",
+		defaults: provenanceDefaults{valueType: "rated", source: "manufacturer_direct", method: "transcribed", family: attestationFamilyMaintenance, requiredValueType: "rated"},
+	},
+	{sheet: "additional_rated_claims", field: "failure_percent"}: {
+		unit:     "percent",
+		defaults: provenanceDefaults{valueType: "rated", source: "manufacturer_direct", method: "transcribed", family: attestationFamilyMaintenance},
+	},
 }
 
 var flickerMetricUnits = map[string]string{

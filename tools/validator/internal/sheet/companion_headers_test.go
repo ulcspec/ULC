@@ -87,8 +87,8 @@ func writeTemplateHeaderBundle(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("read workbook templates: %v", err)
 	}
-	if len(templates.Headers) != 17 {
-		t.Fatalf("workbook template carries %d CSV sheets, want 17", len(templates.Headers))
+	if len(templates.Headers) != 18 {
+		t.Fatalf("workbook template carries %d CSV sheets, want 18", len(templates.Headers))
 	}
 	sourceDir := filepath.Join("testdata", "bundle-b")
 	source, err := ReadCSVBundle(sourceDir)

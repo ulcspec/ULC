@@ -309,6 +309,7 @@ func bundleToXLSXSheets(t *testing.T, bundleDir string) []xsheet {
 }
 
 var xlsxNumericColumns = map[string]map[string]bool{
+	"additional_rated_claims":     {"claimed_hours": true, "failure_percent": true},
 	"alpha_opic":                  {"melanopic_der": true, "efficacy": true},
 	"attestations":                {"domestic_content_us_cost_share_percent": true, "domestic_content_foreign_cost_share_percent": true, "domestic_content_threshold_percent": true},
 	"cct_multipliers":             {"cct": true, "multiplier": true},

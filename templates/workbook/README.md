@@ -67,7 +67,8 @@ the `records` sheet supports the six companion columns `X__value_type`,
 `X__base_attestation_ref`, and `X__attestation_ref`. The same companions are
 supported by `melanopic_der` and `efficacy` on `alpha_opic`, `value` on
 `flicker_metrics`, the three numeric values on `lumen_maintenance_package`, and
-`lumens` on both zonal sheets, and `value` on `spectral_power_distribution`.
+`lumens` on both zonal sheets, `value` on `spectral_power_distribution`, and
+`claimed_hours` and `failure_percent` on `additional_rated_claims`.
 The spectrum companions describe its whole block, with one resolved provenance
 for all samples. The authored rows on `declared_by_length` retain
 their fixed provenance defaults and accept no companions in this release.
@@ -144,11 +145,19 @@ release 1.5.0 on.
 | `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry enrichment |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM, percent flicker) with per-value provenance companions and a metric-specific unit rule. | Full enrichment |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed projection with companions on its three numeric values. | Full enrichment |
+| `additional_rated_claims` | Further lumen-maintenance thresholds beside the records-sheet headline, with companions on hours and failure percent. | When several claims are published |
 | `zonal_lumens` | Angle-band zonal lumens with per-value provenance companions. | Full enrichment |
 | `lcs_zonal_lumens` | TM-15 LCS secondary solid-angle zones with per-value provenance companions. | Outdoor, full enrichment |
 | `ingredient_list` | Declare / Living Building Challenge material roster. | Full enrichment |
 | `cie97_lmf` | CIE-97 LMF grid (one row per interval and cleanliness; a full cutsheet has 12). | Full enrichment |
 | `cie97_llmf` | CIE-97 LLMF by operating hours. | Full enrichment |
+
+When a cutsheet prints several lumen-maintenance claims, put the first claim it
+gives, or the one you judge most representative, in `records` using
+`lm_claim_type`, `lm_claimed_hours`, and `lm_claim_basis`. Put the other claims
+on `additional_rated_claims`, one row per claim. Each row needs `claim_type`
+and `claimed_hours`; `basis` is required by the schema. Claims without a
+records-sheet headline are refused.
 
 ## Spectrum sheet
 
@@ -226,6 +235,19 @@ measurements. Use `input_voltage_class` for the supply class or published range
 the product supports, and `input_voltage_at_test` for the supply class or
 published range used during the test. Those two columns are open strings: the
 values shown in the schema are examples, not a closed vocabulary.
+
+## Bound columns
+
+Use `power_factor` with `power_factor_bound_operator` for a declared power
+factor bound, such as `0.9` with `gt` for above 0.9. Use `thd_percent` with
+`thd_percent_bound_operator` for a THD bound, such as `20` with `lt` for below
+20 percent. Use `max_surface_luminance_cd_per_m2` with
+`max_surface_luminance_bound_operator` for a luminous-surface limit, such as
+`1600` with `lt` for below 1600 cd/m2. The operator is optional when the
+number is a point estimate; an operator without its number fails schema
+validation. These three operators accept `eq`, `lte`, `lt`, `gte`, and `gt`.
+The existing `ugr_4h_8h_bound_operator` still accepts only `eq`, `lte`, and
+`lt`.
 
 ## Notes for `.xlsx` authors
 

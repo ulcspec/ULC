@@ -13,6 +13,8 @@ import (
 //	alpha_opic                 -> alpha_opic_metrics
 //	flicker_metrics            -> flicker_measurements.metrics[]
 //	lumen_maintenance_package  -> lumen_maintenance_package[]            (top-level array)
+//	additional_rated_claims     -> lumen_maintenance_luminaire.additional_rated_claims[]
+//	spectral_power_distribution -> colorimetry.spectral_power_distribution
 //	zonal_lumens               -> photometry.zonal_lumens[]
 //	lcs_zonal_lumens           -> outdoor_classification.lcs_zonal_lumens[]
 //	ingredient_list            -> sustainability_declaration.ingredient_list[]
@@ -46,6 +48,9 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 	if err := assembleLumenMaintenancePackage(wb, id, rec, ctx); err != nil {
 		return err
 	}
+	if err := assembleAdditionalRatedClaims(wb, id, rec, ctx); err != nil {
+		return err
+	}
 	if err := assembleZonalLumens(wb, id, rec, ctx); err != nil {
 		return err
 	}
@@ -56,6 +61,46 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 		return err
 	}
 	return assembleCIE97Table(wb, id, rec)
+}
+
+// assembleAdditionalRatedClaims adds claims beside the records-sheet headline.
+// The headline must exist so readers of manufacturer_rated_claim still see a
+// representative threshold when the supplementary array is present.
+func assembleAdditionalRatedClaims(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
+	const sheet = "additional_rated_claims"
+	rows := wb.RowsFor(sheet, id)
+	if len(rows) == 0 {
+		return nil
+	}
+	_, hasType := getPath(rec, "lumen_maintenance_luminaire.manufacturer_rated_claim.claim_type")
+	_, hasHours := getPath(rec, "lumen_maintenance_luminaire.manufacturer_rated_claim.claimed_hours")
+	if !hasType && !hasHours {
+		return fmt.Errorf("%s row 1 for %q: additional claims require lm_claim_type or lm_claimed_hours on records", sheet, id)
+	}
+	out := make([]any, 0, len(rows))
+	for i, row := range rows {
+		if row["claim_type"] == "" {
+			return fmt.Errorf("%s row %d for %q: missing claim_type", sheet, i+1, id)
+		}
+		if row["claimed_hours"] == "" {
+			return fmt.Errorf("%s row %d for %q: missing claimed_hours", sheet, i+1, id)
+		}
+		hours, err := supplementaryProvenancedNumber(sheet, "claimed_hours", row, ctx)
+		if err != nil {
+			return fmt.Errorf("%s row %d for %q: %w", sheet, i+1, id, err)
+		}
+		claim := map[string]any{"claim_type": row["claim_type"], "claimed_hours": hours}
+		copyIf(claim, row, "basis", "basis")
+		if row["failure_percent"] != "" {
+			failure, err := supplementaryProvenancedNumber(sheet, "failure_percent", row, ctx)
+			if err != nil {
+				return fmt.Errorf("%s row %d for %q: %w", sheet, i+1, id, err)
+			}
+			claim["failure_percent"] = failure
+		}
+		out = append(out, claim)
+	}
+	return setPath(rec, "lumen_maintenance_luminaire.additional_rated_claims", out)
 }
 
 // assembleSpectralPowerDistribution reads one row per wavelength sample. Values

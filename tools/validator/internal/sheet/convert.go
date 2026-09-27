@@ -151,6 +151,7 @@ var consumedRelatedSheets = map[string]bool{
 	"flicker_metrics": true, "lumen_maintenance_package": true,
 	"zonal_lumens": true, "lcs_zonal_lumens": true,
 	"spectral_power_distribution": true,
+	"additional_rated_claims":     true,
 }
 
 // checkRelatedSheetIDs is a preflight over the related sheets the converter
