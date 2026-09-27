@@ -715,7 +715,7 @@
 
     "LumenMaintenanceDeclarationFramework": {
       "title": "Lumen-maintenance declaration framework",
-      "description": "The overarching framework a manufacturer uses to declare lumen maintenance. Distinguishes between quantitative IES projections (TM-21, TM-28), European maintenance-factor tables (CIE 97 Luminaire Maintenance Factor by ambient cleanliness × operating hours, as seen on European cutsheets for design-stage calculations), and bare manufacturer-rated claims that cite no specific method (for example a datasheet stating `L70 >50,000 hours` without TM-21 or TM-28 backing). The validator uses this field to decide which downstream schema blocks apply: `tm_21_projection` pairs with `lumen_maintenance_package`; `tm_28_projection` pairs with `lumen_maintenance_luminaire` and `LumenMaintenanceProjectionMethod`; `cie_97_maintenance_factor` pairs with LMF/LLMF tables; `manufacturer_rated_claim` pairs with a plain rated value and hours. Multiple frameworks may coexist on one record when a cutsheet declares both a TM-21 projection and a CIE 97 LMF table.",
+      "description": "The overarching framework a manufacturer uses to declare lumen maintenance. Distinguishes between quantitative IES projections (TM-21, TM-28), European maintenance-factor tables (CIE 97 Luminaire Maintenance Factor by ambient cleanliness × operating hours, as seen on European cutsheets for design-stage calculations), and a manufacturer claim carried as the cutsheet prints it, with or without a cited method. On a manufacturer-rated claim, `basis` records whether the cutsheet calls the figure TM-21 reported (`tm_21_reported`), TM-21 calculated (`tm_21_calculated`), or states it with no method (`manufacturer_stated`). A projection backed by LM-80 package data stays `tm_21_projection` and pairs with `lumen_maintenance_package`; `tm_28_projection` pairs with `lumen_maintenance_luminaire` and `LumenMaintenanceProjectionMethod`; `cie_97_maintenance_factor` pairs with LMF/LLMF tables; `manufacturer_rated_claim` pairs with a published claim and hours. Multiple frameworks may coexist on one record when a cutsheet declares both a TM-21 projection and a CIE 97 LMF table.",
       "type": "string",
       "enum": [
         "tm_21_projection",
@@ -1160,6 +1160,20 @@
         "inferred",
         "manual_entry"
       ]
+    },
+
+    "SpectralPowerUnit": {
+      "title": "Spectral power unit",
+      "description": "Unit of a sampled spectral power distribution: milliwatts per nanometer, watts per nanometer, or a relative spectrum.",
+      "type": "string",
+      "enum": ["mW/nm", "W/nm", "relative"]
+    },
+
+    "DomesticContentBasis": {
+      "title": "Domestic content cost basis",
+      "description": "Cost basis used to calculate US and foreign shares in a domestic-content attestation: manufacturing cost, component cost, or another stated basis.",
+      "type": "string",
+      "enum": ["manufacturing_cost", "component_cost", "other"]
     },
 
     "SpdSourceKind": {

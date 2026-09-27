@@ -32,8 +32,8 @@ A 1.10.0 engine passes the new optional data fields unread because the data bloc
 
 ### Schema
 
-- `colorimetry.spectral_power_distribution` holds a uniformly sampled wavelength table, its unit, value type, provenance, source kind, and optional measured-through-optics flag. Stated color values remain authoritative. `tm27` joins source-file and provenance vocabularies for IES TM-27 spectral exchange files.
-- `attestations[].domestic_content` holds US and foreign cost shares, the threshold used for the claim, its optional effective date, a cost basis, and provenance. The schema bounds each percentage from 0 to 100; the shares-sum rule is authoring guidance.
+- `colorimetry.spectral_power_distribution` holds a uniformly sampled wavelength table, its unit, value type, provenance, source kind, and optional measured-through-optics flag. Stated color values remain authoritative. `SpectralPowerUnit` names its units, and `tm27` joins source-file and provenance vocabularies for IES TM-27 spectral exchange files.
+- `attestations[].domestic_content` holds US and foreign cost shares, the threshold used for the claim, its optional effective date, a cost basis, and provenance. The schema bounds each percentage from 0 to 100; the shares-sum rule is authoring guidance. `DomesticContentBasis` names the cost basis.
 - `lumen_maintenance_luminaire.manufacturer_rated_claim` gains an optional basis. The optional sibling `additional_rated_claims` carries further thresholds with a required basis on each added claim.
 - `electrical.power_factor_bound_operator` and `thd_percent_bound_operator` pair declared comparison operators with their numbers. `ComparisonOperator` gains `gt` and `gte`. `photometry.max_surface_luminance_cd_per_m2` and its bound operator carry a luminous-surface limit.
 - The pendant `overall_height` description identifies the luminaire body and places suspension length in applicability.

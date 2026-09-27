@@ -1281,7 +1281,7 @@
         "wavelength_start_nm": { "description": "Wavelength of the first value in nanometers.", "type": "number" },
         "wavelength_step_nm": { "description": "Positive wavelength interval between consecutive values in nanometers.", "type": "number", "exclusiveMinimum": 0 },
         "values": { "description": "Spectral values ordered by ascending wavelength, one per stated step.", "type": "array", "items": { "type": "number" }, "minItems": 2 },
-        "unit": { "description": "Spectral power per wavelength interval, or a relative spectrum.", "type": "string", "enum": ["mW/nm", "W/nm", "relative"] },
+        "unit": { "description": "Spectral power per wavelength interval, or a relative spectrum.", "$ref": "taxonomy.schema.json#/$defs/SpectralPowerUnit" },
         "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
         "provenance": { "$ref": "#/$defs/Provenance" },
         "source_kind": { "$ref": "taxonomy.schema.json#/$defs/SpdSourceKind" },
@@ -1781,7 +1781,7 @@
         "foreign_cost_share_percent": { "description": "Foreign share of the declared cost basis, from 0 to 100 percent. With the US share, should sum to 100 percent within source rounding.", "type": "number", "minimum": 0, "maximum": 100 },
         "threshold_percent": { "description": "Domestic-content percentage threshold used to judge the attestation.", "type": "number", "minimum": 0, "maximum": 100 },
         "threshold_effective_date": { "description": "Date on which the stated threshold took effect, when known. ISO 8601 date (YYYY-MM-DD).", "type": "string", "format": "date" },
-        "basis": { "description": "Cost basis used to calculate the shares.", "type": "string", "enum": ["manufacturing_cost", "component_cost", "other"] },
+        "basis": { "description": "Cost basis used to calculate the shares.", "$ref": "taxonomy.schema.json#/$defs/DomesticContentBasis" },
         "provenance": { "$ref": "#/$defs/Provenance" }
       },
       "required": ["us_cost_share_percent", "threshold_percent", "basis"]

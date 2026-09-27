@@ -470,6 +470,11 @@ var descriptiveAllowlist = map[string]bool{
 	// Spectrum source kind describes evidence form; the spectrum is tracked, not graded.
 	"SpdSourceKind": true,
 
+	// --- v1.11.0 evidence qualifiers ---
+	// Spectrum unit and domestic cost basis qualify optional evidence; tracked, not graded.
+	"SpectralPowerUnit": true,
+	"DomesticContentBasis": true,
+
 	// --- v1.11.0 maintenance-claim class ---
 	// The basis qualifies a rated claim and is tracked, not graded.
 	"LumenMaintenanceClaimBasis": true,
