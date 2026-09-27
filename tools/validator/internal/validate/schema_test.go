@@ -48,6 +48,81 @@ func TestValidatorAcceptsExampleRecords(t *testing.T) {
 	}
 }
 
+// TestValidatorAcceptsSpectrumAndTM27 exercises the 87-sample form of a
+// 350 to 780 nm spectrum at 5 nm intervals, with synthetic values. It also
+// checks that a TM-27 file can be cited as both source file and provenance.
+func TestValidatorAcceptsSpectrumAndTM27(t *testing.T) {
+	root := repoRoot(t)
+	v, err := NewValidator(filepath.Join(root, "schema"))
+	if err != nil {
+		t.Fatalf("NewValidator: %v", err)
+	}
+	load := func() (map[string]any, map[string]any) {
+		doc := loadOrFail(t, filepath.Join(root, "examples", "erco-quintessence-30416-023.ulc"))
+		record := doc.(map[string]any)
+		values := make([]any, 87)
+		for i := range values {
+			values[i] = float64(i+1) / 100
+		}
+		spectrum := map[string]any{
+			"wavelength_start_nm": 350,
+			"wavelength_step_nm":  5,
+			"values":              values,
+			"unit":                "mW/nm",
+			"value_type":          "measured",
+			"provenance": map[string]any{
+				"source": "test_report",
+				"method": "extracted",
+			},
+			"source_kind":             "laboratory_table",
+			"measured_through_optics": true,
+		}
+		record["colorimetry"].(map[string]any)["spectral_power_distribution"] = spectrum
+		return record, spectrum
+	}
+	validate := func(record map[string]any) *findings.Report {
+		report := findings.NewReport()
+		v.Validate(record, report)
+		return report
+	}
+
+	t.Run("accepts 87 laboratory table values", func(t *testing.T) {
+		record, _ := load()
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected valid laboratory table spectrum; got: %+v", report.Findings)
+		}
+	})
+	t.Run("accepts tm27 exchange file", func(t *testing.T) {
+		record, spectrum := load()
+		spectrum["source_kind"] = "exchange_file"
+		spectrum["provenance"].(map[string]any)["source"] = "tm27"
+		record["source_files"] = append(record["source_files"].([]any), map[string]any{
+			"file_type": "tm27",
+			"reference": map[string]any{
+				"filename": "synthetic-spectrum.xml",
+				"sha256":   strings.Repeat("a", 64),
+			},
+		})
+		if report := validate(record); report.HasErrors() {
+			t.Fatalf("expected valid tm27 exchange file and provenance; got: %+v", report.Findings)
+		}
+	})
+	t.Run("rejects fewer than two values", func(t *testing.T) {
+		record, spectrum := load()
+		spectrum["values"] = []any{0.1}
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected a spectrum with one value to fail schema validation")
+		}
+	})
+	t.Run("rejects missing source kind", func(t *testing.T) {
+		record, spectrum := load()
+		delete(spectrum, "source_kind")
+		if report := validate(record); !report.HasErrors() {
+			t.Fatal("expected a spectrum without source_kind to fail schema validation")
+		}
+	})
+}
+
 // TestValidatorRejectsBrokenRecord asserts the validator catches a violation
 // introduced to one of the canonical records (e.g., wiping a required field).
 // This guards against silently-accepting-everything bugs in the wiring.

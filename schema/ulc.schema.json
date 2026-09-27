@@ -271,7 +271,7 @@
           "items": { "type": "string" }
         },
         "source_file_types_present": {
-          "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, ULD, GLDF, and manufacturer data exports) exist for this record without walking the full `source_files` array.",
+          "description": "Deduplicated sorted list of `source_files[].file_type` values. Lets AI agents and retrieval systems quickly determine which source formats (PDF, IES, LDT, TM-33, TM-27 spectral files, ULD, GLDF, and manufacturer data exports) exist for this record without walking the full `source_files` array.",
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/SourceFileType" }
         },
@@ -1204,6 +1204,10 @@
         "sdcm_step": { "$ref": "#/$defs/ProvenancedNumber" },
         "cri_ra": { "$ref": "#/$defs/ProvenancedNumber" },
         "cri_r9": { "$ref": "#/$defs/ProvenancedNumber" },
+        "spectral_power_distribution": {
+          "description": "Uniformly sampled spectral power distribution behind the stated color values. Stated color values remain authoritative for this record; the spectrum carries the measurement from which they derive.",
+          "$ref": "#/$defs/SpectralPowerDistribution"
+        },
         "cri_per_sample": {
           "description": "Optional per-sample CIE 13 CRI values (R1 through R15).",
           "type": "array",
@@ -1244,6 +1248,23 @@
           }
         }
       }
+    },
+
+    "SpectralPowerDistribution": {
+      "title": "Spectral power distribution",
+      "description": "Uniformly sampled spectrum at the stated wavelength step. The final wavelength is wavelength_start_nm plus wavelength_step_nm times (the number of values minus one). For a digitized chart, the author resamples the curve to this step and uses source_kind digitized_chart, so consumers can distinguish values read from a drawing from a laboratory table. A package-level curve is not luminaire evidence unless measured_through_optics is true. Stated color values remain authoritative for the record; this spectrum is the measurement from which they derive.",
+      "type": "object",
+      "properties": {
+        "wavelength_start_nm": { "description": "Wavelength of the first value in nanometers.", "type": "number" },
+        "wavelength_step_nm": { "description": "Positive wavelength interval between consecutive values in nanometers.", "type": "number", "exclusiveMinimum": 0 },
+        "values": { "description": "Spectral values ordered by ascending wavelength, one per stated step.", "type": "array", "items": { "type": "number" }, "minItems": 2 },
+        "unit": { "description": "Spectral power per wavelength interval, or a relative spectrum.", "type": "string", "enum": ["mW/nm", "W/nm", "relative"] },
+        "value_type": { "$ref": "taxonomy.schema.json#/$defs/RegulatoryValueType" },
+        "provenance": { "$ref": "#/$defs/Provenance" },
+        "source_kind": { "$ref": "taxonomy.schema.json#/$defs/SpdSourceKind" },
+        "measured_through_optics": { "description": "True when measured through the luminaire optics, for example in a luminaire-level sphere or goniometer measurement; false for an LED-package curve.", "type": "boolean" }
+      },
+      "required": ["wavelength_start_nm", "wavelength_step_nm", "values", "unit", "value_type", "source_kind"]
     },
 
     "AlphaOpicMetrics": {

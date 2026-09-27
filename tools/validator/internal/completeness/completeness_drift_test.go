@@ -466,6 +466,10 @@ var descriptiveAllowlist = map[string]bool{
 	// not graded, so declaring it can never move a conformance tier.
 	"CustomizationAxis": true,
 
+	// --- v1.11.0 spectral data class ---
+	// Spectrum source kind describes evidence form; the spectrum is tracked, not graded.
+	"SpdSourceKind": true,
+
 	// Sales-market vocabulary is predicate input, not a graded field with its
 	// own roadmap row. It can still change which market-specific rows apply.
 	"Market": true,
