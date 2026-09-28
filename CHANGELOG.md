@@ -20,6 +20,24 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.13.0 (2026-09-27)
+
+This release adds workbook authoring for family customization openness and five attestation evidence members already in the schema. The schema and taxonomy do not change. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0, and all eight published examples remain byte-identical.
+
+### For consumers
+
+By default, newly converted records declare 1.13.0. A workbook authored for 1.12.0 converts to the same record except for `ulc_version`. Stored records need no index re-stamp because the builder and its generated projection are unchanged. The new sheet and columns require a 1.13.0 binary; an older converter ignores their unrecognized plain headers. This release adds no companion headers.
+
+### Validator and workbook
+
+- The optional `customization_openness` sheet writes manufacturer-stated open axes into `product_family.customization_openness` in row order. It refuses a missing axis, duplicate listed axes, and duplicate `other` labels; the schema checks each entry's vocabulary, shape, and length limits.
+- Both attestation sheets accept `valid_until`, `listing_number`, `test_laboratory`, `verification_contact_reference`, and `verification_notes`. The two verification columns join the verification block, whose type still defaults to `unconditional` when blank. The schema validates the date format.
+- CSV and XLSX readers produce the same record shapes. All new columns and the new sheet are optional.
+
+### Documentation
+
+- The workbook guide explains openness rows and attestation evidence columns. The authoring-patterns guide points authors to those paths.
+
 ## 1.12.0 (2026-09-27)
 
 This release adds workbook authoring paths for the optional spectrum, domestic-content, lumen-maintenance claim, and declared-bound fields introduced in 1.11.0. The schema and taxonomy do not change. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0, and all eight published examples remain byte-identical.
