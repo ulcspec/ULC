@@ -137,6 +137,7 @@ release 1.5.0 on.
 | `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
 | `attestations` | Per-record program attestations. The LM-79 row is the measurement anchor. | Measured photometry needs the LM-79 anchor even at core; standard and up otherwise as applicable |
 | `shared_attestations` | Family-wide listings (UL, IEC, RoHS). | As applicable |
+| `customization_openness` | Manufacturer-stated axes open to requests beyond the published order-code menu. | When the family publishes or states an opening |
 | `covered_axes` | One row per (axis, covered value) with rationale and derivation. | Patterns B and D |
 | `cct_multipliers` | The CCT lumen-multiplier table. | Pattern B |
 | `declared_by_length` | A verbatim per-length table with fixed provenance defaults in this release. Omit it to have the per-foot rates generate it. | Pattern D |
@@ -160,6 +161,17 @@ and `claimed_hours`; `basis` is required by the schema. Claims without a
 records-sheet headline are refused.
 The additional-claims sheet authors rated hours; use `lumen_maintenance_package`
 for an L50 threshold crossed experimentally in an extended LM-80 test.
+
+## Openness sheet
+
+Use `customization_openness` for one row per open axis, repeated identically
+for every record in the family. The `statement` names the request opportunity
+without enumerating values, prices, lead times, or quantities. If the source
+prints such a list, cite the document and elide the list from the statement.
+Set `published_in_ref` to a filename in the vocabulary of the record's
+`source_files` entries and the family cutsheet. Set `contact_reference` to a
+public role or department, never a named person. At least one of these two
+references is required for each row.
 
 ## Spectrum sheet
 

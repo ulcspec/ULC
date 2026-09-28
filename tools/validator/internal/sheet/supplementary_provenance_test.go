@@ -63,6 +63,7 @@ func TestTouchedSupplementaryTemplateHeadersExposeConsumedColumns(t *testing.T) 
 		{sheet: "alpha_opic", after: "efficacy", header: "efficacy_unit"},
 		{sheet: "additional_rated_claims", after: "claim_type", header: "claimed_hours"},
 		{sheet: "additional_rated_claims", after: "basis", header: "failure_percent"},
+		{sheet: "customization_openness", after: "axis", header: "axis_label"},
 	}
 	for _, test := range tests {
 		t.Run(test.sheet, func(t *testing.T) {
