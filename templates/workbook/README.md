@@ -196,6 +196,17 @@ set `value__prov_source=tm27`.
 If you set `measured_through_optics=FALSE`, set `value__value_type=rated`;
 a measured package spectrum cannot use a luminaire LM-79 attestation.
 
+## Attestation evidence columns
+
+On `attestations` and `shared_attestations`, use `valid_until` (an ISO date in
+`YYYY-MM-DD` form), `listing_number`, and `test_laboratory` for the three
+attestation evidence members. The `verification_contact_reference` and
+`verification_notes` columns become members of the attestation's verification
+block. Its `type` defaults to `unconditional` when `verification_type` is blank,
+even if either of those two columns is filled. For a case-by-case claim, put
+`verification_contact_reference` beside
+`verification_type=requires_manufacturer_confirmation`.
+
 ## Domestic-content columns
 
 On `attestations` or `shared_attestations`, fill

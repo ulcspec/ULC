@@ -868,6 +868,9 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	copyIf(att, row, "status", "status")
 	copyIf(att, row, "value_type", "value_type")
 	copyIf(att, row, "issued_date", "issued_date")
+	copyIf(att, row, "valid_until", "valid_until")
+	copyIf(att, row, "listing_number", "listing_number")
+	copyIf(att, row, "test_laboratory", "test_laboratory")
 	copyIf(att, row, "test_report_id", "test_report_id")
 	copyIf(att, row, "standard_revision", "standard_revision")
 
@@ -880,7 +883,10 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	if vtype == "" {
 		vtype = "unconditional"
 	}
-	att["verification"] = map[string]any{"type": vtype}
+	verification := map[string]any{"type": vtype}
+	copyIf(verification, row, "verification_contact_reference", "contact_reference")
+	copyIf(verification, row, "verification_notes", "notes")
+	att["verification"] = verification
 	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
 		return nil, err
 	}
@@ -925,12 +931,18 @@ func buildSharedAttestation(row Row) (map[string]any, error) {
 	copyIf(att, row, "program", "program")
 	copyIf(att, row, "status", "status")
 	copyIf(att, row, "value_type", "value_type")
+	copyIf(att, row, "valid_until", "valid_until")
+	copyIf(att, row, "listing_number", "listing_number")
+	copyIf(att, row, "test_laboratory", "test_laboratory")
 	copyIf(att, row, "standard_revision", "standard_revision")
 	vtype := row["verification_type"]
 	if vtype == "" {
 		vtype = "unconditional"
 	}
-	att["verification"] = map[string]any{"type": vtype}
+	verification := map[string]any{"type": vtype}
+	copyIf(verification, row, "verification_contact_reference", "contact_reference")
+	copyIf(verification, row, "verification_notes", "notes")
+	att["verification"] = verification
 	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
 		return nil, err
 	}
