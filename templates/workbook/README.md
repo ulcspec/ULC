@@ -179,6 +179,8 @@ LM-79 attestation. For a digitized cutsheet chart, set
 `value__value_type=rated` and `value__prov_source=datasheet_pdf`. For a TM-27
 exchange file, add it to `source_files`, set `source_kind=exchange_file`, and
 set `value__prov_source=tm27`.
+If you set `measured_through_optics=FALSE`, set `value__value_type=rated`;
+a measured package spectrum cannot use a luminaire LM-79 attestation.
 
 ## Domestic-content columns
 

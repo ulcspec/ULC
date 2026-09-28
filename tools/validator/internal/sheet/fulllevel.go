@@ -190,6 +190,9 @@ func assembleSpectralPowerDistribution(wb Workbook, id string, rec map[string]an
 		if err != nil {
 			return fmt.Errorf("%s row 1 for %q: measured_through_optics: %w", sheet, id, err)
 		}
+		if !measured && resolved.valueType == "measured" {
+			return fmt.Errorf("%s row 1 for %q: measured_through_optics=false conflicts with effective value__value_type=measured; set value__value_type=rated for a package spectrum", sheet, id)
+		}
 		spectrum["measured_through_optics"] = measured
 	}
 	return setPath(rec, "colorimetry.spectral_power_distribution", spectrum)

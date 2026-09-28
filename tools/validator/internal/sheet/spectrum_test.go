@@ -84,6 +84,7 @@ func TestSpectrumRefusalsAcrossReaders(t *testing.T) {
 		{"conflicting block unit", func(r [][]string) [][]string { r[2][3] = "W/nm"; return r }, "conflicting unit"},
 		{"conflicting provenance", func(r [][]string) [][]string { r[1][8] = "test_report"; r[2][8] = "datasheet_pdf"; return r }, "conflicting value__prov_source"},
 		{"wrong family attestation", func(r [][]string) [][]string { r[1][12] = "iec_60598_lumos_skyline"; return r }, "different evidence family"},
+		{"measured package spectrum", func(r [][]string) [][]string { r[1][5] = "FALSE"; return r }, "measured_through_optics=false conflicts with effective value__value_type=measured; set value__value_type=rated"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
