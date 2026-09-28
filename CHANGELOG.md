@@ -26,7 +26,7 @@ This release adds workbook authoring paths for the optional spectrum, domestic-c
 
 ### For consumers
 
-Newly converted records declare 1.12.0. A workbook authored for 1.11.0 converts to the same record except for `ulc_version`. Stored records need no index re-stamp because the builder and its generated projection are unchanged. The new sheets and columns require a 1.12.0 binary: an older converter ignores unrecognized plain headers and refuses the new companion headers, so authors should update before using them.
+By default, newly converted records declare 1.12.0. A workbook authored for 1.11.0 converts to the same record except for `ulc_version`. Stored records need no index re-stamp because the builder and its generated projection are unchanged. The new sheets and columns require a 1.12.0 binary: an older converter ignores unrecognized plain headers and refuses the new companion headers, so authors should update before using them.
 
 ### Validator and workbook
 
@@ -34,7 +34,7 @@ Newly converted records declare 1.12.0. A workbook authored for 1.11.0 converts 
 - Both attestation sheets accept domestic-content shares, threshold, effective date, basis, and provenance overrides. A filled payload defaults to `manufacturer_direct` and `transcribed`; the schema validates its required members and percentage ranges.
 - The optional `additional_rated_claims` sheet writes further claims beside the records-sheet headline. `lm_claim_basis` authors the headline basis. The converter requires a headline and complete claim rows; the schema validates each added basis.
 - Seven optional records columns author power factor and THD with comparison operators, maximum surface luminance with its operator, and the headline maintenance basis. The schema refuses an operator without its number; a number without an operator remains a point estimate. The existing UGR operator keeps its narrower token set.
-- CSV and XLSX readers produce the same record shapes for the new sheets and columns. The shipped templates and synthetic test bundle exercise every new header.
+- CSV and XLSX readers produce the same record shapes for the new sheets and columns. The shipped templates list every new header; tests exercise the new values through both readers.
 
 ### Documentation
 

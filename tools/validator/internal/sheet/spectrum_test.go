@@ -67,6 +67,55 @@ func TestSpectrumDecimalGridEmitsRoundedStepAcrossReaders(t *testing.T) {
 	}
 }
 
+func TestSpectrumBlockMetadataAcrossReaders(t *testing.T) {
+	tests := []struct {
+		name   string
+		edit   func([][]string) [][]string
+		optics any
+		typeOf string
+	}{
+		{"later row", func(r [][]string) [][]string {
+			for _, col := range []int{3, 4, 5} {
+				r[2][col], r[1][col] = r[1][col], ""
+			}
+			return r
+		}, true, "measured"},
+		{"matching repeated cells", func(r [][]string) [][]string {
+			for _, col := range []int{3, 4, 5} {
+				r[2][col] = r[1][col]
+			}
+			return r
+		}, true, "measured"},
+		{"rated package spectrum", func(r [][]string) [][]string {
+			r[1][5], r[1][7], r[1][8] = "FALSE", "rated", "datasheet_pdf"
+			return r
+		}, false, "rated"},
+		{"blank optics", func(r [][]string) [][]string { r[1][5] = ""; return r }, nil, "measured"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			bundle := spectrumBundle(t, test.edit)
+			for reader, input := range supplementaryInputs(t, bundle) {
+				t.Run(reader, func(t *testing.T) {
+					record := convertOne(t, input, PatternB, completeness.LevelStandard)
+					value, _ := getPath(record, "colorimetry.spectral_power_distribution")
+					block := value.(map[string]any)
+					if block["unit"] != "mW/nm" || block["source_kind"] != "laboratory_table" || block["value_type"] != test.typeOf {
+						t.Errorf("unexpected spectrum metadata: %v", block)
+					}
+					if optics, present := block["measured_through_optics"]; test.optics == nil {
+						if present {
+							t.Errorf("blank optics cell emitted measured_through_optics=%v", optics)
+						}
+					} else if !present || optics != test.optics {
+						t.Errorf("measured_through_optics = %v, want %v", optics, test.optics)
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestSpectrumRefusalsAcrossReaders(t *testing.T) {
 	tests := []struct {
 		name string
