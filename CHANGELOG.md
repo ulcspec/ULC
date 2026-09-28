@@ -20,6 +20,26 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.12.0 (2026-09-27)
+
+This release adds workbook authoring paths for the optional spectrum, domestic-content, lumen-maintenance claim, and declared-bound fields introduced in 1.11.0. The schema and taxonomy do not change. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0, and all eight published examples remain byte-identical.
+
+### For consumers
+
+By default, newly converted records declare 1.12.0. A workbook authored for 1.11.0 converts to the same record except for `ulc_version`. Stored records need no index re-stamp because the builder and its generated projection are unchanged. The new sheets and columns require a 1.12.0 binary: an older converter ignores unrecognized plain headers and refuses the new companion headers, so authors should update before using them.
+
+### Validator and workbook
+
+- The optional `spectral_power_distribution` sheet accepts one row per wavelength sample, validates a strictly ascending uniform grid, and writes block-level value type and provenance. Its measured default links to the record's LM-79 attestation.
+- Both attestation sheets accept domestic-content shares, threshold, effective date, basis, and provenance overrides. A filled payload defaults to `manufacturer_direct` and `transcribed`; the schema validates its required members and percentage ranges.
+- The optional `additional_rated_claims` sheet writes further claims beside the records-sheet headline. `lm_claim_basis` authors the headline basis. The converter requires a headline and complete claim rows; the schema validates each added basis.
+- Seven optional records columns author power factor and THD with comparison operators, maximum surface luminance with its operator, and the headline maintenance basis. The schema refuses an operator without its number; a number without an operator remains a point estimate. The existing UGR operator keeps its narrower token set.
+- CSV and XLSX readers produce the same record shapes for the new sheets and columns. The shipped templates list every new header; tests exercise the new values through both readers.
+
+### Documentation
+
+- The workbook guide explains spectrum rows, domestic-content provenance, additional claims, and bounds. The converter design and authoring-patterns guide point authors to those workbook paths.
+
 ## 1.11.0 (2026-09-27)
 
 This release adds optional homes for a sampled light spectrum, domestic-content cost shares, multiple lumen-maintenance claims, and declared electrical and surface-luminance bounds. It also clarifies pendant body height. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0.

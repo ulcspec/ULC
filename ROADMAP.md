@@ -27,7 +27,7 @@ for the next major. Pre-1.0 releases generally aimed for additive changes;
 compatibility-tightening changes occurred only when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.11.x
+## Active version: v1.12.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -138,6 +138,13 @@ body height from suspension length. These facts are tracked, not graded:
 required sets, grades, achievement states, and generated index members stay
 unchanged. Builder version 0.8.0 remains current and stored records need no
 index re-stamp.
+
+v1.12.0 gives the optional 1.11.0 schema fields a workbook authoring path:
+sampled spectra, domestic-content cost shares on attestations, additional
+lumen-maintenance claims and the headline claim's basis, bounded power factor
+and THD, and a surface-luminance limit. The converter and templates change;
+the schema, taxonomy, required sets, grades, achievements, generated index,
+and eight published examples do not. Builder version 0.8.0 remains current.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator

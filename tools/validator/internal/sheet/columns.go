@@ -170,6 +170,10 @@ var baseRecordColumns = []Column{
 	{Header: "input_power_w", Path: "electrical.input_power_w", Kind: KindProvNumber, Unit: "W", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "input_voltage_v", Path: "electrical.input_voltage_v", Kind: KindProvNumber, Unit: "V", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 	{Header: "input_voltage_class", Path: "electrical.input_voltage_class", Kind: KindString},
+	{Header: "power_factor", Path: "electrical.power_factor", Kind: KindProvNumber, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "power_factor_bound_operator", Path: "electrical.power_factor_bound_operator", Kind: KindEnum},
+	{Header: "thd_percent", Path: "electrical.thd_percent", Kind: KindProvNumber, Unit: "percent", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "thd_percent_bound_operator", Path: "electrical.thd_percent_bound_operator", Kind: KindEnum},
 	{Header: "driver_protocol", Path: "electrical.driver_protocol", Kind: KindEnum},
 	{Header: "dimming_method", Path: "electrical.dimming_method", Kind: KindEnum},
 	// dimming_range_percent is the {min, max} dim floor. Both halves are authored
@@ -191,6 +195,8 @@ var baseRecordColumns = []Column{
 	{Header: "field_angle_deg", Path: "photometry.field_angle_deg", Kind: KindProvNumber, Unit: "deg", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "nominal"},
 	{Header: "ugr_4h_8h", Path: "photometry.ugr_4h_8h", Kind: KindProvNumber, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 	{Header: "ugr_4h_8h_bound_operator", Path: "photometry.ugr_4h_8h_bound_operator", Kind: KindEnum},
+	{Header: "max_surface_luminance_cd_per_m2", Path: "photometry.max_surface_luminance_cd_per_m2", Kind: KindProvNumber, Unit: "cd/m2", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "max_surface_luminance_bound_operator", Path: "photometry.max_surface_luminance_bound_operator", Kind: KindEnum},
 	{Header: "beam_family", Path: "photometry.beam_family", Kind: KindEnum},
 	{Header: "distribution_type_photometry", Path: "photometry.distribution_type", Kind: KindEnum},
 	{Header: "symmetry_type", Path: "photometry.symmetry_type", Kind: KindEnum},
@@ -236,6 +242,7 @@ var baseRecordColumns = []Column{
 	{Header: "lm_declaration_framework", Path: "lumen_maintenance_luminaire.declaration_framework", Kind: KindEnum},
 	{Header: "lm_claim_type", Path: "lumen_maintenance_luminaire.manufacturer_rated_claim.claim_type", Kind: KindEnum},
 	{Header: "lm_claimed_hours", Path: "lumen_maintenance_luminaire.manufacturer_rated_claim.claimed_hours", Kind: KindProvNumber, Unit: "h", ProvSource: "manufacturer_direct", ProvMethod: "transcribed", ProvValueType: "rated"},
+	{Header: "lm_claim_basis", Path: "lumen_maintenance_luminaire.manufacturer_rated_claim.basis", Kind: KindEnum},
 
 	// --- sustainability_declaration (full-level enrichment; block-level scalars) ---
 	// The Declare / Living Building Challenge roster (ingredient_list) rides on its

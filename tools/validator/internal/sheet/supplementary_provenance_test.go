@@ -32,6 +32,9 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 		{sheet: "lumen_maintenance_package", field: "drive_current_ma"}:       {unit: "mA", family: attestationFamilyMaintenance},
 		{sheet: "zonal_lumens", field: "lumens"}:                              {unit: "lm", family: attestationFamilyPhotometric},
 		{sheet: "lcs_zonal_lumens", field: "lumens"}:                          {unit: "lm", family: attestationFamilyPhotometric},
+		{sheet: "spectral_power_distribution", field: "value"}:                {unitColumn: "unit", allowedUnits: map[string]bool{"mW/nm": true, "W/nm": true, "relative": true}, family: attestationFamilyPhotometric},
+		{sheet: "additional_rated_claims", field: "claimed_hours"}:            {unit: "h", family: attestationFamilyMaintenance, requiredValueType: "rated"},
+		{sheet: "additional_rated_claims", field: "failure_percent"}:          {unit: "percent", family: attestationFamilyMaintenance},
 	}
 	if len(supplementaryValueColumns) != len(want) {
 		t.Fatalf("supplementary value table has %d rows, want %d", len(supplementaryValueColumns), len(want))
@@ -58,6 +61,8 @@ func TestTouchedSupplementaryTemplateHeadersExposeConsumedColumns(t *testing.T) 
 	}{
 		{sheet: "flicker_metrics", after: "bound_operator", header: "conflict_notes"},
 		{sheet: "alpha_opic", after: "efficacy", header: "efficacy_unit"},
+		{sheet: "additional_rated_claims", after: "claim_type", header: "claimed_hours"},
+		{sheet: "additional_rated_claims", after: "basis", header: "failure_percent"},
 	}
 	for _, test := range tests {
 		t.Run(test.sheet, func(t *testing.T) {

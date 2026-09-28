@@ -481,6 +481,11 @@ func TestConvertPatternDAuthoredLengthSheet(t *testing.T) {
 // lift the grade alone.
 func TestConvertFullLevelSheets(t *testing.T) {
 	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, completeness.LevelStandard)
+	spectrum, _ := getPath(record, "colorimetry.spectral_power_distribution")
+	spd, ok := spectrum.(map[string]any)
+	if !ok || len(spd["values"].([]any)) != 87 || asFloat(t, spd["wavelength_start_nm"]) != 350 || asFloat(t, spd["wavelength_step_nm"]) != 5 {
+		t.Fatalf("unexpected spectral power distribution: %v", spectrum)
+	}
 
 	// alpha_opic_metrics: block scalars + a single melanopic per_channel efficacy,
 	// both rated ProvenancedNumbers (no attestation link).
@@ -511,6 +516,17 @@ func TestConvertFullLevelSheets(t *testing.T) {
 	tm21, _ := pkg0["tm_21_projection_hours"].(map[string]any)
 	if asInt64(t, tm21["value"]) != 60000 {
 		t.Fatalf("lumen_maintenance_package[0].tm_21_projection_hours.value = %v, want 60000", tm21["value"])
+	}
+	claims := arrayAt(t, record, "lumen_maintenance_luminaire.additional_rated_claims")
+	if len(claims) != 1 {
+		t.Fatalf("additional_rated_claims len = %d, want 1", len(claims))
+	}
+	claim, _ := claims[0].(map[string]any)
+	if claim["claim_type"] != "L70" || claim["basis"] != "tm_21_calculated" {
+		t.Fatalf("additional claim = %v", claim)
+	}
+	if basis, _ := getPath(record, "lumen_maintenance_luminaire.manufacturer_rated_claim.basis"); basis != "tm_21_reported" {
+		t.Fatalf("headline claim basis = %v, want tm_21_reported", basis)
 	}
 
 	// photometry.zonal_lumens: measured, auto-linked to the single LM-79 anchor.

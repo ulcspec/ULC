@@ -14,7 +14,8 @@ func TestCompanionHeaderSuffixTableIsExact(t *testing.T) {
 		CompanionFamilyProvenance: {
 			"__value_type", "__prov_source", "__prov_method", "__extension_method", "__base_attestation_ref", "__attestation_ref",
 		},
-		CompanionFamilyRevision: {"__revision_label", "__revision_date"},
+		CompanionFamilyRevision:       {"__revision_label", "__revision_date"},
+		CompanionFamilyProvenanceOnly: {"__prov_source", "__prov_method"},
 	}
 	if !reflect.DeepEqual(CompanionHeaderSuffixes, want) {
 		t.Errorf("companion suffix table = %#v, want %#v", CompanionHeaderSuffixes, want)
@@ -86,8 +87,8 @@ func writeTemplateHeaderBundle(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("read workbook templates: %v", err)
 	}
-	if len(templates.Headers) != 16 {
-		t.Fatalf("workbook template carries %d CSV sheets, want 16", len(templates.Headers))
+	if len(templates.Headers) != 18 {
+		t.Fatalf("workbook template carries %d CSV sheets, want 18", len(templates.Headers))
 	}
 	sourceDir := filepath.Join("testdata", "bundle-b")
 	source, err := ReadCSVBundle(sourceDir)
@@ -127,6 +128,32 @@ func writeTemplateHeaderBundle(t *testing.T) string {
 		}
 	}
 	return out
+}
+
+func TestWorkbookReadmeNamesEveryConsumedSheet(t *testing.T) {
+	templateDir := filepath.Join(filepath.Dir(schemaDir(t)), "templates", "workbook")
+	readme, err := os.ReadFile(filepath.Join(templateDir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for sheet := range consumedRelatedSheets {
+		if !strings.Contains(string(readme), "| `"+sheet+"` |") {
+			t.Errorf("workbook README table does not name consumed sheet %q", sheet)
+		}
+		if _, err := os.Stat(filepath.Join(templateDir, sheet+".csv")); err != nil {
+			t.Errorf("consumed sheet %q has no template CSV: %v", sheet, err)
+		}
+	}
+	files, err := filepath.Glob(filepath.Join(templateDir, "*.csv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range files {
+		sheet := strings.TrimSuffix(filepath.Base(file), ".csv")
+		if sheet != "records" && !consumedRelatedSheets[sheet] {
+			t.Errorf("template CSV %q is not a consumed sheet", sheet)
+		}
+	}
 }
 
 func TestAllShippedTemplateHeadersConvert(t *testing.T) {

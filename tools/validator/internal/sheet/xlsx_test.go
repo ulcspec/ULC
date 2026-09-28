@@ -309,14 +309,18 @@ func bundleToXLSXSheets(t *testing.T, bundleDir string) []xsheet {
 }
 
 var xlsxNumericColumns = map[string]map[string]bool{
-	"alpha_opic":                {"melanopic_der": true, "efficacy": true},
-	"cct_multipliers":           {"cct": true, "multiplier": true},
-	"cie97_llmf":                {"hours": true, "llmf": true, "lsf": true},
-	"cie97_lmf":                 {"cleaning_interval_years": true, "lmf": true},
-	"flicker_metrics":           {"value": true},
-	"lcs_zonal_lumens":          {"lumens": true},
-	"lumen_maintenance_package": {"flux_maintenance_threshold": true, "tm_21_projection_hours": true},
-	"zonal_lumens":              {"lumens": true},
+	"additional_rated_claims":     {"claimed_hours": true, "failure_percent": true},
+	"alpha_opic":                  {"melanopic_der": true, "efficacy": true},
+	"attestations":                {"domestic_content_us_cost_share_percent": true, "domestic_content_foreign_cost_share_percent": true, "domestic_content_threshold_percent": true},
+	"cct_multipliers":             {"cct": true, "multiplier": true},
+	"cie97_llmf":                  {"hours": true, "llmf": true, "lsf": true},
+	"cie97_lmf":                   {"cleaning_interval_years": true, "lmf": true},
+	"flicker_metrics":             {"value": true},
+	"lcs_zonal_lumens":            {"lumens": true},
+	"lumen_maintenance_package":   {"flux_maintenance_threshold": true, "tm_21_projection_hours": true},
+	"spectral_power_distribution": {"wavelength_nm": true, "value": true},
+	"shared_attestations":         {"domestic_content_us_cost_share_percent": true, "domestic_content_foreign_cost_share_percent": true, "domestic_content_threshold_percent": true},
+	"zonal_lumens":                {"lumens": true},
 }
 
 func xlsxFixtureCell(sheetName, header string, rowIndex, columnIndex int, value string) (string, string) {
