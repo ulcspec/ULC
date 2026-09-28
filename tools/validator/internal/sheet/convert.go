@@ -806,6 +806,9 @@ func buildDomesticContent(row Row) (map[string]any, error) {
 	if method == "" {
 		method = "transcribed"
 	}
+	if derivedBaseMethods[method] {
+		return nil, fmt.Errorf("domestic_content__prov_method %q requires a base_attestation_ref, which domestic_content cannot author; use a non-derived method", method)
+	}
 	payload["provenance"] = map[string]any{"source": source, "method": method}
 	return payload, nil
 }

@@ -115,6 +115,63 @@ func TestDomesticContentAcrossReaders(t *testing.T) {
 	}
 }
 
+func TestDomesticContentIndependentProvenanceOverridesAcrossReaders(t *testing.T) {
+	for _, sheet := range []string{"attestations", "shared_attestations"} {
+		for _, test := range []struct {
+			name, column, value, source, method string
+		}{
+			{"source only", "domestic_content__prov_source", "manufacturer_data_export", "manufacturer_data_export", "transcribed"},
+			{"method only", "domestic_content__prov_method", "extracted", "manufacturer_direct", "extracted"},
+		} {
+			t.Run(sheet+"/"+test.name, func(t *testing.T) {
+				bundle := domesticBundle(t, sheet, map[string]string{
+					"domestic_content_us_cost_share_percent": "88.50",
+					"domestic_content_threshold_percent":     "65",
+					"domestic_content_basis":                 "manufacturing_cost",
+					test.column:                              test.value,
+				})
+				for reader, input := range supplementaryInputs(t, bundle) {
+					t.Run(reader, func(t *testing.T) {
+						record := convertOne(t, input, PatternB, completeness.LevelStandard)
+						prov := domesticPayload(t, record, sheet)["provenance"].(map[string]any)
+						if prov["source"] != test.source || prov["method"] != test.method {
+							t.Errorf("provenance = %v, want %s and %s", prov, test.source, test.method)
+						}
+					})
+				}
+			})
+		}
+	}
+}
+
+func TestDomesticContentRejectsDerivedMethodsAcrossReaders(t *testing.T) {
+	for _, sheet := range []string{"attestations", "shared_attestations"} {
+		for _, method := range []string{"scaled", "optical_simulation", "extended_photometry"} {
+			t.Run(sheet+"/"+method, func(t *testing.T) {
+				bundle := domesticBundle(t, sheet, map[string]string{
+					"domestic_content_us_cost_share_percent": "88.50",
+					"domestic_content_threshold_percent":     "65",
+					"domestic_content_basis":                 "manufacturing_cost",
+					"domestic_content__prov_method":          method,
+				})
+				for reader, input := range supplementaryInputs(t, bundle) {
+					t.Run(reader, func(t *testing.T) {
+						_, err := Convert(input, Options{})
+						if err == nil {
+							t.Fatal("derived domestic-content method converted")
+						}
+						for _, want := range []string{"domestic_content__prov_method", method, "base_attestation_ref", "non-derived method"} {
+							if !strings.Contains(err.Error(), want) {
+								t.Errorf("error %q does not contain %q", err, want)
+							}
+						}
+					})
+				}
+			})
+		}
+	}
+}
+
 func domesticSchemaErrors(t *testing.T, input string) string {
 	t.Helper()
 	results, err := Convert(input, Options{})

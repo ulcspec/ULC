@@ -69,28 +69,33 @@ func TestSpectrumDecimalGridEmitsRoundedStepAcrossReaders(t *testing.T) {
 
 func TestSpectrumBlockMetadataAcrossReaders(t *testing.T) {
 	tests := []struct {
-		name   string
-		edit   func([][]string) [][]string
-		optics any
-		typeOf string
+		name       string
+		edit       func([][]string) [][]string
+		optics     any
+		typeOf     string
+		provSource string
 	}{
 		{"later row", func(r [][]string) [][]string {
 			for _, col := range []int{3, 4, 5} {
 				r[2][col], r[1][col] = r[1][col], ""
 			}
 			return r
-		}, true, "measured"},
+		}, true, "measured", "test_report"},
 		{"matching repeated cells", func(r [][]string) [][]string {
 			for _, col := range []int{3, 4, 5} {
 				r[2][col] = r[1][col]
 			}
 			return r
-		}, true, "measured"},
+		}, true, "measured", "test_report"},
 		{"rated package spectrum", func(r [][]string) [][]string {
 			r[1][5], r[1][7], r[1][8] = "FALSE", "rated", "datasheet_pdf"
 			return r
-		}, false, "rated"},
-		{"blank optics", func(r [][]string) [][]string { r[1][5] = ""; return r }, nil, "measured"},
+		}, false, "rated", "datasheet_pdf"},
+		{"blank optics", func(r [][]string) [][]string { r[1][5] = ""; return r }, nil, "measured", "test_report"},
+		{"late rated provenance", func(r [][]string) [][]string {
+			r[2][7], r[2][8] = "rated", "datasheet_pdf"
+			return r
+		}, true, "rated", "datasheet_pdf"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -102,6 +107,9 @@ func TestSpectrumBlockMetadataAcrossReaders(t *testing.T) {
 					block := value.(map[string]any)
 					if block["unit"] != "mW/nm" || block["source_kind"] != "laboratory_table" || block["value_type"] != test.typeOf {
 						t.Errorf("unexpected spectrum metadata: %v", block)
+					}
+					if source := block["provenance"].(map[string]any)["source"]; source != test.provSource {
+						t.Errorf("provenance source = %v, want %s", source, test.provSource)
 					}
 					if optics, present := block["measured_through_optics"]; test.optics == nil {
 						if present {

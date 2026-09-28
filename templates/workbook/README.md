@@ -200,6 +200,8 @@ checks percentages against 0 to 100. Set `basis` to `manufacturing_cost`,
 spreadsheet, set `domestic_content__prov_source=manufacturer_data_export`;
 `domestic_content__prov_method` can override the method independently. The
 payload belongs to its attestation and carries no separate `value_type`.
+Derived methods (`scaled`, `optical_simulation`, and `extended_photometry`) are
+refused because this payload cannot name a base attestation.
 
 The four authoring patterns are detected for you from which sheets carry rows: a
 populated `catalog_number` with no applicability sheets is a single-SKU pin
