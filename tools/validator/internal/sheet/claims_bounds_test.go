@@ -140,6 +140,7 @@ func TestAdditionalClaimRowRefusalsAcrossReaders(t *testing.T) {
 		want []string
 	}{
 		{"missing claim type", func(t *testing.T, b string) { setClaimsCell(t, b, "additional_rated_claims", "claim_type", "") }, []string{"claim_type"}},
+		{"L50 rated claim", func(t *testing.T, b string) { setClaimsCell(t, b, "additional_rated_claims", "claim_type", "L50") }, []string{"claim_type", "L50", "threshold crossed experimentally", "extended LM-80", "measured", "lumen_maintenance_package"}},
 		{"missing claimed hours", func(t *testing.T, b string) { setClaimsCell(t, b, "additional_rated_claims", "claimed_hours", "") }, []string{"claimed_hours"}},
 		{"measured claimed hours", func(t *testing.T, b string) {
 			setClaimsCell(t, b, "additional_rated_claims", "claimed_hours__value_type", "measured")

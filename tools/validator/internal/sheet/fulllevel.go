@@ -82,6 +82,9 @@ func assembleAdditionalRatedClaims(wb Workbook, id string, rec map[string]any, c
 		if row["claim_type"] == "" {
 			return fmt.Errorf("%s row %d for %q: missing claim_type", sheet, i+1, id)
 		}
+		if row["claim_type"] == "L50" {
+			return fmt.Errorf("%s row %d for %q: claim_type cell L50 is reserved by the FluxMaintenanceThreshold taxonomy for a threshold crossed experimentally in an extended LM-80 test encoded measured; author that evidence on lumen_maintenance_package instead", sheet, i+1, id)
+		}
 		if row["claimed_hours"] == "" {
 			return fmt.Errorf("%s row %d for %q: missing claimed_hours", sheet, i+1, id)
 		}

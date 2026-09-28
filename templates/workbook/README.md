@@ -158,6 +158,8 @@ gives, or the one you judge most representative, in `records` using
 on `additional_rated_claims`, one row per claim. Each row needs `claim_type`
 and `claimed_hours`; `basis` is required by the schema. Claims without a
 records-sheet headline are refused.
+The additional-claims sheet authors rated hours; use `lumen_maintenance_package`
+for an L50 threshold crossed experimentally in an extended LM-80 test.
 
 ## Spectrum sheet
 
