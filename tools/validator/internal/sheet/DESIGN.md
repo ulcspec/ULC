@@ -55,6 +55,7 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
 | `source_files` | IES/LDT/ULD/supplementary files (cutsheet auto-injected) | `record_id` | A B C D |
 | `attestations` | per-record program attestations (LM-79 row is load-bearing) | `record_id` | A B C D |
 | `shared_attestations` | family-wide listings (UL/IEC/RoHS) | `record_id` | A B C D |
+| `customization_openness` | manufacturer-stated open axes, assembled into `product_family.customization_openness` | `(record_id,axis)`; `axis_label` disambiguates `other` rows | A B C D |
 | `covered_axes` | one row per (axis, covered value) + rationale + derivation | `(record_id,axis_key,value)` | B D |
 | `cct_multipliers` | the Pattern B CCT lumen-multiplier table | `(record_id,axis_value)` | B |
 | `declared_by_length` | verbatim per-length table (else generated) | `(record_id,length_mm)` | D |

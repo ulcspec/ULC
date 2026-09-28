@@ -145,7 +145,8 @@ func Convert(input string, opts Options) ([]Result, error) {
 // workbook tabs like instructions or a changelog are ignored).
 var consumedRelatedSheets = map[string]bool{
 	"source_files": true, "attestations": true, "shared_attestations": true,
-	"covered_axes": true, "cct_multipliers": true, "declared_by_length": true,
+	"customization_openness": true,
+	"covered_axes":           true, "cct_multipliers": true, "declared_by_length": true,
 	"excluded_combinations": true, "ingredient_list": true,
 	"cie97_lmf": true, "cie97_llmf": true, "alpha_opic": true,
 	"flicker_metrics": true, "lumen_maintenance_package": true,
@@ -291,6 +292,9 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 		if err := setPath(rec, "product_family.shared_attestations", shared); err != nil {
 			return nil, err
 		}
+	}
+	if err := assembleCustomizationOpenness(wb, id, rec); err != nil {
+		return nil, err
 	}
 
 	// Patterns B and D: the applicability block and the derivation-generated
@@ -724,6 +728,48 @@ func assembleSharedAttestations(wb Workbook, id string) ([]any, error) {
 	return out, nil
 }
 
+// assembleCustomizationOpenness copies family openings in sheet order. The
+// schema checks each entry's vocabulary and shape; row-key uniqueness is a
+// workbook constraint and is checked here.
+func assembleCustomizationOpenness(wb Workbook, id string, rec map[string]any) error {
+	openings := []any{}
+	axisRows := map[string]int{}
+	otherRows := map[string]int{}
+	for i, row := range wb.Rows["customization_openness"] {
+		if row["record_id"] != id {
+			continue
+		}
+		rowNumber := i + 1
+		axis := row["axis"]
+		if axis == "" {
+			return fmt.Errorf("customization_openness row %d record %q: missing axis", rowNumber, id)
+		}
+		if axis == "other" {
+			if label := row["axis_label"]; label != "" {
+				key := strings.ToLower(strings.Join(strings.Fields(label), " "))
+				if previous, exists := otherRows[key]; exists {
+					return fmt.Errorf("customization_openness rows %d and %d record %q: duplicate other axis_label %q", previous, rowNumber, id, label)
+				}
+				otherRows[key] = rowNumber
+			}
+		} else {
+			if previous, exists := axisRows[axis]; exists {
+				return fmt.Errorf("customization_openness rows %d and %d record %q: duplicate axis %q", previous, rowNumber, id, axis)
+			}
+			axisRows[axis] = rowNumber
+		}
+		entry := map[string]any{}
+		for _, field := range []string{"axis", "axis_label", "statement", "published_in_ref", "contact_reference"} {
+			copyIf(entry, row, field, field)
+		}
+		openings = append(openings, entry)
+	}
+	if len(openings) == 0 {
+		return nil
+	}
+	return setPath(rec, "product_family.customization_openness", openings)
+}
+
 // rejectCaseByCaseMeasured enforces the attestation policy that a case-by-case
 // claim (verification_type=requires_manufacturer_confirmation) must not be
 // promoted to a measured value: consumers must not propagate such a claim
@@ -822,6 +868,9 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	copyIf(att, row, "status", "status")
 	copyIf(att, row, "value_type", "value_type")
 	copyIf(att, row, "issued_date", "issued_date")
+	copyIf(att, row, "valid_until", "valid_until")
+	copyIf(att, row, "listing_number", "listing_number")
+	copyIf(att, row, "test_laboratory", "test_laboratory")
 	copyIf(att, row, "test_report_id", "test_report_id")
 	copyIf(att, row, "standard_revision", "standard_revision")
 
@@ -834,7 +883,10 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	if vtype == "" {
 		vtype = "unconditional"
 	}
-	att["verification"] = map[string]any{"type": vtype}
+	verification := map[string]any{"type": vtype}
+	copyIf(verification, row, "verification_contact_reference", "contact_reference")
+	copyIf(verification, row, "verification_notes", "notes")
+	att["verification"] = verification
 	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
 		return nil, err
 	}
@@ -879,12 +931,18 @@ func buildSharedAttestation(row Row) (map[string]any, error) {
 	copyIf(att, row, "program", "program")
 	copyIf(att, row, "status", "status")
 	copyIf(att, row, "value_type", "value_type")
+	copyIf(att, row, "valid_until", "valid_until")
+	copyIf(att, row, "listing_number", "listing_number")
+	copyIf(att, row, "test_laboratory", "test_laboratory")
 	copyIf(att, row, "standard_revision", "standard_revision")
 	vtype := row["verification_type"]
 	if vtype == "" {
 		vtype = "unconditional"
 	}
-	att["verification"] = map[string]any{"type": vtype}
+	verification := map[string]any{"type": vtype}
+	copyIf(verification, row, "verification_contact_reference", "contact_reference")
+	copyIf(verification, row, "verification_notes", "notes")
+	att["verification"] = verification
 	if err := rejectCaseByCaseMeasured(vtype, att); err != nil {
 		return nil, err
 	}
