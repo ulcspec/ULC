@@ -20,6 +20,24 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.14.0 (2026-09-30)
+
+This release adds optional workbook authoring for measured CCT, chromaticity x and y, CRI R9, and TM-30 Rf, Rg, reference illuminant type, and PVF code. The schema and taxonomy do not change. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0, and all eight published examples remain byte-identical.
+
+### For consumers
+
+By default, newly converted records declare 1.14.0. Workbooks without the new columns convert to the same records as 1.13.0 except for `ulc_version`, and an explicit 1.13.0 declaration remains unchanged. Stored records need no index re-stamp because the builder and its generated projection are unchanged. The new columns require a 1.14.0 binary: older converters ignore the unrecognized plain field headers but reject the new double-underscore companion headers, including blank companion columns.
+
+### Validator and workbook
+
+- The `records` sheet adds six optional provenanced numbers: `measured_cct_k`, `chromaticity_x`, `chromaticity_y`, `cri_r9`, `tm_30_rf`, and `tm_30_rg`. Each defaults independently to value type `measured`, source `test_report`, and method `transcribed`, and each accepts the six standard provenance companions.
+- The plain `tm_30_reference_illuminant_type` and `tm_30_pvf_code` columns author their existing schema fields without provenance companions. Rf and Rg may be supplied independently with distinct evidence references. Blank fields are omitted, and no TM-30 value is inferred from CCT or another metric.
+- CSV and XLSX readers produce the same record shapes. All eight columns and all 36 new companions are optional.
+
+### Documentation
+
+- The workbook guide lists the eight measured-colour fields, their destinations, units, defaults and allowed plain values, and explains their LM-79 evidence and older-converter requirements.
+
 ## 1.13.0 (2026-09-27)
 
 This release adds workbook authoring for family customization openness and five attestation evidence members already in the schema. The schema and taxonomy do not change. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0, and all eight published examples remain byte-identical.
