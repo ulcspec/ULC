@@ -96,6 +96,40 @@ The derived methods `scaled`, `optical_simulation`, and `extended_photometry`
 also require `value_type=rated` and cannot be paired with `measured` or
 `nominal`.
 
+### Measured-colour records columns
+
+Release 1.14.0 adds these optional `records` columns for measured colour data:
+
+| Header | Record destination | Shape and unit | Defaults or allowed values |
+|---|---|---|---|
+| `measured_cct_k` | `colorimetry.measured_cct_k` | Provenanced number, `K` | `measured`, `test_report`, `transcribed` |
+| `chromaticity_x` | `colorimetry.chromaticity_x` | Provenanced number, no unit | `measured`, `test_report`, `transcribed` |
+| `chromaticity_y` | `colorimetry.chromaticity_y` | Provenanced number, no unit | `measured`, `test_report`, `transcribed` |
+| `cri_r9` | `colorimetry.cri_r9` | Provenanced number, no unit | `measured`, `test_report`, `transcribed` |
+| `tm_30_rf` | `colorimetry.tm_30.rf` | Provenanced number, no unit | `measured`, `test_report`, `transcribed` |
+| `tm_30_rg` | `colorimetry.tm_30.rg` | Provenanced number, no unit | `measured`, `test_report`, `transcribed` |
+| `tm_30_reference_illuminant_type` | `colorimetry.tm_30.reference_illuminant_type` | Plain enum | `planckian`, `blended_planckian_daylight`, or `cie_d_series` |
+| `tm_30_pvf_code` | `colorimetry.tm_30.pvf_code` | Plain string | `P1` to `P3`, `V1` to `V3`, or `F1` to `F3` |
+
+Each of the six provenanced-number columns accepts all six standard companions:
+`__value_type`, `__prov_source`, `__prov_method`, `__extension_method`,
+`__base_attestation_ref`, and `__attestation_ref`. The two plain columns accept
+no companions. A measured value requires eligible LM-79 evidence. When more
+than one eligible LM-79 attestation exists, author the value's explicit
+`__attestation_ref`. Report evidence must actually support the authored value;
+the converter does not turn unrelated evidence into a measurement.
+
+TM-30 Rf and Rg are independent values. Each has its own value type,
+provenance, and evidence reference, so either can be authored without the other
+and their companions need not match. The reference illuminant and PVF code may
+also be authored independently. Blank cells are omitted, and four blank TM-30
+cells create no `tm_30` object. The converter never derives Rf, Rg, reference
+illuminant, or PVF from CCT or another colour metric.
+
+Use an `ulc` converter at release 1.14.0 or newer for these columns. Older
+converters ignore the two unknown plain headers and reject the new companion
+headers, even when those companion cells are blank.
+
 File-reference revision metadata uses a separate companion family:
 `X__revision_label` and `X__revision_date` are legal for `cutsheet_file` and
 `warranty_conditions_file` on `records`, `filename` on `source_files`, and
