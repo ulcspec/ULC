@@ -27,7 +27,7 @@ for the next major. Pre-1.0 releases generally aimed for additive changes;
 compatibility-tightening changes occurred only when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.13.x
+## Active version: v1.14.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -150,6 +150,13 @@ v1.13.0 adds workbook authoring for family customization openness and five
 attestation evidence members. The converter and templates change; the schema,
 taxonomy, required sets, grades, achievements, generated index, and eight
 published examples do not. Builder version 0.8.0 remains current.
+
+v1.14.0 adds optional workbook columns for measured CCT, chromaticity x and y,
+CRI R9, and TM-30 Rf, Rg, reference illuminant type, and PVF code. The six
+numeric values carry independent value type and provenance companions. The
+converter and template change; the schema, taxonomy, required sets, grades,
+achievements, generated index, and eight published examples do not. Builder
+version 0.8.0 remains current.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator

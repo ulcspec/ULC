@@ -221,6 +221,14 @@ var baseRecordColumns = []Column{
 	{Header: "cri_ra", Path: "colorimetry.cri_ra", Kind: KindProvNumber, ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "duv", Path: "colorimetry.duv", Kind: KindProvNumber, ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},
 	{Header: "sdcm_step", Path: "colorimetry.sdcm_step", Kind: KindProvNumber, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "measured_cct_k", Path: "colorimetry.measured_cct_k", Kind: KindProvNumber, Unit: "K", ProvSource: "test_report", ProvMethod: "transcribed", ProvValueType: "measured"},
+	{Header: "chromaticity_x", Path: "colorimetry.chromaticity_x", Kind: KindProvNumber, ProvSource: "test_report", ProvMethod: "transcribed", ProvValueType: "measured"},
+	{Header: "chromaticity_y", Path: "colorimetry.chromaticity_y", Kind: KindProvNumber, ProvSource: "test_report", ProvMethod: "transcribed", ProvValueType: "measured"},
+	{Header: "cri_r9", Path: "colorimetry.cri_r9", Kind: KindProvNumber, ProvSource: "test_report", ProvMethod: "transcribed", ProvValueType: "measured"},
+	{Header: "tm_30_rf", Path: "colorimetry.tm_30.rf", Kind: KindProvNumber, ProvSource: "test_report", ProvMethod: "transcribed", ProvValueType: "measured"},
+	{Header: "tm_30_rg", Path: "colorimetry.tm_30.rg", Kind: KindProvNumber, ProvSource: "test_report", ProvMethod: "transcribed", ProvValueType: "measured"},
+	{Header: "tm_30_reference_illuminant_type", Path: "colorimetry.tm_30.reference_illuminant_type", Kind: KindEnum},
+	{Header: "tm_30_pvf_code", Path: "colorimetry.tm_30.pvf_code", Kind: KindString},
 
 	// --- outdoor_classification (full-level gate for outdoor products) ---
 	{Header: "bug_b", Path: "outdoor_classification.bug_rating.b", Kind: KindNumber},
