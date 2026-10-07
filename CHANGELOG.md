@@ -20,6 +20,25 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.15.0 (2026-10-07)
+
+This release grades a measured spectral power distribution at the Full conformance level for white-light records and names the spectrum on the non-gating enrichment roadmap. The schema, taxonomy, workbook template and converter do not change. No required set or achievement state changes. The builder moves to 0.9.0 because `index.conformance_level` now reads the spectrum block.
+
+### For consumers
+
+A white-light record (`color_tunability` `static_white`, `tunable_white` or `dim_to_warm`) reaches `full` only when `colorimetry.spectral_power_distribution` holds at least two numeric sampled values at a positive wavelength step, a `source_kind` of `laboratory_table` or `exchange_file`, `measured_through_optics` true, and a `value_type` of `measured` or `rated`. A digitized chart, an LED-package curve or a nominal spectrum does not satisfy the row. A spectrometer export the manufacturer measured through the luminaire's optics does, entered as `rated`, and its value type stays `rated`. Core and Standard are unchanged, and colour-mixing records are not asked for a spectrum.
+
+Newly converted records default to 1.15.0. Builder 0.9.0 identifies the new logic, so every stored record must re-stamp its index with `ulc build-index`; until it does, `ulc validate` and `ulc build-index --check` report an index drift on `builder_version`. A white-light record that graded `full` under 0.8.0 without a qualifying spectrum grades `standard` under 0.9.0 with one open Full item naming the spectrum; every other record keeps its level and every other generated value. None of the eight published examples grades `full` or carries a spectrum, so their grades are unchanged and each re-stamps only `builder_version`. The scope manifest of a white-light record gains one `full` item of kind `requirement`; `scope_version` stays `1.0.0` because the item is a member of the existing `items` array, not a new field, kind or array.
+
+### Grading
+
+- New Full row for white-light records: `measured spectral power distribution as data (through the optics; table or exchange file)`, source document `test_report`, standard `LM-79 / TM-27`. It applies with the TM-30 rows (`isWhiteLightPrimary`) and reads only the spectrum block.
+- New non-gating enrichment row at `/colorimetry/spectral_power_distribution` with the same test, so every white-light record at core or above and below Full without a qualifying spectrum sees the spectrum once on its enrichment roadmap beside the Full gap.
+
+### Documentation
+
+- The methodology's Full table, grade sentence, enrichment list and predicate table name the row; the validator and examples READMEs and the authoring patterns name it; the workbook guide's spectrum sheet names the cells the Full row reads; the roadmap records the delivered row and retires its deferred entry.
+
 ## 1.14.0 (2026-09-30)
 
 This release adds optional workbook authoring for measured CCT, chromaticity x and y, CRI R9, and TM-30 Rf, Rg, reference illuminant type, and PVF code. The schema and taxonomy do not change. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.8.0, and all eight published examples remain byte-identical.
