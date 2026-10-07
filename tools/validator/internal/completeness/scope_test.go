@@ -188,7 +188,7 @@ func TestScopePerClass(t *testing.T) {
 
 // --- T2: the frozen public table ---
 
-// TestScopeGatingTable freezes all 68 gating rows as (tier, kind, path,
+// TestScopeGatingTable freezes all 69 gating rows as (tier, kind, path,
 // source_document, standard). The manifest publishes those three strings for
 // every in-scope row unconditionally, where today they reach the public only for
 // rows some record happens to miss, so any reword, any added or removed gating
@@ -284,8 +284,8 @@ func TestScopeKindPartition(t *testing.T) {
 	if gating+enrichment+observation != len(rubric) {
 		t.Errorf("level split = %d gating + %d enrichment + %d observation, want %d total", gating, enrichment, observation, len(rubric))
 	}
-	if gating != 68 || enrichment != 70 || observation != 2 {
-		t.Errorf("level split = %d/%d/%d, want 68 gating / 70 enrichment / 2 observation", gating, enrichment, observation)
+	if gating != 69 || enrichment != 71 || observation != 2 {
+		t.Errorf("level split = %d/%d/%d, want 69 gating / 71 enrichment / 2 observation", gating, enrichment, observation)
 	}
 
 	// Every tier token the manifest can emit must be one of the three documented
@@ -317,8 +317,8 @@ func TestScopeKindPartition(t *testing.T) {
 		seenKey[k] = ru.path
 	}
 
-	if counts[ScopeKindPointer] != 59 || counts[ScopeKindChoice] != 2 || counts[ScopeKindRequirement] != 7 {
-		t.Errorf("gating kind partition = %d pointer / %d choice / %d requirement, want 59/2/7",
+	if counts[ScopeKindPointer] != 59 || counts[ScopeKindChoice] != 2 || counts[ScopeKindRequirement] != 8 {
+		t.Errorf("gating kind partition = %d pointer / %d choice / %d requirement, want 59/2/8",
 			counts[ScopeKindPointer], counts[ScopeKindChoice], counts[ScopeKindRequirement])
 	}
 	// The tables must not carry entries no gating row claims.
@@ -423,11 +423,11 @@ func TestScopeCorpusShape(t *testing.T) {
 		{"cooper-atlite-auxswhsd.ulc", 25, 15, 9, 1, sign},
 		{"cooper-sure-lites-es61src.ulc", 22, 15, 6, 1, sign},
 		{"cooper-sure-lites-lpx7sd.ulc", 25, 15, 9, 1, sign},
-		{"erco-quintessence-30416-023.ulc", 44, 21, 15, 8, withColor("colorimetry")},
+		{"erco-quintessence-30416-023.ulc", 45, 21, 15, 9, withColor("colorimetry")},
 		{"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc", 37, 19, 12, 6, base},
 		{"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc", 38, 20, 12, 6, withColor("colorimetry")},
-		{"selux-aya-pole-sr-ho-3000k.ulc", 47, 21, 18, 8, withColor("colorimetry", "outdoor_classification")},
-		{"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc", 45, 21, 16, 8, withColor("colorimetry")},
+		{"selux-aya-pole-sr-ho-3000k.ulc", 48, 21, 18, 9, withColor("colorimetry", "outdoor_classification")},
+		{"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc", 46, 21, 16, 9, withColor("colorimetry")},
 	}
 	if got := len(cases); got != len(scopeExamples(t)) {
 		t.Fatalf("this table covers %d records but examples/ holds %d; add the new record here too", got, len(scopeExamples(t)))
@@ -688,6 +688,7 @@ func TestScopeBlocksDerivation(t *testing.T) {
 		{generic, LevelCore, "safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)", []string{"attestations", "product_family"}},
 		{sign, LevelCore, "UL 924 listing", []string{"attestations", "product_family"}},
 		{generic, LevelStandard, "LM-79 attestation", []string{"attestations", "product_family"}},
+		{Scope(fullBase()), LevelFull, "measured spectral power distribution as data (through the optics; table or exchange file)", []string{"colorimetry"}},
 		{generic, LevelFull, "instrumentation depth (goniometer/lab)", []string{"instrumentation"}},
 		{generic, LevelFull, "method-backed lumen maintenance (TM-21 hours or TM-28)", []string{"lumen_maintenance_luminaire", "lumen_maintenance_package"}},
 		{sign, LevelFull, "test-report-backed sign-face luminance", []string{"exit_sign"}},
@@ -778,6 +779,7 @@ func TestNonPointerBlocksAreNecessary(t *testing.T) {
 		{LevelCore, "UL 924 listing", comboSignCore()},
 		{LevelStandard, "LM-79 attestation", standardBase()},
 		{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", standardBase()},
+		{LevelFull, "measured spectral power distribution as data (through the optics; table or exchange file)", fullBase()},
 		{LevelFull, "instrumentation depth (goniometer/lab)", fullBase()},
 		{LevelFull, "method-backed lumen maintenance (TM-21 hours or TM-28)", fullBase()},
 		{LevelFull, "test-report-backed sign-face luminance", comboSignFull()},

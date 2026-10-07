@@ -30,6 +30,7 @@ full	pointer	/operating_point	test_report	LM-79
 full	pointer	/photometry/zonal_lumens	ies	LM-79
 full	pointer	/uncertainty	test_report	LM-79 / GUM
 full	requirement	instrumentation depth (goniometer/lab)	test_report	LM-79 / LM-75
+full	requirement	measured spectral power distribution as data (through the optics; table or exchange file)	test_report	LM-79 / TM-27
 full	requirement	method-backed lumen maintenance (TM-21 hours or TM-28)	test_report	LM-80 / TM-21 / TM-28
 full	requirement	test-report-backed face illuminance	test_report	UL 924
 full	requirement	test-report-backed sign-face luminance	test_report	UL 924

@@ -60,7 +60,8 @@ var choiceBlocks = map[string][]string{
 // attestationPrograms, which reads both the top-level attestations array and
 // product_family.shared_attestations, so both blocks are named.
 var requirementBlocks = map[string][]string{
-	"safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)": {"attestations", "product_family"},
+	"measured spectral power distribution as data (through the optics; table or exchange file)": {"colorimetry"},
+	"safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)":                       {"attestations", "product_family"},
 	"UL 924 listing":                                         {"attestations", "product_family"},
 	"LM-79 attestation":                                      {"attestations", "product_family"},
 	"instrumentation depth (goniometer/lab)":                 {"instrumentation"},

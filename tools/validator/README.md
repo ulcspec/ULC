@@ -33,7 +33,7 @@ The `ulc` CLI provides:
 
 Not yet implemented:
 
-- [ ] Promoting selected observations to graded requirements. The `full` tier hard-gates accredited-laboratory depth: zonal lumens, measurement uncertainty, applied corrections, method-backed lumen-maintenance projections, deeper instrumentation metadata, and (for primarily-white-light fixtures) TM-30 fidelity. The remaining comprehensive items stay non-gating across two channels: the enrichment roadmap carries the optional datasheet depth (power factor, flicker, alpha-opic and circadian metrics, and similar), while a sustainability declaration and a small residual set stay plain `conformance/observation` notes.
+- [ ] Promoting selected observations to graded requirements. The `full` tier hard-gates accredited-laboratory depth: zonal lumens, measurement uncertainty, applied corrections, method-backed lumen-maintenance projections, deeper instrumentation metadata, and (for primarily-white-light fixtures) TM-30 fidelity, plus a measured spectrum as data. The remaining comprehensive items stay non-gating across two channels: the enrichment roadmap carries the optional datasheet depth (power factor, flicker, alpha-opic and circadian metrics, and similar), while a sustainability declaration and a small residual set stay plain `conformance/observation` notes.
 
 ## Language
 

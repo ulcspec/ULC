@@ -214,14 +214,15 @@ func setDataPath(rec map[string]any, comps []string, val any) {
 // constructor), so a generic schema-correct value would not satisfy it. They are
 // covered by the behavioral tests instead.
 var predicateBackedPaths = map[string]bool{
-	"/product_family/cutsheet":           true, // hasCutsheet: needs an attached cutsheet with a content hash
-	"/emergency/photometry_reference":    true, // hasEmergencyPhotometryReference: FileReference needing a content hash (like cutsheet)
-	"/operating_point":                   true, // hasOperatingPoint: needs a recognized qualifier
-	"/uncertainty":                       true, // hasUncertainty: needs coverage_factor_k + an expanded_*
-	"/corrections_applied":               true, // hasCorrectionsApplied: needs a recognized correction leaf
-	"/photometry/per_length_normalized":  true, // hasPerLengthNormalized: needs a per-length rate, not just reference_length
-	"/outdoor_classification/bug_rating": true, // hasBugRating: needs b + u + g
-	"/electrical/dimming_range_percent":  true, // hasDimmingRange: needs min + max
+	"/colorimetry/spectral_power_distribution": true, // hasMeasuredSpectrum: requires sampled data and evidence qualifiers
+	"/product_family/cutsheet":                 true, // hasCutsheet: needs an attached cutsheet with a content hash
+	"/emergency/photometry_reference":          true, // hasEmergencyPhotometryReference: FileReference needing a content hash (like cutsheet)
+	"/operating_point":                         true, // hasOperatingPoint: needs a recognized qualifier
+	"/uncertainty":                             true, // hasUncertainty: needs coverage_factor_k + an expanded_*
+	"/corrections_applied":                     true, // hasCorrectionsApplied: needs a recognized correction leaf
+	"/photometry/per_length_normalized":        true, // hasPerLengthNormalized: needs a per-length rate, not just reference_length
+	"/outdoor_classification/bug_rating":       true, // hasBugRating: needs b + u + g
+	"/electrical/dimming_range_percent":        true, // hasDimmingRange: needs min + max
 	// Enrichment/observation rows whose closures require recognized real content (a
 	// placeholder object reads as absent), so the "... not disclosed" nudge fires on
 	// hollow blocks. Behavioral coverage: TestTightenedObservationGatesRejectHollow.
@@ -472,7 +473,7 @@ var descriptiveAllowlist = map[string]bool{
 
 	// --- v1.11.0 evidence qualifiers ---
 	// Spectrum unit and domestic cost basis qualify optional evidence; tracked, not graded.
-	"SpectralPowerUnit": true,
+	"SpectralPowerUnit":    true,
 	"DomesticContentBasis": true,
 
 	// --- v1.11.0 maintenance-claim class ---
@@ -600,6 +601,8 @@ func TestPredicateSetsAreRealEnumMembers(t *testing.T) {
 		{"analogPhaseDimming", analogPhaseDimming, "DimmingProtocol"},
 		{"nonControllableDrivers", nonControllableDrivers, "DimmingProtocol"},
 		{"photometrySourceFileTypes", photometrySourceFileTypes, "SourceFileType"},
+		{"spectrumDataSourceKinds", spectrumDataSourceKinds, "SpdSourceKind"},
+		{"spectrum value_type tokens", map[string]bool{"measured": true, "rated": true}, "RegulatoryValueType"},
 		{"naSafetyListings", naSafetyListings, "AttestationProgram"},
 		{"anySafetyListings", anySafetyListings, "AttestationProgram"},
 		{"naRegions", naRegions, "TechnicalRegion"},

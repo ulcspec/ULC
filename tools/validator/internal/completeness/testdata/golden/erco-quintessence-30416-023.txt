@@ -5,8 +5,9 @@ INFO    conformance/gap at /corrections_applied: to reach "full", add /correctio
 INFO    conformance/gap at /photometry/zonal_lumens: to reach "full", add /photometry/zonal_lumens (from ies, per LM-79)
 INFO    conformance/gap at /uncertainty: to reach "full", add /uncertainty (from test_report, per LM-79 / GUM)
 INFO    conformance/gap at instrumentation depth (goniometer/lab): to reach "full", add instrumentation depth (goniometer/lab) (from test_report, per LM-79 / LM-75)
+INFO    conformance/gap at measured spectral power distribution as data (through the optics; table or exchange file): to reach "full", add measured spectral power distribution as data (through the optics; table or exchange file) (from test_report, per LM-79 / TM-27)
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "core" satisfied
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "standard" satisfied
 INFO    conformance/level at /index/conformance_level: this record achieves conformance level "standard"
 
-OK -- erco-quintessence-30416-023.ulc: 0 errors, 0 warnings, 45 infos (35 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).
+OK -- erco-quintessence-30416-023.ulc: 0 errors, 0 warnings, 47 infos (36 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).

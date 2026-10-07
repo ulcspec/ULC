@@ -55,7 +55,10 @@ import (
 // 0.8.0: conformance_level now uses product_family.markets when deciding whether
 // the three North American outdoor-classification rows apply. Existing records
 // without markets keep their computed level and re-stamp only the builder version.
-const BuilderVersion = "0.8.0"
+// 0.9.0: conformance_level now reads colorimetry.spectral_power_distribution: a white-light record
+// reaches full only with a measured spectrum as data through the luminaire's optics. Every stored record
+// re-stamps the builder version; only a white-light record that was full without such a spectrum changes level.
+const BuilderVersion = "0.9.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard

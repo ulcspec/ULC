@@ -323,6 +323,13 @@
     {
       "tier": "full",
       "kind": "requirement",
+      "path": "measured spectral power distribution as data (through the optics; table or exchange file)",
+      "source_document": "test_report",
+      "standard": "LM-79 / TM-27"
+    },
+    {
+      "tier": "full",
+      "kind": "requirement",
       "path": "method-backed lumen maintenance (TM-21 hours or TM-28)",
       "source_document": "test_report",
       "standard": "LM-80 / TM-21 / TM-28"

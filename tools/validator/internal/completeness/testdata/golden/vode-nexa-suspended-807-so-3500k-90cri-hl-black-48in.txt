@@ -5,8 +5,9 @@ INFO    conformance/gap at /colorimetry/tm_30/rf_h_per_bin: to reach "full", add
 INFO    conformance/gap at /corrections_applied: to reach "full", add /corrections_applied (from test_report, per LM-79)
 INFO    conformance/gap at /photometry/zonal_lumens: to reach "full", add /photometry/zonal_lumens (from ies, per LM-79)
 INFO    conformance/gap at /uncertainty: to reach "full", add /uncertainty (from test_report, per LM-79 / GUM)
+INFO    conformance/gap at measured spectral power distribution as data (through the optics; table or exchange file): to reach "full", add measured spectral power distribution as data (through the optics; table or exchange file) (from test_report, per LM-79 / TM-27)
 INFO    conformance/gap at method-backed lumen maintenance (TM-21 hours or TM-28): to reach "full", add method-backed lumen maintenance (TM-21 hours or TM-28) (from test_report, per LM-80 / TM-21 / TM-28)
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "core" satisfied
 INFO    conformance/level at /index/conformance_level: this record achieves conformance level "core"
 
-OK -- vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc: 0 errors, 0 warnings, 42 infos (32 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).
+OK -- vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc: 0 errors, 0 warnings, 44 infos (33 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).
