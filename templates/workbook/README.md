@@ -177,7 +177,7 @@ release 1.5.0 on.
 | `declared_by_length` | A verbatim per-length table with fixed provenance defaults in this release. Omit it to have the per-foot rates generate it. | Pattern D |
 | `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Patterns B and D |
 | `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |
-| `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry enrichment |
+| `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry; a Full requirement for white-light records from 1.15.0 |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM, percent flicker) with per-value provenance companions and a metric-specific unit rule. | Full enrichment |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed projection with companions on its three numeric values. | Full enrichment |
 | `additional_rated_claims` | Further lumen-maintenance thresholds beside the records-sheet headline, with companions on hours and failure percent. | When several claims are published |
@@ -229,6 +229,8 @@ exchange file, add it to `source_files`, set `source_kind=exchange_file`, and
 set `value__prov_source=tm27`.
 If you set `measured_through_optics=FALSE`, set `value__value_type=rated`;
 a measured package spectrum cannot use a luminaire LM-79 attestation.
+
+From release 1.15.0 the Full conformance level of a white-light record requires this spectrum (authored on this sheet): at least two samples, source_kind laboratory_table or exchange_file, measured_through_optics TRUE, and value__value_type measured or rated. A spectrum the manufacturer measured with its own spectrometer through the luminaire's optics qualifies: enter it with value__value_type=rated, source_kind exchange_file, value__prov_source manufacturer_data_export for the meter's export file (or tm27 for a TM-27 file, added to source_files as above), and leave value__attestation_ref blank, since a handheld export is not the LM-79 attestation. A digitized chart or a package spectrum does not qualify.
 
 ## Attestation evidence columns
 

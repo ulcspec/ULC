@@ -158,6 +158,8 @@ converter and template change; the schema, taxonomy, required sets, grades,
 achievements, generated index, and eight published examples do not. Builder
 version 0.8.0 remains current.
 
+v1.15.0 grades a measured spectral power distribution at Full for white-light records and names the spectrum on the non-gating enrichment roadmap, closing the deferred Full-tier spectrum row ahead of its original trigger (a real record carrying a spectrum) because the spectrum is part of an LM-79 measurement and a manufacturer's own spectrometer export is admitted. A qualifying spectrum is sampled data from a laboratory table or an exchange file, measured through the luminaire's optics, with value type measured or rated; a digitized chart, an LED-package curve or a nominal spectrum does not qualify. The schema, taxonomy, workbook, converter and required sets do not change. Builder version 0.9.0 marks the changed conformance calculation; the eight published examples keep their grades and re-stamp only that marker, and every stored record re-stamps its index.
+
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
 hardened against real cutsheets. Two items that earlier drafts framed as 1.0
@@ -202,9 +204,6 @@ foreclosed to the next major, v2.0.0; minors stay additive-only.
   `additional_rated_claims` array while `manufacturer_rated_claim` remains
   a single headline object. Replacing that object with an in-place array
   remains a v2.0.0 question.
-- **Full-tier spectrum rubric row.** A later release will grade the
-  optional spectral power distribution for applicable white-light records
-  after a real record carries a spectrum. The 1.11.0 field is tracked only.
 - **Multi-framework lumen maintenance.** `declaration_framework` inside
   `lumen_maintenance_luminaire` is single-valued, though its description
   allows multiple frameworks to coexist. A future revision may add array
