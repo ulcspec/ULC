@@ -29,7 +29,8 @@
 //	            attached cutsheet, headline photometric/electrical numbers, one-line
 //	            colorimetry, and a market safety listing.
 //	standard    core plus the fuller specification an LM-79 report produces.
-//	full        standard plus exhaustive accredited characterization.
+//	full        standard plus exhaustive accredited characterization and, for white light,
+//	            the measured spectrum as data.
 //
 // The table also carries two non-ordered sentinels for non-gating rows, both
 // excluded from grading: LevelEnrichment for the enrichment roadmap (optional
@@ -432,7 +433,7 @@ func hasWhitePoint(r map[string]any) bool {
 }
 
 // isWhiteLightPrimary gates the white-light-quality family: cri_ra (core),
-// cri_tier + sdcm_step (standard), TM-30 (full). All color-mixing modes
+// cri_tier + sdcm_step (standard), TM-30 and the measured spectrum (full). All color-mixing modes
 // (including rgbw) waive it: their quality is not characterized by CRI / SDCM.
 func isWhiteLightPrimary(r map[string]any) bool {
 	switch getString(r, "configuration", "tested_axes", "color_tunability") {
@@ -508,6 +509,11 @@ func controllableDriver(r map[string]any) bool {
 // photometric data format (so a photometry_format is meaningful on the entry).
 var photometrySourceFileTypes = map[string]bool{
 	"ies": true, "ldt": true, "tm33": true,
+}
+
+// spectrumDataSourceKinds admits sampled data from a laboratory table or an exchange file.
+var spectrumDataSourceKinds = map[string]bool{
+	"laboratory_table": true, "exchange_file": true,
 }
 
 // hasPhotometrySourceFile reports whether any source_files[] entry is a photometric
@@ -897,6 +903,7 @@ var rubric = []rule{
 	{LevelFull, "method-backed lumen maintenance (TM-21 hours or TM-28)", "", "test_report", "LM-80 / TM-21 / TM-28", "", hasMethodBackedLumenMaintenance, notExitSign},
 	{LevelFull, "/colorimetry/tm_30/rf", "", "test_report", "TM-30", "", num("colorimetry", "tm_30", "rf"), isWhiteLightPrimary},
 	{LevelFull, "/colorimetry/tm_30/rf_h_per_bin", "", "test_report", "TM-30", "", arr("colorimetry", "tm_30", "rf_h_per_bin"), isWhiteLightPrimary},
+	{LevelFull, "measured spectral power distribution as data (through the optics; table or exchange file)", "", "test_report", "LM-79 / TM-27", "", hasMeasuredSpectrum, isWhiteLightPrimary},
 
 	// v0.10.0 exit-sign FULL tier (§2.6): two provenance-reading rows that PARTITION the
 	// sign class by mode, so every sign has exactly one applicable full row and a standard
@@ -988,6 +995,7 @@ var rubric = []rule{
 	// pvf_code surfaces the TM-30 design-intent ground (TM30DesignIntent/TM30Level stay
 	// staged vocabulary; pvf_code carries the highest-priority achieved designation).
 	{LevelEnrichment, "/colorimetry/tm_30/pvf_code", "", "test_report", "TM-30", "TM-30 PVF designation not disclosed", str("colorimetry", "tm_30", "pvf_code"), both(isWhiteLightPrimary, blockPresent("colorimetry", "tm_30"))},
+	{LevelEnrichment, "/colorimetry/spectral_power_distribution", "", "test_report", "LM-79 / TM-27", "measured spectral power distribution not disclosed (a spectrometer export through the luminaire's optics counts)", hasMeasuredSpectrum, isWhiteLightPrimary},
 
 	// v0.10.0 exit-sign & emergency ENRICHMENT rows (§4.5; all non-gating). Powered signs
 	// also disclose input voltage; every sign can disclose the UL 924-marked viewing
@@ -1529,6 +1537,39 @@ func hasFlickerMeasurements(record map[string]any) bool {
 		}
 	}
 	return false
+}
+
+// hasMeasuredSpectrum requires sampled measured or rated data through the optics.
+// It proves the data's form, not wavelength coverage or usability for a calculation.
+// SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
+// set as public contract. Move that entry whenever this reads somewhere new.
+func hasMeasuredSpectrum(record map[string]any) bool {
+	spd, ok := getMap(record, "colorimetry", "spectral_power_distribution")
+	if !ok || len(spd) == 0 {
+		return false
+	}
+	step, ok := asFloat(spd["wavelength_step_nm"])
+	if !ok || !(step > 0) {
+		return false
+	}
+	values, ok := spd["values"].([]any)
+	if !ok || len(values) < 2 {
+		return false
+	}
+	for _, value := range values {
+		if !isNumber(value) {
+			return false
+		}
+	}
+	if !spectrumDataSourceKinds[getString(spd, "source_kind")] {
+		return false
+	}
+	optics, ok := spd["measured_through_optics"].(bool)
+	if !ok || !optics {
+		return false
+	}
+	valueType := getString(spd, "value_type")
+	return valueType == "measured" || valueType == "rated"
 }
 
 // hasAlphaOpicMetrics reports whether alpha_opic_metrics carries a recognized field of

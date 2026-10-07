@@ -148,7 +148,8 @@ func standardBase() map[string]any {
 
 // fullBase extends standardBase to meet every hard full requirement: zonal lumens,
 // an operating point, measurement uncertainty, corrections, instrumentation depth,
-// a method-backed maintenance projection, and TM-30 fidelity + hue bins. It grades
+// a method-backed maintenance projection, TM-30 fidelity + hue bins, and an invented
+// measured spectrum through the optics. It grades
 // full.
 func fullBase() map[string]any {
 	rec := standardBase()
@@ -171,6 +172,23 @@ func fullBase() map[string]any {
 		"rf": map[string]any{"value": float64(90)},
 		"rf_h_per_bin": []any{
 			map[string]any{"bin": float64(1), "rf_h": map[string]any{"value": float64(95), "value_type": "measured"}},
+		},
+	}
+	// Invented relative values on the 380-780 nm grid at 5 nm intervals.
+	values := make([]any, 81)
+	for i := range values {
+		values[i] = float64(1 + i%9)
+	}
+	rec["colorimetry"].(map[string]any)["spectral_power_distribution"] = map[string]any{
+		"wavelength_start_nm":     float64(380),
+		"wavelength_step_nm":      float64(5),
+		"values":                  values,
+		"unit":                    "relative",
+		"source_kind":             "laboratory_table",
+		"measured_through_optics": true,
+		"value_type":              "measured",
+		"provenance": map[string]any{
+			"source": "test_report", "method": "transcribed", "attestation_ref": "synthetic-spectrum-test",
 		},
 	}
 	return rec
@@ -378,6 +396,37 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 		name  string
 		strip func(map[string]any)
 	}{
+		{"no spectrum", func(r map[string]any) { delete(r["colorimetry"].(map[string]any), "spectral_power_distribution") }},
+		{"digitized_chart", func(r map[string]any) {
+			r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)["source_kind"] = "digitized_chart"
+		}},
+		{"junk source_kind", func(r map[string]any) {
+			r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)["source_kind"] = "junk"
+		}},
+		{"optics false", func(r map[string]any) {
+			r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)["measured_through_optics"] = false
+		}},
+		{"one sample", func(r map[string]any) {
+			r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)["values"] = []any{float64(1)}
+		}},
+		{"a non-numeric sample", func(r map[string]any) {
+			r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)["values"] = []any{float64(1), "x"}
+		}},
+		{"zero step", func(r map[string]any) {
+			r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)["wavelength_step_nm"] = float64(0)
+		}},
+		{"nominal", func(r map[string]any) {
+			r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)["value_type"] = "nominal"
+		}},
+		{"optics absent", func(r map[string]any) {
+			delete(r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any), "measured_through_optics")
+		}},
+		{"source_kind absent", func(r map[string]any) {
+			delete(r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any), "source_kind")
+		}},
+		{"value_type absent", func(r map[string]any) {
+			delete(r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any), "value_type")
+		}},
 		{"no zonal_lumens", func(r map[string]any) { delete(r["photometry"].(map[string]any), "zonal_lumens") }},
 		{"no operating_point", func(r map[string]any) { delete(r, "operating_point") }},
 		{"no uncertainty", func(r map[string]any) { delete(r, "uncertainty") }},
@@ -399,6 +448,17 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 			c.strip(rec)
 			if got := AchievedLevel(rec); got != LevelStandard {
 				t.Errorf("%s = %s, want standard", c.name, got)
+			}
+			if c.name == "no spectrum" {
+				report := findings.NewReport()
+				Report(rec, report)
+				report.Finalize()
+				gaps := findingsFor(report, findings.CodeConformanceGap)
+				if len(gaps) != 1 || gaps[0].Path != "measured spectral power distribution as data (through the optics; table or exchange file)" ||
+					gaps[0].NextConformanceLevel != "full" || gaps[0].SourceDocument != "test_report" ||
+					gaps[0].Standard != "LM-79 / TM-27" {
+					t.Errorf("no spectrum must leave only the spectrum Full gap: %+v", gaps)
+				}
 			}
 		})
 	}
@@ -1465,6 +1525,7 @@ func TestGatingPredicatesIgnoreStandardAndFullFields(t *testing.T) {
 			path  string
 			rec   map[string]any
 		}{
+			{LevelFull, "measured spectral power distribution as data (through the optics; table or exchange file)", coreBase()},
 			{LevelCore, "/emergency/power_source", comboSignCore()},
 			{LevelCore, "/emergency/power_source", emgLuminaireCore()},
 			{LevelStandard, "/emergency/battery_duration_min", comboSignCore()},
@@ -1511,6 +1572,15 @@ func TestGradeHostileInput(t *testing.T) {
 		{[]string{"product_family"}, "manufacturer"}, {nil, "electrical"},
 		{[]string{"electrical"}, "dimming_range_percent"}, {nil, "configuration"},
 		{[]string{"configuration"}, "tested_axes"}, {nil, "colorimetry"},
+		{[]string{"colorimetry"}, "spectral_power_distribution"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "wavelength_start_nm"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "wavelength_step_nm"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "values"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "unit"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "source_kind"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "measured_through_optics"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "value_type"},
+		{[]string{"colorimetry", "spectral_power_distribution"}, "provenance"},
 		{[]string{"colorimetry"}, "tm_30"}, {nil, "photometry"}, {[]string{"photometry"}, "zonal_lumens"},
 		{nil, "corrections_applied"}, {nil, "instrumentation"}, {nil, "outdoor_classification"},
 		{nil, "uncertainty"}, {nil, "operating_point"}, {nil, "lumen_maintenance_package"},
@@ -1632,4 +1702,59 @@ func normalizeForTest(v any) (any, error) {
 	default:
 		return v, nil
 	}
+}
+
+// TestSpectrumRowAndEnrichment pins the handheld export and the shared enrichment test.
+func TestSpectrumRowAndEnrichment(t *testing.T) {
+	t.Run("handheld", func(t *testing.T) {
+		rec := fullBase()
+		spd := rec["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any)
+		spd["value_type"] = "rated"
+		spd["source_kind"] = "exchange_file"
+		spd["provenance"] = map[string]any{"source": "manufacturer_data_export", "method": "transcribed"}
+		if got := AchievedLevel(rec); got != LevelFull {
+			t.Errorf("handheld export = %s, want full", got)
+		}
+	})
+	t.Run("enrichment", func(t *testing.T) {
+		cases := []struct {
+			name  string
+			rec   map[string]any
+			level Level
+			count int
+		}{
+			{"standard", standardBase(), LevelStandard, 1},
+			{"full", fullBase(), LevelFull, 0},
+			{"core", coreBase(), LevelCore, 1},
+		}
+		rgbw := standardBase()
+		rgbw["configuration"].(map[string]any)["tested_axes"].(map[string]any)["color_tunability"] = "rgbw"
+		cases = append(cases, struct {
+			name  string
+			rec   map[string]any
+			level Level
+			count int
+		}{"rgbw", rgbw, LevelStandard, 0})
+		for _, c := range cases {
+			t.Run(c.name, func(t *testing.T) {
+				report := findings.NewReport()
+				if got := Report(c.rec, report); got != c.level {
+					t.Fatalf("grade = %s, want %s", got, c.level)
+				}
+				report.Finalize()
+				count := 0
+				for _, finding := range findingsFor(report, findings.CodeConformanceEnrichment) {
+					if finding.Path == "/colorimetry/spectral_power_distribution" {
+						count++
+						if finding.Message != "measured spectral power distribution not disclosed (a spectrometer export through the luminaire's optics counts)" || finding.SourceDocument != "test_report" || finding.Standard != "LM-79 / TM-27" {
+							t.Errorf("spectrum enrichment wording or source drifted: %+v", finding)
+						}
+					}
+				}
+				if count != c.count {
+					t.Errorf("spectrum enrichment count = %d, want %d", count, c.count)
+				}
+			})
+		}
+	})
 }

@@ -41,6 +41,14 @@
     {
       "level": "INFO",
       "code": "conformance/enrichment",
+      "message": "measured spectral power distribution not disclosed (a spectrometer export through the luminaire's optics counts)",
+      "path": "/colorimetry/spectral_power_distribution",
+      "source_document": "test_report",
+      "standard": "LM-79 / TM-27"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
       "message": "adaptive lighting modes not disclosed",
       "path": "/electrical/adaptive_lighting_modes",
       "source_document": "datasheet_pdf",
@@ -326,6 +334,15 @@
     },
     {
       "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add measured spectral power distribution as data (through the optics; table or exchange file) (from test_report, per LM-79 / TM-27)",
+      "path": "measured spectral power distribution as data (through the optics; table or exchange file)",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79 / TM-27"
+    },
+    {
+      "level": "INFO",
       "code": "conformance/grade-satisfied",
       "message": "conformance grade \"core\" satisfied",
       "path": "/index/conformance_level"
@@ -360,6 +377,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 45
+    "infos": 47
   }
 }
