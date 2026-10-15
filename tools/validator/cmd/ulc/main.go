@@ -510,7 +510,8 @@ All four authoring patterns are supported end to end: A (single-SKU) and C
 (per-IES with derived provenance) as fixed-axes pins, B (CCT multiplier table)
 and D (per-foot linear scaling) with generated declared_by_cct / declared_by_length
 photometry tables. Optional comprehensive sheets (alpha_opic, flicker_metrics,
-lumen_maintenance_package, lcs_zonal_lumens, ingredient_list,
+lumen_maintenance_package, additional_rated_claims, spectral_power_distribution,
+tm_30_hue_bins, lcs_zonal_lumens, ingredient_list,
 cie97_lmf / cie97_llmf) add full-level depth when present;
 zonal_lumens is a standard requirement.
 

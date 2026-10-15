@@ -489,7 +489,7 @@ func TestConvertPatternDAuthoredLengthSheet(t *testing.T) {
 // findings. The "full-level" name refers to these comprehensive sheets, not the
 // conformance grade: under the redesigned rubric the converted record grades
 // standard (it authors the analog dimming method and range), and full additionally
-// needs test-report depth (uncertainty, corrections, instrumentation, TM-30) the
+// needs test-report depth (uncertainty, corrections, instrumentation) the
 // converter does not synthesize. Several of these blocks (zonal_lumens, the
 // method-backed lumen-maintenance package) feed graded rules, but they cannot
 // reach full alone.

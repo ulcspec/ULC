@@ -26,12 +26,13 @@ import (
 // conformance rubric zonal_lumens gates standard, and a populated CIE 97 table
 // satisfies standard lumen maintenance. A package with positive tm_21_projection_hours
 // satisfies both standard maintenance and the full method-backed row. A qualifying
-// spectral_power_distribution satisfies the white-light full spectrum row. The other
+// spectral_power_distribution satisfies the white-light full spectrum row.
+// Sixteen tm_30_hue_bins rows satisfy the white-light full hue-bin row. The other
 // listed blocks are non-gating enrichment: a manufacturer who has the data adds the sheet and the
 // record carries more depth, while one who does not simply omits it. No converted
 // record reaches full on these blocks alone, because the full tier additionally
-// requires test-report depth (measurement uncertainty, corrections, instrumentation,
-// TM-30) the converter does not synthesize. The sustainability_declaration
+// requires test-report depth (measurement uncertainty, corrections, instrumentation)
+// the converter does not synthesize. The sustainability_declaration
 // block-level scalars (declaration_type, dates, recyclable_percent, ...) ride on
 // the records sheet via recordColumns; this assembler only adds its ingredient
 // roster, which coexists with those scalars under the same parent.

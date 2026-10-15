@@ -29,7 +29,7 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
   declares the value as companion-capable, the six optional companions `*__value_type`,
   `*__prov_source`, `*__prov_method`, `*__extension_method`, `*__base_attestation_ref`, and
   `*__attestation_ref`. Every provenanced records-sheet column is companion-capable, as are the
-  eleven values declared in `supplementaryValueColumns`. Authored `declared_by_length` rows keep
+  twelve values declared in `supplementaryValueColumns`. Authored `declared_by_length` rows keep
   their fixed defaults and have no companion headers in this release. A declared companion may
   be blank; any unsupported double-underscore header is refused before assembly.
 - **DualUnit columns** are authored on **exactly one side per field**: the SI column (`*_mm`,
@@ -67,6 +67,7 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
 | `additional_rated_claims` | further lumen-maintenance thresholds beside the records-sheet headline | `(record_id,claim)` | A B C D |
 | `alpha_opic` | per-photoreceptor efficacy (assembled into `alpha_opic_metrics`) | `(record_id,channel)` | full |
 | `spectral_power_distribution` | one uniformly spaced wavelength sample per row, with block-level provenance | `(record_id,wavelength_nm)` | full |
+| `tm_30_hue_bins` | the sixteen TM-30 local fidelity values, one bin per row with per-row provenance (assembled into `colorimetry.tm_30.rf_h_per_bin`) | `(record_id,bin)` | full |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM) | `(record_id,metric)` | full |
 | `zonal_lumens` / `lcs_zonal_lumens` | angle-band + TM-15 LCS zones | `(record_id,zone)` | B / outdoor |
 
@@ -161,9 +162,9 @@ Every ProvenancedNumber/DualUnit needs `provenance {source, method}` + `value_ty
 applies per-column defaults, overridable on declared bases by optional `*__value_type` /
 `*__prov_source` / `*__prov_method` / `*__attestation_ref` / `*__extension_method` /
 `*__base_attestation_ref` columns. Records-sheet values retain the photometric LM-79 family.
-The supplementary table declares eleven values across `alpha_opic`, `flicker_metrics`,
-`lumen_maintenance_package`, `zonal_lumens`, `lcs_zonal_lumens`, and
-`spectral_power_distribution` and `additional_rated_claims`, with their unit rule,
+The supplementary table declares twelve values across `alpha_opic`, `flicker_metrics`,
+`lumen_maintenance_package`, `zonal_lumens`, `lcs_zonal_lumens`,
+`spectral_power_distribution`, `additional_rated_claims`, and `tm_30_hue_bins`, with their unit rule,
 three defaults, and one of four attestation families: photometric LM-79, maintenance LM-80 or
 TM-21, flicker LM-90-20 or IEEE 1789-2015 or NEMA 77-2017, and melanopic RP-46. The authored
 program-family table is exhaustive against the taxonomy; every other program is declared as
@@ -231,14 +232,18 @@ which remains the single owner of the enum domain.
   the index builder grades the achieved `conformance_level` from what is present. The full-level
   related sheets are implemented (`fulllevel.go`): `alpha_opic` -> alpha_opic_metrics,
   `flicker_metrics` -> flicker_measurements, `lumen_maintenance_package` (top-level array),
+  `spectral_power_distribution` -> colorimetry.spectral_power_distribution,
+  `additional_rated_claims` -> lumen_maintenance_luminaire.additional_rated_claims[],
+  `tm_30_hue_bins` -> colorimetry.tm_30.rf_h_per_bin,
   `zonal_lumens` -> photometry.zonal_lumens, `lcs_zonal_lumens` -> outdoor_classification, the
   Declare roster `ingredient_list` -> sustainability_declaration (whose block scalars ride on the
   records sheet), and `cie97_lmf` / `cie97_llmf` -> lumen_maintenance_luminaire.cie_97_lmf_table.
   Each attaches only when its sheet carries rows. `zonal_lumens` gates standard; a populated
   CIE 97 table satisfies standard lumen maintenance; a `lumen_maintenance_package` with positive
   tm_21_projection_hours satisfies both standard maintenance and the full method-backed row.
+  A qualifying `spectral_power_distribution` and sixteen `tm_30_hue_bins` rows each satisfy a white-light full row.
   The other listed sheets are non-gating enrichment. No converted record reaches full on these sheets alone, because the full tier also
-  requires test-report depth (uncertainty, corrections, instrumentation, TM-30) the converter does
+  requires test-report depth (uncertainty, corrections, instrumentation) the converter does
   not synthesize, and an analog or phase-cut fixture that does not author its dimming method and
   range caps at core (a digital-protocol fixture is exempt and reaches standard without them). A
   manufacturer who has the data adds those sheets and the record carries more depth; one
