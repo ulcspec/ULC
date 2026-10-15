@@ -477,7 +477,76 @@
       "unit": "lm",
       "value": 546,
       "value_type": "rated"
-    }
+    },
+    "zonal_lumens": [
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 0,
+          "value_type": "rated"
+        },
+        "zone_label": "0-30"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 0,
+          "value_type": "rated"
+        },
+        "zone_label": "0-40"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 0.1,
+          "value_type": "rated"
+        },
+        "zone_label": "0-60"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+            "conflict_notes": "The 0-90 and 90-180 bands computed from LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX.ies sum to 535.6 lm; the record's total luminous flux of 546 lm was authored separately from the same file and is unchanged.",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 0.4,
+          "value_type": "rated"
+        },
+        "zone_label": "0-90"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_24_lumenpulse_loi_lighttools_g1504071_r1",
+            "conflict_notes": "The 0-90 and 90-180 bands computed from LOI-120-12-RGBW30K-10X60-TS2.5-INTL-XX-XX.ies sum to 535.6 lm; the record's total luminous flux of 546 lm was authored separately from the same file and is unchanged.",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 535.2,
+          "value_type": "rated"
+        },
+        "zone_label": "90-180"
+      }
+    ]
   },
   "product_family": {
     "catalog_line": "Lumenfacade Inground",

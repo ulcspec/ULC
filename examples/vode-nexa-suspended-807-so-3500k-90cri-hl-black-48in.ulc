@@ -730,7 +730,76 @@
       "value": 7.6,
       "value_type": "rated"
     },
-    "ugr_4h_8h_bound_operator": "lte"
+    "ugr_4h_8h_bound_operator": "lte",
+    "zonal_lumens": [
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 640.1,
+          "value_type": "measured"
+        },
+        "zone_label": "0-30"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 934.5,
+          "value_type": "measured"
+        },
+        "zone_label": "0-40"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 1246.3,
+          "value_type": "measured"
+        },
+        "zone_label": "0-60"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "conflict_notes": "The 0-90 and 90-180 bands computed from 807-nexa3-35k-90cri-so-hl-bl.ies sum to 1265.8 lm; the record's total luminous flux of 1276 lm was authored separately from the same file and is unchanged.",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 1265.8,
+          "value_type": "measured"
+        },
+        "zone_label": "0-90"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_19_vode_nexa_807_l072310201",
+            "conflict_notes": "The 0-90 and 90-180 bands computed from 807-nexa3-35k-90cri-so-hl-bl.ies sum to 1265.8 lm; the record's total luminous flux of 1276 lm was authored separately from the same file and is unchanged.",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 0,
+          "value_type": "measured"
+        },
+        "zone_label": "90-180"
+      }
+    ]
   },
   "product_family": {
     "catalog_line": "Nexa",

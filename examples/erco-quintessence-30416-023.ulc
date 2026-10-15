@@ -659,7 +659,74 @@
       "unit": "lm",
       "value": 1301,
       "value_type": "measured"
-    }
+    },
+    "zonal_lumens": [
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_08_erco_30416_023_2026_02_24",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 871.3,
+          "value_type": "measured"
+        },
+        "zone_label": "0-30"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_08_erco_30416_023_2026_02_24",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 1185.5,
+          "value_type": "measured"
+        },
+        "zone_label": "0-40"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_08_erco_30416_023_2026_02_24",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 1301.2,
+          "value_type": "measured"
+        },
+        "zone_label": "0-60"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_08_erco_30416_023_2026_02_24",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 1301.2,
+          "value_type": "measured"
+        },
+        "zone_label": "0-90"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "attestation_ref": "lm79_08_erco_30416_023_2026_02_24",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 0,
+          "value_type": "measured"
+        },
+        "zone_label": "90-180"
+      }
+    ]
   },
   "product_family": {
     "catalog_line": "Quintessence",

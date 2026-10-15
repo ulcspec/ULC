@@ -462,7 +462,76 @@
       "unit": "lm",
       "value": 637,
       "value_type": "rated"
-    }
+    },
+    "zonal_lumens": [
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_08_lumenpulse_loi_spectralux_s1503051_r1_2015_03_05",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 0.6,
+          "value_type": "rated"
+        },
+        "zone_label": "0-30"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_08_lumenpulse_loi_spectralux_s1503051_r1_2015_03_05",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 1.1,
+          "value_type": "rated"
+        },
+        "zone_label": "0-40"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_08_lumenpulse_loi_spectralux_s1503051_r1_2015_03_05",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 2.2,
+          "value_type": "rated"
+        },
+        "zone_label": "0-60"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_08_lumenpulse_loi_spectralux_s1503051_r1_2015_03_05",
+            "conflict_notes": "The 0-90 and 90-180 bands computed from LOI-120-12-RGB-30x60-TS0-XX-XX-ASL.ies sum to 629.2 lm; the record's total luminous flux of 637 lm was authored separately from the same file and is unchanged.",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 3.9,
+          "value_type": "rated"
+        },
+        "zone_label": "0-90"
+      },
+      {
+        "lumens": {
+          "provenance": {
+            "base_attestation_ref": "lm79_08_lumenpulse_loi_spectralux_s1503051_r1_2015_03_05",
+            "conflict_notes": "The 0-90 and 90-180 bands computed from LOI-120-12-RGB-30x60-TS0-XX-XX-ASL.ies sum to 629.2 lm; the record's total luminous flux of 637 lm was authored separately from the same file and is unchanged.",
+            "method": "computed",
+            "source": "ies"
+          },
+          "unit": "lm",
+          "value": 625.3,
+          "value_type": "rated"
+        },
+        "zone_label": "90-180"
+      }
+    ]
   },
   "product_family": {
     "catalog_line": "Lumenfacade Inground",

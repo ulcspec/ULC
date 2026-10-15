@@ -246,15 +246,6 @@
     {
       "level": "INFO",
       "code": "conformance/gap",
-      "message": "to reach \"full\", add /photometry/zonal_lumens (from ies, per LM-79)",
-      "path": "/photometry/zonal_lumens",
-      "next_conformance_level": "full",
-      "source_document": "ies",
-      "standard": "LM-79"
-    },
-    {
-      "level": "INFO",
-      "code": "conformance/gap",
       "message": "to reach \"full\", add /uncertainty (from test_report, per LM-79 / GUM)",
       "path": "/uncertainty",
       "next_conformance_level": "full",
@@ -324,6 +315,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 42
+    "infos": 41
   }
 }
