@@ -1398,11 +1398,43 @@ func attestationPrograms(record map[string]any) []string {
 }
 
 // hasLumenMaintenance requires positive claimed hours, a positive TM-28 or
-// TM-21 projection, or a populated CIE 97 table. A grade is not awarded on a
+// TM-21 projection, or a CIE 97 table with a numeric maintenance factor.
+// A factor of zero is read table data. A grade is not awarded on a
 // claim type, an identifier, test hours, or a zero nobody can read as maintenance.
 func hasLumenMaintenance(record map[string]any) bool {
 	return hasPositiveNumberValue(record, "lumen_maintenance_luminaire", "manufacturer_rated_claim", "claimed_hours") ||
-		hasCie97LmfTable(record) || hasMethodBackedLumenMaintenance(record)
+		hasCie97MaintenanceFactor(record) || hasMethodBackedLumenMaintenance(record)
+}
+
+// hasCie97MaintenanceFactor requires a numeric factor in a CIE 97 grid entry.
+// Hours alone do not disclose maintenance. Zero is valid read data; the schema
+// checks factor ranges. This grading check leaves hasCie97LmfTable unchanged
+// for the enrichment rows.
+func hasCie97MaintenanceFactor(record map[string]any) bool {
+	table, ok := getMap(record, "lumen_maintenance_luminaire", "cie_97_lmf_table")
+	if !ok {
+		return false
+	}
+	hasFactor := func(rows any, keys ...string) bool {
+		entries, ok := rows.([]any)
+		if !ok {
+			return false
+		}
+		for _, entry := range entries {
+			m, ok := entry.(map[string]any)
+			if !ok {
+				continue
+			}
+			for _, key := range keys {
+				if _, ok := asFloat(m[key]); ok {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	return hasFactor(table["lmf_by_cleanliness_and_interval"], "lmf") ||
+		hasFactor(table["llmf_by_hours"], "llmf", "lsf")
 }
 
 // hasLumenMaintenanceLuminaire reports whether lumen_maintenance_luminaire carries at

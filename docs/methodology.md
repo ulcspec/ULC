@@ -175,7 +175,7 @@ Universal rows:
 | Photometry basis | `test_conditions.photometry_basis` | `ies` |
 | Measurement regime | `instrumentation.measurement_regime` | `ies` |
 | Zonal lumens | `photometry.zonal_lumens` | `ies` |
-| Lumen-maintenance framework | a positive `claimed_hours`, a positive TM-28 or TM-21 projection, or a CIE 97 table, in `lumen_maintenance_luminaire` or `lumen_maintenance_package` | `datasheet_pdf` |
+| Lumen-maintenance framework | a positive `claimed_hours`, a positive TM-28 or TM-21 projection, or a CIE 97 table containing a numeric `lmf`, `llmf` or `lsf` factor (zero counts), in `lumen_maintenance_luminaire` or `lumen_maintenance_package` | `datasheet_pdf` |
 
 Conditional rows (each names the predicate that switches it on):
 

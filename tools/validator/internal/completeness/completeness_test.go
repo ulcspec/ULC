@@ -1917,3 +1917,48 @@ func TestLumenMaintenanceEnrichmentUnchanged(t *testing.T) {
 		t.Errorf("luminaire enrichments = %d, missing %v", count, want)
 	}
 }
+
+func TestStandardCie97ReadsFactor(t *testing.T) {
+	cases := []struct {
+		name, table string
+		entry       map[string]any
+		want        Level
+	}{
+		{"hours only", "llmf_by_hours", map[string]any{"hours": 60000}, LevelCore},
+		{"numeric llmf", "llmf_by_hours", map[string]any{"hours": 60000, "llmf": 0.9}, LevelStandard},
+		{"zero llmf", "llmf_by_hours", map[string]any{"hours": 60000, "llmf": float64(0)}, LevelStandard},
+		{"numeric lsf", "llmf_by_hours", map[string]any{"hours": 60000, "lsf": 0.9}, LevelStandard},
+		{"zero lsf", "llmf_by_hours", map[string]any{"hours": 60000, "lsf": 0}, LevelStandard},
+		{"numeric lmf", "lmf_by_cleanliness_and_interval", map[string]any{"cleaning_interval_years": 1, "ambient_cleanliness": "clean", "lmf": 0.9}, LevelStandard},
+		{"zero lmf", "lmf_by_cleanliness_and_interval", map[string]any{"cleaning_interval_years": 1, "ambient_cleanliness": "clean", "lmf": int64(0)}, LevelStandard},
+		{"string factor", "llmf_by_hours", map[string]any{"hours": 60000, "llmf": "0.9"}, LevelCore},
+		{"wrong factor for grid", "llmf_by_hours", map[string]any{"hours": 60000, "lmf": 0.9}, LevelCore},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rec := standardBase()
+			rec["lumen_maintenance_luminaire"] = map[string]any{"cie_97_lmf_table": map[string]any{c.table: []any{c.entry}}}
+			report := findings.NewReport()
+			if got := Report(rec, report); got != c.want {
+				t.Errorf("grade = %s, want %s", got, c.want)
+			}
+			report.Finalize()
+			var gaps []findings.Finding
+			for _, gap := range findingsFor(report, findings.CodeConformanceGap) {
+				if gap.NextConformanceLevel == "standard" {
+					gaps = append(gaps, gap)
+				}
+			}
+			if c.want == LevelCore {
+				if len(gaps) != 1 || gaps[0].Path != "/lumen_maintenance_luminaire (or /lumen_maintenance_package)" || gaps[0].SourceDocument != "datasheet_pdf" || gaps[0].Standard != "TM-21" {
+					t.Errorf("Standard gaps = %+v, want only maintenance", gaps)
+				}
+			} else if len(gaps) != 0 {
+				t.Errorf("unexpected Standard gaps: %+v", gaps)
+			}
+			if !hasCie97LmfTable(rec) {
+				t.Error("non-empty grid must retain its enrichment applicability behavior")
+			}
+		})
+	}
+}
