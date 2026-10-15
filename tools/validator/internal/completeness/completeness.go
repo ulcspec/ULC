@@ -1397,16 +1397,12 @@ func attestationPrograms(record map[string]any) []string {
 	return out
 }
 
-// hasLumenMaintenance reports whether either lumen-maintenance framework is present
-// with recognized content of the correct leaf type. A luminaire framework qualifies
-// when one of its sub-blocks (tm_28, cie_97_lmf_table, manufacturer_rated_claim)
-// carries a recognized populated field; a package qualifies when at least one entry
-// carries a recognized field. A bare manufacturer_rated_claim still satisfies the gate
-// (a claim_type enum or a numeric claimed_hours is enough, not a published-method
-// requirement), but an empty object, one holding only unrecognized keys, or one whose
-// recognized keys carry the wrong leaf type does not.
+// hasLumenMaintenance requires positive claimed hours, a positive TM-28 or
+// TM-21 projection, or a populated CIE 97 table. A grade is not awarded on a
+// claim type, an identifier, test hours, or a zero nobody can read as maintenance.
 func hasLumenMaintenance(record map[string]any) bool {
-	return hasLumenMaintenanceLuminaire(record) || hasLumenMaintenancePackage(record)
+	return hasPositiveNumberValue(record, "lumen_maintenance_luminaire", "manufacturer_rated_claim", "claimed_hours") ||
+		hasCie97LmfTable(record) || hasMethodBackedLumenMaintenance(record)
 }
 
 // hasLumenMaintenanceLuminaire reports whether lumen_maintenance_luminaire carries at
@@ -1416,6 +1412,7 @@ func hasLumenMaintenance(record map[string]any) bool {
 // cie_97_lmf_table on a non-empty lmf_by_cleanliness_and_interval or llmf_by_hours
 // array. A sub-block holding only unrecognized keys, or recognized keys of the wrong
 // type, does not satisfy the gate.
+// This helper now serves enrichment applicability only.
 func hasLumenMaintenanceLuminaire(record map[string]any) bool {
 	lml, ok := getMap(record, "lumen_maintenance_luminaire")
 	if !ok {
@@ -1447,6 +1444,7 @@ func hasLumenMaintenanceLuminaire(record map[string]any) bool {
 // ProvenancedNumber is meant), must not satisfy the gate. The four ProvenancedNumber
 // fields (tm_21_projection_hours, test_hours, test_temperature_c, drive_current_ma)
 // qualify via hasNumberValue; the six string/enum fields qualify via a non-empty string.
+// This helper now serves enrichment applicability only.
 func hasLumenMaintenancePackage(record map[string]any) bool {
 	arr, ok := record["lumen_maintenance_package"].([]any)
 	if !ok {
@@ -1478,7 +1476,7 @@ func hasLumenMaintenancePackage(record map[string]any) bool {
 
 // hasMethodBackedLumenMaintenance reports whether the record carries a
 // method-backed lumen-maintenance projection: a package entry with a
-// tm_21_projection_hours value, or a luminaire framework with a tm_28 projection.
+// positive tm_21_projection_hours value, or a luminaire framework with a positive tm_28 projection.
 // A bare manufacturer_rated_claim does not count.
 // SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
 // set as public contract. Move that entry whenever this reads somewhere new.
@@ -1486,14 +1484,14 @@ func hasMethodBackedLumenMaintenance(record map[string]any) bool {
 	if arr, ok := record["lumen_maintenance_package"].([]any); ok {
 		for _, e := range arr {
 			if m, ok := e.(map[string]any); ok {
-				if hasNumberValue(m, "tm_21_projection_hours") {
+				if hasPositiveNumberValue(m, "tm_21_projection_hours") {
 					return true
 				}
 			}
 		}
 	}
 	if lml, ok := record["lumen_maintenance_luminaire"].(map[string]any); ok {
-		if hasNumberValue(lml, "tm_28", "tm_28_projection_hours") {
+		if hasPositiveNumberValue(lml, "tm_28", "tm_28_projection_hours") {
 			return true
 		}
 	}
@@ -1753,6 +1751,17 @@ func hasInstrumentationDepth(record map[string]any) bool {
 }
 
 // --- map / value accessors (local, so grade has no dependency beyond findings) ---
+
+// hasPositiveNumberValue reads a ProvenancedNumber-shaped object's numeric value
+// and requires it to be greater than zero.
+func hasPositiveNumberValue(record map[string]any, keys ...string) bool {
+	m, ok := getMap(record, keys...)
+	if !ok {
+		return false
+	}
+	v, ok := asFloat(m["value"])
+	return ok && v > 0
+}
 
 // hasNumberValue reports whether the object at the given path is a
 // ProvenancedNumber-shaped object carrying a numeric value field.

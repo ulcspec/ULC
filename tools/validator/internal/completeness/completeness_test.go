@@ -206,7 +206,7 @@ func TestAchievedLevel(t *testing.T) {
 		why  string
 	}{
 		{"erco-quintessence-30416-023.ulc", LevelStandard, "full ceiling: no uncertainty/corrections/instrumentation/TM-30 depth"},
-		{"selux-aya-pole-sr-ho-3000k.ulc", LevelStandard, "carries zonal + operating_point but lacks test-report depth"},
+		{"selux-aya-pole-sr-ho-3000k.ulc", LevelCore, "claim type with no stated hours (claimed_hours 0)"},
 		{"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc", LevelCore, "sole standard gap is sdcm_step (no published MacAdam step)"},
 		{"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc", LevelStandard, "DMX exempts the dimming detail; pure RGB waives CCT/CRI/SDCM"},
 		{"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc", LevelStandard, "DMX exempts the dimming detail; RGBW carries CCT, waives CRI/SDCM"},
@@ -445,6 +445,9 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 		{"no instrumentation depth", func(r map[string]any) {
 			delete(r["instrumentation"].(map[string]any), "laboratory_accreditation_scheme")
 		}},
+		{"zero method-backed projection", func(r map[string]any) {
+			r["lumen_maintenance_luminaire"].(map[string]any)["tm_28"].(map[string]any)["tm_28_projection_hours"] = map[string]any{"value": float64(0)}
+		}},
 		{"no method-backed maintenance", func(r map[string]any) {
 			delete(r["lumen_maintenance_luminaire"].(map[string]any), "tm_28")
 		}},
@@ -467,6 +470,15 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 				gaps := findingsFor(report, findings.CodeConformanceGap)
 				if len(gaps) != 1 || gaps[0].Path != "LM-79 attestation" || gaps[0].NextConformanceLevel != "full" || gaps[0].SourceDocument != "test_report" || gaps[0].Standard != "LM-79" {
 					t.Errorf("expected only documented LM-79 Full gap: %+v", gaps)
+				}
+			}
+			if c.name == "zero method-backed projection" {
+				report := findings.NewReport()
+				Report(rec, report)
+				report.Finalize()
+				gaps := findingsFor(report, findings.CodeConformanceGap)
+				if len(gaps) != 1 || gaps[0].Path != "method-backed lumen maintenance (TM-21 hours or TM-28)" || gaps[0].NextConformanceLevel != "full" {
+					t.Errorf("zero projection gaps = %+v", gaps)
 				}
 			}
 			if c.name == "no spectrum" {
@@ -1851,5 +1863,57 @@ func TestStandardNeedsNoTestReport(t *testing.T) {
 	}
 	if !lm79 {
 		t.Error("missing LM-79 Full gap")
+	}
+}
+
+func TestStandardLumenMaintenanceReadsAValue(t *testing.T) {
+	rec := standardBase()
+	claim := rec["lumen_maintenance_luminaire"].(map[string]any)["manufacturer_rated_claim"].(map[string]any)
+	claim["claimed_hours"] = map[string]any{"value": float64(0)}
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelCore {
+		t.Fatalf("zero hours = %s, want core", got)
+	}
+	report.Finalize()
+	var gaps []findings.Finding
+	for _, gap := range findingsFor(report, findings.CodeConformanceGap) {
+		if gap.NextConformanceLevel == "standard" {
+			gaps = append(gaps, gap)
+		}
+	}
+	if len(gaps) != 1 || gaps[0].Path != "/lumen_maintenance_luminaire (or /lumen_maintenance_package)" || gaps[0].SourceDocument != "datasheet_pdf" || gaps[0].Standard != "TM-21" {
+		t.Errorf("Standard gaps = %+v", gaps)
+	}
+	delete(claim, "claim_type")
+	claim["claimed_hours"] = map[string]any{"value": float64(50000)}
+	if got := AchievedLevel(rec); got != LevelStandard {
+		t.Errorf("positive hours without type = %s, want standard", got)
+	}
+}
+
+func TestLumenMaintenanceEnrichmentUnchanged(t *testing.T) {
+	rec := standardBase()
+	delete(rec["lumen_maintenance_luminaire"].(map[string]any)["manufacturer_rated_claim"].(map[string]any), "claimed_hours")
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	want := map[string]bool{
+		"/lumen_maintenance_luminaire/tm_28/projection_reliability": true,
+		"/lumen_maintenance_luminaire/tm_28/projection_basis":       true,
+		"/lumen_maintenance_luminaire/tm_28/projection_method":      true,
+		"/lumen_maintenance_luminaire/cie_97_lmf_table":             true,
+	}
+	count := 0
+	for _, f := range findingsFor(report, findings.CodeConformanceEnrichment) {
+		if strings.HasPrefix(f.Path, "/lumen_maintenance_luminaire/") {
+			count++
+			if !want[f.Path] {
+				t.Errorf("unexpected enrichment %s", f.Path)
+			}
+			delete(want, f.Path)
+		}
+	}
+	if count != 4 || len(want) != 0 {
+		t.Errorf("luminaire enrichments = %d, missing %v", count, want)
 	}
 }

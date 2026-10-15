@@ -79,7 +79,7 @@ func TestBuildAchievementsMatchesCompute(t *testing.T) {
 // 5.12 TestRealExampleAchievementStates asserts the section 4.3 expected-state table
 // verbatim over the real examples: the seven theme states, the domestic_content programs
 // slice on each record, documented_count, the restricted array, and that conformance_level
-// is unchanged on every record. Escalate any mismatch; never adjust a record to force a state.
+// matches the pinned grade on every record. Escalate any mismatch; never adjust a record to force a state.
 func TestRealExampleAchievementStates(t *testing.T) {
 	type row struct {
 		emergency, energy, darkSky, materialHealth, embodiedCarbon, circularity, domesticContent string
@@ -94,7 +94,7 @@ func TestRealExampleAchievementStates(t *testing.T) {
 		"erco-quintessence-30416-023.ulc":                          {"none", "none", "none", "none", "none", "none", "none", 0, []string{}, "standard"},
 		"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc":          {"none", "none", "none", "none", "none", "none", "claimed", 0, []string{"rohs"}, "standard"},
 		"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc":    {"none", "none", "none", "none", "none", "none", "claimed", 0, []string{"rohs"}, "standard"},
-		"selux-aya-pole-sr-ho-3000k.ulc":                           {"none", "none", "claimed", "claimed", "none", "none", "claimed", 0, []string{"rohs"}, "standard"},
+		"selux-aya-pole-sr-ho-3000k.ulc":                           {"none", "none", "claimed", "claimed", "none", "none", "claimed", 0, []string{"rohs"}, "core"},
 		"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc": {"none", "none", "none", "claimed", "none", "none", "claimed", 0, []string{}, "core"},
 	}
 	// T2: section 4's programs column, machine-pinned. Non-carrier records default to an empty
@@ -170,7 +170,7 @@ func TestRealExampleAchievementStates(t *testing.T) {
 			}
 			stored, _ := record["index"].(map[string]any)
 			if storedCL, _ := stored["conformance_level"].(string); storedCL != w.conformance {
-				t.Errorf("%s: stored conformance_level = %q, want %q (grade must not move)", name, storedCL, w.conformance)
+				t.Errorf("%s: stored conformance_level = %q, want %q (grade must match the release pin)", name, storedCL, w.conformance)
 			}
 		})
 	}

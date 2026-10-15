@@ -317,8 +317,8 @@ func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any,
 	for _, row := range rows {
 		// A package row needs a substantive maintenance payload. A bare row (only
 		// record_id, or only descriptive identifiers) is skipped so it cannot emit
-		// a near-empty entry that nonetheless satisfies the standard-level
-		// lumen-maintenance grade gate.
+		// a near-empty entry with no maintenance payload. The standard-level
+		// gate separately requires positive projection hours or luminaire evidence.
 		if !hasLMPayload(row) {
 			continue
 		}

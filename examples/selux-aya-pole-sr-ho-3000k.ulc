@@ -492,7 +492,7 @@
     "catalog_model": "Aya Pole or Pendant (AYAP)",
     "catalog_number": "selux-aya-pole-sr-ho-3000k",
     "color_tunability": "static_white",
-    "conformance_level": "standard",
+    "conformance_level": "core",
     "dimming_protocols": [
       "0-10v"
     ],
