@@ -160,6 +160,8 @@ version 0.8.0 remains current.
 
 v1.15.0 grades a measured spectral power distribution at Full for white-light records and names the spectrum on the non-gating enrichment roadmap, closing the deferred Full-tier spectrum row ahead of its original trigger (a real record carrying a spectrum) because the spectrum is part of an LM-79 measurement and a manufacturer's own spectrometer export is admitted. A qualifying spectrum is sampled data from a laboratory table or an exchange file, measured through the luminaire's optics, with value type measured or rated; a digitized chart, an LED-package curve or a nominal spectrum does not qualify. The schema, taxonomy, workbook, converter and required sets do not change. Builder version 0.9.0 marks the changed conformance calculation; the eight published examples keep their grades and re-stamp only that marker, and every stored record re-stamps its index.
 
+v1.16.0 moves the LM-79 attestation from Standard to Full and zonal lumens from Full to Standard, so each grade reads one class of document, and requires a positive number of hours or a populated table of the lumen-maintenance rows. No schema structure, vocabulary, workbook or converter change. Builder version 0.10.0; scope manifest contract 2.0.0.
+
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator
 hardened against real cutsheets. Two items that earlier drafts framed as 1.0

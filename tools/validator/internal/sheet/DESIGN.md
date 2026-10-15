@@ -235,8 +235,8 @@ which remains the single owner of the enum domain.
   Declare roster `ingredient_list` -> sustainability_declaration (whose block scalars ride on the
   records sheet), and `cie97_lmf` / `cie97_llmf` -> lumen_maintenance_luminaire.cie_97_lmf_table.
   Each attaches only when its sheet carries rows. Under the redesigned rubric two of these feed
-  full-tier rules (`zonal_lumens` gates full; a `lumen_maintenance_package` with a
-  tm_21_projection_hours is the method-backed maintenance projection); the rest are non-gating
+  graded rules (`zonal_lumens` gates standard; a `lumen_maintenance_package` with a
+  positive tm_21_projection_hours is the method-backed maintenance projection); the rest are non-gating
   enrichment. No converted record reaches full on these sheets alone, because the full tier also
   requires test-report depth (uncertainty, corrections, instrumentation, TM-30) the converter does
   not synthesize, and an analog or phase-cut fixture that does not author its dimming method and

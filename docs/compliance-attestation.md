@@ -112,14 +112,14 @@ Two columns carry the load. **Category** sorts each badge into one governance fa
 
 ### Subtable B: test-method attestations
 
-These tokens reference measurement and method standards rather than safety listings or market badges. Per the schema, both a family label (for example `lm_79`, `tm_30`) and version-specific values (for example `lm_79_24`, `tm_30_24`) exist; claims should use the version-specific value whenever the revision is known, because numeric results may not be comparable across revisions. The reference grader reads only one family here: the `lm_79*` family (any token starting with `lm_79`) is the LM-79 attestation gate evaluated at the STANDARD tier. Every other token in this subtable is `tracked`.
+These tokens reference measurement and method standards rather than safety listings or market badges. Per the schema, both a family label (for example `lm_79`, `tm_30`) and version-specific values (for example `lm_79_24`, `tm_30_24`) exist; claims should use the version-specific value whenever the revision is known, because numeric results may not be comparable across revisions. The reference grader reads only one family here: the `lm_79*` family (any token starting with `lm_79`) is the LM-79 attestation gate evaluated at the FULL tier. Every other token in this subtable is `tracked`.
 
 | token | Full name | What it certifies | Governing program / standard | Category | Conformance role |
 | --- | --- | --- | --- | --- | --- |
-| `lm_79` | IES LM-79 (family) | Approved method for the electrical and photometric measurement of solid-state lighting products (revision unspecified). | IES LM-79 | test-method (photometry) | `tracked` (LM-79 family read at standard) |
-| `lm_79_08` | IES LM-79-08 | LM-79, 2008 edition. | IES LM-79-08 | test-method (photometry) | `tracked` (LM-79 family read at standard) |
-| `lm_79_19` | IES LM-79-19 | LM-79, 2019 edition. | ANSI/IES LM-79-19 | test-method (photometry) | `tracked` (LM-79 family read at standard) |
-| `lm_79_24` | IES LM-79-24 | LM-79, 2024 edition (current). | ANSI/IES LM-79-24 | test-method (photometry) | `tracked` (LM-79 family read at standard) |
+| `lm_79` | IES LM-79 (family) | Approved method for the electrical and photometric measurement of solid-state lighting products (revision unspecified). | IES LM-79 | test-method (photometry) | `tracked` (LM-79 family read at full) |
+| `lm_79_08` | IES LM-79-08 | LM-79, 2008 edition. | IES LM-79-08 | test-method (photometry) | `tracked` (LM-79 family read at full) |
+| `lm_79_19` | IES LM-79-19 | LM-79, 2019 edition. | ANSI/IES LM-79-19 | test-method (photometry) | `tracked` (LM-79 family read at full) |
+| `lm_79_24` | IES LM-79-24 | LM-79, 2024 edition (current). | ANSI/IES LM-79-24 | test-method (photometry) | `tracked` (LM-79 family read at full) |
 | `lm_75_19` | IES LM-75-19 | Goniophotometer types and photometric coordinate systems guidance. | ANSI/IES LM-75-19 | test-method (photometry) | `tracked` |
 | `lm_78_20` | IES LM-78-20 | Total luminous flux measurement using an integrating sphere. | ANSI/IES LM-78-20 | test-method (photometry) | `tracked` |
 | `lm_82_20` | IES LM-82-20 | Characterization of LED light engines and lamps for electrical and photometric properties as a function of temperature (thermal derating). | ANSI/IES LM-82-20 | test-method (thermal) | `tracked` |

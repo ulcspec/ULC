@@ -52,7 +52,7 @@ The conformance level is computed and stamped into the generated index as `index
 
 - **incomplete**: the floor, a record that has not yet met a core requirement. It grades incomplete, indexes, and carries a roadmap to core; a record missing identity (the schema-required `product_family.manufacturer.slug`, `product_family.manufacturer.display_name`, `product_family.family_id`, and `product_family.catalog_model`) is malformed rather than incomplete: `ulc validate` rejects it against the JSON Schema, and the builder additionally cannot derive the required index keys it projects from identity (`manufacturer_slug`, `catalog_model`), reported through `MissingRequiredKeys`. Either rejection is distinct from incomplete.
 - **core**: a complete, identifiable, legally-sellable luminaire with headline numbers and a market safety listing.
-- **standard**: core plus the fuller specification a typical LM-79 report produces.
+- **standard**: core plus the selection-grade specification a datasheet and the photometric file carry.
 - **full**: standard plus exhaustive accredited characterization, mostly from an accredited test report.
 
 The exact required-field list for each grade is in [the conformance rubric in methodology.md](methodology.md#the-conformance-rubric).

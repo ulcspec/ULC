@@ -510,8 +510,9 @@ All four authoring patterns are supported end to end: A (single-SKU) and C
 (per-IES with derived provenance) as fixed-axes pins, B (CCT multiplier table)
 and D (per-foot linear scaling) with generated declared_by_cct / declared_by_length
 photometry tables. Optional comprehensive sheets (alpha_opic, flicker_metrics,
-lumen_maintenance_package, zonal_lumens, lcs_zonal_lumens, ingredient_list,
-cie97_lmf / cie97_llmf) add full-level depth when present.
+lumen_maintenance_package, lcs_zonal_lumens, ingredient_list,
+cie97_lmf / cie97_llmf) add full-level depth when present;
+zonal_lumens is a standard requirement.
 
 --json emits one JSON document on stdout: from_sheet_version (additive-only
 contract, currently 1.0.0), cli_version, one records[] entry per converted

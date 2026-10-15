@@ -490,8 +490,8 @@ func TestConvertPatternDAuthoredLengthSheet(t *testing.T) {
 // standard (it authors the analog dimming method and range), and full additionally
 // needs test-report depth (uncertainty, corrections, instrumentation, TM-30) the
 // converter does not synthesize. Several of these blocks (zonal_lumens, the
-// method-backed lumen-maintenance package) feed full-tier rules, but they cannot
-// lift the grade alone.
+// method-backed lumen-maintenance package) feed graded rules, but they cannot
+// reach full alone.
 func TestConvertFullLevelSheets(t *testing.T) {
 	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, completeness.LevelStandard)
 	spectrum, _ := getPath(record, "colorimetry.spectral_power_distribution")

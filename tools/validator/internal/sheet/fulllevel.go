@@ -21,8 +21,8 @@ import (
 //	cie97_lmf / cie97_llmf     -> lumen_maintenance_luminaire.cie_97_lmf_table
 //
 // Each block attaches only when its sheet carries rows for the record. Under the
-// redesigned conformance rubric two of these now feed full-tier rules: zonal_lumens
-// gates full, and a lumen_maintenance_package carrying a tm_21_projection_hours
+// redesigned conformance rubric two of these now feed graded rules: zonal_lumens
+// gates standard, and a lumen_maintenance_package carrying a positive tm_21_projection_hours
 // satisfies the method-backed lumen-maintenance rule. The rest are pure enrichment
 // (non-gating observations): a manufacturer who has the data adds the sheet and the
 // record carries more depth, while one who does not simply omits it. No converted
