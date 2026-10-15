@@ -58,7 +58,12 @@ import (
 // 0.9.0: conformance_level now reads colorimetry.spectral_power_distribution: a white-light record
 // reaches full only with a measured spectrum as data through the luminaire's optics. Every stored record
 // re-stamps the builder version; only a white-light record that was full without such a spectrum changes level.
-const BuilderVersion = "0.9.0"
+// 0.10.0: conformance_level moves two rubric rows (the LM-79 attestation to full,
+// zonal lumens to standard) and reads a lumen-maintenance row as met only on a
+// positive number of hours or a populated table. Every stored record re-stamps
+// the builder version; a record's level changes only where one of those three
+// rows decided it.
+const BuilderVersion = "0.10.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard

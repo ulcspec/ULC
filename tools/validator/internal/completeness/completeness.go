@@ -28,7 +28,7 @@
 //	core        a complete, identifiable, legally-sellable luminaire with an
 //	            attached cutsheet, headline photometric/electrical numbers, one-line
 //	            colorimetry, and a market safety listing.
-//	standard    core plus the fuller specification an LM-79 report produces.
+//	standard    core plus the selection-grade specification a datasheet and the photometric file carry.
 //	full        standard plus exhaustive accredited characterization and, for white light,
 //	            the measured spectrum as data.
 //
@@ -60,6 +60,7 @@ package completeness
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -859,7 +860,7 @@ var rubric = []rule{
 	{LevelStandard, "/product_family/shared_mechanical/lens_material", "LensMaterial", "datasheet_pdf", "identity", "", str("product_family", "shared_mechanical", "lens_material"), nil},
 	{LevelStandard, "/test_conditions/photometry_basis", "PhotometryBasis", "ies", "LM-79", "", str("test_conditions", "photometry_basis"), notExitSign},
 	{LevelStandard, "/instrumentation/measurement_regime", "MeasurementRegime", "ies", "LM-79", "", str("instrumentation", "measurement_regime"), notExitSign},
-	{LevelStandard, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasLM79Attestation, notExitSign},
+	{LevelStandard, "/photometry/zonal_lumens", "", "ies", "LM-79", "", arr("photometry", "zonal_lumens"), notExitSign},
 	{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", "", "datasheet_pdf", "TM-21", "", hasLumenMaintenance, notExitSign},
 	{LevelStandard, "/photometry/beam_angle_deg", "", "ies", "LM-79", "", num("photometry", "beam_angle_deg"), directional},
 	{LevelStandard, "/photometry/per_length_normalized", "", "datasheet_pdf", "LM-79", "", hasPerLengthNormalized, linear},
@@ -895,7 +896,7 @@ var rubric = []rule{
 	{LevelStandard, "/emergency/self_test", "EmergencySelfTestCapability", "datasheet_pdf", "UL 924", "", str("emergency", "self_test"), both(emergencyPowerCoreClass, hasIntegralBattery)},
 
 	// --- FULL ---
-	{LevelFull, "/photometry/zonal_lumens", "", "ies", "LM-79", "", arr("photometry", "zonal_lumens"), notExitSign},
+	{LevelFull, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasDocumentedLM79Attestation, notExitSign},
 	{LevelFull, "/operating_point", "", "test_report", "LM-79", "", hasOperatingPoint, notExitSign},
 	{LevelFull, "/uncertainty", "", "test_report", "LM-79 / GUM", "", hasUncertainty, notExitSign},
 	{LevelFull, "/corrections_applied", "", "test_report", "LM-79", "", hasCorrectionsApplied, notExitSign},
@@ -1332,17 +1333,39 @@ func emitAttestationCoverage(record map[string]any, report *findings.Report) {
 
 // --- reused accessors and domain helpers (all comma-ok guarded) ---
 
-// hasLM79Attestation reports whether any attestation entry has a program in the
-// LM-79 family (program token starts with "lm_79"). Checks both record-level
-// attestations and product_family.shared_attestations, matching where the index
-// builder collects programs.
+var lm79DocumentHash = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
+// hasDocumentedLM79Attestation requires an LM-79 attestation with its report
+// referenced in the record. A claim alone cannot satisfy the Full report row.
+// Both record-level and product-family shared attestations are read; status is
+// irrelevant. Malformed references and the missing-file draft sentinel fail.
 // SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
 // set as public contract. Move that entry whenever this reads somewhere new.
-func hasLM79Attestation(record map[string]any) bool {
-	for _, p := range attestationPrograms(record) {
-		if strings.HasPrefix(p, "lm_79") {
-			return true
+func hasDocumentedLM79Attestation(record map[string]any) bool {
+	documented := func(entries []any) bool {
+		for _, entry := range entries {
+			m, ok := entry.(map[string]any)
+			if !ok || !strings.HasPrefix(getString(m, "program"), "lm_79") {
+				continue
+			}
+			ref, ok := m["source_document_ref"].(map[string]any)
+			if !ok {
+				continue
+			}
+			_, filenameOK := ref["filename"].(string)
+			hash, hashOK := ref["sha256"].(string)
+			if filenameOK && hashOK && lm79DocumentHash.MatchString(hash) && hash != strings.Repeat("0", 64) {
+				return true
+			}
 		}
+		return false
+	}
+	if entries, ok := record["attestations"].([]any); ok && documented(entries) {
+		return true
+	}
+	if entries, ok := getMap(record, "product_family"); ok {
+		shared, _ := entries["shared_attestations"].([]any)
+		return documented(shared)
 	}
 	return false
 }

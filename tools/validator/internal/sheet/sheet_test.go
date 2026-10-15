@@ -368,7 +368,20 @@ func TestDimmingRangeRequiresBothHalves(t *testing.T) {
 // Lumenfacade SKU, so it grades standard: a digital protocol is exempt from the
 // analog/phase dimming detail, and pure RGB waives the white-light color gates.
 func TestConvertPatternC(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, completeness.LevelStandard)
+	// This fixture has no zonal_lumens sheet; the converter does not compute it.
+	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, completeness.LevelCore)
+	report := findings.NewReport()
+	completeness.Report(record, report)
+	report.Finalize()
+	var gaps []findings.Finding
+	for _, f := range report.Findings {
+		if f.Code == findings.CodeConformanceGap && f.NextConformanceLevel == "standard" {
+			gaps = append(gaps, f)
+		}
+	}
+	if len(gaps) != 1 || gaps[0].Path != "/photometry/zonal_lumens" {
+		t.Fatalf("Pattern C Standard gaps = %+v, want only zonal lumens", gaps)
+	}
 
 	// Structural fact: a headline photometric value carries
 	// provenance.method=extended_photometry + base_attestation_ref.

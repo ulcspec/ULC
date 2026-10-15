@@ -239,7 +239,7 @@ func emgLuminaireFull() map[string]any {
 	r := fullBase()
 	pf := r["product_family"].(map[string]any)
 	pf["primary_category"] = "emergency_luminaire"
-	pf["shared_attestations"] = []any{map[string]any{"program": "ul_924"}, map[string]any{"program": "lm_79_08"}}
+	pf["shared_attestations"] = []any{map[string]any{"program": "ul_924"}, map[string]any{"program": "lm_79_08", "source_document_ref": map[string]any{"filename": "synthetic-lm79-report.pdf", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}
 	r["electrical"].(map[string]any)["driver_protocol"] = "non_dimming"
 	delete(r["electrical"].(map[string]any), "dimming_method")
 	delete(r["electrical"].(map[string]any), "dimming_range_percent")
@@ -308,9 +308,9 @@ func TestSignAndEmergencyLadders(t *testing.T) {
 				"/colorimetry/sdcm_step", "/configuration/tested_axes/cri_tier", "/electrical/control_gear_type",
 				"/emergency/battery_chemistry", "/emergency/battery_duration_min", "/emergency/self_test",
 				"/instrumentation/measurement_regime", "/lumen_maintenance_luminaire (or /lumen_maintenance_package)",
-				"/photometry/maximum_intensity_cd", "/photometry/photometric_coordinate_system", "/photometry/symmetry_type",
+				"/photometry/maximum_intensity_cd", "/photometry/photometric_coordinate_system", "/photometry/symmetry_type", "/photometry/zonal_lumens",
 				"/product_family/shared_mechanical/housing_material", "/product_family/shared_mechanical/lens_material",
-				"/test_conditions/photometry_basis", "LM-79 attestation",
+				"/test_conditions/photometry_basis",
 			},
 		},
 	}

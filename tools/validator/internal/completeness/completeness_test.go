@@ -116,12 +116,15 @@ func coreBase() map[string]any {
 }
 
 // standardBase extends coreBase to meet every hard standard requirement (the
-// universal photometry/material/test fields, an LM-79 attestation, a
+// universal photometry/material/test fields, zonal lumens, a
 // lumen-maintenance framework, the white-light cri_tier + sdcm_step, and the
 // analog dimming method + range). It grades exactly standard.
 func standardBase() map[string]any {
 	rec := coreBase()
 	phot := rec["photometry"].(map[string]any)
+	rec["photometry"].(map[string]any)["zonal_lumens"] = []any{
+		map[string]any{"zone_label": "0-30", "lumens": map[string]any{"value": float64(500)}},
+	}
 	phot["maximum_intensity_cd"] = map[string]any{"value": float64(5000)}
 	phot["symmetry_type"] = "symm_quad"
 	phot["photometric_coordinate_system"] = "ies_c"
@@ -131,7 +134,6 @@ func standardBase() map[string]any {
 	el["dimming_range_percent"] = map[string]any{"min": float64(1), "max": float64(100)}
 	pf := rec["product_family"].(map[string]any)
 	pf["shared_mechanical"] = map[string]any{"housing_material": "aluminum", "lens_material": "pmma"}
-	pf["shared_attestations"] = append(pf["shared_attestations"].([]any), map[string]any{"program": "lm_79_08"})
 	rec["test_conditions"] = map[string]any{"photometry_basis": "absolute"}
 	rec["instrumentation"] = map[string]any{"measurement_regime": "far_field"}
 	rec["colorimetry"].(map[string]any)["sdcm_step"] = map[string]any{"value": float64(3)}
@@ -146,16 +148,15 @@ func standardBase() map[string]any {
 	return rec
 }
 
-// fullBase extends standardBase to meet every hard full requirement: zonal lumens,
+// fullBase extends standardBase to meet every hard full requirement: an LM-79 report reference,
 // an operating point, measurement uncertainty, corrections, instrumentation depth,
 // a method-backed maintenance projection, TM-30 fidelity + hue bins, and an invented
 // measured spectrum through the optics. It grades
 // full.
 func fullBase() map[string]any {
 	rec := standardBase()
-	rec["photometry"].(map[string]any)["zonal_lumens"] = []any{
-		map[string]any{"zone_label": "0-30", "lumens": map[string]any{"value": float64(500)}},
-	}
+	pf := rec["product_family"].(map[string]any)
+	pf["shared_attestations"] = append(pf["shared_attestations"].([]any), map[string]any{"program": "lm_79_08", "source_document_ref": map[string]any{"filename": "synthetic-lm79-report.pdf", "sha256": strings.Repeat("a", 64)}})
 	rec["operating_point"] = map[string]any{
 		"drive_current_ma": map[string]any{"value": float64(350)},
 	}
@@ -204,7 +205,7 @@ func TestAchievedLevel(t *testing.T) {
 		want Level
 		why  string
 	}{
-		{"erco-quintessence-30416-023.ulc", LevelStandard, "full ceiling: no zonal/uncertainty/corrections/instrumentation/TM-30 depth"},
+		{"erco-quintessence-30416-023.ulc", LevelStandard, "full ceiling: no uncertainty/corrections/instrumentation/TM-30 depth"},
 		{"selux-aya-pole-sr-ho-3000k.ulc", LevelStandard, "carries zonal + operating_point but lacks test-report depth"},
 		{"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc", LevelCore, "sole standard gap is sdcm_step (no published MacAdam step)"},
 		{"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc", LevelStandard, "DMX exempts the dimming detail; pure RGB waives CCT/CRI/SDCM"},
@@ -427,7 +428,17 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 		{"value_type absent", func(r map[string]any) {
 			delete(r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any), "value_type")
 		}},
-		{"no zonal_lumens", func(r map[string]any) { delete(r["photometry"].(map[string]any), "zonal_lumens") }},
+		{"no LM-79 attestation", func(r map[string]any) {
+			pf := r["product_family"].(map[string]any)
+			entries := pf["shared_attestations"].([]any)
+			pf["shared_attestations"] = entries[:len(entries)-1]
+		}},
+		{"LM-79 attestation claimed, no document", func(r map[string]any) {
+			entries := r["product_family"].(map[string]any)["shared_attestations"].([]any)
+			lm := entries[len(entries)-1].(map[string]any)
+			lm["status"] = "claimed"
+			delete(lm, "source_document_ref")
+		}},
 		{"no operating_point", func(r map[string]any) { delete(r, "operating_point") }},
 		{"no uncertainty", func(r map[string]any) { delete(r, "uncertainty") }},
 		{"no corrections", func(r map[string]any) { delete(r, "corrections_applied") }},
@@ -448,6 +459,15 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 			c.strip(rec)
 			if got := AchievedLevel(rec); got != LevelStandard {
 				t.Errorf("%s = %s, want standard", c.name, got)
+			}
+			if c.name == "no LM-79 attestation" || c.name == "LM-79 attestation claimed, no document" {
+				report := findings.NewReport()
+				Report(rec, report)
+				report.Finalize()
+				gaps := findingsFor(report, findings.CodeConformanceGap)
+				if len(gaps) != 1 || gaps[0].Path != "LM-79 attestation" || gaps[0].NextConformanceLevel != "full" || gaps[0].SourceDocument != "test_report" || gaps[0].Standard != "LM-79" {
+					t.Errorf("expected only documented LM-79 Full gap: %+v", gaps)
+				}
 			}
 			if c.name == "no spectrum" {
 				report := findings.NewReport()
@@ -1757,4 +1777,79 @@ func TestSpectrumRowAndEnrichment(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestDocumentedLM79Attestation(t *testing.T) {
+	ref := map[string]any{"filename": "synthetic-lm79-report.pdf", "sha256": strings.Repeat("a", 64)}
+	cases := []struct {
+		name, program, status string
+		ref                   any
+		shared, want          bool
+	}{
+		{"claimed with document", "lm_79_24", "claimed", ref, false, true},
+		{"shared document", "lm_79_08", "verified", ref, true, true},
+		{"verified without document", "lm_79_08", "verified", nil, false, false},
+		{"no hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf"}, false, false},
+		{"no filename", "lm_79_08", "verified", map[string]any{"sha256": strings.Repeat("a", 64)}, false, false},
+		{"short hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": "abc"}, false, false},
+		{"uppercase hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": strings.Repeat("A", 64)}, false, false},
+		{"string reference", "lm_79_08", "verified", "report.pdf", false, false},
+		{"draft sentinel", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": strings.Repeat("0", 64)}, false, false},
+		{"different program", "ul_1598", "verified", ref, false, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			entry := map[string]any{"program": c.program, "status": c.status, "source_document_ref": c.ref}
+			record := map[string]any{"attestations": []any{entry}}
+			if c.shared {
+				record = map[string]any{"product_family": map[string]any{"shared_attestations": []any{entry}}}
+			}
+			if got := hasDocumentedLM79Attestation(record); got != c.want {
+				t.Errorf("got %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+func TestStandardRequiresZonalLumens(t *testing.T) {
+	rec := standardBase()
+	delete(rec["photometry"].(map[string]any), "zonal_lumens")
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelCore {
+		t.Fatalf("got %s, want core", got)
+	}
+	report.Finalize()
+	gap, ok := hasGapFor(report, "/photometry/zonal_lumens")
+	if !ok || gap.NextConformanceLevel != "standard" || gap.SourceDocument != "ies" || gap.Standard != "LM-79" {
+		t.Errorf("zonal gap = %+v, present %v", gap, ok)
+	}
+}
+
+func TestStandardNeedsNoTestReport(t *testing.T) {
+	rec := standardBase()
+	for _, program := range attestationPrograms(rec) {
+		if strings.HasPrefix(program, "lm_79") {
+			t.Fatal("standard fixture must carry no LM-79 attestation")
+		}
+	}
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelStandard {
+		t.Fatalf("got %s, want standard", got)
+	}
+	report.Finalize()
+	lm79 := false
+	for _, gap := range findingsFor(report, findings.CodeConformanceGap) {
+		if gap.NextConformanceLevel != "full" {
+			t.Errorf("unexpected gap tier: %+v", gap)
+		}
+		if gap.Path == "LM-79 attestation" {
+			lm79 = true
+		}
+		if gap.Path == "/photometry/zonal_lumens" {
+			t.Error("zones are satisfied at Standard")
+		}
+	}
+	if !lm79 {
+		t.Error("missing LM-79 Full gap")
+	}
 }

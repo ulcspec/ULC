@@ -27,8 +27,8 @@ full	pointer	/colorimetry/tm_30/rf	test_report	TM-30
 full	pointer	/colorimetry/tm_30/rf_h_per_bin	test_report	TM-30
 full	pointer	/corrections_applied	test_report	LM-79
 full	pointer	/operating_point	test_report	LM-79
-full	pointer	/photometry/zonal_lumens	ies	LM-79
 full	pointer	/uncertainty	test_report	LM-79 / GUM
+full	requirement	LM-79 attestation	test_report	LM-79
 full	requirement	instrumentation depth (goniometer/lab)	test_report	LM-79 / LM-75
 full	requirement	measured spectral power distribution as data (through the optics; table or exchange file)	test_report	LM-79 / TM-27
 full	requirement	method-backed lumen maintenance (TM-21 hours or TM-28)	test_report	LM-80 / TM-21 / TM-28
@@ -62,8 +62,8 @@ standard	pointer	/photometry/maximum_intensity_cd	ies	LM-79
 standard	pointer	/photometry/per_length_normalized	datasheet_pdf	LM-79
 standard	pointer	/photometry/photometric_coordinate_system	ies	LM-75
 standard	pointer	/photometry/symmetry_type	ies	LM-75
+standard	pointer	/photometry/zonal_lumens	ies	LM-79
 standard	pointer	/product_family/shared_mechanical/housing_material	datasheet_pdf	identity
 standard	pointer	/product_family/shared_mechanical/ip_rating	compliance_documents	IEC 60529
 standard	pointer	/product_family/shared_mechanical/lens_material	datasheet_pdf	identity
 standard	pointer	/test_conditions/photometry_basis	ies	LM-79
-standard	requirement	LM-79 attestation	test_report	LM-79

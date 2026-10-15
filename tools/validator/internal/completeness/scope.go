@@ -56,8 +56,9 @@ var choiceBlocks = map[string][]string{
 }
 
 // requirementBlocks maps each ScopeKindRequirement gating path to the blocks its
-// present-closure reads. The three attestation-program rows route through
-// attestationPrograms, which reads both the top-level attestations array and
+// present-closure reads. The safety-listing and UL 924 rows route through
+// attestationPrograms, and the LM-79 row walks the same two arrays to read each
+// entry's source_document_ref; both read the top-level attestations array and
 // product_family.shared_attestations, so both blocks are named.
 var requirementBlocks = map[string][]string{
 	"measured spectral power distribution as data (through the optics; table or exchange file)": {"colorimetry"},
