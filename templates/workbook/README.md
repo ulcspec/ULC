@@ -181,7 +181,7 @@ release 1.5.0 on.
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM, percent flicker) with per-value provenance companions and a metric-specific unit rule. | Full enrichment |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed projection with companions on its three numeric values. | Full enrichment |
 | `additional_rated_claims` | Further lumen-maintenance thresholds beside the records-sheet headline, with companions on hours and failure percent. | When several claims are published |
-| `zonal_lumens` | Angle-band zonal lumens with per-value provenance companions. | Full enrichment |
+| `zonal_lumens` | Angle-band zonal lumens with per-value provenance companions. | A Standard requirement from 1.16.0 |
 | `lcs_zonal_lumens` | TM-15 LCS secondary solid-angle zones with per-value provenance companions. | Outdoor, full enrichment |
 | `ingredient_list` | Declare / Living Building Challenge material roster. | Full enrichment |
 | `cie97_lmf` | CIE-97 LMF grid (one row per interval and cleanliness; a full cutsheet has 12). | Full enrichment |

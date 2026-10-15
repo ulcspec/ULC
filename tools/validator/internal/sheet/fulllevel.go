@@ -21,10 +21,11 @@ import (
 //	cie97_lmf / cie97_llmf     -> lumen_maintenance_luminaire.cie_97_lmf_table
 //
 // Each block attaches only when its sheet carries rows for the record. Under the
-// redesigned conformance rubric two of these now feed full-tier rules: zonal_lumens
-// gates full, and a lumen_maintenance_package carrying a tm_21_projection_hours
-// satisfies the method-backed lumen-maintenance rule. The rest are pure enrichment
-// (non-gating observations): a manufacturer who has the data adds the sheet and the
+// conformance rubric zonal_lumens gates standard, and a populated CIE 97 table
+// satisfies standard lumen maintenance. A package with positive tm_21_projection_hours
+// satisfies both standard maintenance and the full method-backed row. A qualifying
+// spectral_power_distribution satisfies the white-light full spectrum row. The other
+// listed blocks are non-gating enrichment: a manufacturer who has the data adds the sheet and the
 // record carries more depth, while one who does not simply omits it. No converted
 // record reaches full on these blocks alone, because the full tier additionally
 // requires test-report depth (measurement uncertainty, corrections, instrumentation,
@@ -317,8 +318,8 @@ func assembleLumenMaintenancePackage(wb Workbook, id string, rec map[string]any,
 	for _, row := range rows {
 		// A package row needs a substantive maintenance payload. A bare row (only
 		// record_id, or only descriptive identifiers) is skipped so it cannot emit
-		// a near-empty entry that nonetheless satisfies the standard-level
-		// lumen-maintenance grade gate.
+		// a near-empty entry with no maintenance payload. The standard-level
+		// gate separately requires positive projection hours or luminaire evidence.
 		if !hasLMPayload(row) {
 			continue
 		}

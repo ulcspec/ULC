@@ -365,10 +365,24 @@ func TestDimmingRangeRequiresBothHalves(t *testing.T) {
 // (method=extended_photometry + base_attestation_ref) supplied via the per-column
 // provenance override columns. The extensions_json overflow lands at
 // extensions.manufacturer_specific.<slug>. This bundle is the DMX/RDM color-mixing
-// Lumenfacade SKU, so it grades standard: a digital protocol is exempt from the
-// analog/phase dimming detail, and pure RGB waives the white-light color gates.
+// Lumenfacade SKU, which grades core because its bundle has no zonal_lumens sheet.
+// Its digital protocol is exempt from analog/phase dimming detail, and pure RGB
+// waives the white-light color gates.
 func TestConvertPatternC(t *testing.T) {
-	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, completeness.LevelStandard)
+	// This fixture has no zonal_lumens sheet; the converter does not compute it.
+	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, completeness.LevelCore)
+	report := findings.NewReport()
+	completeness.Report(record, report)
+	report.Finalize()
+	var gaps []findings.Finding
+	for _, f := range report.Findings {
+		if f.Code == findings.CodeConformanceGap && f.NextConformanceLevel == "standard" {
+			gaps = append(gaps, f)
+		}
+	}
+	if len(gaps) != 1 || gaps[0].Path != "/photometry/zonal_lumens" {
+		t.Fatalf("Pattern C Standard gaps = %+v, want only zonal lumens", gaps)
+	}
 
 	// Structural fact: a headline photometric value carries
 	// provenance.method=extended_photometry + base_attestation_ref.
@@ -477,8 +491,8 @@ func TestConvertPatternDAuthoredLengthSheet(t *testing.T) {
 // standard (it authors the analog dimming method and range), and full additionally
 // needs test-report depth (uncertainty, corrections, instrumentation, TM-30) the
 // converter does not synthesize. Several of these blocks (zonal_lumens, the
-// method-backed lumen-maintenance package) feed full-tier rules, but they cannot
-// lift the grade alone.
+// method-backed lumen-maintenance package) feed graded rules, but they cannot
+// reach full alone.
 func TestConvertFullLevelSheets(t *testing.T) {
 	record := convertOne(t, filepath.Join("testdata", "bundle-b"), PatternB, completeness.LevelStandard)
 	spectrum, _ := getPath(record, "colorimetry.spectral_power_distribution")

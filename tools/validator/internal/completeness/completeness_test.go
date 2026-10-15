@@ -116,12 +116,15 @@ func coreBase() map[string]any {
 }
 
 // standardBase extends coreBase to meet every hard standard requirement (the
-// universal photometry/material/test fields, an LM-79 attestation, a
+// universal photometry/material/test fields, zonal lumens, a
 // lumen-maintenance framework, the white-light cri_tier + sdcm_step, and the
 // analog dimming method + range). It grades exactly standard.
 func standardBase() map[string]any {
 	rec := coreBase()
 	phot := rec["photometry"].(map[string]any)
+	rec["photometry"].(map[string]any)["zonal_lumens"] = []any{
+		map[string]any{"zone_label": "0-30", "lumens": map[string]any{"value": float64(500)}},
+	}
 	phot["maximum_intensity_cd"] = map[string]any{"value": float64(5000)}
 	phot["symmetry_type"] = "symm_quad"
 	phot["photometric_coordinate_system"] = "ies_c"
@@ -131,7 +134,6 @@ func standardBase() map[string]any {
 	el["dimming_range_percent"] = map[string]any{"min": float64(1), "max": float64(100)}
 	pf := rec["product_family"].(map[string]any)
 	pf["shared_mechanical"] = map[string]any{"housing_material": "aluminum", "lens_material": "pmma"}
-	pf["shared_attestations"] = append(pf["shared_attestations"].([]any), map[string]any{"program": "lm_79_08"})
 	rec["test_conditions"] = map[string]any{"photometry_basis": "absolute"}
 	rec["instrumentation"] = map[string]any{"measurement_regime": "far_field"}
 	rec["colorimetry"].(map[string]any)["sdcm_step"] = map[string]any{"value": float64(3)}
@@ -146,16 +148,15 @@ func standardBase() map[string]any {
 	return rec
 }
 
-// fullBase extends standardBase to meet every hard full requirement: zonal lumens,
+// fullBase extends standardBase to meet every hard full requirement: an LM-79 report reference,
 // an operating point, measurement uncertainty, corrections, instrumentation depth,
 // a method-backed maintenance projection, TM-30 fidelity + hue bins, and an invented
 // measured spectrum through the optics. It grades
 // full.
 func fullBase() map[string]any {
 	rec := standardBase()
-	rec["photometry"].(map[string]any)["zonal_lumens"] = []any{
-		map[string]any{"zone_label": "0-30", "lumens": map[string]any{"value": float64(500)}},
-	}
+	pf := rec["product_family"].(map[string]any)
+	pf["shared_attestations"] = append(pf["shared_attestations"].([]any), map[string]any{"program": "lm_79_08", "source_document_ref": map[string]any{"filename": "synthetic-lm79-report.pdf", "sha256": strings.Repeat("a", 64)}})
 	rec["operating_point"] = map[string]any{
 		"drive_current_ma": map[string]any{"value": float64(350)},
 	}
@@ -204,8 +205,8 @@ func TestAchievedLevel(t *testing.T) {
 		want Level
 		why  string
 	}{
-		{"erco-quintessence-30416-023.ulc", LevelStandard, "full ceiling: no zonal/uncertainty/corrections/instrumentation/TM-30 depth"},
-		{"selux-aya-pole-sr-ho-3000k.ulc", LevelStandard, "carries zonal + operating_point but lacks test-report depth"},
+		{"erco-quintessence-30416-023.ulc", LevelStandard, "full ceiling: no uncertainty/corrections/instrumentation/TM-30 depth"},
+		{"selux-aya-pole-sr-ho-3000k.ulc", LevelCore, "claim type with no stated hours (claimed_hours 0)"},
 		{"vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in.ulc", LevelCore, "sole standard gap is sdcm_step (no published MacAdam step)"},
 		{"lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc", LevelStandard, "DMX exempts the dimming detail; pure RGB waives CCT/CRI/SDCM"},
 		{"lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5.ulc", LevelStandard, "DMX exempts the dimming detail; RGBW carries CCT, waives CRI/SDCM"},
@@ -427,12 +428,30 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 		{"value_type absent", func(r map[string]any) {
 			delete(r["colorimetry"].(map[string]any)["spectral_power_distribution"].(map[string]any), "value_type")
 		}},
-		{"no zonal_lumens", func(r map[string]any) { delete(r["photometry"].(map[string]any), "zonal_lumens") }},
+		{"no LM-79 attestation", func(r map[string]any) {
+			pf := r["product_family"].(map[string]any)
+			entries := pf["shared_attestations"].([]any)
+			pf["shared_attestations"] = entries[:len(entries)-1]
+		}},
+		{"empty LM-79 filename", func(r map[string]any) {
+			entries := r["product_family"].(map[string]any)["shared_attestations"].([]any)
+			lm := entries[len(entries)-1].(map[string]any)
+			lm["source_document_ref"].(map[string]any)["filename"] = ""
+		}},
+		{"LM-79 attestation claimed, no document", func(r map[string]any) {
+			entries := r["product_family"].(map[string]any)["shared_attestations"].([]any)
+			lm := entries[len(entries)-1].(map[string]any)
+			lm["status"] = "claimed"
+			delete(lm, "source_document_ref")
+		}},
 		{"no operating_point", func(r map[string]any) { delete(r, "operating_point") }},
 		{"no uncertainty", func(r map[string]any) { delete(r, "uncertainty") }},
 		{"no corrections", func(r map[string]any) { delete(r, "corrections_applied") }},
 		{"no instrumentation depth", func(r map[string]any) {
 			delete(r["instrumentation"].(map[string]any), "laboratory_accreditation_scheme")
+		}},
+		{"zero method-backed projection", func(r map[string]any) {
+			r["lumen_maintenance_luminaire"].(map[string]any)["tm_28"].(map[string]any)["tm_28_projection_hours"] = map[string]any{"value": float64(0)}
 		}},
 		{"no method-backed maintenance", func(r map[string]any) {
 			delete(r["lumen_maintenance_luminaire"].(map[string]any), "tm_28")
@@ -448,6 +467,24 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 			c.strip(rec)
 			if got := AchievedLevel(rec); got != LevelStandard {
 				t.Errorf("%s = %s, want standard", c.name, got)
+			}
+			if c.name == "no LM-79 attestation" || c.name == "LM-79 attestation claimed, no document" || c.name == "empty LM-79 filename" {
+				report := findings.NewReport()
+				Report(rec, report)
+				report.Finalize()
+				gaps := findingsFor(report, findings.CodeConformanceGap)
+				if len(gaps) != 1 || gaps[0].Path != "LM-79 attestation" || gaps[0].NextConformanceLevel != "full" || gaps[0].SourceDocument != "test_report" || gaps[0].Standard != "LM-79" {
+					t.Errorf("expected only documented LM-79 Full gap: %+v", gaps)
+				}
+			}
+			if c.name == "zero method-backed projection" {
+				report := findings.NewReport()
+				Report(rec, report)
+				report.Finalize()
+				gaps := findingsFor(report, findings.CodeConformanceGap)
+				if len(gaps) != 1 || gaps[0].Path != "method-backed lumen maintenance (TM-21 hours or TM-28)" || gaps[0].NextConformanceLevel != "full" {
+					t.Errorf("zero projection gaps = %+v", gaps)
+				}
 			}
 			if c.name == "no spectrum" {
 				report := findings.NewReport()
@@ -1757,4 +1794,177 @@ func TestSpectrumRowAndEnrichment(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestDocumentedLM79Attestation(t *testing.T) {
+	ref := map[string]any{"filename": "synthetic-lm79-report.pdf", "sha256": strings.Repeat("a", 64)}
+	cases := []struct {
+		name, program, status string
+		ref                   any
+		shared, want          bool
+	}{
+		{"claimed with document", "lm_79_24", "claimed", ref, false, true},
+		{"shared document", "lm_79_08", "verified", ref, true, true},
+		{"verified without document", "lm_79_08", "verified", nil, false, false},
+		{"no hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf"}, false, false},
+		{"empty filename", "lm_79_08", "verified", map[string]any{"filename": "", "sha256": strings.Repeat("a", 64)}, false, false},
+		{"no filename", "lm_79_08", "verified", map[string]any{"sha256": strings.Repeat("a", 64)}, false, false},
+		{"short hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": "abc"}, false, false},
+		{"uppercase hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": strings.Repeat("A", 64)}, false, false},
+		{"string reference", "lm_79_08", "verified", "report.pdf", false, false},
+		{"draft sentinel", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": strings.Repeat("0", 64)}, false, false},
+		{"different program", "ul_1598", "verified", ref, false, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			entry := map[string]any{"program": c.program, "status": c.status, "source_document_ref": c.ref}
+			record := map[string]any{"attestations": []any{entry}}
+			if c.shared {
+				record = map[string]any{"product_family": map[string]any{"shared_attestations": []any{entry}}}
+			}
+			if got := hasDocumentedLM79Attestation(record); got != c.want {
+				t.Errorf("got %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+func TestStandardRequiresZonalLumens(t *testing.T) {
+	rec := standardBase()
+	delete(rec["photometry"].(map[string]any), "zonal_lumens")
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelCore {
+		t.Fatalf("got %s, want core", got)
+	}
+	report.Finalize()
+	gap, ok := hasGapFor(report, "/photometry/zonal_lumens")
+	if !ok || gap.NextConformanceLevel != "standard" || gap.SourceDocument != "ies" || gap.Standard != "LM-79" {
+		t.Errorf("zonal gap = %+v, present %v", gap, ok)
+	}
+}
+
+func TestStandardNeedsNoTestReport(t *testing.T) {
+	rec := standardBase()
+	for _, program := range attestationPrograms(rec) {
+		if strings.HasPrefix(program, "lm_79") {
+			t.Fatal("standard fixture must carry no LM-79 attestation")
+		}
+	}
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelStandard {
+		t.Fatalf("got %s, want standard", got)
+	}
+	report.Finalize()
+	lm79 := false
+	for _, gap := range findingsFor(report, findings.CodeConformanceGap) {
+		if gap.NextConformanceLevel != "full" {
+			t.Errorf("unexpected gap tier: %+v", gap)
+		}
+		if gap.Path == "LM-79 attestation" {
+			lm79 = true
+		}
+		if gap.Path == "/photometry/zonal_lumens" {
+			t.Error("zones are satisfied at Standard")
+		}
+	}
+	if !lm79 {
+		t.Error("missing LM-79 Full gap")
+	}
+}
+
+func TestStandardLumenMaintenanceReadsAValue(t *testing.T) {
+	rec := standardBase()
+	claim := rec["lumen_maintenance_luminaire"].(map[string]any)["manufacturer_rated_claim"].(map[string]any)
+	claim["claimed_hours"] = map[string]any{"value": float64(0)}
+	report := findings.NewReport()
+	if got := Report(rec, report); got != LevelCore {
+		t.Fatalf("zero hours = %s, want core", got)
+	}
+	report.Finalize()
+	var gaps []findings.Finding
+	for _, gap := range findingsFor(report, findings.CodeConformanceGap) {
+		if gap.NextConformanceLevel == "standard" {
+			gaps = append(gaps, gap)
+		}
+	}
+	if len(gaps) != 1 || gaps[0].Path != "/lumen_maintenance_luminaire (or /lumen_maintenance_package)" || gaps[0].SourceDocument != "datasheet_pdf" || gaps[0].Standard != "TM-21" {
+		t.Errorf("Standard gaps = %+v", gaps)
+	}
+	delete(claim, "claim_type")
+	claim["claimed_hours"] = map[string]any{"value": float64(50000)}
+	if got := AchievedLevel(rec); got != LevelStandard {
+		t.Errorf("positive hours without type = %s, want standard", got)
+	}
+}
+
+func TestLumenMaintenanceEnrichmentUnchanged(t *testing.T) {
+	rec := standardBase()
+	delete(rec["lumen_maintenance_luminaire"].(map[string]any)["manufacturer_rated_claim"].(map[string]any), "claimed_hours")
+	report := findings.NewReport()
+	Report(rec, report)
+	report.Finalize()
+	want := map[string]bool{
+		"/lumen_maintenance_luminaire/tm_28/projection_reliability": true,
+		"/lumen_maintenance_luminaire/tm_28/projection_basis":       true,
+		"/lumen_maintenance_luminaire/tm_28/projection_method":      true,
+		"/lumen_maintenance_luminaire/cie_97_lmf_table":             true,
+	}
+	count := 0
+	for _, f := range findingsFor(report, findings.CodeConformanceEnrichment) {
+		if strings.HasPrefix(f.Path, "/lumen_maintenance_luminaire/") {
+			count++
+			if !want[f.Path] {
+				t.Errorf("unexpected enrichment %s", f.Path)
+			}
+			delete(want, f.Path)
+		}
+	}
+	if count != 4 || len(want) != 0 {
+		t.Errorf("luminaire enrichments = %d, missing %v", count, want)
+	}
+}
+
+func TestStandardCie97ReadsFactor(t *testing.T) {
+	cases := []struct {
+		name, table string
+		entry       map[string]any
+		want        Level
+	}{
+		{"hours only", "llmf_by_hours", map[string]any{"hours": 60000}, LevelCore},
+		{"numeric llmf", "llmf_by_hours", map[string]any{"hours": 60000, "llmf": 0.9}, LevelStandard},
+		{"zero llmf", "llmf_by_hours", map[string]any{"hours": 60000, "llmf": float64(0)}, LevelStandard},
+		{"numeric lsf", "llmf_by_hours", map[string]any{"hours": 60000, "lsf": 0.9}, LevelStandard},
+		{"zero lsf", "llmf_by_hours", map[string]any{"hours": 60000, "lsf": 0}, LevelStandard},
+		{"numeric lmf", "lmf_by_cleanliness_and_interval", map[string]any{"cleaning_interval_years": 1, "ambient_cleanliness": "clean", "lmf": 0.9}, LevelStandard},
+		{"zero lmf", "lmf_by_cleanliness_and_interval", map[string]any{"cleaning_interval_years": 1, "ambient_cleanliness": "clean", "lmf": int64(0)}, LevelStandard},
+		{"string factor", "llmf_by_hours", map[string]any{"hours": 60000, "llmf": "0.9"}, LevelCore},
+		{"wrong factor for grid", "llmf_by_hours", map[string]any{"hours": 60000, "lmf": 0.9}, LevelCore},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rec := standardBase()
+			rec["lumen_maintenance_luminaire"] = map[string]any{"cie_97_lmf_table": map[string]any{c.table: []any{c.entry}}}
+			report := findings.NewReport()
+			if got := Report(rec, report); got != c.want {
+				t.Errorf("grade = %s, want %s", got, c.want)
+			}
+			report.Finalize()
+			var gaps []findings.Finding
+			for _, gap := range findingsFor(report, findings.CodeConformanceGap) {
+				if gap.NextConformanceLevel == "standard" {
+					gaps = append(gaps, gap)
+				}
+			}
+			if c.want == LevelCore {
+				if len(gaps) != 1 || gaps[0].Path != "/lumen_maintenance_luminaire (or /lumen_maintenance_package)" || gaps[0].SourceDocument != "datasheet_pdf" || gaps[0].Standard != "TM-21" {
+					t.Errorf("Standard gaps = %+v, want only maintenance", gaps)
+				}
+			} else if len(gaps) != 0 {
+				t.Errorf("unexpected Standard gaps: %+v", gaps)
+			}
+			if !hasCie97LmfTable(rec) {
+				t.Error("non-empty grid must retain its enrichment applicability behavior")
+			}
+		})
+	}
 }

@@ -312,6 +312,15 @@
     {
       "level": "INFO",
       "code": "conformance/gap",
+      "message": "to reach \"standard\", add /lumen_maintenance_luminaire (or /lumen_maintenance_package) (from datasheet_pdf, per TM-21)",
+      "path": "/lumen_maintenance_luminaire (or /lumen_maintenance_package)",
+      "next_conformance_level": "standard",
+      "source_document": "datasheet_pdf",
+      "standard": "TM-21"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
       "message": "to reach \"full\", add /uncertainty (from test_report, per LM-79 / GUM)",
       "path": "/uncertainty",
       "next_conformance_level": "full",
@@ -344,14 +353,8 @@
     },
     {
       "level": "INFO",
-      "code": "conformance/grade-satisfied",
-      "message": "conformance grade \"standard\" satisfied",
-      "path": "/index/conformance_level"
-    },
-    {
-      "level": "INFO",
       "code": "conformance/level",
-      "message": "this record achieves conformance level \"standard\"",
+      "message": "this record achieves conformance level \"core\"",
       "path": "/index/conformance_level"
     },
     {

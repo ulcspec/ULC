@@ -699,7 +699,7 @@ func TestTightenedObjectGatesRejectEmptyAndUnrecognized(t *testing.T) {
 			"lumen_maintenance_luminaire",
 			func(f map[string]any) map[string]any { return map[string]any{"lumen_maintenance_luminaire": f} },
 			hasLumenMaintenance,
-			map[string]any{"manufacturer_rated_claim": map[string]any{"claim_type": "L70"}},
+			map[string]any{"manufacturer_rated_claim": map[string]any{"claimed_hours": map[string]any{"value": float64(50000)}}},
 		},
 	}
 	for _, c := range cases {
@@ -719,7 +719,7 @@ func TestTightenedObjectGatesRejectEmptyAndUnrecognized(t *testing.T) {
 }
 
 // TestTightenedLumenMaintenancePackageRejectsEmptyEntry proves the package arm of
-// hasLumenMaintenance is closed: a non-empty array of empty entries (the [{}] case
+// hasLumenMaintenancePackage, used only for enrichment applicability, is closed: a non-empty array of empty entries (the [{}] case
 // the old len>0 check accepted, since LumenMaintenancePackageEntry has no required
 // fields) is rejected, an entry whose recognized keys carry the wrong leaf type (a
 // package_identifier:"" empty string, a value-less test_hours:{} object where a
@@ -742,7 +742,7 @@ func TestTightenedLumenMaintenancePackageRejectsEmptyEntry(t *testing.T) {
 		c := c
 		t.Run("reject/"+c.name, func(t *testing.T) {
 			rec := map[string]any{"lumen_maintenance_package": []any{c.entry}}
-			if hasLumenMaintenance(rec) {
+			if hasLumenMaintenancePackage(rec) {
 				t.Errorf("lumen_maintenance_package: closure accepted a hollow entry (%s) (over-lenient)", c.name)
 			}
 		})
@@ -759,7 +759,7 @@ func TestTightenedLumenMaintenancePackageRejectsEmptyEntry(t *testing.T) {
 		c := c
 		t.Run("accept/"+c.name, func(t *testing.T) {
 			rec := map[string]any{"lumen_maintenance_package": []any{c.entry}}
-			if !hasLumenMaintenance(rec) {
+			if !hasLumenMaintenancePackage(rec) {
 				t.Errorf("lumen_maintenance_package: closure rejected an entry with a recognized field (%s)", c.name)
 			}
 		})
@@ -767,14 +767,14 @@ func TestTightenedLumenMaintenancePackageRejectsEmptyEntry(t *testing.T) {
 }
 
 // TestTightenedLumenMaintenanceLuminaireRejectsHollowSubBlock proves the luminaire arm
-// of hasLumenMaintenance is closed at the SUB-BLOCK level: a manufacturer_rated_claim,
+// of hasLumenMaintenanceLuminaire is closed at the SUB-BLOCK level: a manufacturer_rated_claim,
 // tm_28, or cie_97_lmf_table that is present as a non-empty map but carries only
 // unrecognized keys (or recognized keys of the wrong leaf type) does not satisfy the
-// gate. The prior hasMap-based check accepted any non-empty sub-block, so a
+// enrichment applicability helper. The prior hasMap-based check accepted any non-empty sub-block, so a
 // manufacturer_rated_claim:{<only-unrecognized-key>} passed: every FALSE assertion
 // below would have been RED before this change. The accept cases pin that a real
 // claim_type enum, a real claimed_hours number, a tm_28 projection, and a populated
-// CIE 97 grid each still lift the gate.
+// CIE 97 grid each still enable enrichment applicability only.
 func TestTightenedLumenMaintenanceLuminaireRejectsHollowSubBlock(t *testing.T) {
 	wrap := func(sub map[string]any) map[string]any {
 		return map[string]any{"lumen_maintenance_luminaire": sub}
@@ -801,7 +801,7 @@ func TestTightenedLumenMaintenanceLuminaireRejectsHollowSubBlock(t *testing.T) {
 	for _, c := range reject {
 		c := c
 		t.Run("reject/"+c.name, func(t *testing.T) {
-			if hasLumenMaintenance(wrap(c.sub)) {
+			if hasLumenMaintenanceLuminaire(wrap(c.sub)) {
 				t.Errorf("lumen_maintenance_luminaire: closure accepted a hollow sub-block (%s) (over-lenient)", c.name)
 			}
 		})
@@ -822,7 +822,7 @@ func TestTightenedLumenMaintenanceLuminaireRejectsHollowSubBlock(t *testing.T) {
 	for _, c := range accept {
 		c := c
 		t.Run("accept/"+c.name, func(t *testing.T) {
-			if !hasLumenMaintenance(wrap(c.sub)) {
+			if !hasLumenMaintenanceLuminaire(wrap(c.sub)) {
 				t.Errorf("lumen_maintenance_luminaire: closure rejected a populated sub-block (%s)", c.name)
 			}
 		})
@@ -1095,5 +1095,47 @@ func TestAllowlistDisjointFromRubric(t *testing.T) {
 		if covered[name] {
 			t.Errorf("taxonomy %q is both rubric-covered and in descriptiveAllowlist; remove the allowlist entry", name)
 		}
+	}
+}
+
+func TestLumenMaintenanceGateReadsAValue(t *testing.T) {
+	num := func(v any) map[string]any { return map[string]any{"value": v} }
+	claim := func(m map[string]any) map[string]any {
+		return map[string]any{"lumen_maintenance_luminaire": map[string]any{"manufacturer_rated_claim": m}}
+	}
+	tm28 := func(v any) map[string]any {
+		return map[string]any{"lumen_maintenance_luminaire": map[string]any{"tm_28": map[string]any{"tm_28_projection_hours": num(v)}}}
+	}
+	pkg := func(m map[string]any) map[string]any { return map[string]any{"lumen_maintenance_package": []any{m}} }
+	cases := []struct {
+		name   string
+		record map[string]any
+		want   bool
+	}{
+		{"bare claim type", claim(map[string]any{"claim_type": "L70"}), false},
+		{"zero hours", claim(map[string]any{"claimed_hours": num(0)}), false},
+		{"claim type and zero hours", claim(map[string]any{"claim_type": "L70", "claimed_hours": num(0)}), false},
+		{"negative hours", claim(map[string]any{"claimed_hours": num(-1)}), false},
+		{"string hours", claim(map[string]any{"claimed_hours": num("50000")}), false},
+		{"zero TM-28", tm28(0), false},
+		{"negative TM-28", tm28(-1), false},
+		{"empty CIE table", map[string]any{"lumen_maintenance_luminaire": map[string]any{"cie_97_lmf_table": map[string]any{"llmf_by_hours": []any{}}}}, false},
+		{"package identifier", pkg(map[string]any{"package_identifier": "PKG-A"}), false},
+		{"package threshold", pkg(map[string]any{"flux_maintenance_threshold": "L70"}), false},
+		{"package test hours", pkg(map[string]any{"test_hours": num(60000)}), false},
+		{"zero TM-21", pkg(map[string]any{"tm_21_projection_hours": num(0)}), false},
+		{"negative TM-21", pkg(map[string]any{"tm_21_projection_hours": num(-1)}), false},
+		{"positive claimed hours", claim(map[string]any{"claimed_hours": num(50000)}), true},
+		{"positive TM-28", tm28(float64(60000)), true},
+		{"CIE llmf table", map[string]any{"lumen_maintenance_luminaire": map[string]any{"cie_97_lmf_table": map[string]any{"llmf_by_hours": []any{map[string]any{"hours": 6000, "llmf": 0.95}}}}}, true},
+		{"CIE lmf table", map[string]any{"lumen_maintenance_luminaire": map[string]any{"cie_97_lmf_table": map[string]any{"lmf_by_cleanliness_and_interval": []any{map[string]any{"lmf": 0.9}}}}}, true},
+		{"positive TM-21", pkg(map[string]any{"tm_21_projection_hours": num(int64(60000))}), true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := hasLumenMaintenance(c.record); got != c.want {
+				t.Errorf("got %v, want %v", got, c.want)
+			}
+		})
 	}
 }

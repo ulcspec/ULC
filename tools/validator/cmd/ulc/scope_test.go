@@ -423,10 +423,10 @@ func TestCLIScopeEnvelopeEchoes(t *testing.T) {
 // goldens carry it too, but they are regenerable by their own flag, so without a
 // hand-maintained assertion a bump could ship unnoticed.
 func TestCLIScopeContractVersion(t *testing.T) {
-	if scopeContractVersion != "1.0.0" {
+	if scopeContractVersion != "2.0.0" {
 		t.Errorf("scopeContractVersion = %q, want %q. Bumping it is a contract change: "+
 			"update the README bullet and the CHANGELOG alongside this constant.",
-			scopeContractVersion, "1.0.0")
+			scopeContractVersion, "2.0.0")
 	}
 }
 
@@ -439,7 +439,7 @@ func TestPrintJSONEscapeModes(t *testing.T) {
 	// A record whose index will carry an ampersand and angle brackets.
 	rec := filepath.Join(t.TempDir(), "amp.ulc")
 	body := `{
-  "ulc_version": "1.0.0",
+  "ulc_version": "2.0.0",
   "record_id": "amp-test",
   "record_status": "draft",
   "product_family": {

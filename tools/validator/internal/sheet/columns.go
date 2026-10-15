@@ -241,9 +241,10 @@ var baseRecordColumns = []Column{
 	{Header: "photometry_basis", Path: "test_conditions.photometry_basis", Kind: KindEnum},
 	{Header: "measurement_regime", Path: "instrumentation.measurement_regime", Kind: KindEnum},
 
-	// --- lumen_maintenance_luminaire (bare manufacturer claim; standard gate) ---
-	// The standard rubric requires any lumen-maintenance framework. The simplest
-	// inline form is a bare manufacturer_rated_claim authored on the records sheet.
+	// --- lumen_maintenance_luminaire (manufacturer claim with hours; standard gate) ---
+	// The standard rubric requires a lumen-maintenance claim with stated hours;
+	// a bare claim type does not satisfy it. The inline form is a
+	// manufacturer_rated_claim authored on the records sheet.
 	// Richer LM-80 / TM-21 data rides on the lumen_maintenance_package long sheet,
 	// and the CIE-97 LMF table on the cie97_lmf / cie97_llmf long sheets; both
 	// coexist with these scalars under the same parent (see fulllevel.go).

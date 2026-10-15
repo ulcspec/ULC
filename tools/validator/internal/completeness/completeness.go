@@ -28,7 +28,7 @@
 //	core        a complete, identifiable, legally-sellable luminaire with an
 //	            attached cutsheet, headline photometric/electrical numbers, one-line
 //	            colorimetry, and a market safety listing.
-//	standard    core plus the fuller specification an LM-79 report produces.
+//	standard    core plus the selection-grade specification a datasheet and the photometric file carry.
 //	full        standard plus exhaustive accredited characterization and, for white light,
 //	            the measured spectrum as data.
 //
@@ -60,6 +60,7 @@ package completeness
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -859,7 +860,7 @@ var rubric = []rule{
 	{LevelStandard, "/product_family/shared_mechanical/lens_material", "LensMaterial", "datasheet_pdf", "identity", "", str("product_family", "shared_mechanical", "lens_material"), nil},
 	{LevelStandard, "/test_conditions/photometry_basis", "PhotometryBasis", "ies", "LM-79", "", str("test_conditions", "photometry_basis"), notExitSign},
 	{LevelStandard, "/instrumentation/measurement_regime", "MeasurementRegime", "ies", "LM-79", "", str("instrumentation", "measurement_regime"), notExitSign},
-	{LevelStandard, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasLM79Attestation, notExitSign},
+	{LevelStandard, "/photometry/zonal_lumens", "", "ies", "LM-79", "", arr("photometry", "zonal_lumens"), notExitSign},
 	{LevelStandard, "/lumen_maintenance_luminaire (or /lumen_maintenance_package)", "", "datasheet_pdf", "TM-21", "", hasLumenMaintenance, notExitSign},
 	{LevelStandard, "/photometry/beam_angle_deg", "", "ies", "LM-79", "", num("photometry", "beam_angle_deg"), directional},
 	{LevelStandard, "/photometry/per_length_normalized", "", "datasheet_pdf", "LM-79", "", hasPerLengthNormalized, linear},
@@ -895,7 +896,7 @@ var rubric = []rule{
 	{LevelStandard, "/emergency/self_test", "EmergencySelfTestCapability", "datasheet_pdf", "UL 924", "", str("emergency", "self_test"), both(emergencyPowerCoreClass, hasIntegralBattery)},
 
 	// --- FULL ---
-	{LevelFull, "/photometry/zonal_lumens", "", "ies", "LM-79", "", arr("photometry", "zonal_lumens"), notExitSign},
+	{LevelFull, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasDocumentedLM79Attestation, notExitSign},
 	{LevelFull, "/operating_point", "", "test_report", "LM-79", "", hasOperatingPoint, notExitSign},
 	{LevelFull, "/uncertainty", "", "test_report", "LM-79 / GUM", "", hasUncertainty, notExitSign},
 	{LevelFull, "/corrections_applied", "", "test_report", "LM-79", "", hasCorrectionsApplied, notExitSign},
@@ -1332,17 +1333,40 @@ func emitAttestationCoverage(record map[string]any, report *findings.Report) {
 
 // --- reused accessors and domain helpers (all comma-ok guarded) ---
 
-// hasLM79Attestation reports whether any attestation entry has a program in the
-// LM-79 family (program token starts with "lm_79"). Checks both record-level
-// attestations and product_family.shared_attestations, matching where the index
-// builder collects programs.
+var lm79DocumentHash = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
+// hasDocumentedLM79Attestation requires an LM-79 attestation with its report
+// referenced in the record. A claim alone cannot satisfy the Full report row.
+// Both record-level and product-family shared attestations are read; status is
+// irrelevant. Empty filenames, malformed references and the missing-file draft
+// sentinel fail.
 // SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
 // set as public contract. Move that entry whenever this reads somewhere new.
-func hasLM79Attestation(record map[string]any) bool {
-	for _, p := range attestationPrograms(record) {
-		if strings.HasPrefix(p, "lm_79") {
-			return true
+func hasDocumentedLM79Attestation(record map[string]any) bool {
+	documented := func(entries []any) bool {
+		for _, entry := range entries {
+			m, ok := entry.(map[string]any)
+			if !ok || !strings.HasPrefix(getString(m, "program"), "lm_79") {
+				continue
+			}
+			ref, ok := m["source_document_ref"].(map[string]any)
+			if !ok {
+				continue
+			}
+			filename, filenameOK := ref["filename"].(string)
+			hash, hashOK := ref["sha256"].(string)
+			if filenameOK && filename != "" && hashOK && lm79DocumentHash.MatchString(hash) && hash != strings.Repeat("0", 64) {
+				return true
+			}
 		}
+		return false
+	}
+	if entries, ok := record["attestations"].([]any); ok && documented(entries) {
+		return true
+	}
+	if entries, ok := getMap(record, "product_family"); ok {
+		shared, _ := entries["shared_attestations"].([]any)
+		return documented(shared)
 	}
 	return false
 }
@@ -1374,16 +1398,44 @@ func attestationPrograms(record map[string]any) []string {
 	return out
 }
 
-// hasLumenMaintenance reports whether either lumen-maintenance framework is present
-// with recognized content of the correct leaf type. A luminaire framework qualifies
-// when one of its sub-blocks (tm_28, cie_97_lmf_table, manufacturer_rated_claim)
-// carries a recognized populated field; a package qualifies when at least one entry
-// carries a recognized field. A bare manufacturer_rated_claim still satisfies the gate
-// (a claim_type enum or a numeric claimed_hours is enough, not a published-method
-// requirement), but an empty object, one holding only unrecognized keys, or one whose
-// recognized keys carry the wrong leaf type does not.
+// hasLumenMaintenance requires positive claimed hours, a positive TM-28 or
+// TM-21 projection, or a CIE 97 table with a numeric maintenance factor.
+// A factor of zero is read table data. A grade is not awarded on a
+// claim type, an identifier, test hours, or a zero nobody can read as maintenance.
 func hasLumenMaintenance(record map[string]any) bool {
-	return hasLumenMaintenanceLuminaire(record) || hasLumenMaintenancePackage(record)
+	return hasPositiveNumberValue(record, "lumen_maintenance_luminaire", "manufacturer_rated_claim", "claimed_hours") ||
+		hasCie97MaintenanceFactor(record) || hasMethodBackedLumenMaintenance(record)
+}
+
+// hasCie97MaintenanceFactor requires a numeric factor in a CIE 97 grid entry.
+// Hours alone do not disclose maintenance. Zero is valid read data; the schema
+// checks factor ranges. This grading check leaves hasCie97LmfTable unchanged
+// for the enrichment rows.
+func hasCie97MaintenanceFactor(record map[string]any) bool {
+	table, ok := getMap(record, "lumen_maintenance_luminaire", "cie_97_lmf_table")
+	if !ok {
+		return false
+	}
+	hasFactor := func(rows any, keys ...string) bool {
+		entries, ok := rows.([]any)
+		if !ok {
+			return false
+		}
+		for _, entry := range entries {
+			m, ok := entry.(map[string]any)
+			if !ok {
+				continue
+			}
+			for _, key := range keys {
+				if _, ok := asFloat(m[key]); ok {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	return hasFactor(table["lmf_by_cleanliness_and_interval"], "lmf") ||
+		hasFactor(table["llmf_by_hours"], "llmf", "lsf")
 }
 
 // hasLumenMaintenanceLuminaire reports whether lumen_maintenance_luminaire carries at
@@ -1393,6 +1445,7 @@ func hasLumenMaintenance(record map[string]any) bool {
 // cie_97_lmf_table on a non-empty lmf_by_cleanliness_and_interval or llmf_by_hours
 // array. A sub-block holding only unrecognized keys, or recognized keys of the wrong
 // type, does not satisfy the gate.
+// This helper now serves enrichment applicability only.
 func hasLumenMaintenanceLuminaire(record map[string]any) bool {
 	lml, ok := getMap(record, "lumen_maintenance_luminaire")
 	if !ok {
@@ -1424,6 +1477,7 @@ func hasLumenMaintenanceLuminaire(record map[string]any) bool {
 // ProvenancedNumber is meant), must not satisfy the gate. The four ProvenancedNumber
 // fields (tm_21_projection_hours, test_hours, test_temperature_c, drive_current_ma)
 // qualify via hasNumberValue; the six string/enum fields qualify via a non-empty string.
+// This helper now serves enrichment applicability only.
 func hasLumenMaintenancePackage(record map[string]any) bool {
 	arr, ok := record["lumen_maintenance_package"].([]any)
 	if !ok {
@@ -1455,7 +1509,7 @@ func hasLumenMaintenancePackage(record map[string]any) bool {
 
 // hasMethodBackedLumenMaintenance reports whether the record carries a
 // method-backed lumen-maintenance projection: a package entry with a
-// tm_21_projection_hours value, or a luminaire framework with a tm_28 projection.
+// positive tm_21_projection_hours value, or a luminaire framework with a positive tm_28 projection.
 // A bare manufacturer_rated_claim does not count.
 // SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
 // set as public contract. Move that entry whenever this reads somewhere new.
@@ -1463,14 +1517,14 @@ func hasMethodBackedLumenMaintenance(record map[string]any) bool {
 	if arr, ok := record["lumen_maintenance_package"].([]any); ok {
 		for _, e := range arr {
 			if m, ok := e.(map[string]any); ok {
-				if hasNumberValue(m, "tm_21_projection_hours") {
+				if hasPositiveNumberValue(m, "tm_21_projection_hours") {
 					return true
 				}
 			}
 		}
 	}
 	if lml, ok := record["lumen_maintenance_luminaire"].(map[string]any); ok {
-		if hasNumberValue(lml, "tm_28", "tm_28_projection_hours") {
+		if hasPositiveNumberValue(lml, "tm_28", "tm_28_projection_hours") {
 			return true
 		}
 	}
@@ -1730,6 +1784,17 @@ func hasInstrumentationDepth(record map[string]any) bool {
 }
 
 // --- map / value accessors (local, so grade has no dependency beyond findings) ---
+
+// hasPositiveNumberValue reads a ProvenancedNumber-shaped object's numeric value
+// and requires it to be greater than zero.
+func hasPositiveNumberValue(record map[string]any, keys ...string) bool {
+	m, ok := getMap(record, keys...)
+	if !ok {
+		return false
+	}
+	v, ok := asFloat(m["value"])
+	return ok && v > 0
+}
 
 // hasNumberValue reports whether the object at the given path is a
 // ProvenancedNumber-shaped object carrying a numeric value field.

@@ -110,8 +110,8 @@ There are three ordered grades, `core` < `standard` < `full`, sitting above an `
 
 - **`incomplete`.** The floor: a record that has not yet met a core requirement. It grades incomplete, indexes, and carries a roadmap to core. A record missing the schema-required identity keys is malformed, a rejection distinct from an incomplete grade; [how-it-works.md](how-it-works.md#validation-and-the-two-computed-views) covers that boundary.
 - **`core`.** A complete, identifiable, legally-sellable luminaire with headline numbers: the identity, classification, headline photometric and electrical values, one-line colorimetry, and a market safety listing that a buyer needs before specifying the fixture.
-- **`standard`.** Core plus the fuller specification an LM-79 report produces: the maximum intensity, symmetry and coordinate system, materials, the test conditions and measurement regime, an LM-79 attestation, a lumen-maintenance framework, and the conditional rows that apply to the fixture's form.
-- **`full`.** Standard plus exhaustive accredited characterization: zonal lumens, an operating point, measurement uncertainty, corrections, instrumentation depth, a method-backed lumen-maintenance projection, and (for white-light fixtures) TM-30 detail and the measured spectrum as sampled data, from the laboratory or from the manufacturer's own spectrometer. These are mostly fed by accredited test reports.
+- **`standard`.** Core plus the selection-grade specification a datasheet and the photometric file carry: the maximum intensity, symmetry and coordinate system, materials, the test conditions and measurement regime, zonal lumens, a lumen-maintenance claim that states its hours or a maintenance table, and the conditional rows that apply to the fixture's form.
+- **`full`.** Standard plus exhaustive accredited characterization: an LM-79 attestation with its report referenced in the record, an operating point, measurement uncertainty, corrections, instrumentation depth, a method-backed lumen-maintenance projection, and (for white-light fixtures) TM-30 detail and the measured spectrum as sampled data, from the laboratory or from the manufacturer's own spectrometer. These are mostly fed by accredited test reports.
 
 A requirement is only ever counted against a record when it applies. A conditional requirement whose predicate is false for a given record (CRI for a pure color-mixing fixture, a BUG rating for an indoor downlight) is dropped from grading entirely, never reported as missing.
 
@@ -174,8 +174,8 @@ Universal rows:
 | Lens material | `product_family.shared_mechanical.lens_material` | `datasheet_pdf` |
 | Photometry basis | `test_conditions.photometry_basis` | `ies` |
 | Measurement regime | `instrumentation.measurement_regime` | `ies` |
-| LM-79 attestation | an `lm_79*` attestation | `test_report` |
-| Lumen-maintenance framework | `lumen_maintenance_luminaire` or `lumen_maintenance_package` | `datasheet_pdf` |
+| Zonal lumens | `photometry.zonal_lumens` | `ies` |
+| Lumen-maintenance framework | a positive `claimed_hours`, a positive TM-28 or TM-21 projection, or a CIE 97 table containing a numeric `lmf`, `llmf` or `lsf` factor (zero counts), in `lumen_maintenance_luminaire` or `lumen_maintenance_package` | `datasheet_pdf` |
 
 Conditional rows (each names the predicate that switches it on):
 
@@ -199,17 +199,17 @@ The dimming method and dimming range gates apply only to analog and phase-cut dr
 
 | Requirement | Field | Source |
 | --- | --- | --- |
-| Zonal lumens | `photometry.zonal_lumens` | `ies` |
+| LM-79 attestation | an `lm_79*` attestation with a `source_document_ref` | `test_report` |
 | Operating point | `operating_point` | `test_report` |
 | Measurement uncertainty | `uncertainty` | `test_report` |
 | Corrections applied | `corrections_applied` | `test_report` |
 | Instrumentation depth | goniometer / lab fields on `instrumentation` | `test_report` |
-| Method-backed lumen maintenance | TM-21 projection hours or a TM-28 projection | `test_report` |
+| Method-backed lumen maintenance | positive TM-21 projection hours or a positive TM-28 projection | `test_report` |
 | TM-30 fidelity Rf (conditional: primarily white light) | `colorimetry.tm_30.rf` | `test_report` |
 | TM-30 per-hue-bin detail (conditional: primarily white light) | `colorimetry.tm_30.rf_h_per_bin` | `test_report` |
 | Measured spectrum as data (conditional: primarily white light) | colorimetry.spectral_power_distribution with source_kind laboratory_table or exchange_file, measured_through_optics true, value_type measured or rated | test_report |
 
-`zonal_lumens` sits at full rather than standard because it is IES-derived: it is computed from the candela grid, not a value a manufacturer publishes on a datasheet, so it belongs with the exhaustive accredited characterization rather than the LM-79 specification band.
+`zonal_lumens` sits at standard with the rest of the photometric file: it is computed from the candela grid of that file and needs no test report. The LM-79 attestation sits at full, with the report content it stands for.
 
 ### The two-part roadmap: tier gaps and enrichment
 
