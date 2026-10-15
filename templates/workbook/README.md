@@ -67,14 +67,14 @@ the `records` sheet supports the six companion columns `X__value_type`,
 `X__base_attestation_ref`, and `X__attestation_ref`. The same companions are
 supported by `melanopic_der` and `efficacy` on `alpha_opic`, `value` on
 `flicker_metrics`, the three numeric values on `lumen_maintenance_package`, and
-`lumens` on both zonal sheets, `value` on `spectral_power_distribution`, and
-`claimed_hours` and `failure_percent` on `additional_rated_claims`.
+`lumens` on both zonal sheets, `value` on `spectral_power_distribution`,
+`rf_h` on `tm_30_hue_bins`, and `claimed_hours` and `failure_percent` on `additional_rated_claims`.
 The spectrum companions describe its whole block, with one resolved provenance
 for all samples. The authored rows on `declared_by_length` retain
 their fixed provenance defaults and accept no companions in this release.
 
 Measured values auto-link only within their evidence family: records-sheet
-photometry and zonal lumens use LM-79; alpha-opic values use RP-46; flicker
+photometry, zonal lumens, and TM-30 hue bins use LM-79; alpha-opic values use RP-46; flicker
 values use LM-90-20, IEEE 1789-2015, or NEMA 77-2017; and package-maintenance
 values use LM-80 or TM-21. Supply `X__attestation_ref` when a family has more
 than one candidate; it must name exactly one attestation in that family, and a
@@ -178,6 +178,7 @@ release 1.5.0 on.
 | `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Patterns B and D |
 | `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |
 | `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry; a Full requirement for white-light records from 1.15.0 |
+| `tm_30_hue_bins` | The sixteen TM-30 local fidelity values (Rf,h), one row per hue bin 1 to 16, with per-value provenance companions. Needs `tm_30_rf` on `records`. | White-light records; a Full requirement |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM, percent flicker) with per-value provenance companions and a metric-specific unit rule. | Full enrichment |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed projection with companions on its three numeric values. | Full enrichment |
 | `additional_rated_claims` | Further lumen-maintenance thresholds beside the records-sheet headline, with companions on hours and failure percent. | When several claims are published |
@@ -231,6 +232,10 @@ If you set `measured_through_optics=FALSE`, set `value__value_type=rated`;
 a measured package spectrum cannot use a luminaire LM-79 attestation.
 
 From release 1.15.0 the Full conformance level of a white-light record requires this spectrum (authored on this sheet): at least two samples, source_kind laboratory_table or exchange_file, measured_through_optics TRUE, and value__value_type measured or rated. A spectrum the manufacturer measured with its own spectrometer through the luminaire's optics qualifies: enter it with value__value_type=rated, source_kind exchange_file, value__prov_source manufacturer_data_export for the meter's export file (or tm27 for a TM-27 file, added to source_files as above), and leave value__attestation_ref blank, since a handheld export is not the LM-79 attestation. A digitized chart or a package spectrum does not qualify.
+
+## Hue-bin sheet
+
+Use `tm_30_hue_bins` for the sixteen local color fidelity values (Rf,h) of a TM-30 report, one row per bin: `record_id`, an integer `bin` from 1 to 16, and a numeric `rf_h`. A record that uses the sheet carries all sixteen bins, each once, in any row order, and its records row carries `tm_30_rf`; a missing, repeated or out-of-range bin, a blank or non-numeric value, and bins without that headline are refused. The six `rf_h__*` companions and `conflict_notes` apply per row. The default is measured, from a test report, transcribed, and linked to the record's single LM-79 attestation, as for `tm_30_rf`; a `tm_30*` attestation cannot anchor it. The values land at `colorimetry.tm_30.rf_h_per_bin`, ordered by bin, which the Full level of a white-light record requires. Use an `ulc` converter at release 1.17.0 or newer for this sheet; an older one ignores the whole sheet without a message.
 
 ## Attestation evidence columns
 

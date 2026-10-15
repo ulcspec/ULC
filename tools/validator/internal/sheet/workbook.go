@@ -18,8 +18,10 @@
 // block plus the derivation-generated photometry.declared_by_cct (CCT multiplier
 // table) and photometry.declared_by_length (per-foot linear scaling) tables. The
 // comprehensive full-level long sheets (alpha_opic, flicker_metrics,
-// lumen_maintenance_package, zonal_lumens, lcs_zonal_lumens, ingredient_list,
-// cie97_lmf / cie97_llmf) are optional enrichment, assembled in fulllevel.go.
+// lumen_maintenance_package, additional_rated_claims, spectral_power_distribution,
+// tm_30_hue_bins, zonal_lumens, lcs_zonal_lumens, ingredient_list,
+// cie97_lmf / cie97_llmf) are optional, assembled in fulllevel.go;
+// the comment there names the ones that feed graded rules.
 package sheet
 
 // Row is one spreadsheet row as a header->cell map. A blank or whitespace-only

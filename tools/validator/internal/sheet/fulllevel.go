@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 )
 
 // assembleFullLevelBlocks attaches the optional comprehensive ("full-level")
@@ -15,6 +16,7 @@ import (
 //	lumen_maintenance_package  -> lumen_maintenance_package[]            (top-level array)
 //	additional_rated_claims     -> lumen_maintenance_luminaire.additional_rated_claims[]
 //	spectral_power_distribution -> colorimetry.spectral_power_distribution
+//	tm_30_hue_bins              -> colorimetry.tm_30.rf_h_per_bin
 //	zonal_lumens               -> photometry.zonal_lumens[]
 //	lcs_zonal_lumens           -> outdoor_classification.lcs_zonal_lumens[]
 //	ingredient_list            -> sustainability_declaration.ingredient_list[]
@@ -24,12 +26,13 @@ import (
 // conformance rubric zonal_lumens gates standard, and a populated CIE 97 table
 // satisfies standard lumen maintenance. A package with positive tm_21_projection_hours
 // satisfies both standard maintenance and the full method-backed row. A qualifying
-// spectral_power_distribution satisfies the white-light full spectrum row. The other
+// spectral_power_distribution satisfies the white-light full spectrum row.
+// Sixteen tm_30_hue_bins rows satisfy the white-light full hue-bin row. The other
 // listed blocks are non-gating enrichment: a manufacturer who has the data adds the sheet and the
 // record carries more depth, while one who does not simply omits it. No converted
 // record reaches full on these blocks alone, because the full tier additionally
-// requires test-report depth (measurement uncertainty, corrections, instrumentation,
-// TM-30) the converter does not synthesize. The sustainability_declaration
+// requires test-report depth (measurement uncertainty, corrections, instrumentation)
+// the converter does not synthesize. The sustainability_declaration
 // block-level scalars (declaration_type, dates, recyclable_percent, ...) ride on
 // the records sheet via recordColumns; this assembler only adds its ingredient
 // roster, which coexists with those scalars under the same parent.
@@ -41,6 +44,9 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 		return err
 	}
 	if err := assembleSpectralPowerDistribution(wb, id, rec, ctx); err != nil {
+		return err
+	}
+	if err := assembleTM30HueBins(wb, id, rec, ctx); err != nil {
 		return err
 	}
 	if err := assembleFlickerMeasurements(wb, id, rec, ctx); err != nil {
@@ -62,6 +68,50 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 		return err
 	}
 	return assembleCIE97Table(wb, id, rec)
+}
+
+func assembleTM30HueBins(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
+	const sheet = "tm_30_hue_bins"
+	rows := wb.RowsFor(sheet, id)
+	if len(rows) == 0 {
+		return nil
+	}
+	if _, ok := getPath(rec, "colorimetry.tm_30.rf"); !ok {
+		return fmt.Errorf("tm_30_hue_bins row 1 for %q: hue bins require tm_30_rf on records", id)
+	}
+	entries := make([]any, 16)
+	seen := make(map[int64]int, 16)
+	for i, row := range rows {
+		if row["bin"] == "" {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: missing bin", i+1, id)
+		}
+		bin, err := parseIntCell(row["bin"])
+		if err != nil {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: bin: %w", i+1, id, err)
+		}
+		if bin < 1 || bin > 16 {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: bin %d is outside 1 to 16", i+1, id, bin)
+		}
+		if first, ok := seen[bin]; ok {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: bin %d repeats row %d", i+1, id, bin, first)
+		}
+		seen[bin] = i + 1
+		value, err := supplementaryProvenancedNumber(sheet, "rf_h", row, ctx)
+		if err != nil {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q (bin %d): %w", i+1, id, bin, err)
+		}
+		entries[bin-1] = map[string]any{"bin": bin, "rf_h": value}
+	}
+	missing := []string{}
+	for i, entry := range entries {
+		if entry == nil {
+			missing = append(missing, strconv.Itoa(i+1))
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("tm_30_hue_bins for %q: %d of 16 bins authored; missing bins %s", id, len(rows), strings.Join(missing, ", "))
+	}
+	return setPath(rec, "colorimetry.tm_30.rf_h_per_bin", entries)
 }
 
 // assembleAdditionalRatedClaims adds claims beside the records-sheet headline.

@@ -541,6 +541,7 @@ func TestExistingBundlesOmitMeasuredColourColumnsAcrossReaders(t *testing.T) {
 		"colorimetry.measured_cct_k", "colorimetry.chromaticity_x", "colorimetry.chromaticity_y",
 		"colorimetry.cri_r9", "colorimetry.tm_30.rf", "colorimetry.tm_30.rg",
 		"colorimetry.tm_30.reference_illuminant_type", "colorimetry.tm_30.pvf_code",
+		"colorimetry.tm_30.rf_h_per_bin",
 	}
 	for _, name := range []string{"bundle", "bundle-b", "bundle-c", "bundle-d"} {
 		t.Run(name, func(t *testing.T) {

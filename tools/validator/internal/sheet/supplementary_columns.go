@@ -58,6 +58,9 @@ var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColu
 		allowedUnits: map[string]bool{"mW/nm": true, "W/nm": true, "relative": true},
 		defaults:     provenanceDefaults{valueType: "measured", source: "test_report", method: "transcribed", family: attestationFamilyPhotometric},
 	},
+	{sheet: "tm_30_hue_bins", field: "rf_h"}: {
+		defaults: provenanceDefaults{valueType: "measured", source: "test_report", method: "transcribed", family: attestationFamilyPhotometric},
+	},
 	{sheet: "additional_rated_claims", field: "claimed_hours"}: {
 		unit:     "h",
 		defaults: provenanceDefaults{valueType: "rated", source: "manufacturer_direct", method: "transcribed", family: attestationFamilyMaintenance, requiredValueType: "rated"},

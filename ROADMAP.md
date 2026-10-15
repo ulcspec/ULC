@@ -27,7 +27,7 @@ for the next major. Pre-1.0 releases generally aimed for additive changes;
 compatibility-tightening changes occurred only when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.16.x
+## Active version: v1.17.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -161,6 +161,8 @@ version 0.8.0 remains current.
 v1.15.0 grades a measured spectral power distribution at Full for white-light records and names the spectrum on the non-gating enrichment roadmap, closing the deferred Full-tier spectrum row ahead of its original trigger (a real record carrying a spectrum) because the spectrum is part of an LM-79 measurement and a manufacturer's own spectrometer export is admitted. A qualifying spectrum is sampled data from a laboratory table or an exchange file, measured through the luminaire's optics, with value type measured or rated; a digitized chart, an LED-package curve or a nominal spectrum does not qualify. The schema, taxonomy, workbook, converter and required sets do not change. Builder version 0.9.0 marks the changed conformance calculation; the eight published examples keep their grades and re-stamp only that marker, and every stored record re-stamps its index.
 
 v1.16.0 moves the LM-79 attestation from Standard to Full and zonal lumens from Full to Standard, so Standard includes the rest of the photometric file and Full asks for the LM-79 report, and requires a positive number of hours or a populated table of the lumen-maintenance rows. No schema structure, vocabulary, workbook or converter assembly change. Newly converted records default to 1.16.0. Builder version 0.10.0; scope manifest contract 2.0.0.
+
+v1.17.0 gives the TM-30 hue-bin local fidelity values a workbook authoring path: one `tm_30_hue_bins` sheet whose sixteen rows convert to `colorimetry.tm_30.rf_h_per_bin`, so the Full row that asks for them can be met from a workbook. The converter, template and one schema description change; the schema structure, taxonomy, required sets, grades, achievements, generated index, and eight published examples do not. Builder version 0.10.0 remains current.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator

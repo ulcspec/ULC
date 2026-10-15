@@ -168,6 +168,10 @@ An optional uniformly sampled spectrum carries `wavelength_start_nm`, a positive
 
 Author spectrum samples in the workbook's `spectral_power_distribution` sheet; see `templates/workbook/README.md`.
 
+### `colorimetry.tm_30.rf_h_per_bin`
+
+The sixteen local color fidelity values of a TM-30 report, one entry per hue bin: an integer `bin` from 1 to 16 and `rf_h`, a provenanced number. A white-light record reaches Full only with this array. Author it in the workbook's `tm_30_hue_bins` sheet; see `templates/workbook/README.md`.
+
 ### `attestations[].domestic_content`
 
 A domestic-content attestation may carry its US and foreign cost shares, the percentage threshold used to judge the claim, an optional effective date for that threshold, a `basis` (`manufacturing_cost`, `component_cost`, or `other`), and provenance. Author the US share, threshold, and basis together. When both shares are given, they should sum to 100 percent within source rounding. The payload is meaningful on `baa`, `baba`, and `american_iron_and_steel` claims; it records their cost evidence and does not decide the claim's status.
