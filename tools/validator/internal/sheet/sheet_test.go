@@ -365,8 +365,9 @@ func TestDimmingRangeRequiresBothHalves(t *testing.T) {
 // (method=extended_photometry + base_attestation_ref) supplied via the per-column
 // provenance override columns. The extensions_json overflow lands at
 // extensions.manufacturer_specific.<slug>. This bundle is the DMX/RDM color-mixing
-// Lumenfacade SKU, so it grades standard: a digital protocol is exempt from the
-// analog/phase dimming detail, and pure RGB waives the white-light color gates.
+// Lumenfacade SKU, which grades core because its bundle has no zonal_lumens sheet.
+// Its digital protocol is exempt from analog/phase dimming detail, and pure RGB
+// waives the white-light color gates.
 func TestConvertPatternC(t *testing.T) {
 	// This fixture has no zonal_lumens sheet; the converter does not compute it.
 	record := convertOne(t, filepath.Join("testdata", "bundle-c"), PatternC, completeness.LevelCore)
