@@ -96,8 +96,8 @@
     },
 
     "IndoorOutdoor": {
-      "title": "Indoor or outdoor suitability",
-      "description": "Whether the luminaire is intended for indoor use, outdoor use, or either. Luminaires with both ratings must carry ingress protection and location ratings that support both environments.",
+      "title": "Indoor or outdoor intended use",
+      "description": "Where the product is intended to be used: indoor, outdoor, or both. This is the intended use the manufacturer sells the product for, not its environment rating; a wet-location rated product sold for indoor use is indoor, and a product sold for both settings is both.",
       "type": "string",
       "enum": [
         "indoor",

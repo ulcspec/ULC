@@ -47,6 +47,7 @@ The two moved gap strings are unchanged and appear under a new `next_conformance
 ### Documentation
 
 - The methodology, attestation guide, how-it-works guide, validator and examples READMEs, workbook guide, sheet design and code comments, taxonomy conformance description, and roadmap describe the revised ladder and hours rule.
+- The `IndoorOutdoor` title and description say the field records the intended use the product is sold for, not its environment rating; the enum is unchanged.
 
 ## 1.15.0 (2026-10-07)
 
