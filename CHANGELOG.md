@@ -20,6 +20,34 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.16.0 (2026-10-14)
+
+This release moves the LM-79 attestation to Full and zonal lumens to Standard, and requires a positive number of lumen-maintenance hours or a populated maintenance table. There is no schema structure or vocabulary change; the `ConformanceLevel` description is corrected, and the `IndoorOutdoor` title and description are clarified. The workbook template and converter do not change. The builder moves to 0.10.0, and the scope manifest contract moves to 2.0.0.
+
+### For consumers
+
+Stored records re-grade on validation, and every stored record must re-stamp its index with `ulc build-index`. Until re-stamped, `ulc validate` and `ulc build-index --check` report index drift on `builder_version`.
+
+A record at Standard without `photometry.zonal_lumens` grades Core, including a workbook-converted record without a `zonal_lumens` sheet: the converter does not compute zones from the photometric file. A record held at Core only by a missing LM-79 attestation grades Standard if it carries zonal lumens and meets the other Standard rows. A record at Standard on a claim type, an identifier, LM-80 test data without a projection (`test_hours`, temperature, current), or zero hours grades Core. A record at Full on a zero projection grades Standard, or Core where that zero was its only stated hours. A record at Full whose `lm_79*` attestation carries no `source_document_ref`, or only the draft sentinel hash, grades Standard.
+
+The two moved gap strings are unchanged and appear under a new `next_conformance_level`. The scope manifest lists the two items at their new tiers, changing their `(tier, path)` identities. This is a break of the scope contract, so `scope_version` moves to `2.0.0`; the gating table changes on two rows.
+
+### Grading
+
+- `LM-79 attestation` moves from Standard to Full, keeping source document `test_report` and standard `LM-79`. An `lm_79*` attestation counts only with a `source_document_ref` object carrying a string filename and a 64-character lowercase hexadecimal SHA-256 hash other than the all-zero missing-file sentinel. The status word does not decide the row.
+- `/photometry/zonal_lumens` moves from Full to Standard, keeping source document `ies` and standard `LM-79`.
+- The Standard `/lumen_maintenance_luminaire (or /lumen_maintenance_package)` row requires positive `manufacturer_rated_claim.claimed_hours`, positive `tm_28.tm_28_projection_hours`, a non-empty CIE 97 `lmf_by_cleanliness_and_interval` or `llmf_by_hours` table, or a package entry with positive `tm_21_projection_hours`.
+- The Full `method-backed lumen maintenance (TM-21 hours or TM-28)` row requires positive TM-21 or TM-28 projection hours. The helper predicates that switch on enrichment remain unchanged, so enrichment output is unchanged.
+
+### Examples
+
+- `selux-aya-pole-sr-ho-3000k` re-grades from `standard` to `core`: its cutsheet states no lumen-maintenance hours, and the record's zero is a placeholder. Every other example keeps its grade.
+- `erco-quintessence-30416-023`, `lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0`, `lumenpulse-lumenfacade-loi-12-rgbw30k-10x60-ts2-5` and `vode-nexa-suspended-807-so-3500k-90cri-hl-black-48in` gain `photometry.zonal_lumens`, five bands each, computed from the record's own pinned IES file: for each C-plane the candela curve is integrated by trapezoid over the vertical angle weighted by its sine, split at the band edges, and each plane is weighted by its angular cell; the bands from 0-30 to 0-90 are cumulative from 0 degrees. Each value carries provenance source `ies`, method `computed`, and the record's attestation reference. On both Lumenpulse records and Vode the 0-90 and 90-180 bands note that their sum differs from the record's stated total flux, which is unchanged.
+
+### Documentation
+
+- The methodology, attestation guide, how-it-works guide, validator and examples READMEs, workbook guide, sheet design and code comments, taxonomy conformance description, and roadmap describe the revised ladder and hours rule.
+
 ## 1.15.0 (2026-10-07)
 
 This release grades a measured spectral power distribution at the Full conformance level for white-light records and names the spectrum on the non-gating enrichment roadmap. The schema, taxonomy, workbook template and converter do not change. No required set or achievement state changes. The builder moves to 0.9.0 because `index.conformance_level` now reads the spectrum block.
