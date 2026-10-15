@@ -20,6 +20,26 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.17.0 (2026-10-14)
+
+This release adds a workbook authoring path for the TM-30 hue-bin local fidelity values a record carries at `colorimetry.tm_30.rf_h_per_bin`, so the Full row that asks for them can be met from a workbook. The schema structure and taxonomy do not change; the array's description is corrected to name the one value its entries carry. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.10.0, and all eight published examples remain byte-identical.
+
+### For consumers
+
+Newly converted records declare 1.17.0. A workbook without a `tm_30_hue_bins` sheet converts to the same record as 1.16.0 except `ulc_version`. Stored records need no re-stamp. Use a converter at release 1.17.0 or newer for the sheet; an older converter ignores the whole sheet without a message.
+
+### Validator and workbook
+
+- The `tm_30_hue_bins` sheet carries sixteen TM-30 local color fidelity values (Rf,h), one row per bin 1 to 16. Each bin appears exactly once, in any row order, and the records row carries `tm_30_rf`. Converted entries are ordered by bin.
+- Missing, repeated or out-of-range bins, blank or non-numeric values, and bins without the headline are refused with errors naming the sheet, row and record. An incomplete set names the record and the missing bins.
+- The six `rf_h__*` companions and `conflict_notes` apply per row. Values default to measured, from a test report, transcribed, and linked to the record's single LM-79 attestation, as for `tm_30_rf`; a `tm_30*` attestation cannot anchor them.
+- CSV and XLSX conversion produce the same sixteen entries and provenance. The workbook template includes the new sheet and its companion headers.
+
+### Documentation
+
+- The schema description names TM-30 local color fidelity Rf,h, the value the entries carry.
+- The workbook README, sheet design, authoring patterns, converter help and code comments name the sheet, its rules and its Full requirement for white-light records. The converter sheet lists also name `spectral_power_distribution` and `additional_rated_claims`.
+
 ## 1.16.0 (2026-10-14)
 
 This release moves the LM-79 attestation to Full and zonal lumens to Standard, and requires a positive number of lumen-maintenance hours or a populated maintenance table. There is no schema structure or vocabulary change; the `ConformanceLevel` description is corrected, and the `IndoorOutdoor` title and description are clarified. The workbook template and converter assembly logic do not change. Newly converted records default to 1.16.0. The builder moves to 0.10.0, and the scope manifest contract moves to 2.0.0.
