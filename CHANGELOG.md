@@ -22,7 +22,7 @@ For emergency manual releases (bypassing the PR flow), trigger the `Release on m
 
 ## 1.16.0 (2026-10-14)
 
-This release moves the LM-79 attestation to Full and zonal lumens to Standard, and requires a positive number of lumen-maintenance hours or a populated maintenance table. There is no schema structure or vocabulary change; the `ConformanceLevel` description is corrected, and the `IndoorOutdoor` title and description are clarified. The workbook template and converter do not change. The builder moves to 0.10.0, and the scope manifest contract moves to 2.0.0.
+This release moves the LM-79 attestation to Full and zonal lumens to Standard, and requires a positive number of lumen-maintenance hours or a populated maintenance table. There is no schema structure or vocabulary change; the `ConformanceLevel` description is corrected, and the `IndoorOutdoor` title and description are clarified. The workbook template and converter assembly logic do not change. Newly converted records default to 1.16.0. The builder moves to 0.10.0, and the scope manifest contract moves to 2.0.0.
 
 ### For consumers
 
