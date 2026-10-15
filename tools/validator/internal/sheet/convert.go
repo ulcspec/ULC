@@ -152,6 +152,7 @@ var consumedRelatedSheets = map[string]bool{
 	"flicker_metrics": true, "lumen_maintenance_package": true,
 	"zonal_lumens": true, "lcs_zonal_lumens": true,
 	"spectral_power_distribution": true,
+	"tm_30_hue_bins":              true,
 	"additional_rated_claims":     true,
 }
 

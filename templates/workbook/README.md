@@ -178,6 +178,7 @@ release 1.5.0 on.
 | `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Patterns B and D |
 | `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |
 | `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry; a Full requirement for white-light records from 1.15.0 |
+| `tm_30_hue_bins` | The sixteen TM-30 local fidelity values (Rf,h), one row per hue bin 1 to 16, with per-value provenance companions. Needs `tm_30_rf` on `records`. | White-light records; a Full requirement |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM, percent flicker) with per-value provenance companions and a metric-specific unit rule. | Full enrichment |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed projection with companions on its three numeric values. | Full enrichment |
 | `additional_rated_claims` | Further lumen-maintenance thresholds beside the records-sheet headline, with companions on hours and failure percent. | When several claims are published |

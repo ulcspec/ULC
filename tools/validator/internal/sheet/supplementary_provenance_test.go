@@ -24,6 +24,7 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 		family            attestationFamily
 		requiredValueType string
 	}{
+		{sheet: "tm_30_hue_bins", field: "rf_h"}:                              {family: attestationFamilyPhotometric},
 		{sheet: "alpha_opic", field: "melanopic_der"}:                         {unit: "ratio", family: attestationFamilyMelanopic},
 		{sheet: "alpha_opic", field: "efficacy"}:                              {unitColumn: "efficacy_unit", allowedUnits: map[string]bool{"W/lm": true, "mW/lm": true}, family: attestationFamilyMelanopic},
 		{sheet: "flicker_metrics", field: "value"}:                            {unitColumn: "unit", unitByMetric: true, family: attestationFamilyFlicker},

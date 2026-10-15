@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 )
 
 // assembleFullLevelBlocks attaches the optional comprehensive ("full-level")
@@ -15,6 +16,7 @@ import (
 //	lumen_maintenance_package  -> lumen_maintenance_package[]            (top-level array)
 //	additional_rated_claims     -> lumen_maintenance_luminaire.additional_rated_claims[]
 //	spectral_power_distribution -> colorimetry.spectral_power_distribution
+//	tm_30_hue_bins              -> colorimetry.tm_30.rf_h_per_bin
 //	zonal_lumens               -> photometry.zonal_lumens[]
 //	lcs_zonal_lumens           -> outdoor_classification.lcs_zonal_lumens[]
 //	ingredient_list            -> sustainability_declaration.ingredient_list[]
@@ -43,6 +45,9 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 	if err := assembleSpectralPowerDistribution(wb, id, rec, ctx); err != nil {
 		return err
 	}
+	if err := assembleTM30HueBins(wb, id, rec, ctx); err != nil {
+		return err
+	}
 	if err := assembleFlickerMeasurements(wb, id, rec, ctx); err != nil {
 		return err
 	}
@@ -62,6 +67,50 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 		return err
 	}
 	return assembleCIE97Table(wb, id, rec)
+}
+
+func assembleTM30HueBins(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
+	const sheet = "tm_30_hue_bins"
+	rows := wb.RowsFor(sheet, id)
+	if len(rows) == 0 {
+		return nil
+	}
+	if _, ok := getPath(rec, "colorimetry.tm_30.rf"); !ok {
+		return fmt.Errorf("tm_30_hue_bins row 1 for %q: hue bins require tm_30_rf on records", id)
+	}
+	entries := make([]any, 16)
+	seen := make(map[int64]int, 16)
+	for i, row := range rows {
+		if row["bin"] == "" {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: missing bin", i+1, id)
+		}
+		bin, err := parseIntCell(row["bin"])
+		if err != nil {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: bin: %w", i+1, id, err)
+		}
+		if bin < 1 || bin > 16 {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: bin %d is outside 1 to 16", i+1, id, bin)
+		}
+		if first, ok := seen[bin]; ok {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q: bin %d repeats row %d", i+1, id, bin, first)
+		}
+		seen[bin] = i + 1
+		value, err := supplementaryProvenancedNumber(sheet, "rf_h", row, ctx)
+		if err != nil {
+			return fmt.Errorf("tm_30_hue_bins row %d for %q (bin %d): %w", i+1, id, bin, err)
+		}
+		entries[bin-1] = map[string]any{"bin": bin, "rf_h": value}
+	}
+	missing := []string{}
+	for i, entry := range entries {
+		if entry == nil {
+			missing = append(missing, strconv.Itoa(i+1))
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("tm_30_hue_bins for %q: %d of 16 bins authored; missing bins %s", id, len(rows), strings.Join(missing, ", "))
+	}
+	return setPath(rec, "colorimetry.tm_30.rf_h_per_bin", entries)
 }
 
 // assembleAdditionalRatedClaims adds claims beside the records-sheet headline.
