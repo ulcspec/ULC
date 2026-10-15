@@ -34,7 +34,7 @@ The two moved gap strings are unchanged and appear under a new `next_conformance
 
 ### Grading
 
-- `LM-79 attestation` moves from Standard to Full, keeping source document `test_report` and standard `LM-79`. An `lm_79*` attestation counts only with a `source_document_ref` object carrying a string filename and a 64-character lowercase hexadecimal SHA-256 hash other than the all-zero missing-file sentinel. The status word does not decide the row.
+- `LM-79 attestation` moves from Standard to Full, keeping source document `test_report` and standard `LM-79`. An `lm_79*` attestation counts only with a `source_document_ref` object with a non-empty filename and a 64-character lowercase hexadecimal SHA-256 hash other than the all-zero missing-file sentinel. The status word does not decide the row.
 - `/photometry/zonal_lumens` moves from Full to Standard, keeping source document `ies` and standard `LM-79`.
 - The Standard `/lumen_maintenance_luminaire (or /lumen_maintenance_package)` row requires positive `manufacturer_rated_claim.claimed_hours`, positive `tm_28.tm_28_projection_hours`, a CIE 97 table with a numeric `lmf` in `lmf_by_cleanliness_and_interval` or numeric `llmf` or `lsf` in `llmf_by_hours`, or a package entry with positive `tm_21_projection_hours`. An hours-only table entry does not count; a factor of zero is read data and counts.
 - The Full `method-backed lumen maintenance (TM-21 hours or TM-28)` row requires positive TM-21 or TM-28 projection hours. The helper predicates that switch on enrichment remain unchanged, so enrichment output is unchanged.

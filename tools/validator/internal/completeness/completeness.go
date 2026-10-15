@@ -1338,7 +1338,8 @@ var lm79DocumentHash = regexp.MustCompile(`^[a-f0-9]{64}$`)
 // hasDocumentedLM79Attestation requires an LM-79 attestation with its report
 // referenced in the record. A claim alone cannot satisfy the Full report row.
 // Both record-level and product-family shared attestations are read; status is
-// irrelevant. Malformed references and the missing-file draft sentinel fail.
+// irrelevant. Empty filenames, malformed references and the missing-file draft
+// sentinel fail.
 // SCOPE MIRROR: requirementBlocks (scope.go) republishes this closure's read
 // set as public contract. Move that entry whenever this reads somewhere new.
 func hasDocumentedLM79Attestation(record map[string]any) bool {
@@ -1352,9 +1353,9 @@ func hasDocumentedLM79Attestation(record map[string]any) bool {
 			if !ok {
 				continue
 			}
-			_, filenameOK := ref["filename"].(string)
+			filename, filenameOK := ref["filename"].(string)
 			hash, hashOK := ref["sha256"].(string)
-			if filenameOK && hashOK && lm79DocumentHash.MatchString(hash) && hash != strings.Repeat("0", 64) {
+			if filenameOK && filename != "" && hashOK && lm79DocumentHash.MatchString(hash) && hash != strings.Repeat("0", 64) {
 				return true
 			}
 		}

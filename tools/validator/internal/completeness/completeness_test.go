@@ -433,6 +433,11 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 			entries := pf["shared_attestations"].([]any)
 			pf["shared_attestations"] = entries[:len(entries)-1]
 		}},
+		{"empty LM-79 filename", func(r map[string]any) {
+			entries := r["product_family"].(map[string]any)["shared_attestations"].([]any)
+			lm := entries[len(entries)-1].(map[string]any)
+			lm["source_document_ref"].(map[string]any)["filename"] = ""
+		}},
 		{"LM-79 attestation claimed, no document", func(r map[string]any) {
 			entries := r["product_family"].(map[string]any)["shared_attestations"].([]any)
 			lm := entries[len(entries)-1].(map[string]any)
@@ -463,7 +468,7 @@ func TestFullRequiresTestReportDepth(t *testing.T) {
 			if got := AchievedLevel(rec); got != LevelStandard {
 				t.Errorf("%s = %s, want standard", c.name, got)
 			}
-			if c.name == "no LM-79 attestation" || c.name == "LM-79 attestation claimed, no document" {
+			if c.name == "no LM-79 attestation" || c.name == "LM-79 attestation claimed, no document" || c.name == "empty LM-79 filename" {
 				report := findings.NewReport()
 				Report(rec, report)
 				report.Finalize()
@@ -1802,6 +1807,7 @@ func TestDocumentedLM79Attestation(t *testing.T) {
 		{"shared document", "lm_79_08", "verified", ref, true, true},
 		{"verified without document", "lm_79_08", "verified", nil, false, false},
 		{"no hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf"}, false, false},
+		{"empty filename", "lm_79_08", "verified", map[string]any{"filename": "", "sha256": strings.Repeat("a", 64)}, false, false},
 		{"no filename", "lm_79_08", "verified", map[string]any{"sha256": strings.Repeat("a", 64)}, false, false},
 		{"short hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": "abc"}, false, false},
 		{"uppercase hash", "lm_79_08", "verified", map[string]any{"filename": "report.pdf", "sha256": strings.Repeat("A", 64)}, false, false},
