@@ -178,6 +178,8 @@ release 1.5.0 on.
 | `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Patterns B and D |
 | `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |
 | `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry; a Full requirement for white-light records from 1.15.0 |
+| `color_states` | Published white operating states other than the tested baseline, with CCT, dim level, quality metrics, melanopic DER, flux and provenance companions. | Tunable or color-mixing records |
+| `emission_channels` | Emitter channels with kind, nominal CCT or peak wavelength, flux and provenance companions. | Color-mixing records |
 | `tm_30_hue_bins` | The sixteen TM-30 local fidelity values (Rf,h), one row per hue bin 1 to 16, with per-value provenance companions. Needs `tm_30_rf` on `records`. | White-light records; a Full requirement |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM, percent flicker) with per-value provenance companions and a metric-specific unit rule. | Full enrichment |
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed projection with companions on its three numeric values. | Full enrichment |
@@ -211,18 +213,21 @@ references is required for each row.
 ## Spectrum sheet
 
 Use `spectral_power_distribution` for a sampled spectrum. Each row needs
-`record_id`, numeric `wavelength_nm`, and numeric `value`. Supply at least two
-rows per record in strictly ascending order at one uniform wavelength step. The
-converter derives the start and step from those rows and refuses duplicate,
-descending, or off-grid wavelengths. For a chart or exchange file with irregular
-samples, resample the curve to one step before authoring it.
+`record_id`, numeric `wavelength_nm`, and numeric `value`. A spectrum group is
+identified by (`record_id`, `state_id`, `channel_id`); blank state and channel
+identifiers select the baseline. Supply at least two rows per group in strictly
+ascending order at one uniform wavelength step. The converter derives each
+group's start and step independently and refuses duplicate, descending, or
+off-grid wavelengths within that group. For a chart or exchange file with
+irregular samples, resample that spectrum to one step before authoring it.
 
 Set `unit` to `mW/nm`, `W/nm`, or `relative`, and set `source_kind` to
 `laboratory_table`, `digitized_chart`, or `exchange_file`. For a luminaire-level
 measurement through its optics, set `measured_through_optics` to `TRUE`. These
 cells and `conflict_notes` may be filled on the first row or repeated; two
-different non-blank values for the same record are refused. The six `value__*`
-companions follow the same rule and describe the whole spectrum. The default
+different non-blank values within the same spectrum group are refused. The six
+`value__*` companions follow the same rule and describe that group's spectrum.
+Different groups may carry different metadata and provenance. The default
 is measured, from a test report, transcribed, and linked to the record's single
 LM-79 attestation. For a digitized cutsheet chart, set
 `value__value_type=rated` and `value__prov_source=datasheet_pdf`. For a TM-27
@@ -236,6 +241,18 @@ From release 1.15.0 the Full conformance level of a white-light record requires 
 ## Hue-bin sheet
 
 Use `tm_30_hue_bins` for the sixteen local color fidelity values (Rf,h) of a TM-30 report, one row per bin: `record_id`, an integer `bin` from 1 to 16, and a numeric `rf_h`. A record that uses the sheet carries all sixteen bins, each once, in any row order, and its records row carries `tm_30_rf`; a missing, repeated or out-of-range bin, a blank or non-numeric value, and bins without that headline are refused. The six `rf_h__*` companions and `conflict_notes` apply per row. The default is measured, from a test report, transcribed, and linked to the record's single LM-79 attestation, as for `tm_30_rf`; a `tm_30*` attestation cannot anchor it. The values land at `colorimetry.tm_30.rf_h_per_bin`, ordered by bin, which the Full level of a white-light record requires. Use an `ulc` converter at release 1.17.0 or newer for this sheet; an older one ignores the whole sheet without a message.
+
+## Color-state sheet
+
+For a tunable-white or dim-to-warm record, keep the tested baseline on `records` and fill `color_tuning_baseline_role` with `range_low_end`, `range_high_end`, `setting` or `dim_level`. Fill `color_tuning_baseline_label` when printed and `color_tuning_baseline_dim_level_percent` for a dim-level baseline; an endpoint may also carry its published percent. A setting cannot carry a percent. The role requires at least one row on `color_states` or `emission_channels`; static-white records and records without `color_tunability` cannot carry these rows.
+
+Use one `color_states` row for each other published white operating state, each with a CCT. Colored emitters are channels on `emission_channels`; colored scenes are not represented in 1.18.0. The state columns are `state_id` (a unique lowercase slug), `role`, the printed `label` when needed, `dim_level_percent`, and `nominal_cct_k` as a taxonomy bin or `measured_cct_k` as a numeric value. An off-bin rated endpoint uses `measured_cct_k__value_type=rated`. The other value columns are `duv`, `cri_ra`, `cri_r9`, `tm_30_rf`, `tm_30_rg`, `melanopic_der`, `lumens` and `efficacy_lm_per_w`. Each has the six provenance companions; defaults are rated, datasheet_pdf, transcribed. A dim-level state requires a percent greater than zero and at most 100. Do not repeat the baseline or its endpoint role. States sharing CCT and dim level must each have a printed label; ask the manufacturer for a missing name rather than inventing one. Both white endpoints are required for Standard; their CRI Ra and melanopic DER are required for Full. Other settings and dim-level points never gate a grade.
+
+## Emission-channel sheet and state spectra
+
+Use one `emission_channels` row per emitter on a color-mixing record: unique lowercase `channel_id`, `kind` (`white` or `color`), the printed `label`, a `nominal_cct_k` bin when applicable, `peak_wavelength_nm` and `lumens` when published. The two numeric values carry the same six companions and rated, datasheet_pdf, transcribed defaults. A channel describes an emitter, so a white channel may repeat the baseline values without becoming a second luminaire state.
+
+On `spectral_power_distribution`, leave both `state_id` and `channel_id` blank for the baseline. Set exactly one identifier for a listed state or channel. Each group is an independent uniformly spaced spectrum with its own metadata and provenance, kept under that state's or channel's `colorimetry.spectral_power_distribution`. Unknown identifiers and rows carrying both identifiers are refused. Use release 1.18.0 or newer; an older converter ignores the new sheets.
 
 ## Attestation evidence columns
 

@@ -196,6 +196,8 @@ Schedule a periodic `ulc validate --expiry` over the published corpus to preview
 
 ## Example transform skeleton (Python + SQLAlchemy)
 
+For tunable or color-mixing products, extend this tested-baseline skeleton with the shared [published color-state and channel mapping](README.md#7-published-color-states-and-emitter-channels), then generate the range fields with `ulc build-index`.
+
 ```python
 # Illustrative pseudocode.
 def emit_ulc(session: Session):
@@ -205,7 +207,7 @@ def emit_ulc(session: Session):
         family = build_family(product, primary_category, mounting)
         for scenario in product.photometric_scenarios:
             record = {
-                "ulc_version": "1.17.0",
+                "ulc_version": "1.18.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
                 "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry

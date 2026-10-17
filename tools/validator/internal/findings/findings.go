@@ -38,6 +38,9 @@ const (
 	// Schema validation.
 	CodeSchemaViolation Code = "schema/violation"
 
+	// Published color-state consistency.
+	CodeColorTuningInconsistent Code = "color-tuning/inconsistent"
+
 	// Index / builder parity.
 	CodeIndexBuilderMissingRequired Code = "index/builder-missing-required"
 	CodeIndexDrift                  Code = "index/drift"

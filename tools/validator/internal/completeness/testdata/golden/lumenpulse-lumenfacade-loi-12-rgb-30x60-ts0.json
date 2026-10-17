@@ -37,6 +37,14 @@
     {
       "level": "INFO",
       "code": "conformance/enrichment",
+      "message": "emission channels not disclosed",
+      "path": "/color_tuning/channels",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/enrichment",
       "message": "adaptive lighting modes not disclosed",
       "path": "/electrical/adaptive_lighting_modes",
       "source_document": "datasheet_pdf",
@@ -291,6 +299,6 @@
   "summary": {
     "errors": 0,
     "warnings": 0,
-    "infos": 38
+    "infos": 39
   }
 }

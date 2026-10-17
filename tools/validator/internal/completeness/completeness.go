@@ -64,6 +64,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ulcspec/ULC/tools/validator/internal/colortuning"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 )
 
@@ -442,6 +443,55 @@ func isWhiteLightPrimary(r map[string]any) bool {
 		return true
 	}
 	return false
+}
+
+func tunesWhite(r map[string]any) bool {
+	capability := getString(r, "configuration", "tested_axes", "color_tunability")
+	return capability == "tunable_white" || capability == "dim_to_warm"
+}
+
+func mixesColor(r map[string]any) bool {
+	switch getString(r, "configuration", "tested_axes", "color_tunability") {
+	case "rgb", "rgbw", "rgba", "rgbww", "multichannel":
+		return true
+	}
+	return false
+}
+
+func hasColorRange(r map[string]any) bool {
+	_, _, ok := colortuning.Ends(r)
+	return ok
+}
+
+func hasColorEndMetrics(r map[string]any) bool {
+	low, high, ok := colortuning.Ends(r)
+	if !ok {
+		return false
+	}
+	for _, end := range []colortuning.State{low, high} {
+		if !num("cri_ra")(end.Colorimetry) || !num("melanopic_der")(end.AlphaOpicMetrics) {
+			return false
+		}
+	}
+	return true
+}
+
+func hasColorEndSpectra(r map[string]any) bool {
+	low, high, ok := colortuning.Ends(r)
+	if !ok {
+		return false
+	}
+	for _, end := range []colortuning.State{low, high} {
+		if spectrum, ok := getMap(end.Colorimetry, "spectral_power_distribution"); !ok || len(spectrum) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func hasColorTuning(r map[string]any) bool {
+	tuning, ok := getMap(r, "color_tuning")
+	return ok && len(tuning) > 0
 }
 
 func directional(r map[string]any) bool { return directionalCategories[category(r)] }
@@ -895,6 +945,8 @@ var rubric = []rule{
 	{LevelStandard, "/emergency/battery_chemistry", "BatteryChemistry", "datasheet_pdf", "UL 924", "", str("emergency", "battery_chemistry"), both(emergencyPowerCoreClass, hasIntegralBattery)},
 	{LevelStandard, "/emergency/self_test", "EmergencySelfTestCapability", "datasheet_pdf", "UL 924", "", str("emergency", "self_test"), both(emergencyPowerCoreClass, hasIntegralBattery)},
 
+	{LevelStandard, "/color_tuning", "", "datasheet_pdf", "identity", "", hasColorRange, tunesWhite},
+
 	// --- FULL ---
 	{LevelFull, "LM-79 attestation", "AttestationProgram", "test_report", "LM-79", "", hasDocumentedLM79Attestation, notExitSign},
 	{LevelFull, "/operating_point", "", "test_report", "LM-79", "", hasOperatingPoint, notExitSign},
@@ -905,6 +957,7 @@ var rubric = []rule{
 	{LevelFull, "/colorimetry/tm_30/rf", "", "test_report", "TM-30", "", num("colorimetry", "tm_30", "rf"), isWhiteLightPrimary},
 	{LevelFull, "/colorimetry/tm_30/rf_h_per_bin", "", "test_report", "TM-30", "", arr("colorimetry", "tm_30", "rf_h_per_bin"), isWhiteLightPrimary},
 	{LevelFull, "measured spectral power distribution as data (through the optics; table or exchange file)", "", "test_report", "LM-79 / TM-27", "", hasMeasuredSpectrum, isWhiteLightPrimary},
+	{LevelFull, "/color_tuning/states", "", "datasheet_pdf", "CIE 13.3", "", hasColorEndMetrics, tunesWhite},
 
 	// v0.10.0 exit-sign FULL tier (§2.6): two provenance-reading rows that PARTITION the
 	// sign class by mode, so every sign has exactly one applicable full row and a standard
@@ -917,6 +970,8 @@ var rubric = []rule{
 	{LevelFull, "test-report-backed face illuminance", "", "test_report", "UL 924", "", testReportBacked("exit_sign", "face_illuminance_lx"), both(isExitSign, signMode("externally_illuminated"))},
 
 	// --- ENRICHMENT (non-gating; the enrichment roadmap; surfaced at core and above) ---
+	{LevelEnrichment, "/color_tuning/channels", "", "datasheet_pdf", "identity", "emission channels not disclosed", arr("color_tuning", "channels"), mixesColor},
+	{LevelEnrichment, "/color_tuning/states", "", "datasheet_pdf", "LM-79 / TM-27", "endpoint spectra not disclosed", hasColorEndSpectra, hasColorTuning},
 	// Optional dimensions a record could disclose to deepen the datasheet. Messages
 	// are byte-identical to their prior conformance/observation wording; only the
 	// finding code changes (see the 0.9.0 CHANGELOG consumer-migration note).

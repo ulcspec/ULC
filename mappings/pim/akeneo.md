@@ -136,6 +136,8 @@ The ULC emit can be modeled as an Akeneo channel (`ulc_export`) with its own com
 
 ## Example transform skeleton (PHP, Akeneo's native stack)
 
+For tunable or color-mixing products, extend this tested-baseline skeleton with the shared [published color-state and channel mapping](README.md#7-published-color-states-and-emitter-channels), then generate the range fields with `ulc build-index`.
+
 ```php
 // Illustrative pseudocode, not a working implementation.
 function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
@@ -145,7 +147,7 @@ function emitUlcFromAkeneo(Product $product, Variant $variant): ?string {
         return null;
     }
     $record = [
-        'ulc_version' => '1.17.0',
+        'ulc_version' => '1.18.0',
         'record_id' => slug("{$product->getBrand()}-{$product->getIdentifier()}-{$variant->getScenarioSlug()}"),
         'record_status' => 'active',
         'record_status_as_of' => date('Y-m-d'), // the emit/edit date; drives record-relative expiry

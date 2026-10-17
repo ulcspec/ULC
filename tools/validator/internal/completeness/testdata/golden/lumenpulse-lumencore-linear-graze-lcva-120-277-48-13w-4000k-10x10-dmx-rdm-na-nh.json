@@ -1,0 +1,282 @@
+{
+  "findings": [
+    {
+      "level": "INFO",
+      "code": "achievements/summary",
+      "message": "achievements: 0 documented, 0 claimed",
+      "path": "/index/achievements"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /color_tuning/states (from datasheet_pdf, per CIE 13.3)",
+      "path": "/color_tuning/states",
+      "next_conformance_level": "full",
+      "source_document": "datasheet_pdf",
+      "standard": "CIE 13.3"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /colorimetry/sdcm_step (from datasheet_pdf, per ANSI C78.377)",
+      "path": "/colorimetry/sdcm_step",
+      "next_conformance_level": "standard",
+      "source_document": "datasheet_pdf",
+      "standard": "ANSI C78.377"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /colorimetry/tm_30/rf_h_per_bin (from test_report, per TM-30)",
+      "path": "/colorimetry/tm_30/rf_h_per_bin",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "TM-30"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /configuration/tested_axes/cri_tier (from datasheet_pdf, per CIE 13.3)",
+      "path": "/configuration/tested_axes/cri_tier",
+      "next_conformance_level": "standard",
+      "source_document": "datasheet_pdf",
+      "standard": "CIE 13.3"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /corrections_applied (from test_report, per LM-79)",
+      "path": "/corrections_applied",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /electrical/control_gear_type (from datasheet_pdf, per LM-79)",
+      "path": "/electrical/control_gear_type",
+      "next_conformance_level": "standard",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /electrical/input_voltage_v (or input_voltage_class) (from datasheet_pdf, per LM-79)",
+      "path": "/electrical/input_voltage_v (or input_voltage_class)",
+      "next_conformance_level": "core",
+      "source_document": "datasheet_pdf",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /instrumentation/measurement_regime (from ies, per LM-79)",
+      "path": "/instrumentation/measurement_regime",
+      "next_conformance_level": "standard",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /lumen_maintenance_luminaire (or /lumen_maintenance_package) (from datasheet_pdf, per TM-21)",
+      "path": "/lumen_maintenance_luminaire (or /lumen_maintenance_package)",
+      "next_conformance_level": "standard",
+      "source_document": "datasheet_pdf",
+      "standard": "TM-21"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /operating_point (from test_report, per LM-79)",
+      "path": "/operating_point",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /photometry/beam_angle_deg (from ies, per LM-79)",
+      "path": "/photometry/beam_angle_deg",
+      "next_conformance_level": "standard",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /photometry/distribution_type (from ies, per LM-79)",
+      "path": "/photometry/distribution_type",
+      "next_conformance_level": "core",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /photometry/luminaire_efficacy_lm_per_w (from ies, per LM-79)",
+      "path": "/photometry/luminaire_efficacy_lm_per_w",
+      "next_conformance_level": "core",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /photometry/photometric_coordinate_system (from ies, per LM-75)",
+      "path": "/photometry/photometric_coordinate_system",
+      "next_conformance_level": "standard",
+      "source_document": "ies",
+      "standard": "LM-75"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /photometry/symmetry_type (from ies, per LM-75)",
+      "path": "/photometry/symmetry_type",
+      "next_conformance_level": "standard",
+      "source_document": "ies",
+      "standard": "LM-75"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /photometry/zonal_lumens (from ies, per LM-79)",
+      "path": "/photometry/zonal_lumens",
+      "next_conformance_level": "standard",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /product_family/environment_rating (from datasheet_pdf, per identity)",
+      "path": "/product_family/environment_rating",
+      "next_conformance_level": "core",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /product_family/indoor_outdoor (from datasheet_pdf, per identity)",
+      "path": "/product_family/indoor_outdoor",
+      "next_conformance_level": "core",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /product_family/mounting_types (from datasheet_pdf, per identity)",
+      "path": "/product_family/mounting_types",
+      "next_conformance_level": "core",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /product_family/secondary_function (from datasheet_pdf, per identity)",
+      "path": "/product_family/secondary_function",
+      "next_conformance_level": "core",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /product_family/shared_mechanical/housing_material (from datasheet_pdf, per identity)",
+      "path": "/product_family/shared_mechanical/housing_material",
+      "next_conformance_level": "standard",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /product_family/shared_mechanical/lens_material (from datasheet_pdf, per identity)",
+      "path": "/product_family/shared_mechanical/lens_material",
+      "next_conformance_level": "standard",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add /product_family/technical_region (from datasheet_pdf, per identity)",
+      "path": "/product_family/technical_region",
+      "next_conformance_level": "core",
+      "source_document": "datasheet_pdf",
+      "standard": "identity"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"standard\", add /test_conditions/photometry_basis (from ies, per LM-79)",
+      "path": "/test_conditions/photometry_basis",
+      "next_conformance_level": "standard",
+      "source_document": "ies",
+      "standard": "LM-79"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add /uncertainty (from test_report, per LM-79 / GUM)",
+      "path": "/uncertainty",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79 / GUM"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add instrumentation depth (goniometer/lab) (from test_report, per LM-79 / LM-75)",
+      "path": "instrumentation depth (goniometer/lab)",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79 / LM-75"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add measured spectral power distribution as data (through the optics; table or exchange file) (from test_report, per LM-79 / TM-27)",
+      "path": "measured spectral power distribution as data (through the optics; table or exchange file)",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-79 / TM-27"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"full\", add method-backed lumen maintenance (TM-21 hours or TM-28) (from test_report, per LM-80 / TM-21 / TM-28)",
+      "path": "method-backed lumen maintenance (TM-21 hours or TM-28)",
+      "next_conformance_level": "full",
+      "source_document": "test_report",
+      "standard": "LM-80 / TM-21 / TM-28"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/gap",
+      "message": "to reach \"core\", add safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise) (from compliance_documents, per UL 1598 / IEC 60598)",
+      "path": "safety listing (UL/cUL/ETL/CSA for NA; CE/ENEC/IEC 60598 otherwise)",
+      "next_conformance_level": "core",
+      "source_document": "compliance_documents",
+      "standard": "UL 1598 / IEC 60598"
+    },
+    {
+      "level": "INFO",
+      "code": "conformance/level",
+      "message": "this record achieves conformance level \"incomplete\"",
+      "path": "/index/conformance_level"
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 31
+  }
+}

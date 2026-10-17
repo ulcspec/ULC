@@ -24,6 +24,17 @@ func TestSupplementaryValueColumnTableIsExact(t *testing.T) {
 		family            attestationFamily
 		requiredValueType string
 	}{
+		{sheet: "color_states", field: "measured_cct_k"}:                      {unit: "K", family: attestationFamilyPhotometric},
+		{sheet: "color_states", field: "duv"}:                                 {unit: "", family: attestationFamilyPhotometric},
+		{sheet: "color_states", field: "cri_ra"}:                              {unit: "", family: attestationFamilyPhotometric},
+		{sheet: "color_states", field: "cri_r9"}:                              {unit: "", family: attestationFamilyPhotometric},
+		{sheet: "color_states", field: "tm_30_rf"}:                            {unit: "", family: attestationFamilyPhotometric},
+		{sheet: "color_states", field: "tm_30_rg"}:                            {unit: "", family: attestationFamilyPhotometric},
+		{sheet: "color_states", field: "melanopic_der"}:                       {unit: "ratio", family: attestationFamilyMelanopic},
+		{sheet: "color_states", field: "lumens"}:                              {unit: "lm", family: attestationFamilyPhotometric},
+		{sheet: "color_states", field: "efficacy_lm_per_w"}:                   {unit: "lm/W", family: attestationFamilyPhotometric},
+		{sheet: "emission_channels", field: "peak_wavelength_nm"}:             {unit: "nm", family: attestationFamilyPhotometric},
+		{sheet: "emission_channels", field: "lumens"}:                         {unit: "lm", family: attestationFamilyPhotometric},
 		{sheet: "tm_30_hue_bins", field: "rf_h"}:                              {family: attestationFamilyPhotometric},
 		{sheet: "alpha_opic", field: "melanopic_der"}:                         {unit: "ratio", family: attestationFamilyMelanopic},
 		{sheet: "alpha_opic", field: "efficacy"}:                              {unitColumn: "efficacy_unit", allowedUnits: map[string]bool{"W/lm": true, "mW/lm": true}, family: attestationFamilyMelanopic},

@@ -66,7 +66,9 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
 | `lumen_maintenance_package` | LM-80 / TM-21 method-backed rows | `(record_id,pkg)` | full |
 | `additional_rated_claims` | further lumen-maintenance thresholds beside the records-sheet headline | `(record_id,claim)` | A B C D |
 | `alpha_opic` | per-photoreceptor efficacy (assembled into `alpha_opic_metrics`) | `(record_id,channel)` | full |
-| `spectral_power_distribution` | one uniformly spaced wavelength sample per row, with block-level provenance | `(record_id,wavelength_nm)` | full |
+| `spectral_power_distribution` | one uniformly spaced wavelength sample per row, with block-level provenance | `(record_id,state_id,channel_id,wavelength_nm)` | full |
+| `color_states` | published luminaire states beside the referenced tested baseline | `(record_id,state_id)` | A B C D |
+| `emission_channels` | emitter kind, CCT or peak wavelength and flux | `(record_id,channel_id)` | A B C D |
 | `tm_30_hue_bins` | the sixteen TM-30 local fidelity values, one bin per row with per-row provenance (assembled into `colorimetry.tm_30.rf_h_per_bin`) | `(record_id,bin)` | full |
 | `flicker_metrics` | TLA metrics (SVM, Pst_LM) | `(record_id,metric)` | full |
 | `zonal_lumens` / `lcs_zonal_lumens` | angle-band + TM-15 LCS zones | `(record_id,zone)` | B / outdoor |

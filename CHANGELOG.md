@@ -20,6 +20,34 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.18.0 (2026-10-17)
+
+This release adds published color states and emitter channels beside the tested baseline for tunable-white, dim-to-warm and color-mixing luminaires. The shared resolver returns the baseline first and then the other published states, preserving each state's own colorimetry, spectrum, alpha-opic metrics and flux. Builder 0.11.0 projects the two numeric white-range endpoints and applies the new endpoint grading rows.
+
+### For consumers
+
+The existing top-level measurement blocks remain the tested baseline. `color_tuning.baseline_role` identifies its role; `states` lists only other states. The nominal CCT bin takes precedence over measured CCT, with `configuration.tested_conditions.nominal_cct_at_test` first for the baseline. The generated `index.cct_range_low_k` and `index.cct_range_high_k` appear together only when both endpoints resolve. A tunable range filter also checks `color_tunability` for `tunable_white` or `dim_to_warm`; a dark-sky filter uses the larger of the high endpoint and the numeric tested CCT.
+
+Stored tunable-white or dim-to-warm records without both endpoints fall below Standard after rebuilding the index. Both endpoint CCTs are required for Standard; endpoint CRI Ra and melanopic DER are required for Full. Existing grading rows continue to read the baseline only. Settings, dim-level points, channels and endpoint spectra never add a gate. Static-white records and records without a color-tunability capability cannot carry a `color_tuning` block. Every stored index should be rebuilt for builder 0.11.0.
+
+### Grading
+
+The public gating table gains two pointer rows: Standard `/color_tuning` (`datasheet_pdf`, `identity`) and Full `/color_tuning/states` (`datasheet_pdf`, `CIE 13.3`). The scope manifest remains `scope_version` 2.0.0, with 71 gating rows, 73 enrichment rows, two observation rows and 61 gating pointer rows. The two new enrichment rows ask for channels on color-mixing records and endpoint spectra when a color-tuning block is present. The eight existing examples keep their grades and change only `index.builder_version`; the two color-mixing validate golden pairs gain the channel nudge.
+
+### Validator and workbook
+
+`color-tuning/inconsistent` reports duplicate state or channel identifiers, a lone endpoint, a reversed range, a state outside a tunable-white or dim-to-warm range, repeated CCT/dim-level/case-folded-label identities, and shared CCT/dim-level states missing a label. The schema prevents repeating the baseline endpoint and permits at most one listed end of each role. Dim-level roles require a percent in (0, 100]; setting roles forbid a percent.
+
+The workbook adds `color_states` and `emission_channels`, the three `color_tuning_baseline_*` records columns, and `state_id`/`channel_id` on the spectrum sheet. Blank spectrum identifiers still target the baseline. Each new provenanced measurement column has provenance companions and defaults to rated, datasheet_pdf, transcribed. Dim-level percentages are scalar metadata without provenance companions. The converter refuses malformed or ambiguous state/channel rows with sheet, row and record context. Use a 1.18.0 converter or newer for the new sheets; older converters ignore them. Newly converted records default to 1.18.0.
+
+### Examples
+
+A ninth example records one public Lumenpulse Lumencore Linear Graze LCVA configuration: 48 in, 13 W/ft, 10x10, DMX/RDM, NA/NH. The 4000 K IES baseline matches the sheet's explicit 4000 K table and unscaled file. Its 1800 K and 6500 K endpoints carry the measured CRI and TM-30 values printed in the supplied reports, plus the original 401-sample spectra. One claimed LM-79 attestation anchors measured values under the existing evidence-family policy. The sheet, IES, endpoint reports and spectral files are individually hashed source documents; none is committed. Endpoint flux, melanopic DER and through-optics status remain absent because the files do not state them. The example is schema-valid at the incomplete floor, with its ordinary missing-data roadmap.
+
+### Documentation
+
+The methodology defines color-state identity, the single CCT rule, baseline ownership and endpoint grading. The workbook README and converter design document describe the two authoring sheets and per-state spectra. The README, roadmap and PIM guide examples advance to 1.18.0.
+
 ## 1.17.0 (2026-10-14)
 
 This release adds a workbook authoring path for the TM-30 hue-bin local fidelity values a record carries at `colorimetry.tm_30.rf_h_per_bin`, so the Full row that asks for them can be met from a workbook. The schema structure and taxonomy do not change; the array's description is corrected to name the one value its entries carry. No required set, conformance grade, achievement state, or generated index member changes. The builder remains 0.10.0, and all eight published examples remain byte-identical.

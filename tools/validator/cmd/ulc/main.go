@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/ulcspec/ULC/tools/validator/internal/achievements"
+	"github.com/ulcspec/ULC/tools/validator/internal/colortuning"
 	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 	"github.com/ulcspec/ULC/tools/validator/internal/findings"
 	"github.com/ulcspec/ULC/tools/validator/internal/index"
@@ -243,6 +244,8 @@ USAGE
 		fmt.Fprintf(os.Stderr, "ulc validate: %s: top-level JSON value is not an object\n", recordPath)
 		return 1
 	}
+
+	reportColorTuning(recordMap, report)
 
 	// 2. Builder parity.
 	built := index.Build(recordMap)
@@ -703,6 +706,7 @@ USAGE
 			continue
 		}
 		v.Validate(rawTree, report)
+		reportColorTuning(res.Record, report)
 		completeness.Report(res.Record, report)
 		achievements.Report(res.Record, report)
 		report.Finalize()
@@ -1088,4 +1092,11 @@ func writeRecord(path string, record index.Record) error {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil
+}
+
+// reportColorTuning runs after schema validation on the normalized record.
+func reportColorTuning(record map[string]any, report *findings.Report) {
+	for _, problem := range colortuning.Problems(record) {
+		report.AddError(findings.CodeColorTuningInconsistent, problem.Path, problem.Message)
+	}
 }

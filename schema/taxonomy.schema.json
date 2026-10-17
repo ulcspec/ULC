@@ -1595,6 +1595,28 @@
         "self_diagnostic",
         "networked"
       ]
+    },
+
+    "ColorStateRole": {
+      "title": "Color state role",
+      "description": "The published role of a luminaire state. Range ends describe the white range; a setting names a preset; a dim level describes output at a stated percent.",
+      "type": "string",
+      "enum": [
+        "range_low_end",
+        "range_high_end",
+        "setting",
+        "dim_level"
+      ]
+    },
+
+    "EmissionChannelKind": {
+      "title": "Emission channel kind",
+      "description": "Whether an emitter channel produces white light or a color. A channel describes an emitter rather than a state of the complete luminaire.",
+      "type": "string",
+      "enum": [
+        "white",
+        "color"
+      ]
     }
   }
 }
