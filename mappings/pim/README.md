@@ -19,7 +19,7 @@ These guides describe, per PIM platform, how the typical PIM data model maps int
 
 ## Shared translation concerns
 
-Every PIM mapping faces the same six problems. The per-PIM guides cover each system's specifics; the high-level pattern is common.
+Every PIM mapping faces the same seven problems. The per-PIM guides cover each system's specifics; the high-level pattern is common.
 
 ### 1. Product identity and the ULC record-per-scenario model
 
@@ -115,6 +115,29 @@ Both `ulc build-index` and `ulc validate` are file-path CLIs: they read from and
 - `index.restricted_substances_declared`: the sibling legal-floor flag listing the restricted-substances programs (RoHS, REACH, and similar) the ledger declares. Table-stakes legality, never a prestige achievement, so it sits beside the themes rather than inside one.
 
 Because the index is a projection, re-run `ulc build-index` after any deep-block edit so the stored index stays parity-valid, and re-stamp `record_status_as_of` to the edit date so record-relative expiry is evaluated against the current review rather than a stale one. (Re-stamping only changes the index when the new date crosses an attestation's expiry boundary; its own job is accurate expiry dating, not parity.) Schedule a periodic `ulc validate --expiry` over the published corpus to preview attestation and declaration expiry before a re-stamp makes a downgrade normative.
+
+### 7. Published color states and emitter channels
+
+For a tunable-white, dim-to-warm or color-mixing luminaire, map the published operating states and emitter channels into `color_tuning`. Keep the tested state in the existing top-level `colorimetry`, `alpha_opic_metrics` and `photometry` blocks. The `states` array contains only the other published states; do not duplicate the tested baseline. A static-white record, or a record with no color-tunability capability, carries no `color_tuning` block.
+
+| PIM data | Authoritative ULC field | Workbook authoring equivalent |
+|---|---|---|
+| Tested state's role | `color_tuning.baseline_role` | `records.color_tuning_baseline_role` |
+| Tested state's printed name, when needed | `color_tuning.baseline_label` | `records.color_tuning_baseline_label` |
+| Tested state's published dim level | `color_tuning.baseline_dim_level_percent` | `records.color_tuning_baseline_dim_level_percent` |
+| Other published luminaire states | `color_tuning.states[]` | One `color_states` row per state |
+| Published emitter channels | `color_tuning.channels[]` | One `emission_channels` row per channel |
+| Baseline spectrum | `colorimetry.spectral_power_distribution` | `spectral_power_distribution` rows with both identifiers blank |
+| State or channel spectrum | Its own `colorimetry.spectral_power_distribution` | `spectral_power_distribution` rows with exactly one of `state_id` or `channel_id` |
+| Searchable white-range endpoints | Generated `index.cct_range_low_k` and `index.cct_range_high_k` | Produced by `ulc build-index`, never records-sheet columns |
+
+`baseline_role` is required when the block is present, with at least one state or channel. Roles are `range_low_end`, `range_high_end`, `setting` and `dim_level`. Each listed state needs a unique slug `state_id`, its role and colorimetry containing a nominal CCT bin or a provenanced `measured_cct_k`. Retain its printed label when supplied. A dim-level role requires a percent greater than zero and at most 100; a setting forbids a percent, while an endpoint may carry one. States sharing CCT and dim level must each have a label. The tested baseline can supply either endpoint, so a listed endpoint must not repeat its role.
+
+Map each channel's unique slug `channel_id` and `kind` (`white` or `color`), plus its published label, nominal CCT, peak wavelength and flux when available. Channels describe emitters rather than operating states. The `color_states` and `emission_channels` sheets carry provenance companions for their measurement columns; dim-level percentages are scalar metadata. Direct emitters use the same provenanced-number shapes and evidence-family policy as the top-level measurements. Attach and hash the source documents for every published measurement.
+
+Keep each baseline, state and channel spectrum in its own group. On the spectrum sheet, identify that group with (`record_id`, `state_id`, `channel_id`); blank state/channel identifiers select the baseline. Sample grids, metadata and provenance are independent per group. Each state or channel identifier must name an entry emitted for that record.
+
+After assembling the deep blocks, run the index/validate pipeline above. The builder resolves each state's nominal CCT first, then its measured value; the baseline first uses `configuration.tested_conditions.nominal_cct_at_test`, then its top-level colorimetry. It emits both range fields only when both endpoints resolve. Tunable-white and dim-to-warm records need both endpoints for Standard and CRI Ra plus melanopic DER at both endpoints for Full. An endpoint represented by the baseline reads those metrics from the top-level blocks. Channels and endpoint spectra are enrichment. The Full roadmap's `/color_tuning/states` row represents the endpoint-metric requirement, so inspect both endpoints and the baseline's measurement blocks when that gap appears. See [workbook authoring](../../templates/workbook/README.md#color-state-sheet) and [color-state methodology](../../docs/methodology.md#color-states).
 
 ## Out of scope
 

@@ -159,6 +159,8 @@ SAP's configurable materials (class-type 300) describe a material with variant c
 
 ## Example transform skeleton (ABAP / Python hybrid)
 
+For tunable or color-mixing products, extend this tested-baseline skeleton with the shared [published color-state and channel mapping](README.md#7-published-color-states-and-emitter-channels), then generate the range fields with `ulc build-index`.
+
 In practice, ABAP handles data extraction (CDS views or SAP CAP/RAP) and a Python microservice handles JSON assembly and the ULC CLI shell-out:
 
 ```python

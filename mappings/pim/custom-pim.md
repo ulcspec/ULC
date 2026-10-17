@@ -196,6 +196,8 @@ Schedule a periodic `ulc validate --expiry` over the published corpus to preview
 
 ## Example transform skeleton (Python + SQLAlchemy)
 
+For tunable or color-mixing products, extend this tested-baseline skeleton with the shared [published color-state and channel mapping](README.md#7-published-color-states-and-emitter-channels), then generate the range fields with `ulc build-index`.
+
 ```python
 # Illustrative pseudocode.
 def emit_ulc(session: Session):
