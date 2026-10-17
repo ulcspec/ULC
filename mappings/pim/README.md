@@ -118,7 +118,7 @@ Because the index is a projection, re-run `ulc build-index` after any deep-block
 
 ### 7. Published color states and emitter channels
 
-For a tunable-white, dim-to-warm or color-mixing luminaire, map the published operating states and emitter channels into `color_tuning`. Keep the tested state in the existing top-level `colorimetry`, `alpha_opic_metrics` and `photometry` blocks. The `states` array contains only the other published states; do not duplicate the tested baseline. A static-white record, or a record with no color-tunability capability, carries no `color_tuning` block.
+For a tunable-white, dim-to-warm or color-mixing luminaire, map published white operating states, each with a CCT, into `color_tuning.states`. Colored emitters are channels in `color_tuning.channels`; colored scenes are not represented in 1.18.0. Keep the tested state in the existing top-level `colorimetry`, `alpha_opic_metrics` and `photometry` blocks. The `states` array contains only the other published states; do not duplicate the tested baseline. A static-white record, or a record with no color-tunability capability, carries no `color_tuning` block.
 
 | PIM data | Authoritative ULC field | Workbook authoring equivalent |
 |---|---|---|
