@@ -122,12 +122,19 @@ func Convert(input string, opts Options) ([]Result, error) {
 		}
 		seen[id] = struct{}{}
 
+		if err := checkColorTuningRows(wb, id, master, i+1); err != nil {
+			return nil, err
+		}
+
 		hasher := &fileHasher{assetsRoot: assetsRoot, allowMissing: opts.AllowMissingFiles, digests: digests}
 		pattern := detectPattern(wb, id, master)
 
 		rec, err := assembleRecord(wb, id, master, pattern, hasher)
 		if err != nil {
 			return nil, fmt.Errorf("record %q: %w", id, err)
+		}
+		if err := checkColorTuningProblems(id, rec, i+1); err != nil {
+			return nil, err
 		}
 		results = append(results, Result{
 			RecordID:               id,
@@ -144,6 +151,7 @@ func Convert(input string, opts Options) ([]Result, error) {
 // record by record_id. The preflight validates these (and only these, so extra
 // workbook tabs like instructions or a changelog are ignored).
 var consumedRelatedSheets = map[string]bool{
+	"color_states": true, "emission_channels": true,
 	"source_files": true, "attestations": true, "shared_attestations": true,
 	"customization_openness": true,
 	"covered_axes":           true, "cct_multipliers": true, "declared_by_length": true,

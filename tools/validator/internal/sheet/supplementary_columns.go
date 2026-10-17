@@ -19,6 +19,17 @@ type supplementaryValueColumn struct {
 // supplementary sheet in this release. declared_by_length remains on its
 // existing hardcoded path because section 4 item 5 was cut.
 var supplementaryValueColumns = map[supplementaryValueKey]supplementaryValueColumn{
+	{sheet: "color_states", field: "measured_cct_k"}:          {unit: "K", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "color_states", field: "duv"}:                     {unit: "", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "color_states", field: "cri_ra"}:                  {unit: "", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "color_states", field: "cri_r9"}:                  {unit: "", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "color_states", field: "tm_30_rf"}:                {unit: "", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "color_states", field: "tm_30_rg"}:                {unit: "", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "color_states", field: "melanopic_der"}:           {unit: "ratio", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyMelanopic}},
+	{sheet: "color_states", field: "lumens"}:                  {unit: "lm", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "color_states", field: "efficacy_lm_per_w"}:       {unit: "lm/W", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "emission_channels", field: "peak_wavelength_nm"}: {unit: "nm", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
+	{sheet: "emission_channels", field: "lumens"}:             {unit: "lm", defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "transcribed", family: attestationFamilyPhotometric}},
 	{sheet: "alpha_opic", field: "melanopic_der"}: {
 		unit:     "ratio",
 		defaults: provenanceDefaults{valueType: "rated", source: "datasheet_pdf", method: "extracted", family: attestationFamilyMelanopic},

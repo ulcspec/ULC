@@ -43,6 +43,9 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 	if err := assembleAlphaOpic(wb, id, rec, ctx); err != nil {
 		return err
 	}
+	if err := assembleColorTuning(wb, id, rec, ctx); err != nil {
+		return err
+	}
 	if err := assembleSpectralPowerDistribution(wb, id, rec, ctx); err != nil {
 		return err
 	}
@@ -67,7 +70,10 @@ func assembleFullLevelBlocks(wb Workbook, id string, rec map[string]any, ctx pro
 	if err := assembleIngredientList(wb, id, rec); err != nil {
 		return err
 	}
-	return assembleCIE97Table(wb, id, rec)
+	if err := assembleCIE97Table(wb, id, rec); err != nil {
+		return err
+	}
+	return nil
 }
 
 func assembleTM30HueBins(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
@@ -157,17 +163,16 @@ func assembleAdditionalRatedClaims(wb Workbook, id string, rec map[string]any, c
 	return setPath(rec, "lumen_maintenance_luminaire.additional_rated_claims", out)
 }
 
-// assembleSpectralPowerDistribution reads one row per wavelength sample. Values
+// assembleSpectrumRows reads one group of wavelength samples. Values
 // retain file order; record-wide metadata may appear on any row, but conflicting
 // non-blank cells are refused rather than silently choosing one.
-func assembleSpectralPowerDistribution(wb Workbook, id string, rec map[string]any, ctx provenanceContext) error {
+func assembleSpectrumRows(rows []Row, rowNumbers []int, id string, rec map[string]any, ctx provenanceContext) error {
 	const sheet = "spectral_power_distribution"
-	rows := wb.RowsFor(sheet, id)
 	if len(rows) == 0 {
 		return nil
 	}
 	if len(rows) < 2 {
-		return fmt.Errorf("%s row 1 for %q: at least two wavelength samples are required", sheet, id)
+		return fmt.Errorf("%s row %d for %q: at least two wavelength samples are required", sheet, rowNumbers[0], id)
 	}
 	blockFields := []string{"unit", "source_kind", "measured_through_optics", "conflict_notes"}
 	for _, suffix := range CompanionHeaderSuffixes[CompanionFamilyProvenance] {
@@ -180,24 +185,24 @@ func assembleSpectralPowerDistribution(wb Workbook, id string, rec map[string]an
 		for _, field := range blockFields {
 			if value := row[field]; value != "" {
 				if previousValue := merged[field]; previousValue != "" && previousValue != value {
-					return fmt.Errorf("%s row %d for %q: conflicting %s values %q and %q", sheet, i+1, id, field, previousValue, value)
+					return fmt.Errorf("%s row %d for %q: conflicting %s values %q and %q", sheet, rowNumbers[i], id, field, previousValue, value)
 				}
 				merged[field] = value
 			}
 		}
 		if row["wavelength_nm"] == "" {
-			return fmt.Errorf("%s row %d for %q: missing wavelength_nm", sheet, i+1, id)
+			return fmt.Errorf("%s row %d for %q: missing wavelength_nm", sheet, rowNumbers[i], id)
 		}
 		wavelength, err := parseFloat(row["wavelength_nm"])
 		if err != nil {
-			return fmt.Errorf("%s row %d for %q: wavelength_nm: %w", sheet, i+1, id, err)
+			return fmt.Errorf("%s row %d for %q: wavelength_nm: %w", sheet, rowNumbers[i], id, err)
 		}
 		if row["value"] == "" {
-			return fmt.Errorf("%s row %d for %q: missing value", sheet, i+1, id)
+			return fmt.Errorf("%s row %d for %q: missing value", sheet, rowNumbers[i], id)
 		}
 		value, err := parseFloat(row["value"])
 		if err != nil {
-			return fmt.Errorf("%s row %d for %q: value: %w", sheet, i+1, id, err)
+			return fmt.Errorf("%s row %d for %q: value: %w", sheet, rowNumbers[i], id, err)
 		}
 		values = append(values, numberLeaf(value))
 		switch i {
@@ -206,26 +211,26 @@ func assembleSpectralPowerDistribution(wb Workbook, id string, rec map[string]an
 		case 1:
 			step = roundTo(wavelength-start, 9)
 			if step <= 0 {
-				return fmt.Errorf("%s row %d for %q: wavelength_nm must be strictly ascending at a positive step", sheet, i+1, id)
+				return fmt.Errorf("%s row %d for %q: wavelength_nm must be strictly ascending at a positive step", sheet, rowNumbers[i], id)
 			}
 		default:
 			if wavelength <= previous {
-				return fmt.Errorf("%s row %d for %q: wavelength_nm must be strictly ascending", sheet, i+1, id)
+				return fmt.Errorf("%s row %d for %q: wavelength_nm must be strictly ascending", sheet, rowNumbers[i], id)
 			}
 		}
 		if i > 0 && math.Abs(wavelength-(start+float64(i)*step)) > 1e-6 {
-			return fmt.Errorf("%s row %d for %q: wavelength_nm %g is off the uniform grid", sheet, i+1, id, wavelength)
+			return fmt.Errorf("%s row %d for %q: wavelength_nm %g is off the uniform grid", sheet, rowNumbers[i], id, wavelength)
 		}
 		previous = wavelength
 	}
 	column := supplementaryValueColumns[supplementaryValueKey{sheet: sheet, field: "value"}]
 	unit, err := declaredSupplementaryUnit(column, merged, "value")
 	if err != nil {
-		return fmt.Errorf("%s row 1 for %q: %w", sheet, id, err)
+		return fmt.Errorf("%s row %d for %q: %w", sheet, rowNumbers[0], id, err)
 	}
 	resolved, err := resolveProvenanceForField("value", column.defaults, merged, ctx)
 	if err != nil {
-		return fmt.Errorf("%s row 1 for %q: %w", sheet, id, err)
+		return fmt.Errorf("%s row %d for %q: %w", sheet, rowNumbers[0], id, err)
 	}
 	if note := merged["conflict_notes"]; note != "" {
 		resolved.provenance["conflict_notes"] = note
@@ -242,10 +247,10 @@ func assembleSpectralPowerDistribution(wb Workbook, id string, rec map[string]an
 	if raw := merged["measured_through_optics"]; raw != "" {
 		measured, err := parseBool(raw)
 		if err != nil {
-			return fmt.Errorf("%s row 1 for %q: measured_through_optics: %w", sheet, id, err)
+			return fmt.Errorf("%s row %d for %q: measured_through_optics: %w", sheet, rowNumbers[0], id, err)
 		}
 		if !measured && resolved.valueType == "measured" {
-			return fmt.Errorf("%s row 1 for %q: measured_through_optics=false conflicts with effective value__value_type=measured; set value__value_type=rated for a package spectrum", sheet, id)
+			return fmt.Errorf("%s row %d for %q: measured_through_optics=false conflicts with effective value__value_type=measured; set value__value_type=rated for a package spectrum", sheet, rowNumbers[0], id)
 		}
 		spectrum["measured_through_optics"] = measured
 	}
