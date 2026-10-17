@@ -38,7 +38,7 @@ The public gating table gains two pointer rows: Standard `/color_tuning` (`datas
 
 `color-tuning/inconsistent` reports duplicate state or channel identifiers, a lone endpoint, a reversed range, a state outside a tunable-white or dim-to-warm range, repeated CCT/dim-level/case-folded-label identities, and shared CCT/dim-level states missing a label. The schema prevents repeating the baseline endpoint and permits at most one listed end of each role. Dim-level roles require a percent in (0, 100]; setting roles forbid a percent.
 
-The workbook adds `color_states` and `emission_channels`, the three `color_tuning_baseline_*` records columns, and `state_id`/`channel_id` on the spectrum sheet. Blank spectrum identifiers still target the baseline. Each new numeric column has provenance companions and defaults to rated, datasheet_pdf, transcribed. The converter refuses malformed or ambiguous state/channel rows with sheet, row and record context. Use a 1.18.0 converter or newer for the new sheets; older converters ignore them. Newly converted records default to 1.18.0.
+The workbook adds `color_states` and `emission_channels`, the three `color_tuning_baseline_*` records columns, and `state_id`/`channel_id` on the spectrum sheet. Blank spectrum identifiers still target the baseline. Each new provenanced measurement column has provenance companions and defaults to rated, datasheet_pdf, transcribed. Dim-level percentages are scalar metadata without provenance companions. The converter refuses malformed or ambiguous state/channel rows with sheet, row and record context. Use a 1.18.0 converter or newer for the new sheets; older converters ignore them. Newly converted records default to 1.18.0.
 
 ### Examples
 

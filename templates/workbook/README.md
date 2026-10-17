@@ -213,18 +213,21 @@ references is required for each row.
 ## Spectrum sheet
 
 Use `spectral_power_distribution` for a sampled spectrum. Each row needs
-`record_id`, numeric `wavelength_nm`, and numeric `value`. Supply at least two
-rows per record in strictly ascending order at one uniform wavelength step. The
-converter derives the start and step from those rows and refuses duplicate,
-descending, or off-grid wavelengths. For a chart or exchange file with irregular
-samples, resample the curve to one step before authoring it.
+`record_id`, numeric `wavelength_nm`, and numeric `value`. A spectrum group is
+identified by (`record_id`, `state_id`, `channel_id`); blank state and channel
+identifiers select the baseline. Supply at least two rows per group in strictly
+ascending order at one uniform wavelength step. The converter derives each
+group's start and step independently and refuses duplicate, descending, or
+off-grid wavelengths within that group. For a chart or exchange file with
+irregular samples, resample that spectrum to one step before authoring it.
 
 Set `unit` to `mW/nm`, `W/nm`, or `relative`, and set `source_kind` to
 `laboratory_table`, `digitized_chart`, or `exchange_file`. For a luminaire-level
 measurement through its optics, set `measured_through_optics` to `TRUE`. These
 cells and `conflict_notes` may be filled on the first row or repeated; two
-different non-blank values for the same record are refused. The six `value__*`
-companions follow the same rule and describe the whole spectrum. The default
+different non-blank values within the same spectrum group are refused. The six
+`value__*` companions follow the same rule and describe that group's spectrum.
+Different groups may carry different metadata and provenance. The default
 is measured, from a test report, transcribed, and linked to the record's single
 LM-79 attestation. For a digitized cutsheet chart, set
 `value__value_type=rated` and `value__prov_source=datasheet_pdf`. For a TM-27
