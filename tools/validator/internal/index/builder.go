@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/ulcspec/ULC/tools/validator/internal/achievements"
+	"github.com/ulcspec/ULC/tools/validator/internal/colortuning"
 	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
 )
 
@@ -63,7 +64,10 @@ import (
 // positive number of hours or a populated table. The full method-backed row
 // also requires a positive projection. Every stored record re-stamps the builder
 // version; a record's level changes only where one of those four rows decided it.
-const BuilderVersion = "0.10.0"
+// 0.11.0: project the published white range through the shared state resolver.
+// Tunable-white and dim-to-warm grading also reads the range and endpoint metrics.
+// Existing examples keep their grades and re-stamp only this marker.
+const BuilderVersion = "0.11.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard
@@ -200,6 +204,10 @@ func Build(record Record) Index {
 	// Capability projections.
 	if v := getString(cfg, "tested_axes", "color_tunability"); v != "" {
 		idx["color_tunability"] = v
+	}
+	if low, high, ok := colortuning.Ends(record); ok {
+		idx["cct_range_low_k"] = numberToJSON(low.CCT)
+		idx["cct_range_high_k"] = numberToJSON(high.CCT)
 	}
 	if v := getString(elec, "driver_protocol"); v != "" {
 		idx["dimming_protocols"] = []any{v}

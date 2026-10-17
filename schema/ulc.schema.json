@@ -266,6 +266,14 @@
         },
         "environment_rating": { "$ref": "taxonomy.schema.json#/$defs/EnvironmentRating" },
         "nominal_cct_k": { "$ref": "taxonomy.schema.json#/$defs/NominalCCT" },
+        "cct_range_low_k": {
+          "description": "Generated low-end CCT of the published white range. Present with cct_range_high_k only when both ends resolve, including the referenced baseline.",
+          "type": "number"
+        },
+        "cct_range_high_k": {
+          "description": "Generated high-end CCT of the published white range. Resolve each state from its nominal bin first, otherwise its measured_cct_k value.",
+          "type": "number"
+        },
         "nominal_total_lumens": { "type": "number", "minimum": 0 },
         "nominal_input_power_w": { "type": "number", "minimum": 0 },
         "nominal_cri_ra": { "type": "number", "minimum": 0, "maximum": 100 },
