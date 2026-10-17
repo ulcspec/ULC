@@ -420,6 +420,7 @@ func TestScopeCorpusShape(t *testing.T) {
 		items, core, std, full int
 		blocks                 []string
 	}{
+		{"lumenpulse-lumencore-linear-graze-lcva-120-277-48-13w-4000k-10x10-dmx-rdm-na-nh.ulc", 45, 21, 14, 10, withColor("colorimetry", "color_tuning")},
 		{"cooper-atlite-auxswhsd.ulc", 25, 15, 9, 1, sign},
 		{"cooper-sure-lites-es61src.ulc", 22, 15, 6, 1, sign},
 		{"cooper-sure-lites-lpx7sd.ulc", 25, 15, 9, 1, sign},

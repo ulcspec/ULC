@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## 1.18.0 (2026-10-16)
+## 1.18.0 (2026-10-17)
 
 This release adds published color states and emitter channels beside the tested baseline for tunable-white, dim-to-warm and color-mixing luminaires. The shared resolver returns the baseline first and then the other published states, preserving each state's own colorimetry, spectrum, alpha-opic metrics and flux. Builder 0.11.0 projects the two numeric white-range endpoints and applies the new endpoint grading rows.
 
@@ -42,7 +42,7 @@ The workbook adds `color_states` and `emission_channels`, the three `color_tunin
 
 ### Examples
 
-A ninth example records the public Gotham EVO 4-inch tunable-white Atmosphere Range cutsheet: the tested 3500 K baseline and its published 1800 K and 4300 K endpoints, with flux, CRI and R9. Its source URL and SHA-256 identify the public cutsheet; the PDF is not committed. The off-bin 4300 K endpoint uses a rated `measured_cct_k` value. Unpublished melanopic DER and spectra remain absent.
+A ninth example records one public Lumenpulse Lumencore Linear Graze LCVA configuration: 48 in, 13 W/ft, 10x10, DMX/RDM, NA/NH. The 4000 K IES baseline matches the sheet's explicit 4000 K table and unscaled file. Its 1800 K and 6500 K endpoints carry the measured CRI and TM-30 values printed in the supplied reports, plus the original 401-sample spectra. One claimed LM-79 attestation anchors measured values under the existing evidence-family policy. The sheet, IES, endpoint reports and spectral files are individually hashed source documents; none is committed. Endpoint flux, melanopic DER and through-optics status remain absent because the files do not state them. The example is schema-valid at the incomplete floor, with its ordinary missing-data roadmap.
 
 ### Documentation
 

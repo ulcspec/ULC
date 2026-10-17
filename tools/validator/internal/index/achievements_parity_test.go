@@ -88,6 +88,7 @@ func TestRealExampleAchievementStates(t *testing.T) {
 		conformance                                                                              string
 	}
 	want := map[string]row{
+		"lumenpulse-lumencore-linear-graze-lcva-120-277-48-13w-4000k-10x10-dmx-rdm-na-nh.ulc": {"none", "none", "none", "none", "none", "none", "none", 0, []string{}, "incomplete"},
 		"cooper-atlite-auxswhsd.ulc":                               {"documented", "none", "none", "none", "none", "none", "none", 1, []string{}, "standard"},
 		"cooper-sure-lites-es61src.ulc":                            {"claimed", "none", "none", "none", "none", "none", "none", 0, []string{}, "standard"},
 		"cooper-sure-lites-lpx7sd.ulc":                             {"claimed", "claimed", "none", "none", "none", "none", "none", 0, []string{}, "core"},
