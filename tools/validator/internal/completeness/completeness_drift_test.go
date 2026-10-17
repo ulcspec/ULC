@@ -396,6 +396,8 @@ func rubricTaxonomies() map[string]bool {
 // is ever both rubric-covered and allowlisted, keeping this registry a conscious record
 // of what is deliberately NOT on a roadmap.
 var descriptiveAllowlist = map[string]bool{
+	"ColorStateRole":      true,
+	"EmissionChannelKind": true,
 	// Record + provenance + file plumbing.
 	"RecordStatus":        true,
 	"ProvenanceSource":    true,

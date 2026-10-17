@@ -86,6 +86,11 @@
       "$ref": "#/$defs/AlphaOpicMetrics"
     },
 
+    "color_tuning": {
+      "description": "Published states and emitter channels beside the tested baseline. States reference the baseline by role and never repeat it.",
+      "$ref": "#/$defs/ColorTuning"
+    },
+
     "flicker_measurements": {
       "description": "Temporal light artefact (TLA) measurements per LM-90-20 and metric values per CIE TN 006 and IEEE 1789.",
       "$ref": "#/$defs/FlickerMeasurements"
@@ -202,6 +207,27 @@
     "configuration",
     "source_files"
   ],
+
+  "if": {
+    "properties": {
+      "configuration": {
+        "properties": {
+          "tested_axes": {
+            "properties": {
+              "color_tunability": {
+                "const": "static_white"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "color_tuning": false
+    }
+  },
 
   "$defs": {
 
@@ -1213,6 +1239,310 @@
       "dependentRequired": {
         "max_surface_luminance_bound_operator": ["max_surface_luminance_cd_per_m2"]
       }
+    },
+
+    "ColorTuning": {
+      "title": "Published color tuning",
+      "description": "The top-level measurement blocks remain the tested baseline. Only other luminaire states appear in states. End roles occur at most once, counting the referenced baseline.",
+      "type": "object",
+      "properties": {
+        "baseline_role": {
+          "$ref": "taxonomy.schema.json#/$defs/ColorStateRole"
+        },
+        "baseline_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "baseline_dim_level_percent": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ColorState"
+          },
+          "allOf": [
+            {
+              "contains": {
+                "properties": {
+                  "role": {
+                    "const": "range_low_end"
+                  }
+                },
+                "required": [
+                  "role"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "properties": {
+                  "role": {
+                    "const": "range_high_end"
+                  }
+                },
+                "required": [
+                  "role"
+                ]
+              },
+              "minContains": 0,
+              "maxContains": 1
+            }
+          ]
+        },
+        "channels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/EmissionChannel"
+          }
+        }
+      },
+      "required": [
+        "baseline_role"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "states"
+          ]
+        },
+        {
+          "required": [
+            "channels"
+          ]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "baseline_role": {
+                "const": "dim_level"
+              }
+            },
+            "required": [
+              "baseline_role"
+            ]
+          },
+          "then": {
+            "required": [
+              "baseline_dim_level_percent"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "baseline_role": {
+                "const": "setting"
+              }
+            },
+            "required": [
+              "baseline_role"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "baseline_dim_level_percent"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "baseline_role": {
+                "const": "range_low_end"
+              }
+            },
+            "required": [
+              "baseline_role"
+            ]
+          },
+          "then": {
+            "properties": {
+              "states": {
+                "not": {
+                  "contains": {
+                    "properties": {
+                      "role": {
+                        "const": "range_low_end"
+                      }
+                    },
+                    "required": [
+                      "role"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "baseline_role": {
+                "const": "range_high_end"
+              }
+            },
+            "required": [
+              "baseline_role"
+            ]
+          },
+          "then": {
+            "properties": {
+              "states": {
+                "not": {
+                  "contains": {
+                    "properties": {
+                      "role": {
+                        "const": "range_high_end"
+                      }
+                    },
+                    "required": [
+                      "role"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "ColorState": {
+      "title": "Published luminaire color state",
+      "type": "object",
+      "properties": {
+        "state_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "role": {
+          "$ref": "taxonomy.schema.json#/$defs/ColorStateRole"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dim_level_percent": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        },
+        "colorimetry": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/Colorimetry"
+            },
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "nominal_cct_k"
+                  ]
+                },
+                {
+                  "required": [
+                    "measured_cct_k"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "alpha_opic_metrics": {
+          "$ref": "#/$defs/AlphaOpicMetrics"
+        },
+        "lumens": {
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "efficacy_lm_per_w": {
+          "$ref": "#/$defs/ProvenancedNumber"
+        }
+      },
+      "required": [
+        "state_id",
+        "role",
+        "colorimetry"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "dim_level"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "required": [
+              "dim_level_percent"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "setting"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "dim_level_percent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    "EmissionChannel": {
+      "title": "Emission channel",
+      "type": "object",
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "$ref": "taxonomy.schema.json#/$defs/EmissionChannelKind"
+        },
+        "peak_wavelength_nm": {
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "lumens": {
+          "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "colorimetry": {
+          "$ref": "#/$defs/Colorimetry"
+        }
+      },
+      "required": [
+        "channel_id",
+        "kind"
+      ]
     },
 
     "Colorimetry": {
