@@ -188,7 +188,7 @@ func TestScopePerClass(t *testing.T) {
 
 // --- T2: the frozen public table ---
 
-// TestScopeGatingTable freezes all 69 gating rows as (tier, kind, path,
+// TestScopeGatingTable freezes all 71 gating rows as (tier, kind, path,
 // source_document, standard). The manifest publishes those three strings for
 // every in-scope row unconditionally, where today they reach the public only for
 // rows some record happens to miss, so any reword, any added or removed gating
@@ -284,8 +284,8 @@ func TestScopeKindPartition(t *testing.T) {
 	if gating+enrichment+observation != len(rubric) {
 		t.Errorf("level split = %d gating + %d enrichment + %d observation, want %d total", gating, enrichment, observation, len(rubric))
 	}
-	if gating != 69 || enrichment != 71 || observation != 2 {
-		t.Errorf("level split = %d/%d/%d, want 69 gating / 71 enrichment / 2 observation", gating, enrichment, observation)
+	if gating != 71 || enrichment != 73 || observation != 2 {
+		t.Errorf("level split = %d/%d/%d, want 71 gating / 73 enrichment / 2 observation", gating, enrichment, observation)
 	}
 
 	// Every tier token the manifest can emit must be one of the three documented
@@ -317,8 +317,8 @@ func TestScopeKindPartition(t *testing.T) {
 		seenKey[k] = ru.path
 	}
 
-	if counts[ScopeKindPointer] != 59 || counts[ScopeKindChoice] != 2 || counts[ScopeKindRequirement] != 8 {
-		t.Errorf("gating kind partition = %d pointer / %d choice / %d requirement, want 59/2/8",
+	if counts[ScopeKindPointer] != 61 || counts[ScopeKindChoice] != 2 || counts[ScopeKindRequirement] != 8 {
+		t.Errorf("gating kind partition = %d pointer / %d choice / %d requirement, want 61/2/8",
 			counts[ScopeKindPointer], counts[ScopeKindChoice], counts[ScopeKindRequirement])
 	}
 	// The tables must not carry entries no gating row claims.

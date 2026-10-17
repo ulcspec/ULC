@@ -214,6 +214,8 @@ func setDataPath(rec map[string]any, comps []string, val any) {
 // constructor), so a generic schema-correct value would not satisfy it. They are
 // covered by the behavioral tests instead.
 var predicateBackedPaths = map[string]bool{
+	"/color_tuning":                            true,
+	"/color_tuning/states":                     true,
 	"/colorimetry/spectral_power_distribution": true, // hasMeasuredSpectrum: requires sampled data and evidence qualifiers
 	"/product_family/cutsheet":                 true, // hasCutsheet: needs an attached cutsheet with a content hash
 	"/emergency/photometry_reference":          true, // hasEmergencyPhotometryReference: FileReference needing a content hash (like cutsheet)

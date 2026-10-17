@@ -6,4 +6,4 @@ INFO    conformance/grade-satisfied at /index/conformance_level: conformance gra
 INFO    conformance/grade-satisfied at /index/conformance_level: conformance grade "standard" satisfied
 INFO    conformance/level at /index/conformance_level: this record achieves conformance level "standard"
 
-OK -- lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc: 0 errors, 0 warnings, 38 infos (31 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).
+OK -- lumenpulse-lumenfacade-loi-12-rgb-30x60-ts0.ulc: 0 errors, 0 warnings, 39 infos (32 optional findings hidden (enrichment, observations, and achievements); use --verbose or --json).
