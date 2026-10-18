@@ -653,6 +653,10 @@ func buildFileReference(filename string, row Row, header string, hasher *fileHas
 	return ref, nil
 }
 
+// photometryFormatFileTypes are the source-file types on which the schema allows
+// a photometry_format (SourceFile if/then); a test ties the set to the schema.
+var photometryFormatFileTypes = map[string]bool{"ies": true, "ldt": true, "tm33": true}
+
 // assembleSourceFiles builds the source_files[] array from the source_files
 // sheet plus the synthesized cutsheet datasheet_pdf entry. The cutsheet entry is
 // de-duplicated on filename: if the manufacturer also listed the cutsheet in
@@ -694,7 +698,17 @@ func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef m
 				return nil, err
 			}
 		}
-		out = append(out, map[string]any{"file_type": fileType, "reference": ref})
+		entry := map[string]any{"file_type": fileType, "reference": ref}
+		if format := row["photometry_format"]; format != "" {
+			if !photometryFormatFileTypes[fileType] {
+				return nil, fmt.Errorf("source_files row %q: photometry_format %q is allowed only on file_type ies, ldt or tm33, not %q", filename, format, fileType)
+			}
+			if !colorEnum("PhotometryFormat", format) {
+				return nil, fmt.Errorf("source_files row %q: photometry_format %q is not a PhotometryFormat token", filename, format)
+			}
+			entry["photometry_format"] = format
+		}
+		out = append(out, entry)
 	}
 
 	// Cutsheet dual-write: synthesize the datasheet_pdf entry when a cutsheet was

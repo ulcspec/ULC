@@ -168,7 +168,7 @@ release 1.5.0 on.
 | Sheet | What it carries | When you need it |
 |---|---|---|
 | `records` | One row per record: identity, taxonomy, lifecycle (supersession pointer and discontinuation date), mechanical, warranty, electrical, photometry, colorimetry, the applicability header, and the sustainability scalars. | Always |
-| `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
+| `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. An optional `photometry_format` cell names the format of an `ies`, `ldt` or `tm33` file with a `PhotometryFormat` token such as `lm63_2002`; on another file type, or with an unknown token, it is refused. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
 | `attestations` | Per-record program attestations. The LM-79 row is the measurement anchor. | Measured photometry needs the LM-79 anchor even at core; standard and up otherwise as applicable |
 | `shared_attestations` | Family-wide listings (UL, IEC, RoHS). | As applicable |
 | `customization_openness` | Manufacturer-stated axes open to requests beyond the published order-code menu. | When the family publishes or states an opening |
