@@ -101,6 +101,9 @@ func TestSourceFilesPhotometryFormatRefusalsAcrossReaders(t *testing.T) {
 		{"supplementary_pdf", "acme-orbit-notes.pdf", "lm63_2002", `source_files row "acme-orbit-notes.pdf": photometry_format "lm63_2002" is allowed only on file_type ies, ldt or tm33, not "supplementary_pdf"`},
 		{"", "", "lm63_2003", `source_files row "acme-orbit-1200-4000k.ies": photometry_format "lm63_2003" is not a PhotometryFormat token`},
 		{"", "", "IESNA:LM-63-2002", `source_files row "acme-orbit-1200-4000k.ies": photometry_format "IESNA:LM-63-2002" is not a PhotometryFormat token`},
+		{"ldt", "acme-orbit-1200-4000k.ldt", "lm63_2002", `source_files row "acme-orbit-1200-4000k.ldt": photometry_format "lm63_2002" belongs to file_type ies, not "ldt"`},
+		{"tm33", "acme-orbit-1200-4000k.xml", "eulumdat", `source_files row "acme-orbit-1200-4000k.xml": photometry_format "eulumdat" belongs to file_type ldt, not "tm33"`},
+		{"", "", "tm33_2023", `source_files row "acme-orbit-1200-4000k.ies": photometry_format "tm33_2023" belongs to file_type tm33, not "ies"`},
 	} {
 		t.Run(tc.format+tc.fileType, func(t *testing.T) {
 			for reader, input := range supplementaryInputs(t, formatBundle(t, tc.fileType, tc.filename, tc.format)) {
@@ -129,5 +132,31 @@ func TestPhotometryFormatFileTypesMatchSchema(t *testing.T) {
 	}
 	if !reflect.DeepEqual(photometryFormatFileTypes, want) {
 		t.Fatalf("format file types = %v, schema = %v", photometryFormatFileTypes, want)
+	}
+}
+
+func TestPhotometryFormatTokensMatchFileTypeFamilies(t *testing.T) {
+	var taxonomy struct {
+		Defs map[string]struct {
+			Enum []string `json:"enum"`
+		} `json:"$defs"`
+	}
+	if err := json.Unmarshal(embedded.TaxonomySchemaJSON, &taxonomy); err != nil {
+		t.Fatal(err)
+	}
+	tokens := taxonomy.Defs["PhotometryFormat"].Enum
+	if len(tokens) == 0 {
+		t.Fatal("PhotometryFormat enum is empty")
+	}
+	families := map[string]bool{}
+	for _, token := range tokens {
+		fileType := photometryFormatFileType(token)
+		if !photometryFormatFileTypes[fileType] {
+			t.Errorf("PhotometryFormat token %q has no unique supported file-type family", token)
+		}
+		families[fileType] = true
+	}
+	if !reflect.DeepEqual(families, photometryFormatFileTypes) {
+		t.Fatalf("format families = %v, want all supported types %v", families, photometryFormatFileTypes)
 	}
 }

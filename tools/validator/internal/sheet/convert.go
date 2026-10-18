@@ -667,6 +667,21 @@ func buildFileReference(filename string, row Row, header string, hasher *fileHas
 // a photometry_format (SourceFile if/then); a test ties the set to the schema.
 var photometryFormatFileTypes = map[string]bool{"ies": true, "ldt": true, "tm33": true}
 
+// photometryFormatFileType maps a known PhotometryFormat token family to its
+// source-file type. A test requires every embedded taxonomy token to have a family.
+func photometryFormatFileType(format string) string {
+	switch {
+	case strings.HasPrefix(format, "lm63_"):
+		return "ies"
+	case format == "eulumdat":
+		return "ldt"
+	case strings.HasPrefix(format, "tm33_"):
+		return "tm33"
+	default:
+		return ""
+	}
+}
+
 // assembleSourceFiles builds the source_files[] array from the source_files
 // sheet plus the synthesized cutsheet datasheet_pdf entry. The cutsheet entry is
 // de-duplicated on filename: if the manufacturer also listed the cutsheet in
@@ -715,6 +730,9 @@ func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef m
 			}
 			if !colorEnum("PhotometryFormat", format) {
 				return nil, fmt.Errorf("source_files row %q: photometry_format %q is not a PhotometryFormat token", filename, format)
+			}
+			if expectedType := photometryFormatFileType(format); expectedType != fileType {
+				return nil, fmt.Errorf("source_files row %q: photometry_format %q belongs to file_type %s, not %q", filename, format, expectedType, fileType)
 			}
 			entry["photometry_format"] = format
 		}
