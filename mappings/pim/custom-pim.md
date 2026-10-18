@@ -207,7 +207,7 @@ def emit_ulc(session: Session):
         family = build_family(product, primary_category, mounting)
         for scenario in product.photometric_scenarios:
             record = {
-                "ulc_version": "1.18.0",
+                "ulc_version": "1.19.0",
                 "record_id": slug(f"{product.manufacturer}-{product.model}-{scenario.slug}"),
                 "record_status": "active",
                 "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
