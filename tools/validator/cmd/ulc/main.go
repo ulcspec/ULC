@@ -510,7 +510,7 @@ the companion leaf is computed per the published conversion policy
 CONVERSION-POLICY.md).
 
 All four authoring patterns are supported end to end: A (single-SKU) and C
-(per-IES with derived provenance) as fixed-axes pins, B (CCT multiplier table)
+(per-IES with derived provenance) as fixed-axes pins with the applicability block their records row states, B (CCT multiplier table)
 and D (per-foot linear scaling) with generated declared_by_cct / declared_by_length
 photometry tables. Optional comprehensive sheets (alpha_opic, flicker_metrics,
 lumen_maintenance_package, additional_rated_claims, spectral_power_distribution,

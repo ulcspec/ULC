@@ -8,7 +8,7 @@ import (
 
 // assembleApplicability builds the applicability block (applicable_catalog_pattern,
 // fixed_axes, covered_axes, excluded_combinations, applicable_sku_count_estimate)
-// for the multi-value patterns B and D, joining the covered_axes,
+// for every pattern (covered axes and multiplier tables exist only on B and D), joining the covered_axes,
 // cct_multipliers, and excluded_combinations long sheets against the record. The
 // applicable_catalog_pattern, fixed_axes (JSON-in-cell), and
 // applicable_sku_count_estimate come from the master row.

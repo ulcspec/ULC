@@ -59,7 +59,7 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
 | `covered_axes` | one row per (axis, covered value) + rationale + derivation | `(record_id,axis_key,value)` | B D |
 | `cct_multipliers` | the Pattern B CCT lumen-multiplier table | `(record_id,axis_value)` | B |
 | `declared_by_length` | verbatim per-length table (else generated) | `(record_id,length_mm)` | D |
-| `excluded_combinations` | SKUs orderable elsewhere but not covered here | `(record_id,row#)` | B D |
+| `excluded_combinations` | SKUs orderable elsewhere but not covered here | `(record_id,row#)` | A B C D |
 | `compatible_accessories` | separately-ordered accessories (planned; declared here but not yet consumed by the converter) | `(record_id,accessory)` | A B C |
 | `ingredient_list` | Declare / LBC material roster | `(record_id,material)` | B D |
 | `cie97_lmf` / `cie97_llmf` | CIE-97 LMF grid + LLMF-by-hours | `(record_id,...)` | A (full) |
@@ -120,7 +120,8 @@ Precedence (resolves the Pattern D `catalog_number` collision, open question 10)
 derivation/length/multiplier signals win over the `catalog_number` signal. Classify as B or D
 whenever the covered-axes / length / multiplier sheets carry rows for the record, regardless of
 whether `catalog_number` is also present. A vs C is not an applicability fork (both are
-fixed-axes pins); the only difference is provenance defaults, driven by the per-column provenance
+fixed-axes pins that carry the applicability block their records row and
+`excluded_combinations` sheet state, with no covered axes and no generated table); the only difference is provenance defaults, driven by the per-column provenance
 values the manufacturer supplies.
 
 ## 3. Dual-unit, SHA-256, provenance

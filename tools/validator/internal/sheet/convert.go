@@ -77,9 +77,9 @@ func readWorkbook(input string) (Workbook, string, error) {
 //
 // All four authoring patterns are handled. A and C share the fixed-axes pin
 // assembler (C differs only in per-column provenance, which the provenance
-// override columns already support). B and D add the covered-axes assembler:
-// the applicability block, the CCT multiplier or per-foot derivation, and the
-// generated declared_by_cct / declared_by_length tables.
+// override columns already support). Every pattern may carry the applicability
+// block its records row and excluded_combinations sheet state. B and D additionally
+// assemble covered axes and the generated declared_by_cct / declared_by_length tables.
 func Convert(input string, opts Options) ([]Result, error) {
 	wb, assetsDefault, err := readWorkbook(input)
 	if err != nil {
@@ -204,8 +204,9 @@ func checkRelatedSheetIDs(wb Workbook, records []Row) error {
 //
 // Patterns A and C share the fixed-axes pin path: the master columns carry the
 // headline photometry directly, and C's derived provenance arrives through the
-// provenance override columns (prov_method, base_attestation_ref). Patterns B and
-// D additionally assemble the applicability block and the derivation-generated
+// provenance override columns (prov_method, base_attestation_ref). Every pattern may carry
+// the applicability block its records row and excluded_combinations sheet state.
+// B and D additionally assemble covered axes and the generated
 // declared_by_cct / declared_by_length tables.
 func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher *fileHasher) (map[string]any, error) {
 	rec := map[string]any{
@@ -307,11 +308,21 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	}
 
 	// Patterns B and D: the applicability block and the derivation-generated
-	// photometry tables. A and C are fixed-axes pins and need neither.
-	if pattern == PatternB || pattern == PatternD {
+	// photometry tables. A and C are fixed-axes pins: they carry the block when the
+	// records row or the excluded_combinations sheet states it, and generate no table.
+	switch pattern {
+	case PatternB, PatternD:
 		lm79ID := provCtx.singleAnchorID(attestationFamilyPhotometric)
 		if err := assembleCoveredAxisRecord(wb, id, master, rec, lm79ID, hasher); err != nil {
 			return nil, err
+		}
+	case PatternA, PatternC:
+		app, err := assembleApplicability(wb, id, master)
+		if err != nil {
+			return nil, err
+		}
+		if len(app) > 0 {
+			rec["applicability"] = app
 		}
 	}
 
@@ -393,12 +404,12 @@ func recordCitesMeasuredIES(v any) bool {
 	return false
 }
 
-// assembleCoveredAxisRecord adds the multi-value-applicability deep blocks shared
-// by patterns B and D: the applicability block (applicable_catalog_pattern,
-// fixed_axes, covered_axes, excluded_combinations), and the derivation-generated
-// photometry table. Pattern B generates photometry.declared_by_cct from the CCT
-// multiplier table applied to the measured baseline flux; Pattern D generates (or
-// echoes) photometry.declared_by_length from the per-foot rates.
+// assembleCoveredAxisRecord adds the B and D deep blocks: the applicability
+// block with its covered axes (applicable_catalog_pattern, fixed_axes,
+// covered_axes, excluded_combinations) and the derivation-generated photometry
+// table. Pattern B generates photometry.declared_by_cct from the CCT multiplier
+// table applied to the baseline flux; Pattern D generates (or echoes)
+// photometry.declared_by_length from the per-foot rates.
 func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[string]any, lm79ID string, hasher *fileHasher) error {
 	app, err := assembleApplicability(wb, id, master)
 	if err != nil {

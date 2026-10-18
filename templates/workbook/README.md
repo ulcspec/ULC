@@ -175,7 +175,7 @@ release 1.5.0 on.
 | `covered_axes` | One row per (axis, covered value) with rationale and derivation. | Patterns B and D |
 | `cct_multipliers` | The CCT lumen-multiplier table. | Pattern B |
 | `declared_by_length` | A verbatim per-length table with fixed provenance defaults in this release. Omit it to have the per-foot rates generate it. | Pattern D |
-| `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Patterns B and D |
+| `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Any pattern |
 | `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |
 | `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry; a Full requirement for white-light records from 1.15.0 |
 | `color_states` | Published white operating states other than the tested baseline, with CCT, dim level, quality metrics, melanopic DER, flux and provenance companions. | Tunable or color-mixing records |
@@ -285,8 +285,7 @@ Derived methods (`scaled`, `optical_simulation`, and `extended_photometry`) are
 refused because this payload cannot name a base attestation.
 
 The four authoring patterns are detected for you from which sheets carry rows: a
-populated `catalog_number` with no applicability sheets is a single-SKU pin
-(Pattern A or, with derived photometry provenance, C); a `cct_multipliers` table
+record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes` or `applicable_sku_count_estimate`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
 is Pattern B; a `declared_by_length` sheet or a `per_foot_linear_scaling`
 derivation on the length axis is Pattern D.
 

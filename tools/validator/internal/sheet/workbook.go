@@ -14,9 +14,10 @@
 // directory or a native .xlsx workbook; see csv.go and xlsx.go, both reducing to
 // this same Workbook model). Patterns A and C share the fixed-axes pin path (C
 // differs only in per-column provenance, supplied through the provenance override
-// columns). Patterns B and D add the covered-axes assembler: the applicability
-// block plus the derivation-generated photometry.declared_by_cct (CCT multiplier
-// table) and photometry.declared_by_length (per-foot linear scaling) tables. The
+// columns). Every pattern may carry the applicability block its records row and
+// excluded_combinations sheet state. B and D additionally assemble covered axes
+// and the generated photometry.declared_by_cct (CCT multiplier table) and
+// photometry.declared_by_length (per-foot linear scaling) tables. The
 // comprehensive full-level long sheets (alpha_opic, flicker_metrics,
 // lumen_maintenance_package, additional_rated_claims, spectral_power_distribution,
 // tm_30_hue_bins, zonal_lumens, lcs_zonal_lumens, ingredient_list,
