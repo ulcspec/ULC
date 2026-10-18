@@ -432,7 +432,7 @@ func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[strin
 		}
 		baselineCCT := coveredAxisBaseline(app, "cct")
 		if baselineCCT == "" {
-			return fmt.Errorf("record %q: a cct_multipliers table is present but the cct covered axis declares no baseline_axis_value, so declared_by_cct has no measured baseline row to anchor", id)
+			return fmt.Errorf("record %q: a cct_multipliers table is present but the cct covered axis declares no baseline_axis_value, so declared_by_cct has no baseline row to anchor", id)
 		}
 		if _, ok := multipliers[baselineCCT]; !ok {
 			return fmt.Errorf("record %q: the cct baseline_axis_value %q has no row in the cct_multipliers table", id, baselineCCT)
@@ -441,10 +441,9 @@ func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[strin
 		if ref := master["total_luminous_flux_lm__attestation_ref"]; ref != "" {
 			base = ref
 		}
-		if base == "" {
-			return fmt.Errorf("record %q: a cct_multipliers table generates scaled declared_by_cct rows, but the record declares no single lm_79* attestation to anchor the measured baseline and the scaled rows' provenance.base_attestation_ref (add a single lm_79* attestations row, or set total_luminous_flux_lm__attestation_ref to disambiguate)", id)
-		}
-		declared := generateDeclaredByCCT(multipliers, multOrder, baseline, baselineCCT, base)
+		headline, _ := getPath(rec, "photometry.total_luminous_flux_lm")
+		headlineMap, _ := headline.(map[string]any)
+		declared := generateDeclaredByCCT(multipliers, multOrder, baseline, baselineCCT, base, headlineMap)
 		if err := setPath(rec, "photometry.declared_by_cct", declared); err != nil {
 			return err
 		}

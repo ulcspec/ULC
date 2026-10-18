@@ -293,12 +293,14 @@ This mirrors precedent across the industry: DLC QPL, ETIM MC catalogs, and GLDF-
 
 ### Measured baseline with declared-by-axis scaling
 
-Measurements that a manufacturer scales by a declared rule (Selux CCT multipliers, Vode per-foot rates) are modeled by pairing the measured baseline with a sibling array of declared values across the covered axis.
+Measurements that a manufacturer scales by a declared rule (Selux CCT multipliers, Vode per-foot rates) are modeled by pairing the baseline with a sibling array of declared values across the covered axis.
 
-- The baseline field (for example `photometry.total_luminous_flux_lm`) is a single `ProvenancedNumber` holding the tested value, with `value_type: measured` and `provenance.attestation_ref` pointing at the LM-79 that produced it.
+- The baseline field (for example `photometry.total_luminous_flux_lm`) is a single `ProvenancedNumber`. A measured baseline holds the tested value with `value_type: measured` and `provenance.attestation_ref` pointing at the record's LM-79 anchor (the attestation that `total_luminous_flux_lm__attestation_ref` names, or else the LM-79 attestation a measured `total_luminous_flux_lm` would auto-link to).
 - A sibling array (`declared_by_cct[]`, or `declared_by_length[]` for the length axis) carries one rated entry per covered value, each with its derivation method and `value_type: rated`.
 
-A Selux record, for example:
+- For `declared_by_cct` without an LM-79 anchor (no `total_luminous_flux_lm__attestation_ref`, and no LM-79 attestation a measured `total_luminous_flux_lm` would auto-link to), the baseline keeps its own provenance (for example `rated` from the datasheet), the declared entry at the baseline CCT repeats it, and every other declared entry carries `method: scaled` and `extension_method: cct_multiplier` with no `base_attestation_ref`. `declared_by_length` rows (generated or verbatim) still need the LM-79 anchor.
+
+An anchored Selux record, for example:
 
 ```json
 "photometry": {

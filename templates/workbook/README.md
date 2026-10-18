@@ -173,7 +173,7 @@ release 1.5.0 on.
 | `shared_attestations` | Family-wide listings (UL, IEC, RoHS). | As applicable |
 | `customization_openness` | Manufacturer-stated axes open to requests beyond the published order-code menu. | When the family publishes or states an opening |
 | `covered_axes` | One row per (axis, covered value) with rationale and derivation. | Patterns B and D |
-| `cct_multipliers` | The CCT lumen-multiplier table. | Pattern B |
+| `cct_multipliers` | The CCT lumen-multiplier table, applied to `total_luminous_flux_lm`. With an LM-79 anchor (the attestation that `total_luminous_flux_lm__attestation_ref` names, or else the LM-79 attestation a measured `total_luminous_flux_lm` would auto-link to) the generated rows cite it; without one the baseline row repeats the headline flux's provenance and the scaled rows are rated with no base attestation. | Pattern B |
 | `declared_by_length` | A verbatim per-length table with fixed provenance defaults in this release. Omit it to have the per-foot rates generate it. | Pattern D |
 | `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Any pattern |
 | `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |

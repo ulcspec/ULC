@@ -202,7 +202,7 @@ candidates unless the author supplies the companion explicitly. An explicit refe
 exactly one attestation in that same family. A confirmation-required attestation cannot anchor
 measured evidence, whether selection is automatic or explicit. A non-measured override on an
 IES-defaulted value switches the default source to `datasheet_pdf` unless the author also
-overrides the source. Derived methods require `base_attestation_ref` under the same family rule.
+overrides the source. Derived methods require `base_attestation_ref` under the same family rule on authored columns; the generated scaled `declared_by_cct` rows of a record without an LM-79 anchor (the attestation that `total_luminous_flux_lm__attestation_ref` names, or else the LM-79 attestation a measured `total_luminous_flux_lm` would auto-link to) carry none.
 An unsupported provenance token passes through assembly and is refused by schema validation,
 which remains the single owner of the enum domain.
 
