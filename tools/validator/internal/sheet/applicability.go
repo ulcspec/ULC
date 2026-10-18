@@ -260,8 +260,8 @@ func assembleExcludedCombinations(wb Workbook, id string) ([]any, error) {
 }
 
 // generateDeclaredByCCT generates photometry.declared_by_cct[] from the CCT
-// multiplier table and the baseline total luminous flux. For each CCT the lumens
-// value is round(multiplier * baseline). With baseLM79 set (the record's LM-79
+// multiplier table and the baseline total luminous flux. For each non-baseline
+// CCT the lumens value is round(multiplier * baseline). With baseLM79 set (the record's LM-79
 // anchor), the baseline CCT row carries measured provenance and that
 // attestation_ref, and every other CCT is scaled with base_attestation_ref naming
 // it. With baseLM79 empty, the baseline row repeats headline's value_type and a
