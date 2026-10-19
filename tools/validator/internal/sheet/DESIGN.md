@@ -52,14 +52,14 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
 | Sheet | Purpose | Key | Patterns |
 |---|---|---|---|
 | `records` | one row per ULC record; the master row | `record_id` (unique) | A B C D |
-| `source_files` | IES/LDT/ULD/supplementary files (cutsheet auto-injected) | `record_id` | A B C D |
+| `source_files` | IES/LDT/ULD/supplementary files (cutsheet auto-injected); optional `photometry_format` on ies, ldt and tm33 rows | `record_id` | A B C D |
 | `attestations` | per-record program attestations (LM-79 row is load-bearing) | `record_id` | A B C D |
 | `shared_attestations` | family-wide listings (UL/IEC/RoHS) | `record_id` | A B C D |
 | `customization_openness` | manufacturer-stated open axes, assembled into `product_family.customization_openness` | `(record_id,axis)`; `axis_label` disambiguates `other` rows | A B C D |
 | `covered_axes` | one row per (axis, covered value) + rationale + derivation | `(record_id,axis_key,value)` | B D |
 | `cct_multipliers` | the Pattern B CCT lumen-multiplier table | `(record_id,axis_value)` | B |
 | `declared_by_length` | verbatim per-length table (else generated) | `(record_id,length_mm)` | D |
-| `excluded_combinations` | SKUs orderable elsewhere but not covered here | `(record_id,row#)` | B D |
+| `excluded_combinations` | SKUs orderable elsewhere but not covered here | `(record_id,row#)` | A B C D |
 | `compatible_accessories` | separately-ordered accessories (planned; declared here but not yet consumed by the converter) | `(record_id,accessory)` | A B C |
 | `ingredient_list` | Declare / LBC material roster | `(record_id,material)` | B D |
 | `cie97_lmf` / `cie97_llmf` | CIE-97 LMF grid + LLMF-by-hours | `(record_id,...)` | A (full) |
@@ -120,7 +120,8 @@ Precedence (resolves the Pattern D `catalog_number` collision, open question 10)
 derivation/length/multiplier signals win over the `catalog_number` signal. Classify as B or D
 whenever the covered-axes / length / multiplier sheets carry rows for the record, regardless of
 whether `catalog_number` is also present. A vs C is not an applicability fork (both are
-fixed-axes pins); the only difference is provenance defaults, driven by the per-column provenance
+fixed-axes pins that carry the applicability block their records row and
+`excluded_combinations` sheet state, with no covered axes and no generated table); the only difference is provenance defaults, driven by the per-column provenance
 values the manufacturer supplies.
 
 ## 3. Dual-unit, SHA-256, provenance
@@ -201,7 +202,7 @@ candidates unless the author supplies the companion explicitly. An explicit refe
 exactly one attestation in that same family. A confirmation-required attestation cannot anchor
 measured evidence, whether selection is automatic or explicit. A non-measured override on an
 IES-defaulted value switches the default source to `datasheet_pdf` unless the author also
-overrides the source. Derived methods require `base_attestation_ref` under the same family rule.
+overrides the source. Derived methods require `base_attestation_ref` under the same family rule on authored columns; the generated scaled `declared_by_cct` rows of a record without an LM-79 anchor (the attestation that `total_luminous_flux_lm__attestation_ref` names, or else the LM-79 attestation a measured `total_luminous_flux_lm` would auto-link to) carry none.
 An unsupported provenance token passes through assembly and is refused by schema validation,
 which remains the single owner of the enum domain.
 
@@ -212,7 +213,7 @@ which remains the single owner of the enum domain.
 3. **`declared_by_length` author-vs-generate**: authored sheet wins; WARN when a row diverges from `rate*length` by > 2%.
 4. **`attestation_ref` with multiple rows in the required evidence family**: require the explicit `*__attestation_ref` column; hard-error rather than guess. Attestations are emitted as unconditional (the default), case-by-case (`verification_type=requires_manufacturer_confirmation`, which the converter forbids from also being `value_type=measured`), or family-wide (shared). Option-conditional attestation applicability is supported via the `required_order_code_options` (`;`-list) and `required_constraints_json` (JSON object) columns, emitted as `attestation.applicability`.
 5. **Pattern C provenance**: supported via the per-column companion columns (`*__value_type`, `*__prov_source`, `*__prov_method`, `*__extension_method`, `*__base_attestation_ref`, `*__attestation_ref`). A `provenance_overrides` long sheet keyed by `(record_id, ulc_field_path)` was considered but is NOT implemented in v1.
-6. **Enum validation**: enum cell values pass through as authored, and the schema validator (run after assembly) rejects unknown tokens. A converter-side enum-domain preload from `ulc.schema.json` with offending cell coordinates was considered but is NOT implemented in v1. Programs with no `AttestationProgram` enum (IP/IK/etc.) route to `extensions_json`, not `attestations`.
+6. **Enum validation**: enum cell values pass through as authored, and the schema validator (run after assembly) rejects unknown tokens. A converter-side enum-domain preload from `ulc.schema.json` with offending cell coordinates was considered but is NOT implemented in v1. Exceptions refused by the converter against the embedded taxonomy: the color-tuning tokens and `source_files.photometry_format`; the latter is checked against the taxonomy and matched to the file type. Programs with no `AttestationProgram` enum (IP/IK/etc.) route to `extensions_json`, not `attestations`.
    The voltage columns follow the schema's separate contracts: `input_voltage_v` is a provenanced number, while `input_voltage_class` and `input_voltage_at_test` are open strings for a supply class or published range. Their schema examples do not close either string domain.
 7. **List delimiter**: inline `;`-joined for short scalar lists; `finish_color_options` is authoritative for `shared_mechanical`; the B `finish` covered-axis is authored independently and not cross-populated.
 8. **`luminaire_efficacy`**: authored via the `luminaire_efficacy_lm_per_w` column; the Pattern D per-foot path computes efficacy for generated length rows (`method=computed`). Blank-fill from `flux/power` and a >1 lm/W divergence WARN were considered but are NOT implemented in v1.

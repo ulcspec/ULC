@@ -77,9 +77,9 @@ func readWorkbook(input string) (Workbook, string, error) {
 //
 // All four authoring patterns are handled. A and C share the fixed-axes pin
 // assembler (C differs only in per-column provenance, which the provenance
-// override columns already support). B and D add the covered-axes assembler:
-// the applicability block, the CCT multiplier or per-foot derivation, and the
-// generated declared_by_cct / declared_by_length tables.
+// override columns already support). Every pattern may carry the applicability
+// block its records row and excluded_combinations sheet state. B and D additionally
+// assemble covered axes and the generated declared_by_cct / declared_by_length tables.
 func Convert(input string, opts Options) ([]Result, error) {
 	wb, assetsDefault, err := readWorkbook(input)
 	if err != nil {
@@ -204,8 +204,9 @@ func checkRelatedSheetIDs(wb Workbook, records []Row) error {
 //
 // Patterns A and C share the fixed-axes pin path: the master columns carry the
 // headline photometry directly, and C's derived provenance arrives through the
-// provenance override columns (prov_method, base_attestation_ref). Patterns B and
-// D additionally assemble the applicability block and the derivation-generated
+// provenance override columns (prov_method, base_attestation_ref). Every pattern may carry
+// the applicability block its records row and excluded_combinations sheet state.
+// B and D additionally assemble covered axes and the generated
 // declared_by_cct / declared_by_length tables.
 func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher *fileHasher) (map[string]any, error) {
 	rec := map[string]any{
@@ -307,11 +308,21 @@ func assembleRecord(wb Workbook, id string, master Row, pattern Pattern, hasher 
 	}
 
 	// Patterns B and D: the applicability block and the derivation-generated
-	// photometry tables. A and C are fixed-axes pins and need neither.
-	if pattern == PatternB || pattern == PatternD {
+	// photometry tables. A and C are fixed-axes pins: they carry the block when the
+	// records row or the excluded_combinations sheet states it, and generate no table.
+	switch pattern {
+	case PatternB, PatternD:
 		lm79ID := provCtx.singleAnchorID(attestationFamilyPhotometric)
 		if err := assembleCoveredAxisRecord(wb, id, master, rec, lm79ID, hasher); err != nil {
 			return nil, err
+		}
+	case PatternA, PatternC:
+		app, err := assembleApplicability(wb, id, master)
+		if err != nil {
+			return nil, err
+		}
+		if len(app) > 0 {
+			rec["applicability"] = app
 		}
 	}
 
@@ -393,12 +404,12 @@ func recordCitesMeasuredIES(v any) bool {
 	return false
 }
 
-// assembleCoveredAxisRecord adds the multi-value-applicability deep blocks shared
-// by patterns B and D: the applicability block (applicable_catalog_pattern,
-// fixed_axes, covered_axes, excluded_combinations), and the derivation-generated
-// photometry table. Pattern B generates photometry.declared_by_cct from the CCT
-// multiplier table applied to the measured baseline flux; Pattern D generates (or
-// echoes) photometry.declared_by_length from the per-foot rates.
+// assembleCoveredAxisRecord adds the B and D deep blocks: the applicability
+// block with its covered axes (applicable_catalog_pattern, fixed_axes,
+// covered_axes, excluded_combinations) and the derivation-generated photometry
+// table. Pattern B generates photometry.declared_by_cct from the CCT multiplier
+// table applied to the baseline flux; Pattern D generates (or echoes)
+// photometry.declared_by_length from the per-foot rates.
 func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[string]any, lm79ID string, hasher *fileHasher) error {
 	app, err := assembleApplicability(wb, id, master)
 	if err != nil {
@@ -421,7 +432,7 @@ func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[strin
 		}
 		baselineCCT := coveredAxisBaseline(app, "cct")
 		if baselineCCT == "" {
-			return fmt.Errorf("record %q: a cct_multipliers table is present but the cct covered axis declares no baseline_axis_value, so declared_by_cct has no measured baseline row to anchor", id)
+			return fmt.Errorf("record %q: a cct_multipliers table is present but the cct covered axis declares no baseline_axis_value, so declared_by_cct has no baseline row to anchor", id)
 		}
 		if _, ok := multipliers[baselineCCT]; !ok {
 			return fmt.Errorf("record %q: the cct baseline_axis_value %q has no row in the cct_multipliers table", id, baselineCCT)
@@ -430,10 +441,9 @@ func assembleCoveredAxisRecord(wb Workbook, id string, master Row, rec map[strin
 		if ref := master["total_luminous_flux_lm__attestation_ref"]; ref != "" {
 			base = ref
 		}
-		if base == "" {
-			return fmt.Errorf("record %q: a cct_multipliers table generates scaled declared_by_cct rows, but the record declares no single lm_79* attestation to anchor the measured baseline and the scaled rows' provenance.base_attestation_ref (add a single lm_79* attestations row, or set total_luminous_flux_lm__attestation_ref to disambiguate)", id)
-		}
-		declared := generateDeclaredByCCT(multipliers, multOrder, baseline, baselineCCT, base)
+		headline, _ := getPath(rec, "photometry.total_luminous_flux_lm")
+		headlineMap, _ := headline.(map[string]any)
+		declared := generateDeclaredByCCT(multipliers, multOrder, baseline, baselineCCT, base, headlineMap)
 		if err := setPath(rec, "photometry.declared_by_cct", declared); err != nil {
 			return err
 		}
@@ -653,6 +663,25 @@ func buildFileReference(filename string, row Row, header string, hasher *fileHas
 	return ref, nil
 }
 
+// photometryFormatFileTypes are the source-file types on which the schema allows
+// a photometry_format (SourceFile if/then); a test ties the set to the schema.
+var photometryFormatFileTypes = map[string]bool{"ies": true, "ldt": true, "tm33": true}
+
+// photometryFormatFileType maps a known PhotometryFormat token family to its
+// source-file type. A test requires every embedded taxonomy token to have a family.
+func photometryFormatFileType(format string) string {
+	switch {
+	case strings.HasPrefix(format, "lm63_"):
+		return "ies"
+	case format == "eulumdat":
+		return "ldt"
+	case strings.HasPrefix(format, "tm33_"):
+		return "tm33"
+	default:
+		return ""
+	}
+}
+
 // assembleSourceFiles builds the source_files[] array from the source_files
 // sheet plus the synthesized cutsheet datasheet_pdf entry. The cutsheet entry is
 // de-duplicated on filename: if the manufacturer also listed the cutsheet in
@@ -694,7 +723,20 @@ func assembleSourceFiles(wb Workbook, id, cutsheetFilename string, cutsheetRef m
 				return nil, err
 			}
 		}
-		out = append(out, map[string]any{"file_type": fileType, "reference": ref})
+		entry := map[string]any{"file_type": fileType, "reference": ref}
+		if format := row["photometry_format"]; format != "" {
+			if !photometryFormatFileTypes[fileType] {
+				return nil, fmt.Errorf("source_files row %q: photometry_format %q is allowed only on file_type ies, ldt or tm33, not %q", filename, format, fileType)
+			}
+			if !colorEnum("PhotometryFormat", format) {
+				return nil, fmt.Errorf("source_files row %q: photometry_format %q is not a PhotometryFormat token", filename, format)
+			}
+			if expectedType := photometryFormatFileType(format); expectedType != fileType {
+				return nil, fmt.Errorf("source_files row %q: photometry_format %q belongs to file_type %s, not %q", filename, format, expectedType, fileType)
+			}
+			entry["photometry_format"] = format
+		}
+		out = append(out, entry)
 	}
 
 	// Cutsheet dual-write: synthesize the datasheet_pdf entry when a cutsheet was

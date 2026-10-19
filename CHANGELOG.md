@@ -20,6 +20,31 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.19.0 (2026-10-18)
+
+This release changes three rules of the workbook converter. A CCT multiplier table no longer needs an LM-79 attestation, a fixed-axes record (Pattern A or C) carries the applicability block its workbook states, and the `source_files` sheet reads an optional `photometry_format` column. The schema, taxonomy, grading rows and generated index do not change; the builder remains 0.11.0 and the nine published examples remain byte-identical.
+
+### For consumers
+
+By default, newly converted records declare 1.19.0. A workbook that 1.18.0 converted converts to the same record, except that a blank `ulc_version` cell now defaults to 1.19.0, unless it carries one of these previously ignored inputs:
+
+- A Pattern A or C record that states `applicable_catalog_pattern`, `fixed_axes`, `applicable_sku_count_estimate` or `excluded_combinations` now carries that applicability data. A malformed cell, or a value schema validation rejects such as a non-string fixed axis or a negative estimate, ignored in 1.18.0, now fails conversion.
+- An IES, LDT or TM-33 source row that carries `photometry_format` now writes the format and clears the corresponding enrichment gap. A format on another file type, an unknown token, or a token belonging to a different file type, ignored in 1.18.0, is now refused. An older converter ignores the column without a message.
+
+A multiplier workbook without a single LM-79 anchor, refused before, now converts: the baseline row repeats the headline flux's own value type and provenance; the other rows are rated, scaled from the datasheet, with `extension_method: cct_multiplier` and no `base_attestation_ref`. Anchored multiplier rows are unchanged. Stored records need no re-stamp.
+
+### Validator and workbook
+
+- `source_files.csv` adds the optional `photometry_format` header after `filename__revision_date`. Its tokens come from the embedded `PhotometryFormat` taxonomy. The converter refuses `source_files row %q: photometry_format %q is allowed only on file_type ies, ldt or tm33, not %q` and `source_files row %q: photometry_format %q is not a PhotometryFormat token`, with the filename, token and, where applicable, file type filled in. The token must belong to the row's file type: `lm63_*` to `ies`, `eulumdat` to `ldt`, `tm33_*` to `tm33`. A known token on a different photometric file type is refused with `source_files row %q: photometry_format %q belongs to file_type %s, not %q`; the checks run in file-type, known-token, then token-family order.
+- Fixed-axes pins carry any applicability block their records row or `excluded_combinations` sheet states. Covered axes stay absent. The existing malformed JSON, invalid integer and missing excluded-row axes or reason refusals now apply to Patterns A and C as well.
+- A CCT multiplier table no longer refuses for lack of a single LM-79 attestation. Without an anchor, its baseline row copies the headline's `value_type` and provenance; the scaled rows are rated with `{source: datasheet_pdf, method: scaled, extension_method: cct_multiplier}` and no base reference. These unanchored scaled rows rest on the headline flux rather than a base measurement. Multiple LM-79 rows without an explicit flux reference, or an ineligible single anchor, take the same unanchored shape. An explicit `total_luminous_flux_lm__attestation_ref` or an eligible single LM-79 anchor keeps the existing generated rows.
+- Missing baseline flux, a missing `baseline_axis_value`, and a baseline absent from the multiplier table remain refusals. The missing-axis message now says `declared_by_cct has no baseline row to anchor`. Length-scaled rows still require an LM-79 anchor.
+- CSV and XLSX readers produce the same source formats, fixed-axes applicability and unanchored multiplier rows. The schema, taxonomy, 71 gating rows, goldens and generated index are unchanged.
+
+### Documentation
+
+The workbook README and converter design document describe the format column, applicability on fixed-axes records and multiplier provenance without an anchor. The package comments and CLI help describe the fixed-axes applicability block. The authoring-patterns guide distinguishes the headline baseline from anchored measurement provenance. The root README, roadmap and four PIM platform guides name the current release; the workbook README now accurately counts nine published examples.
+
 ## 1.18.0 (2026-10-17)
 
 This release adds published color states and emitter channels beside the tested baseline for tunable-white, dim-to-warm and color-mixing luminaires. The shared resolver returns the baseline first and then the other published states, preserving each state's own colorimetry, spectrum, alpha-opic metrics and flux. Builder 0.11.0 projects the two numeric white-range endpoints and applies the new endpoint grading rows.

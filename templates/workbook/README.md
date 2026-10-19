@@ -168,14 +168,14 @@ release 1.5.0 on.
 | Sheet | What it carries | When you need it |
 |---|---|---|
 | `records` | One row per record: identity, taxonomy, lifecycle (supersession pointer and discontinuation date), mechanical, warranty, electrical, photometry, colorimetry, the applicability header, and the sustainability scalars. | Always |
-| `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
+| `source_files` | IES / LDT / ULD / supplementary files. The cutsheet is injected automatically from `records.cutsheet_file`. An optional `photometry_format` cell names the format of an `ies`, `ldt` or `tm33` file with a `PhotometryFormat` token such as `lm63_2002`; on another file type, or with an unknown token, it is refused. The token must belong to the row's file type: `lm63_*` to `ies`, `eulumdat` to `ldt`, `tm33_*` to `tm33`. | An IES row for measured photometry (the converter default); rated-only records rely on the auto-injected cutsheet |
 | `attestations` | Per-record program attestations. The LM-79 row is the measurement anchor. | Measured photometry needs the LM-79 anchor even at core; standard and up otherwise as applicable |
 | `shared_attestations` | Family-wide listings (UL, IEC, RoHS). | As applicable |
 | `customization_openness` | Manufacturer-stated axes open to requests beyond the published order-code menu. | When the family publishes or states an opening |
 | `covered_axes` | One row per (axis, covered value) with rationale and derivation. | Patterns B and D |
-| `cct_multipliers` | The CCT lumen-multiplier table. | Pattern B |
+| `cct_multipliers` | The CCT lumen-multiplier table, applied to `total_luminous_flux_lm`. With an LM-79 anchor (the attestation that `total_luminous_flux_lm__attestation_ref` names, or else the LM-79 attestation a measured `total_luminous_flux_lm` would auto-link to) the generated rows cite it; without one the baseline row repeats the headline flux's provenance and the scaled rows are rated with no base attestation. | Pattern B |
 | `declared_by_length` | A verbatim per-length table with fixed provenance defaults in this release. Omit it to have the per-foot rates generate it. | Pattern D |
-| `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Patterns B and D |
+| `excluded_combinations` | SKUs orderable elsewhere but out of scope for this record. | Any pattern |
 | `alpha_opic` | Alpha-opic / melanopic per-photoreceptor efficacy with per-value provenance companions. Every filled `efficacy` requires an authored `efficacy_unit` of `W/lm` or `mW/lm`. | Full enrichment |
 | `spectral_power_distribution` | One row per wavelength sample for a uniformly spaced spectrum, with provenance for the whole spectrum. | Colorimetry; a Full requirement for white-light records from 1.15.0 |
 | `color_states` | Published white operating states other than the tested baseline, with CCT, dim level, quality metrics, melanopic DER, flux and provenance companions. | Tunable or color-mixing records |
@@ -285,8 +285,7 @@ Derived methods (`scaled`, `optical_simulation`, and `extended_photometry`) are
 refused because this payload cannot name a base attestation.
 
 The four authoring patterns are detected for you from which sheets carry rows: a
-populated `catalog_number` with no applicability sheets is a single-SKU pin
-(Pattern A or, with derived photometry provenance, C); a `cct_multipliers` table
+record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes` or `applicable_sku_count_estimate`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
 is Pattern B; a `declared_by_length` sheet or a `per_foot_linear_scaling`
 derivation on the length axis is Pattern D.
 
@@ -367,6 +366,6 @@ so author with that in mind:
 
 - `tools/validator/internal/sheet/DESIGN.md` for the full column-to-field
   contract and the resolved implementer decisions.
-- `examples/` for eight complete `.ulc` records across the four authoring patterns and the exit-sign/emergency product class.
+- `examples/` for nine published `.ulc` records across the four authoring patterns, the exit-sign/emergency product class and one tunable-white configuration.
 - The filled fixtures under `tools/validator/internal/sheet/testdata/` for a
   working bundle per pattern.

@@ -2,13 +2,14 @@ package sheet
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"strconv"
 )
 
 // assembleApplicability builds the applicability block (applicable_catalog_pattern,
 // fixed_axes, covered_axes, excluded_combinations, applicable_sku_count_estimate)
-// for the multi-value patterns B and D, joining the covered_axes,
+// for every pattern (covered axes and multiplier tables exist only on B and D), joining the covered_axes,
 // cct_multipliers, and excluded_combinations long sheets against the record. The
 // applicable_catalog_pattern, fixed_axes (JSON-in-cell), and
 // applicable_sku_count_estimate come from the master row.
@@ -259,27 +260,44 @@ func assembleExcludedCombinations(wb Workbook, id string) ([]any, error) {
 }
 
 // generateDeclaredByCCT generates photometry.declared_by_cct[] from the CCT
-// multiplier table and the measured baseline total luminous flux. For each CCT,
-// the lumens value is round(multiplier * baseline). The baseline CCT row (the one
-// whose value equals the derivation's baseline_axis_value) carries the measured
-// provenance and its attestation_ref; every other CCT carries scaled provenance
-// with method=scaled, extension_method=cct_multiplier, and base_attestation_ref
-// pointing at the same LM-79 attestation. The shape mirrors the Selux example.
+// multiplier table and the baseline total luminous flux. For each non-baseline
+// CCT the lumens value is round(multiplier * baseline). With baseLM79 set (the record's LM-79
+// anchor), the baseline CCT row carries measured provenance and that
+// attestation_ref, and every other CCT is scaled with base_attestation_ref naming
+// it. With baseLM79 empty, the baseline row repeats headline's value_type and a
+// copy of its provenance, and every other CCT is rated, scaled, cct_multiplier,
+// with no base_attestation_ref.
 //
 // multOrder preserves the cct_multipliers file order so the generated array is
-// deterministic. baseLM79 is the record's single LM-79 attestation id (the
-// measured anchor). baselineCCT names the tested baseline CCT.
-func generateDeclaredByCCT(multipliers map[string]float64, multOrder []string, baseline float64, baselineCCT, baseLM79 string) []any {
+// deterministic. baseLM79 is the record's LM-79 anchor (the attestation
+// total_luminous_flux_lm__attestation_ref names, or else the LM-79 attestation a
+// measured total_luminous_flux_lm would auto-link to), or empty; headline is
+// photometry.total_luminous_flux_lm, read only when baseLM79 is empty.
+// baselineCCT names the baseline CCT.
+func generateDeclaredByCCT(multipliers map[string]float64, multOrder []string, baseline float64, baselineCCT, baseLM79 string, headline map[string]any) []any {
 	out := []any{}
 	for _, cct := range multOrder {
 		mult := multipliers[cct]
 		lumens := math.Round(mult * baseline)
 		entry := map[string]any{"cct": cct}
-		if cct == baselineCCT {
-			// The baseline CCT row carries the actual measured flux, not a
+		if baseLM79 == "" {
+			if cct == baselineCCT {
+				provenance, _ := headline["provenance"].(map[string]any)
+				entry["lumens"] = map[string]any{
+					"value": numberLeaf(baseline), "unit": "lm",
+					"value_type": headline["value_type"], "provenance": maps.Clone(provenance),
+				}
+			} else {
+				entry["lumens"] = map[string]any{
+					"value": numberLeaf(lumens), "unit": "lm", "value_type": "rated",
+					"provenance": map[string]any{"source": "datasheet_pdf", "method": "scaled", "extension_method": "cct_multiplier"},
+				}
+			}
+		} else if cct == baselineCCT {
+			// The baseline CCT row carries the headline flux itself, not a
 			// multiplier-scaled value: the baseline multiplier should be 1.0, but
-			// trusting the measured baseline keeps a mis-authored non-1.0 baseline
-			// multiplier from turning a measured value into a derived one.
+			// trusting the headline keeps a mis-authored non-1.0 baseline multiplier
+			// from rescaling it.
 			entry["lumens"] = map[string]any{
 				"value":      numberLeaf(baseline),
 				"unit":       "lm",
@@ -317,7 +335,7 @@ func firstNonBlank(dst *string, v string) {
 	}
 }
 
-// baselineFlux reads the measured baseline total luminous flux off the assembled
+// baselineFlux reads the baseline total luminous flux off the assembled
 // record (photometry.total_luminous_flux_lm.value), the value the CCT multiplier
 // table scales. It accepts both int64 and float64 (parseNumber emits int64 for
 // integral cells) and reports false when absent.

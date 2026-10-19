@@ -96,6 +96,9 @@ func TestConvertPatternA(t *testing.T) {
 	}
 
 	// Spot-check load-bearing converter outputs.
+	if _, present := res.Record["applicability"]; present {
+		t.Fatal("plain Pattern A fixture must omit applicability")
+	}
 	assertCutsheetDualWrite(t, res.Record)
 	assertDualUnit(t, res.Record)
 	assertMeasuredAttestationRef(t, res.Record)

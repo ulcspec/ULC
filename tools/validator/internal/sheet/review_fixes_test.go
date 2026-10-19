@@ -249,7 +249,7 @@ func TestCheckRelatedSheetIDs(t *testing.T) {
 // multiplier-scaled value), even when the authored baseline multiplier is not 1.0.
 func TestGenerateDeclaredByCCTBaselineMeasured(t *testing.T) {
 	mult := map[string]float64{"3000": 0.95, "4000": 1.05}
-	out := generateDeclaredByCCT(mult, []string{"3000", "4000"}, 4000, "3000", "L1")
+	out := generateDeclaredByCCT(mult, []string{"3000", "4000"}, 4000, "3000", "L1", nil)
 	for _, e := range out {
 		row := e.(map[string]any)
 		if row["cct"] != "3000" {

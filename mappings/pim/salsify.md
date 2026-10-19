@@ -154,7 +154,7 @@ For tunable or color-mixing products, extend this tested-baseline skeleton with 
 # Illustrative pseudocode, not a working implementation.
 def emit_ulc_from_salsify(product, scenario):
     record = {
-        "ulc_version": "1.18.0",
+        "ulc_version": "1.19.0",
         "record_id": f"{product.brand_slug}-{product.sku_slug}-{scenario.slug}",
         "record_status": "active",
         "record_status_as_of": date.today().isoformat(),  # emit/edit date; drives record-relative expiry
