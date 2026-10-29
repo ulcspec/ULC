@@ -265,6 +265,11 @@ even if either of those two columns is filled. For a case-by-case claim, put
 `verification_contact_reference` beside
 `verification_type=requires_manufacturer_confirmation`.
 
+On both attestation sheets, `origin_country` is an uppercase ISO 3166-1 alpha-2
+code for the country an origin claim names. A blank cell writes no country.
+`made_in_usa` refuses a country other than `US`; `made_in_canada` refuses a
+country other than `CA`.
+
 ## Domestic-content columns
 
 On `attestations` or `shared_attestations`, fill

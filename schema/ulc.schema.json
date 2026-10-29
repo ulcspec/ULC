@@ -2089,6 +2089,11 @@
           "description": "Named operator of the program, for programs run by more than one operator (for example the several EPD program operators). Optional descriptive data; it never affects the computed achievement state.",
           "type": "string"
         },
+        "origin_country": {
+          "description": "ISO 3166-1 alpha-2 code, uppercase, of the country an origin claim names: the declared origin on country_of_origin, the country of manufacture or substantial transformation on taa, US on made_in_usa and CA on made_in_canada. It inherits the attestation's status, evidence, applicability and expiry. The procurement programs (baa, baba, buy_america, american_iron_and_steel) are US by definition and need none.",
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
         "domestic_content": {
           "description": "Optional cost-share evidence behind a domestic-content attestation, such as baa, baba, american_iron_and_steel, buy_america, or made_in_usa. The payload inherits the attestation's status, evidence, applicability, and expiry. It does not itself determine whether the program's threshold is met.",
           "$ref": "#/$defs/DomesticContentPayload"
@@ -2109,7 +2114,17 @@
           "then": { "required": ["embodied_carbon_scope", "embodied_carbon_functional_unit"] }
         }
       },
-      "required": ["program", "value_type"]
+      "required": ["program", "value_type"],
+      "allOf": [
+        {
+          "if": { "properties": { "program": { "const": "made_in_usa" } }, "required": ["program", "origin_country"] },
+          "then": { "properties": { "origin_country": { "const": "US" } } }
+        },
+        {
+          "if": { "properties": { "program": { "const": "made_in_canada" } }, "required": ["program", "origin_country"] },
+          "then": { "properties": { "origin_country": { "const": "CA" } } }
+        }
+      ]
     },
 
     "DomesticContentPayload": {

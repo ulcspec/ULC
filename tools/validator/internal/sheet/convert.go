@@ -924,6 +924,7 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	copyIf(att, row, "test_laboratory", "test_laboratory")
 	copyIf(att, row, "test_report_id", "test_report_id")
 	copyIf(att, row, "standard_revision", "standard_revision")
+	copyIf(att, row, "origin_country", "origin_country")
 
 	if mq := row["measured_quantities"]; mq != "" {
 		att["measured_quantities"] = parseList(mq)
@@ -986,6 +987,7 @@ func buildSharedAttestation(row Row) (map[string]any, error) {
 	copyIf(att, row, "listing_number", "listing_number")
 	copyIf(att, row, "test_laboratory", "test_laboratory")
 	copyIf(att, row, "standard_revision", "standard_revision")
+	copyIf(att, row, "origin_country", "origin_country")
 	vtype := row["verification_type"]
 	if vtype == "" {
 		vtype = "unconditional"
