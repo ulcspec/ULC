@@ -42,7 +42,7 @@ func TestStateLaddersPerTheme(t *testing.T) {
 
 // T1 domestic_content UNIT SEMANTICS (pins D2 and the token routing the corpus cannot fully
 // supply: baba and american_iron_and_steel have zero example coverage, so these are the only
-// pins that they route into the theme at all). All three mapped tokens land in domestic_content;
+// pins that they route into the theme at all). All six mapped tokens land in domestic_content;
 // the two deliberately-excluded origin tokens do not; documented needs attached, unexpired
 // evidence with no accidental state cap; and a multi-program record aggregates a sorted slice.
 func TestDomesticContentSemantics(t *testing.T) {
@@ -64,7 +64,7 @@ func TestDomesticContentSemantics(t *testing.T) {
 	}
 
 	// Every mapped token routes to domestic_content claimed on its own.
-	for _, prog := range []string{"baa", "baba", "american_iron_and_steel"} {
+	for _, prog := range []string{"baa", "baba", "american_iron_and_steel", "buy_america", "made_in_usa", "made_in_canada"} {
 		if got := Compute(rec(att(prog, nil))).Themes[ThemeDomesticContent].State; got != StateClaimed {
 			t.Errorf("%s alone: domestic_content=%s want claimed", prog, got)
 		}
@@ -496,5 +496,18 @@ func TestDeterminism(t *testing.T) {
 	}
 	if !sort.StringsAreSorted(mh.SourceAttestationIDs) {
 		t.Errorf("source_attestation_ids not sorted: %v", mh.SourceAttestationIDs)
+	}
+}
+
+func TestLineCardProgramsRouteToThemes(t *testing.T) {
+	got := Compute(rec(att("buy_america", nil), att("fwc_wildlife_lighting", nil), att("made_in_usa", nil), att("made_in_canada", nil)))
+	for theme, want := range map[string][]string{
+		ThemeDarkSky:         {"fwc_wildlife_lighting"},
+		ThemeDomesticContent: {"buy_america", "made_in_canada", "made_in_usa"},
+	} {
+		actual := got.Themes[theme]
+		if actual.State != StateClaimed || strings.Join(actual.Programs, ",") != strings.Join(want, ",") {
+			t.Errorf("%s = %s %v, want claimed %v", theme, actual.State, actual.Programs, want)
+		}
 	}
 }

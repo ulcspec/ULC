@@ -121,7 +121,7 @@
     "attestation_programs": [
       "ul_924"
     ],
-    "builder_version": "0.11.0",
+    "builder_version": "0.12.0",
     "catalog_model": "ES6",
     "catalog_number": "ES61SRC",
     "conformance_level": "standard",

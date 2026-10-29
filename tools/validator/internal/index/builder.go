@@ -67,7 +67,10 @@ import (
 // 0.11.0: project the published white range through the shared state resolver.
 // Tunable-white and dim-to-warm grading also reads the range and endpoint metrics.
 // Existing examples keep their grades and re-stamp only this marker.
-const BuilderVersion = "0.11.0"
+// 0.12.0: the dark_sky theme maps fwc_wildlife_lighting and the domestic_content
+// theme maps buy_america, made_in_usa and made_in_canada. Existing examples keep
+// their grades and achievement states and re-stamp only this marker.
+const BuilderVersion = "0.12.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard

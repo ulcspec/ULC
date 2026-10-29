@@ -2075,7 +2075,7 @@
           }
         },
         "verification": {
-          "description": "For case-by-case attestations (BAA, BABA, and similar), declares that manufacturer confirmation is required before a consumer can propagate the claim downstream.",
+          "description": "For case-by-case attestations (BAA, BABA and Buy America, confirmed per project; the Made in USA and Made in Canada marking claims, confirmed per claim; and similar), declares that manufacturer confirmation is required before a consumer can propagate the claim downstream.",
           "type": "object",
           "properties": {
             "type": { "$ref": "taxonomy.schema.json#/$defs/AttestationVerificationType" },
@@ -2090,7 +2090,7 @@
           "type": "string"
         },
         "domestic_content": {
-          "description": "Optional cost-share evidence behind a domestic-content attestation, such as baa, baba, or american_iron_and_steel. The payload inherits the attestation's status, evidence, applicability, and expiry. It does not itself determine whether the program's threshold is met.",
+          "description": "Optional cost-share evidence behind a domestic-content attestation, such as baa, baba, american_iron_and_steel, buy_america, or made_in_usa. The payload inherits the attestation's status, evidence, applicability, and expiry. It does not itself determine whether the program's threshold is met.",
           "$ref": "#/$defs/DomesticContentPayload"
         },
         "sustainability_metric": {
@@ -2114,7 +2114,7 @@
 
     "DomesticContentPayload": {
       "title": "Domestic content cost-share payload",
-      "description": "Cost shares and the threshold used for a domestic-content claim. US and foreign cost shares should sum to 100 percent within the source's rounding precision; the schema constrains each share individually but does not check their sum. The threshold is the bar against which the attestation was judged, and threshold_effective_date names when that bar took effect. Meaningful for baa, baba, and american_iron_and_steel attestations; program applicability is not restricted by this schema.",
+      "description": "Cost shares and the threshold used for a domestic-content claim. US and foreign cost shares should sum to 100 percent within the source's rounding precision; the schema constrains each share individually but does not check their sum. The threshold is the bar against which the attestation was judged, and threshold_effective_date names when that bar took effect. Meaningful for baa, baba, american_iron_and_steel, buy_america and made_in_usa attestations; its shares are US shares, so it is not shaped for a made_in_canada claim; program applicability is not restricted by this schema.",
       "type": "object",
       "properties": {
         "us_cost_share_percent": { "description": "US share of the declared cost basis, from 0 to 100 percent.", "type": "number", "minimum": 0, "maximum": 100 },

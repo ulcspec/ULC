@@ -1,6 +1,13 @@
 package achievements
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+)
 
 // namedThemeSets is the seven theme sets, keyed for reporting.
 func namedThemeSets() map[string]map[string]bool {
@@ -167,4 +174,76 @@ func TestThemeSetKeysIdentical(t *testing.T) {
 	// themeOrder is the pivot: identity with both maps forces all three key sets identical.
 	equalKeys(orderKeys, setKeys, "themeOrder", "themeSets")
 	equalKeys(orderKeys, namedKeys, "themeOrder", "namedThemeSets")
+}
+
+// The glossary and its theme map are a second public spelling of the enum and sets.
+func TestGlossaryMatchesProgramEnum(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join(repoRoot(t), "docs", "compliance-attestation.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sections := strings.SplitN(string(data), "## Achievement themes", 2)
+	if len(sections) != 2 {
+		t.Fatal("missing achievement themes heading")
+	}
+	enum := loadTaxonomyEnum(t, "AttestationProgram")
+	counts := map[string]int{}
+	token := regexp.MustCompile("`([a-z][a-z0-9_]*)`")
+	for _, line := range strings.Split(sections[0], "\n") {
+		if !strings.HasPrefix(line, "| `") {
+			continue
+		}
+		cells := strings.Split(line, "|")
+		match := token.FindStringSubmatch(cells[1])
+		if len(match) != 2 {
+			t.Fatalf("invalid glossary row %q", line)
+		}
+		counts[match[1]]++
+		if !enum[match[1]] {
+			t.Errorf("glossary has non-token %q", match[1])
+		}
+	}
+	for name := range enum {
+		if counts[name] != 1 {
+			t.Errorf("%s has %d glossary rows", name, counts[name])
+		}
+	}
+	count := regexp.MustCompile(`The ([0-9]+) tokens`).FindStringSubmatch(sections[0])
+	if len(count) != 2 || count[1] != strconv.Itoa(len(enum)) {
+		t.Errorf("preamble count %v, want %d", count, len(enum))
+	}
+	seen := map[string]int{}
+	for _, line := range strings.Split(sections[1], "\n") {
+		if !strings.HasPrefix(line, "| `") {
+			continue
+		}
+		cells := strings.Split(line, "|")
+		key := token.FindStringSubmatch(cells[1])
+		if len(key) != 2 {
+			continue
+		}
+		set, ok := themeSets[key[1]]
+		if !ok {
+			t.Errorf("unknown theme %q", key[1])
+			continue
+		}
+		seen[key[1]]++
+		got := map[string]int{}
+		for _, match := range token.FindAllStringSubmatch(cells[3], -1) {
+			got[match[1]]++
+			if !set[match[1]] {
+				t.Errorf("%s lists unexpected %s", key[1], match[1])
+			}
+		}
+		for name := range set {
+			if got[name] != 1 {
+				t.Errorf("%s lists %s %d times", key[1], name, got[name])
+			}
+		}
+	}
+	for name := range themeSets {
+		if seen[name] != 1 {
+			t.Errorf("theme %s has %d map rows", name, seen[name])
+		}
+	}
 }

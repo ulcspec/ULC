@@ -71,10 +71,11 @@ var energyPrograms = map[string]bool{
 	"nrcan_ee_regulations":      true,
 }
 
-// darkSkyPrograms: light-pollution qualifications.
+// darkSkyPrograms: light-pollution and wildlife-lighting qualifications.
 var darkSkyPrograms = map[string]bool{
-	"darksky_approved": true,
-	"dlc_luna":         true,
+	"darksky_approved":      true,
+	"dlc_luna":              true,
+	"fwc_wildlife_lighting": true,
 }
 
 // emergencyPrograms: emergency-lighting product-conformity schemes. icel is the ICEL
@@ -87,14 +88,20 @@ var emergencyPrograms = map[string]bool{
 	"icel":    true,
 }
 
-// domesticContentPrograms: US domestic-content procurement eligibility (BAA, BABA, and the
-// American Iron and Steel requirement). taa and country_of_origin are deliberately NOT here
-// (see the unthemed residue): TAA can be satisfied by non-US manufacture, and country of
-// origin is a neutral provenance fact, so neither is a domestic-content claim.
+// domesticContentPrograms: domestic-content procurement eligibility (BAA, BABA,
+// American Iron and Steel, Buy America) and origin marking claims under a published
+// legal standard (Made in USA, 16 CFR part 323; Made in Canada, Competition Bureau
+// guidance). taa and country_of_origin are deliberately NOT here (see the unthemed
+// residue): TAA is satisfied by substantial transformation in any designated country,
+// so a TAA claim is not a content claim, and country of origin names a country under
+// no content standard.
 var domesticContentPrograms = map[string]bool{
 	"american_iron_and_steel": true,
 	"baa":                     true,
 	"baba":                    true,
+	"buy_america":             true,
+	"made_in_canada":          true,
+	"made_in_usa":             true,
 }
 
 // restrictedSubstancePrograms feeds index.restricted_substances_declared, the sibling
@@ -188,7 +195,10 @@ var unthemedPrograms = map[string]bool{
 	// Mandatory or discontinued disclosure labels, not qualifications.
 	"doe_led_lighting_facts": true,
 	"ftc_lighting_facts":     true,
-	// Deliberately unthemed: country_of_origin is a neutral provenance fact; taa (Trade Agreements Act) can be satisfied by non-US manufacture, so neither is a domestic-content claim.
+	// Deliberately unthemed: country_of_origin names a country under no content standard;
+	// taa (Trade Agreements Act) is satisfied by substantial transformation in any
+	// designated country. An attestation on either token may carry origin_country
+	// to name the country without making a content claim.
 	"country_of_origin": true,
 	"taa":               true,
 	// Controls (unscheduled future theme).
