@@ -2112,7 +2112,7 @@
           "type": "string"
         },
         "origin_country": {
-          "description": "ISO 3166-1 alpha-2 code, uppercase, of the country an origin claim names: the declared origin on country_of_origin, the country of manufacture or substantial transformation on taa, US on made_in_usa and CA on made_in_canada. It inherits the attestation's status, evidence, applicability and expiry. The procurement programs (baa, baba, buy_america, american_iron_and_steel) are US by definition and need none.",
+          "description": "ISO 3166-1 alpha-2 code, uppercase, of the country an origin claim names: the declared origin on country_of_origin, the country of manufacture or substantial transformation on taa, US on made_in_usa and CA on made_in_canada. It inherits the attestation's status, evidence, applicability and expiry. The procurement programs (baa, baba, buy_america, american_iron_and_steel) are US by definition and need none. The schema validates uppercase two-letter syntax, not membership in the current ISO country-code assignment list.",
           "type": "string",
           "pattern": "^[A-Z]{2}$"
         },
