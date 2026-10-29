@@ -139,6 +139,16 @@ Keep each baseline, state and channel spectrum in its own group. On the spectrum
 
 After assembling the deep blocks, run the index/validate pipeline above. The builder resolves each state's nominal CCT first, then its measured value; the baseline first uses `configuration.tested_conditions.nominal_cct_at_test`, then its top-level colorimetry. It emits both range fields only when both endpoints resolve. Tunable-white and dim-to-warm records need both endpoints for Standard and CRI Ra plus melanopic DER at both endpoints for Full. An endpoint represented by the baseline reads those metrics from the top-level blocks. Channels and endpoint spectra are enrichment. The Full roadmap's `/color_tuning/states` row represents the endpoint-metric requirement, so inspect both endpoints and the baseline's measurement blocks when that gap appears. See [workbook authoring](../../templates/workbook/README.md#color-state-sheet) and [color-state methodology](../../docs/methodology.md#color-states).
 
+### 8. The 1.20.0 line-card fields
+
+Map these optional fields at the scope shown below; they do not add a completeness gate. `origin_country` carries two uppercase letters on its attestation and is not indexed. `power_input_kind` accepts `ac_mains`, `dc_low_voltage`, `poe`, or `solar_pv` and projects to `index.power_input_kind`. `field_selectable_axes` accepts `cct`, `output`, and `optic`; the builder deduplicates and sorts the axes into `index.field_selectable_axes`.
+
+| PIM data | Authoritative ULC field | Workbook authoring equivalent |
+| --- | --- | --- |
+| `origin_country` | `attestations[].origin_country` or `product_family.shared_attestations[].origin_country` | `attestations.origin_country` or `shared_attestations.origin_country` |
+| `power_input_kind` | `electrical.power_input_kind` | `records.power_input_kind` |
+| `field_selectable_axes` | `applicability.field_selectable_axes` | `records.field_selectable_axes` |
+
 ## Out of scope
 
 These guides describe the PIM-to-ULC transformation. They do not cover:

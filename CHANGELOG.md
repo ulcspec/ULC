@@ -91,8 +91,8 @@ fixtures exercise the additions; no published example gains an unsupported claim
 
 ### Documentation
 
-The glossary, methodology, authoring-patterns guide, schema descriptions, and
-workbook README describe the new claims and fields, confirmation guidance, and
+The glossary, methodology, authoring-patterns guide, schema descriptions, shared
+PIM mapping guide, and workbook README describe the new claims and fields, confirmation guidance, and
 field-selector semantics. The root README, roadmap active-version section, and
 four PIM guides advance to 1.20.0. Parked roadmap candidates remain unchanged.
 
