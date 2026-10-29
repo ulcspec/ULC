@@ -136,7 +136,7 @@
 
     "EnvironmentRating": {
       "title": "Environmental suitability",
-      "description": "Conditions under which the luminaire is rated for safe and compliant operation. Multiple values may apply. These ratings are attestations by the manufacturer and should be corroborated by the corresponding IP and IK ratings and applicable compliance records.",
+      "description": "Conditions under which the luminaire is rated for safe and compliant operation. `product_family.environment_rating` holds one value. These ratings are attestations by the manufacturer and should be corroborated by the corresponding IP and IK ratings and applicable compliance records. `ligature_resistant` marks a luminaire built so that a cord or ligature cannot be anchored to it, for behavioral-health settings; it is a sibling of `vandal_resistant` and neither implies the other.",
       "type": "string",
       "enum": [
         "dry",
@@ -152,6 +152,7 @@
         "cleanroom",
         "food_safe",
         "vandal_resistant",
+        "ligature_resistant",
         "tunnel_duty",
         "high_vibration",
         "bridge_rated"
