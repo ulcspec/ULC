@@ -487,6 +487,9 @@ var descriptiveAllowlist = map[string]bool{
 	// Sales-market vocabulary is predicate input, not a graded field with its
 	// own roadmap row. It can still change which market-specific rows apply.
 	"Market": true,
+	// --- v1.20.0 line-card class ---
+	// Power input and field-selectable axes describe the product for search; tracked, not graded.
+	"PowerInputKind": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from

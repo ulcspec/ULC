@@ -327,6 +327,14 @@ the product supports, and `input_voltage_at_test` for the supply class or
 published range used during the test. Those two columns are open strings: the
 values shown in the schema are examples, not a closed vocabulary.
 
+## Power-input column
+
+Use `power_input_kind` on `records` for the normal supply of the tested
+configuration: `ac_mains`, `dc_low_voltage`, `poe`, or `solar_pv`. The value
+lands at `electrical.power_input_kind` and is projected into the index. A blank
+cell leaves it absent. Emergency battery operation belongs in the emergency
+block; `battery` is refused. A configuration on another supply is another record.
+
 ## Bound columns
 
 Use `power_factor` with `power_factor_bound_operator` for a declared power

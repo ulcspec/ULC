@@ -2,6 +2,7 @@ package sheet
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ulcspec/ULC/tools/validator/internal/completeness"
@@ -42,4 +43,20 @@ func TestLigatureResistantConvertsAtTheSameGrade(t *testing.T) {
 	}
 	wantSchemaValid(t, record)
 	t.Log("converted product_family.environment_rating=ligature_resistant index.environment_rating=ligature_resistant conformance_level=core")
+}
+
+func TestPowerInputKindColumn(t *testing.T) {
+	record := convertOneRecord(t, bundleWithColumns(t, map[string]string{"power_input_kind": "poe"}), Options{}).Record
+	wantString(t, record, "electrical.power_input_kind", "poe")
+	wantSchemaValid(t, record)
+	wantString(t, record, "index.power_input_kind", "poe")
+	t.Log("converted electrical.power_input_kind=poe index.power_input_kind=poe")
+	got := domesticSchemaErrors(t, bundleWithColumns(t, map[string]string{"power_input_kind": "battery"}))
+	for _, path := range []string{"/electrical/power_input_kind", "/index/power_input_kind"} {
+		want := "at '" + path + "': value must be one of 'ac_mains', 'dc_low_voltage', 'poe', 'solar_pv'"
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %s", want, got)
+		}
+	}
+	t.Log(got)
 }

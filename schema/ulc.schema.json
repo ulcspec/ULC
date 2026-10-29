@@ -286,6 +286,10 @@
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/DimmingProtocol" }
         },
+        "power_input_kind": {
+          "description": "Generated from electrical.power_input_kind.",
+          "$ref": "taxonomy.schema.json#/$defs/PowerInputKind"
+        },
         "ip_rating": { "type": "string", "pattern": "^IP[0-9X]{2}$" },
         "ik_rating": { "type": "string", "pattern": "^IK[0-9]{2}$" },
         "bug_rating": {
@@ -1141,6 +1145,10 @@
         "led_module_power_w": {
           "description": "Optional LED-module-only input power (typically smaller than luminaire input due to driver losses). Useful when the cutsheet distinguishes module from luminaire.",
           "$ref": "#/$defs/ProvenancedNumber"
+        },
+        "power_input_kind": {
+          "description": "The supply powering this tested configuration in normal operation.",
+          "$ref": "taxonomy.schema.json#/$defs/PowerInputKind"
         }
       },
       "dependentRequired": {

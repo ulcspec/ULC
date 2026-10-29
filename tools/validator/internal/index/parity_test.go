@@ -123,8 +123,9 @@ func maximalFixture() map[string]any {
 			"tested_conditions":       map[string]any{"nominal_cct_at_test": "3000"},
 		},
 		"electrical": map[string]any{
-			"input_power_w":   map[string]any{"value": int64(17)},
-			"driver_protocol": "0-10v",
+			"power_input_kind": "poe",
+			"input_power_w":    map[string]any{"value": int64(17)},
+			"driver_protocol":  "0-10v",
 		},
 		"photometry": map[string]any{
 			"total_luminous_flux_lm":      map[string]any{"value": int64(1301)},

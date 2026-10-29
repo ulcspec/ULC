@@ -70,6 +70,7 @@ import (
 // 0.12.0: the dark_sky theme maps fwc_wildlife_lighting and the domestic_content
 // theme maps buy_america, made_in_usa and made_in_canada. Existing examples keep
 // their grades and achievement states and re-stamp only this marker.
+// It projects electrical.power_input_kind.
 const BuilderVersion = "0.12.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
@@ -214,6 +215,9 @@ func Build(record Record) Index {
 	}
 	if v := getString(elec, "driver_protocol"); v != "" {
 		idx["dimming_protocols"] = []any{v}
+	}
+	if v := getString(elec, "power_input_kind"); v != "" {
+		idx["power_input_kind"] = v
 	}
 
 	// Ingress and impact ratings.
