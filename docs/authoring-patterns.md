@@ -174,9 +174,29 @@ The sixteen local color fidelity values of a TM-30 report, one entry per hue bin
 
 ### `attestations[].domestic_content`
 
-A domestic-content attestation may carry its US and foreign cost shares, the percentage threshold used to judge the claim, an optional effective date for that threshold, a `basis` (`manufacturing_cost`, `component_cost`, or `other`), and provenance. Author the US share, threshold, and basis together. When both shares are given, they should sum to 100 percent within source rounding. The payload is meaningful on `baa`, `baba`, and `american_iron_and_steel` claims; it records their cost evidence and does not decide the claim's status.
+A domestic-content attestation may carry its US and foreign cost shares, the percentage threshold used to judge the claim, an optional effective date for that threshold, a `basis` (`manufacturing_cost`, `component_cost`, or `other`), and provenance. Author the US share, threshold, and basis together. When both shares are given, they should sum to 100 percent within source rounding. The payload is meaningful on `baa`, `baba`, `american_iron_and_steel`, `buy_america` and `made_in_usa` attestations; its shares are US shares, so it is not shaped for a `made_in_canada` claim. Program applicability is not restricted by the schema. It records cost evidence and does not decide the claim's status.
 
 Author the payload with the workbook's `domestic_content_*` columns on `attestations` or `shared_attestations`; see `templates/workbook/README.md`.
+
+### `attestations[].origin_country`
+
+Use an uppercase ISO 3166-1 alpha-2 code for the country an origin claim names:
+the declared origin on `country_of_origin`, manufacture or substantial
+transformation on `taa`, `US` on `made_in_usa`, and `CA` on `made_in_canada`.
+It inherits the attestation's status, evidence, applicability, and expiry.
+The field is optional; procurement programs (`baa`, `baba`, `buy_america`,
+`american_iron_and_steel`) are US by definition and need none. The schema refuses
+a country other than `US` on `made_in_usa` or `CA` on `made_in_canada`.
+Author `origin_country` on either attestation sheet; a blank cell writes no key.
+The index does not project this attestation qualifier.
+
+### `electrical.power_input_kind`
+
+Name the tested configuration's normal supply with `ac_mains`, `dc_low_voltage`,
+`poe`, or `solar_pv`, using the workbook's `power_input_kind` records column.
+The index projects the value for filtering; it is tracked and never graded.
+A different supply configuration is another record. Emergency battery operation
+belongs in the emergency block.
 
 ### `lumen_maintenance_luminaire.additional_rated_claims`
 
@@ -207,6 +227,7 @@ A top-level block declaring the range of orderable SKUs the record's measurement
 - `covered_axes`: segments where several values share this record's photometry, each with a rationale and an optional derivation rule (CCT multiplier table, per-foot linear scaling, regulated-driver voltage independence, and so on)
 - `excluded_combinations`: combinations that are orderable for other records but not this one (for example "Max Output not available with 2200K, 2700K, 3500K, 5000K")
 - `applicable_sku_count_estimate`: informational
+- `field_selectable_axes`: installer-selectable axes on the covered SKUs (`cct`, `output`, `optic`), authored as a semicolon-separated list in the workbook. With `cct` listed, the measurement blocks describe the setting at test (`configuration.tested_conditions.nominal_cct_at_test`); `photometry.declared_by_cct` rows and any CCT entry in `covered_axes` describe other switch settings of the same SKUs rather than sibling order codes. Keep `color_tunability=static_white` because a selector sets one CCT at installation rather than a control-driven range. The `cct_range_*` projection is unchanged. The index sorts and deduplicates the axes for filtering; this field never gates a grade.
 
 ### `ordering`
 
@@ -253,7 +274,7 @@ An **option-conditional attestation** is true when a specific order-code option 
 }
 ```
 
-A **case-by-case attestation** is one the manufacturer supports but requires per-project verification before a consumer may represent the SKU as compliant:
+A **case-by-case attestation** is one the manufacturer supports but must confirm before a consumer may represent the SKU as compliant: per project for BAA, BABA and Buy America, per claim for the Made in USA and Made in Canada marking claims:
 
 ```json
 {
