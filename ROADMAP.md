@@ -27,7 +27,7 @@ for the next major. Pre-1.0 releases generally aimed for additive changes;
 compatibility-tightening changes occurred only when documented in the changelog
 (as with the v0.3.0 `cri_tier` enum tightening).
 
-## Active version: v1.19.x
+## Active version: v1.20.x
 
 The current line, and ULC's first formal backward-compatibility commitment.
 v1.0.0 adds **Product Achievements**, a second computed axis alongside data
@@ -167,6 +167,8 @@ v1.17.0 gives the TM-30 hue-bin local fidelity values a workbook authoring path:
 v1.18.0 adds a referenced tested baseline, published luminaire color states and emitter channels. One resolver owns state reading and CCT selection; builder 0.11.0 projects both white-range endpoints. Tunable-white and dim-to-warm records need both endpoints for Standard and CRI Ra plus melanopic DER at each end for Full. Channels and endpoint spectra are enrichment. The workbook adds two sheets and state/channel spectrum routing. The eight existing examples keep their grades; a ninth public tunable-white example demonstrates the range, endpoint spectra and reported color-quality values. Scope contract 2.0.0 remains current.
 
 v1.19.0 changes three workbook converter rules: a CCT multiplier table converts without an LM-79 attestation, a fixed-axes record carries the applicability block its workbook states, and source rows carry a photometry format. The schema, taxonomy, grades, generated index and nine published examples do not change. Builder version 0.11.0 remains current.
+
+v1.20.0 adds Buy America, FWC wildlife-lighting certification, Made in USA and Made in Canada attestations, an optional origin country on attestations, ligature resistance, power-input kind and field-selectable axes. Builder 0.12.0 routes the programs to the existing dark_sky and domestic_content themes and projects power-input kind and the sorted selectable axes. These are tracked search data; no grade, gating row, golden or required set moves. The nine examples keep their grades and achievement states and re-stamp only the builder marker. Newly converted records default to 1.20.0.
 
 The 1.0 milestone is defined by the two computed axes and the compatibility
 commitment, justified by the additive-only release history and a validator

@@ -20,6 +20,82 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.20.0 (2026-10-29)
+
+This additive release adds eight catalog and search capabilities: Buy America,
+FWC wildlife-lighting certification, Made in USA, Made in Canada, attestation
+origin country, ligature resistance, electrical power-input kind, and
+field-selectable axes. No grade, rubric row, gating table, golden, or required
+set changes. Builder 0.12.0 routes the four new programs and projects the two
+new search fields. The nine published examples re-stamp only `builder_version`.
+
+### For consumers
+
+By default, newly converted records declare 1.20.0. Rebuild stored indexes to re-stamp builder
+0.12.0. A record carrying a new program gains that program's theme state:
+`fwc_wildlife_lighting` routes to `dark_sky`; `buy_america`, `made_in_usa`, and
+`made_in_canada` route to `domestic_content`. A claimed `domestic_content` theme
+no longer implies a US program. Read
+`index.achievements.themes.domestic_content.programs` to identify the claims.
+A documented theme still means evidence is attached, not verified eligibility.
+Manufacturer confirmation remains required guidance, per project for the
+procurement programs and per claim for the two marking claims.
+
+A 1.19.0 engine accepts the three new fields unread, refuses the five new tokens
+(the four programs and `ligature_resistant`), and reports index drift on a
+0.12.0 stored index. A 1.19.0 converter silently drops the three new columns:
+`origin_country` on the attestation sheets and `power_input_kind` and
+`field_selectable_axes` on records. Use a 1.20.0 converter or newer to preserve
+them. Existing records need no new claim or field.
+
+### Schema
+
+`AttestationProgram` grows from 146 to 150 tokens. Buy America refers to FHWA
+23 CFR 635.410 and FTA 49 CFR 661; the marking claims name the FTC Made in USA
+Labeling Rule (16 CFR part 323) and Competition Bureau Canada guidance. The
+`domestic_content` theme covers procurement eligibility and origin marking
+claims; `taa` and `country_of_origin` remain unthemed.
+
+Optional `attestations[].origin_country` and its shared-attestation counterpart
+use uppercase ISO 3166-1 alpha-2 codes. `made_in_usa` permits only `US` when a
+country is given; `made_in_canada` permits only `CA`. The country inherits its
+attestation's status, evidence, applicability, and expiry and is not indexed.
+The US-shaped domestic-content payload describes US shares and is not shaped
+for a Made in Canada claim.
+
+`EnvironmentRating` adds `ligature_resistant`, a scalar sibling of
+`vandal_resistant`; neither implies the other. `PowerInputKind` adds `ac_mains`,
+`dc_low_voltage`, `poe`, and `solar_pv` at `electrical.power_input_kind` and in
+the index. `FieldSelectableAxis` adds `cct`, `output`, and `optic` at
+`applicability.field_selectable_axes`; the index sorts and deduplicates them.
+A CCT selector leaves `color_tunability=static_white`: the baseline is the
+setting at test, and declared-by-CCT rows and any covered CCT axis describe
+other field settings of the same SKUs. The range projection is unchanged.
+
+### Validator and workbook
+
+Both attestation sheets gain `origin_country`. Records gain `power_input_kind`
+and the semicolon-list `field_selectable_axes`, including on fixed-axes pins.
+Blank cells remain absent. The schema refuses lowercase country codes,
+contradicting marking-claim countries, unknown power-input kinds such as
+`battery`, and duplicate field-selectable axes. The two new enums are
+allowlisted as descriptive, tracked data rather than grading inputs. Both
+existing program partitions explicitly gain all four programs; the new
+glossary guard holds all 150 rows and the theme map to those sets.
+
+### Examples
+
+All nine examples keep their grades and achievement states. Each changes only
+`index.builder_version` from 0.11.0 to 0.12.0. Synthetic converter and achievement
+fixtures exercise the additions; no published example gains an unsupported claim.
+
+### Documentation
+
+The glossary, methodology, authoring-patterns guide, schema descriptions, and
+workbook README describe the new claims and fields, confirmation guidance, and
+field-selector semantics. The root README, roadmap active-version section, and
+four PIM guides advance to 1.20.0. Parked roadmap candidates remain unchanged.
+
 ## 1.19.0 (2026-10-18)
 
 This release changes three rules of the workbook converter. A CCT multiplier table no longer needs an LM-79 attestation, a fixed-axes record (Pattern A or C) carries the applicability block its workbook states, and the `source_files` sheet reads an optional `photometry_format` column. The schema, taxonomy, grading rows and generated index do not change; the builder remains 0.11.0 and the nine published examples remain byte-identical.
