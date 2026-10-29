@@ -1065,7 +1065,7 @@
     "attestation_programs": [
       "lm_79"
     ],
-    "builder_version": "0.11.0",
+    "builder_version": "0.12.0",
     "catalog_model": "LCVA",
     "catalog_number": "lumenpulse-lumencore-linear-graze-lcva-120-277-48-13w-4000k-10x10-dmx-rdm-na-nh",
     "cct_range_high_k": 6500,

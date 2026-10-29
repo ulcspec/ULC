@@ -186,6 +186,7 @@ var baseRecordColumns = []Column{
 	{Header: "dimming_curve", Path: "electrical.dimming_curve", Kind: KindEnum},
 	{Header: "control_gear_type", Path: "electrical.control_gear_type", Kind: KindEnum},
 	{Header: "led_module_power_w", Path: "electrical.led_module_power_w", Kind: KindProvNumber, Unit: "W", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+	{Header: "power_input_kind", Path: "electrical.power_input_kind", Kind: KindEnum},
 
 	// --- photometry ---
 	{Header: "total_luminous_flux_lm", Path: "photometry.total_luminous_flux_lm", Kind: KindProvNumber, Unit: "lm", ProvSource: "ies", ProvMethod: "extracted", ProvValueType: "measured"},

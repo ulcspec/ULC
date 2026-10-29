@@ -116,6 +116,7 @@ var recordColumnHeaders = []string{
 	"photometry_basis",
 	"power_factor",
 	"power_factor_bound_operator",
+	"power_input_kind",
 	"primary_category",
 	"recess_depth_in",
 	"recess_depth_mm",

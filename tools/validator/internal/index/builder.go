@@ -67,7 +67,11 @@ import (
 // 0.11.0: project the published white range through the shared state resolver.
 // Tunable-white and dim-to-warm grading also reads the range and endpoint metrics.
 // Existing examples keep their grades and re-stamp only this marker.
-const BuilderVersion = "0.11.0"
+// 0.12.0: the dark_sky theme maps fwc_wildlife_lighting and the domestic_content
+// theme maps buy_america, made_in_usa and made_in_canada. Existing examples keep
+// their grades and achievement states and re-stamp only this marker.
+// It projects electrical.power_input_kind and applicability.field_selectable_axes.
+const BuilderVersion = "0.12.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
 // validator enforces this set directly; the legacy Python builder-parity-guard
@@ -205,12 +209,18 @@ func Build(record Record) Index {
 	if v := getString(cfg, "tested_axes", "color_tunability"); v != "" {
 		idx["color_tunability"] = v
 	}
+	if axes := dedupeSortedStrings(getStringSlice(getMap(record, "applicability"), "field_selectable_axes")); len(axes) > 0 {
+		idx["field_selectable_axes"] = axes
+	}
 	if low, high, ok := colortuning.Ends(record); ok {
 		idx["cct_range_low_k"] = numberToJSON(low.CCT)
 		idx["cct_range_high_k"] = numberToJSON(high.CCT)
 	}
 	if v := getString(elec, "driver_protocol"); v != "" {
 		idx["dimming_protocols"] = []any{v}
+	}
+	if v := getString(elec, "power_input_kind"); v != "" {
+		idx["power_input_kind"] = v
 	}
 
 	// Ingress and impact ratings.

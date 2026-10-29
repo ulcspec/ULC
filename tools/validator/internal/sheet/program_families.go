@@ -168,6 +168,10 @@ var nonAnchoringPrograms = map[string]bool{
 	"taa":                        true,
 	"american_iron_and_steel":    true,
 	"country_of_origin":          true,
+	"buy_america":                true,
+	"fwc_wildlife_lighting":      true,
+	"made_in_usa":                true,
+	"made_in_canada":             true,
 }
 
 type attestationAnchor struct {

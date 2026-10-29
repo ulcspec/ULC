@@ -40,6 +40,10 @@ func assembleApplicability(wb Workbook, id string, master Row) (map[string]any, 
 		app["applicable_sku_count_estimate"] = n
 	}
 
+	if v := master["field_selectable_axes"]; v != "" {
+		app["field_selectable_axes"] = parseList(v)
+	}
+
 	multipliers, multOrder, err := readMultiplierTable(wb, id)
 	if err != nil {
 		return nil, err

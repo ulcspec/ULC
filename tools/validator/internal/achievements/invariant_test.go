@@ -186,3 +186,38 @@ func packageImports(t *testing.T, dir string) map[string]bool {
 	}
 	return out
 }
+
+func TestCompletenessIgnoresLineCardFields(t *testing.T) {
+	for _, path := range exampleFiles(t) {
+		t.Run(filepath.Base(path), func(t *testing.T) {
+			base := loadRecord(t, path)
+			changed := deepCopyRecord(t, base)
+			ledger, _ := changed["attestations"].([]any)
+			for _, claim := range []struct{ program, country string }{
+				{"buy_america", "US"}, {"fwc_wildlife_lighting", "US"}, {"made_in_usa", "US"}, {"made_in_canada", "CA"},
+			} {
+				ledger = append(ledger, att(claim.program, map[string]any{"value_type": "rated", "origin_country": claim.country}))
+			}
+			changed["attestations"] = ledger
+			electrical, _ := changed["electrical"].(map[string]any)
+			if electrical == nil {
+				electrical = map[string]any{}
+				changed["electrical"] = electrical
+			}
+			electrical["power_input_kind"] = "poe"
+			applicability, _ := changed["applicability"].(map[string]any)
+			if applicability == nil {
+				applicability = map[string]any{}
+				changed["applicability"] = applicability
+			}
+			applicability["field_selectable_axes"] = []any{"cct", "output", "optic"}
+			family := changed["product_family"].(map[string]any)
+			if family["indoor_outdoor"] == "indoor" && family["environment_rating"] == "dry" {
+				family["environment_rating"] = "ligature_resistant"
+			}
+			if got, want := completeness.AchievedLevel(changed), completeness.AchievedLevel(base); got != want {
+				t.Errorf("grade = %s, want %s", got, want)
+			}
+		})
+	}
+}

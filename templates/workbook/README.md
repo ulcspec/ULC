@@ -265,6 +265,11 @@ even if either of those two columns is filled. For a case-by-case claim, put
 `verification_contact_reference` beside
 `verification_type=requires_manufacturer_confirmation`.
 
+On both attestation sheets, `origin_country` is an uppercase ISO 3166-1 alpha-2
+code for the country an origin claim names. A blank cell writes no country.
+`made_in_usa` refuses a country other than `US`; `made_in_canada` refuses a
+country other than `CA`.
+
 ## Domestic-content columns
 
 On `attestations` or `shared_attestations`, fill
@@ -285,7 +290,7 @@ Derived methods (`scaled`, `optical_simulation`, and `extended_photometry`) are
 refused because this payload cannot name a base attestation.
 
 The four authoring patterns are detected for you from which sheets carry rows: a
-record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes` or `applicable_sku_count_estimate`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
+record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes`, `applicable_sku_count_estimate` or `field_selectable_axes`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
 is Pattern B; a `declared_by_length` sheet or a `per_foot_linear_scaling`
 derivation on the length axis is Pattern D.
 
@@ -302,6 +307,19 @@ validates and builds the index against that schema alone. A version newer than
 the converter's compiled specification version is refused. A delivery path must
 also require records produced by its build to declare exactly the release of
 the `ulc` engine it pins.
+
+## Field-selectable column
+
+Use `field_selectable_axes` on `records` for axes the installer selects on the
+covered SKUs, as a semicolon-separated list of `cct`, `output`, and `optic`.
+For example, `output;cct` preserves that order in applicability and produces
+`["cct", "output"]` in the index. A blank cell leaves the field absent; duplicate
+axes are refused. With `cct`, measurements describe the setting at test in
+`configuration.tested_conditions.nominal_cct_at_test`; `photometry.declared_by_cct`
+rows and any CCT entry in `covered_axes` name other field settings of the same
+SKUs rather than sibling order codes. Keep `color_tunability=static_white` for a
+selector that sets one CCT at installation. It does not create a control-driven
+range or alter the `cct_range_*` projection.
 
 ## Market columns
 
@@ -321,6 +339,14 @@ measurements. Use `input_voltage_class` for the supply class or published range
 the product supports, and `input_voltage_at_test` for the supply class or
 published range used during the test. Those two columns are open strings: the
 values shown in the schema are examples, not a closed vocabulary.
+
+## Power-input column
+
+Use `power_input_kind` on `records` for the normal supply of the tested
+configuration: `ac_mains`, `dc_low_voltage`, `poe`, or `solar_pv`. The value
+lands at `electrical.power_input_kind` and is projected into the index. A blank
+cell leaves it absent. Emergency battery operation belongs in the emergency
+block; `battery` is refused. A configuration on another supply is another record.
 
 ## Bound columns
 

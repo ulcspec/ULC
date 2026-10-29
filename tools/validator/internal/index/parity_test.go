@@ -92,7 +92,8 @@ func repoRoot(t *testing.T) string {
 // change there that adds a new emit path needs a matching field here.
 func maximalFixture() map[string]any {
 	return map[string]any{
-		"record_id": "test-record",
+		"record_id":     "test-record",
+		"applicability": map[string]any{"field_selectable_axes": []any{"output", "cct"}},
 		"product_family": map[string]any{
 			"family_id":           "test-fam",
 			"family_display_name": "Test Family",
@@ -123,8 +124,9 @@ func maximalFixture() map[string]any {
 			"tested_conditions":       map[string]any{"nominal_cct_at_test": "3000"},
 		},
 		"electrical": map[string]any{
-			"input_power_w":   map[string]any{"value": int64(17)},
-			"driver_protocol": "0-10v",
+			"power_input_kind": "poe",
+			"input_power_w":    map[string]any{"value": int64(17)},
+			"driver_protocol":  "0-10v",
 		},
 		"photometry": map[string]any{
 			"total_luminous_flux_lm":      map[string]any{"value": int64(1301)},
