@@ -282,6 +282,13 @@
         "outdoor_distribution": { "$ref": "taxonomy.schema.json#/$defs/OutdoorDistributionType" },
         "beam_family": { "$ref": "taxonomy.schema.json#/$defs/BeamFamily" },
         "color_tunability": { "$ref": "taxonomy.schema.json#/$defs/ColorTunabilityCapability" },
+        "field_selectable_axes": {
+          "description": "Generated from applicability.field_selectable_axes, deduplicated and sorted.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "taxonomy.schema.json#/$defs/FieldSelectableAxis" }
+        },
         "dimming_protocols": {
           "type": "array",
           "items": { "$ref": "taxonomy.schema.json#/$defs/DimmingProtocol" }
@@ -1007,7 +1014,7 @@
           "additionalProperties": { "type": "string" }
         },
         "covered_axes": {
-          "description": "Order-code axes where multiple values share this record's photometry. Each entry lists the covered values and optionally a derivation rule (multiplier table, linear scaling, voltage-independence rationale).",
+          "description": "Axes, normally order-code axes, where multiple values share this record's photometry. Each entry lists the covered values and optionally a derivation rule (multiplier table, linear scaling, voltage-independence rationale). When applicability.field_selectable_axes lists cct, CCT values here are field settings of the same SKUs rather than sibling order codes.",
           "type": "object",
           "additionalProperties": { "$ref": "#/$defs/CoveredAxis" }
         },
@@ -1035,6 +1042,13 @@
           "description": "Informational count of orderable SKUs this record covers. Not used for validation.",
           "type": "integer",
           "minimum": 0
+        },
+        "field_selectable_axes": {
+          "description": "Axes the installer selects in the field on the SKUs this record covers. With cct listed, the measurement blocks describe the setting at test (configuration.tested_conditions.nominal_cct_at_test), photometry.declared_by_cct rows describe other switch settings of the same SKUs, and a CCT entry in covered_axes, if present, names those settings rather than sibling order codes. color_tunability stays static_white because a selector sets one CCT at installation rather than a control-driven range; the cct_range_* index projection is unchanged.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "taxonomy.schema.json#/$defs/FieldSelectableAxis" }
         }
       }
     },
@@ -1225,7 +1239,7 @@
           }
         },
         "declared_by_cct": {
-          "description": "Manufacturer-declared photometric values at CCTs other than the tested baseline, derived via a CCT multiplier table or similar rule. See applicability.covered_axes.CCT for the derivation context.",
+          "description": "Manufacturer-declared photometric values at CCTs other than the tested baseline, derived via a CCT multiplier table or similar rule. See applicability.covered_axes.CCT for the derivation context. When applicability.field_selectable_axes lists cct, CCT values here are field settings of the same SKUs rather than sibling order codes.",
           "type": "array",
           "items": {
             "type": "object",

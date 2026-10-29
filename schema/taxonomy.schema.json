@@ -205,7 +205,7 @@
 
     "ColorTunabilityCapability": {
       "title": "Color tunability capability",
-      "description": "The fixture's color-adjustment capability. `static_white` means the fixture emits a single fixed CCT with no user-accessible color adjustment. `tunable_white` means the fixture can vary CCT across a declared range (for example 2700K to 6500K) on a single control axis. `dim_to_warm` is a specialized CCT variability where the CCT shifts warmer as the dim level decreases, mimicking incandescent dimming behavior. `rgb`, `rgbw`, `rgba`, and `rgbww` describe multi-channel color-mixing fixtures with the respective channel sets: red/green/blue, plus a dedicated white channel, plus a dedicated amber channel (for warmer hues and richer sunset tones in exterior architectural applications), or plus warm-white and cool-white channels. `multichannel` covers advanced fixtures with more than five channels, typically used for art, museum, hospitality, or horticultural applications.",
+      "description": "The fixture's color-adjustment capability. `static_white` means the fixture emits a single fixed CCT with no color adjustment in operation; a field selector that sets one CCT at installation (`applicability.field_selectable_axes` lists `cct`) is still `static_white`. `tunable_white` means the fixture can vary CCT across a declared range (for example 2700K to 6500K) on a single control axis. `dim_to_warm` is a specialized CCT variability where the CCT shifts warmer as the dim level decreases, mimicking incandescent dimming behavior. `rgb`, `rgbw`, `rgba`, and `rgbww` describe multi-channel color-mixing fixtures with the respective channel sets: red/green/blue, plus a dedicated white channel, plus a dedicated amber channel (for warmer hues and richer sunset tones in exterior architectural applications), or plus warm-white and cool-white channels. `multichannel` covers advanced fixtures with more than five channels, typically used for art, museum, hospitality, or horticultural applications.",
       "type": "string",
       "enum": [
         "static_white",
@@ -1629,6 +1629,13 @@
       "description": "The supply that powers the luminaire in normal operation, one per record because the electrical block describes the tested configuration. `ac_mains` is line-voltage AC (its class lives in `input_voltage_class`); `dc_low_voltage` is a separately supplied low-voltage DC input other than PoE; `poe` is DC power delivered over Ethernet cabling (IEEE 802.3af, 802.3at or 802.3bt); `solar_pv` is an integral or dedicated photovoltaic source with on-board storage. Emergency battery operation lives in the emergency block.",
       "type": "string",
       "enum": ["ac_mains", "dc_low_voltage", "poe", "solar_pv"]
+    },
+
+    "FieldSelectableAxis": {
+      "title": "Field-selectable axis",
+      "description": "An axis the installer selects in the field on the SKUs a record covers, as distinct from an axis fixed at order time by the order code. A token names the axis, never a value. `cct` anchors to NominalCCT, configuration.tested_conditions.nominal_cct_at_test and photometry.declared_by_cct; `output` to configuration.tested_axes.output_tier and the photometry flux surfaces; `optic` to DistributionType, OutdoorDistributionType and BeamFamily through configuration.tested_axes.distribution_code and photometry.beam_family. A field selector is not tunability: a CCT selector leaves color_tunability at static_white. The set widens additively when real datasheets require it.",
+      "type": "string",
+      "enum": ["cct", "output", "optic"]
     }
   }
 }

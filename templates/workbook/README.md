@@ -290,7 +290,7 @@ Derived methods (`scaled`, `optical_simulation`, and `extended_photometry`) are
 refused because this payload cannot name a base attestation.
 
 The four authoring patterns are detected for you from which sheets carry rows: a
-record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes` or `applicable_sku_count_estimate`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
+record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes`, `applicable_sku_count_estimate` or `field_selectable_axes`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
 is Pattern B; a `declared_by_length` sheet or a `per_foot_linear_scaling`
 derivation on the length axis is Pattern D.
 
@@ -307,6 +307,19 @@ validates and builds the index against that schema alone. A version newer than
 the converter's compiled specification version is refused. A delivery path must
 also require records produced by its build to declare exactly the release of
 the `ulc` engine it pins.
+
+## Field-selectable column
+
+Use `field_selectable_axes` on `records` for axes the installer selects on the
+covered SKUs, as a semicolon-separated list of `cct`, `output`, and `optic`.
+For example, `output;cct` preserves that order in applicability and produces
+`["cct", "output"]` in the index. A blank cell leaves the field absent; duplicate
+axes are refused. With `cct`, measurements describe the setting at test in
+`configuration.tested_conditions.nominal_cct_at_test`; `photometry.declared_by_cct`
+rows and any CCT entry in `covered_axes` name other field settings of the same
+SKUs rather than sibling order codes. Keep `color_tunability=static_white` for a
+selector that sets one CCT at installation. It does not create a control-driven
+range or alter the `cct_range_*` projection.
 
 ## Market columns
 

@@ -70,7 +70,7 @@ import (
 // 0.12.0: the dark_sky theme maps fwc_wildlife_lighting and the domestic_content
 // theme maps buy_america, made_in_usa and made_in_canada. Existing examples keep
 // their grades and achievement states and re-stamp only this marker.
-// It projects electrical.power_input_kind.
+// It projects electrical.power_input_kind and applicability.field_selectable_axes.
 const BuilderVersion = "0.12.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go
@@ -208,6 +208,9 @@ func Build(record Record) Index {
 	// Capability projections.
 	if v := getString(cfg, "tested_axes", "color_tunability"); v != "" {
 		idx["color_tunability"] = v
+	}
+	if axes := dedupeSortedStrings(getStringSlice(getMap(record, "applicability"), "field_selectable_axes")); len(axes) > 0 {
+		idx["field_selectable_axes"] = axes
 	}
 	if low, high, ok := colortuning.Ends(record); ok {
 		idx["cct_range_low_k"] = numberToJSON(low.CCT)

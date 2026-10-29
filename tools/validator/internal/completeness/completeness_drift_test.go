@@ -489,7 +489,8 @@ var descriptiveAllowlist = map[string]bool{
 	"Market": true,
 	// --- v1.20.0 line-card class ---
 	// Power input and field-selectable axes describe the product for search; tracked, not graded.
-	"PowerInputKind": true,
+	"PowerInputKind":      true,
+	"FieldSelectableAxis": true,
 }
 
 // TestRubricExhaustiveness is the drift guard: every taxonomy enum referenced from

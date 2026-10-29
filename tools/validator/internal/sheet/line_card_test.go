@@ -2,6 +2,7 @@ package sheet
 
 import (
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -57,6 +58,26 @@ func TestPowerInputKindColumn(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in %s", want, got)
 		}
+	}
+	t.Log(got)
+}
+
+func TestFieldSelectableAxesColumn(t *testing.T) {
+	record := convertOneRecord(t, bundleWithColumns(t, map[string]string{"field_selectable_axes": "output;cct"}), Options{}).Record
+	value, ok := getPath(record, "applicability.field_selectable_axes")
+	if !ok || !reflect.DeepEqual(value, []any{"output", "cct"}) {
+		t.Fatalf("authored axes = %#v", value)
+	}
+	wantSchemaValid(t, record)
+	value, ok = getPath(record, "index.field_selectable_axes")
+	if !ok || !reflect.DeepEqual(value, []any{"cct", "output"}) {
+		t.Fatalf("indexed axes = %#v", value)
+	}
+	t.Log("converted applicability.field_selectable_axes=[output cct] index.field_selectable_axes=[cct output]")
+	got := domesticSchemaErrors(t, bundleWithColumns(t, map[string]string{"field_selectable_axes": "cct;cct"}))
+	want := "at '/applicability/field_selectable_axes': items at 0 and 1 are equal"
+	if !strings.Contains(got, want) {
+		t.Fatalf("missing %q in %s", want, got)
 	}
 	t.Log(got)
 }
