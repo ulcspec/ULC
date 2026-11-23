@@ -71,6 +71,7 @@ import (
 // theme maps buy_america, made_in_usa and made_in_canada. Existing examples keep
 // their grades and achievement states and re-stamp only this marker.
 // It projects electrical.power_input_kind and applicability.field_selectable_axes.
+// At specification 1.21.0 the embodied_carbon theme also maps tm65; the builder version is unchanged because no valid stored index moves.
 const BuilderVersion = "0.12.0"
 
 // RequiredKeys mirrors schema/ulc.schema.json#/$defs/Index.required. The Go

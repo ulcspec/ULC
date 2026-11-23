@@ -2,7 +2,7 @@
 
 This glossary is the reference for every `AttestationProgram` token a ULC record may claim. It is a companion to [methodology.md](methodology.md), which explains why compliance badges are modeled as an orthogonal axis (the attestations block) rather than as a conformance-level gate. Each program below is an external listing, certification, mark, declaration, or test-method standard, referenced by identifier only and never redistributed (the [metadata-only principle](methodology.md#design-principles-that-shape-the-schema)).
 
-The 150 tokens are split across two subtables. Subtable A covers the compliance and listing badges (safety listings, market-access marks, energy and environmental programs, origin and trade-body claims). Subtable B covers the test-method attestations (the IES/ANSI/IEEE/NEMA/NTCIP/CSA measurement and method standards). Together the two subtables enumerate the complete `AttestationProgram` enum with no omissions.
+The 151 tokens are split across two subtables. Subtable A covers the compliance and listing badges (safety listings, market-access marks, energy and environmental programs, origin and trade-body claims). Subtable B covers the test-method attestations (the IES/ANSI/IEEE/NEMA/NTCIP/CSA measurement and method standards). Together the two subtables enumerate the complete `AttestationProgram` enum with no omissions.
 
 Two columns carry the load. **Category** sorts each badge into one governance family. **Conformance role** states whether the reference grader reads the token. It is one of two roles: `tracked` (the token is recorded for catalog and search and never affects the conformance level) or `core-eligible safety listing` (its presence can satisfy the grader's core safety gate). The safety-listing role is region-aware, mirroring the region-conditional gate, so a row may be qualified: `core-eligible safety listing (North America)` counts only toward a North-American record's gate, `core-eligible safety listing (outside North America)` counts toward every other region's gate but not North America's, and an unqualified `core-eligible safety listing` is accepted by any region. The verification standing of any claim, genuine or not, lives separately in the attestation's own `AttestationStatus` field (`claimed`, `verified`, `listed`, `audited_member`, `provisional_member`, `expired`, `withdrawn`, `not_applicable`).
 
@@ -110,7 +110,8 @@ Two columns carry the load. **Category** sorts each badge into one governance fa
 | `liasc_plus` | LIASC+ | LIA Supply Chain (LIASC+) verification of supply-chain practices. | LIA Supply Chain scheme | trade-body | `tracked` |
 | `performance_verified` | Performance Verified | A LIA Performance Verified claim (independently checked headline performance). | LIA Performance Verified | trade-body | `tracked` |
 | `tm66_assured` | TM66 Assured | Conformity with TM-66 circular-economy assessment for luminaires (the CIBSE/SLL/LIA TM66 framework), an LIA-administered assurance. | CIBSE TM-66 / LIA TM66 Assured | sustainability / trade-body | `tracked` |
-| `tm65_2` | TM65.2 | Embodied-carbon assessment of building services equipment per CIBSE TM65 (the 2.x lighting-relevant edition). | CIBSE TM65 | sustainability / trade-body | `tracked` |
+| `tm65` | TM65 | An embodied-carbon figure for building services equipment calculated with the CIBSE TM65 methodology. A regional addendum, such as TM65NA for North America, is named in `sustainability_metric.method_variant`. | CIBSE TM65 | sustainability / trade-body | `tracked` |
+| `tm65_2` | TM65.2 | An embodied-carbon figure for lighting equipment calculated with CIBSE TM65.2, the lighting addendum to TM65. | CIBSE TM65.2 | sustainability / trade-body | `tracked` |
 | `icel` | ICEL | Registration under the Industry Committee for Emergency Lighting conformity scheme: an emergency-lighting product declared to conform to the ICEL and BS EN emergency-lighting requirements. A product-level emergency-lighting qualification, distinct from LIA-style trade-body membership, which is why the achievement axis themes it under `emergency` while the LIA membership tokens stay unthemed. | ICEL (UK) | emergency-lighting | `tracked` |
 | `iso_9001` | ISO 9001 | Quality management system certification of the manufacturing organization. | ISO 9001 | trade-body | `tracked` |
 
@@ -180,7 +181,7 @@ Each theme resolves to one of three states, `none`, `claimed`, or `documented`, 
 
 | Theme | What it recognizes | Program tokens |
 | --- | --- | --- |
-| `embodied_carbon` | A declared cradle-to-gate (or wider) carbon figure. | `epd_iso_14025`, `tm65_2` |
+| `embodied_carbon` | A declared cradle-to-gate (or wider) carbon figure. | `epd_iso_14025`, `tm65`, `tm65_2` |
 | `circularity` | A design or lifecycle circularity rating. | `tm66_assured`, `cradle_to_cradle` |
 | `material_health` | Ingredient and red-list disclosure. | `declare`, `lbc_red_list_free`, `lbc_red_list_approved`, `lbc_red_list_declared`, `hpd`, `cradle_to_cradle` |
 | `energy` | Energy and efficiency qualification. | `dlc_standard`, `dlc_premium`, `dlc_qpl`, `dlc_horticultural`, `energy_star`, `energy_star_downlights_v1`, `ja8_title_24`, `ca_title_20`, `eu_ecodesign_2019_2020`, `eu_energy_label_2019_2015`, `nrcan_ee_regulations` |

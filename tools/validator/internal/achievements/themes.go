@@ -32,6 +32,7 @@ var themeOrder = []string{
 // embodiedCarbonPrograms: a declared kg CO2e figure.
 var embodiedCarbonPrograms = map[string]bool{
 	"epd_iso_14025": true,
+	"tm65":          true,
 	"tm65_2":        true,
 }
 

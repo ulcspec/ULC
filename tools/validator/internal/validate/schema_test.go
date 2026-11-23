@@ -529,6 +529,31 @@ func TestValidatorConstrainsSustainabilityMetricCarbonScope(t *testing.T) {
 		t.Errorf("a complete embodied-carbon metric must validate; got: %+v", rGood.Findings)
 	}
 
+	for _, program := range []string{"tm65", "tm65_2"} {
+		t.Run(program, func(t *testing.T) {
+			record := load()
+			record["attestations"].([]any)[0].(map[string]any)["program"] = program
+			setMetric(record, map[string]any{
+				"embodied_carbon_kgco2e":          43.82,
+				"embodied_carbon_scope":           "a1_a4_b3_c2_c4",
+				"embodied_carbon_functional_unit": "one luminaire",
+				"method_variant":                  "TM65NA",
+			})
+			report := findings.NewReport()
+			v.Validate(record, report)
+			if report.HasErrors() {
+				t.Fatalf("complete %s metric: %+v", program, report.Findings)
+			}
+			record["attestations"].([]any)[0].(map[string]any)["sustainability_metric"].(map[string]any)["embodied_carbon_scope"] = "unknown"
+			refused := findings.NewReport()
+			v.Validate(record, refused)
+			want := "value must be one of 'a1_a3', 'a1_a4', 'a1_c4', 'a1_a4_b3_c2_c4', 'cradle_to_grave'"
+			if !refused.HasErrors() || !strings.Contains(fmt.Sprint(refused.Findings), want) {
+				t.Fatalf("unknown scope: %+v, want %q", refused.Findings, want)
+			}
+		})
+	}
+
 	// Good: a metric with no kgCO2e (ceam_score plus C2C level) has no scope requirement.
 	noCarbon := load()
 	setMetric(noCarbon, map[string]any{"ceam_score": 3.5, "c2c_overall_level": "gold"})

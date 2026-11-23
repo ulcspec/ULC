@@ -45,6 +45,7 @@ var nonAnchoringPrograms = map[string]bool{
 	"liasc_plus":                 true,
 	"performance_verified":       true,
 	"tm66_assured":               true,
+	"tm65":                       true,
 	"tm65_2":                     true,
 	"icel":                       true,
 	"iso_9001":                   true,
