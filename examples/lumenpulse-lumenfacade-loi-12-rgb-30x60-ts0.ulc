@@ -544,7 +544,7 @@
     },
     "end_of_life_program_url": "https://www.lumenpulse.com/lumencycle",
     "environment_rating": "wet",
-    "family_description": "Outdoor inground linear color-changing grazing/wayfinding luminaire in Lumenpulse's Lumenfacade family. Pattern C cutsheet: one spec sheet publishes 1,728 IES files covering 4 lengths x 4 color modes x 14 optics x 2 tilts x 2 optical-option states. Each IES becomes one ULC record that declares its photometric provenance class (extracted / optical_simulation / extended_photometry / scaled); this record is extended_photometry scaled by Lumenpulse from a Spectralux LM-79 base test (S1503051-R1, 2015-03-05).",
+    "family_description": "Outdoor inground linear color-changing grazing/wayfinding luminaire in Lumenpulse's Lumenfacade family. Pattern C cutsheet: one spec sheet publishes 1,728 IES files across its lengths, color modes, optics, tilts and optical options. Each IES becomes one ULC record that declares its photometric provenance class (extracted / optical_simulation / extended_photometry / scaled); this record is extended_photometry scaled by Lumenpulse from a Spectralux LM-79 base test (S1503051-R1, 2015-03-05).",
     "family_display_name": "Lumenfacade Inground LOI Color Changing",
     "family_id": "lumenpulse-lumenfacade-inground-color-changing-loi",
     "indoor_outdoor": "outdoor",
