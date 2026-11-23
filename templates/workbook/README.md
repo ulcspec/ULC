@@ -40,8 +40,8 @@ Three things are computed, never typed into the workbook:
   `conformance_level`).
 - Every computed companion leaf on a dual-unit field. Each dual-unit field
   on the records sheet has two entry columns, an SI column (`*_mm`, `*_kg`,
-  `*_kg_per_m`) and an Imperial companion column (`*_in`, `*_lb`,
-  `*_lb_per_ft`); the `declared_by_length` sheet's `length_mm` stays
+  `*_kg_per_m`, `*_c`) and an Imperial companion column (`*_in`, `*_lb`,
+  `*_lb_per_ft`, `*_f`); the `declared_by_length` sheet's `length_mm` stays
   SI-only. Author exactly one side per field and leave the other blank; the
   converter writes both leaves, computing the companion per the published
   conversion policy (`docs/conversion-policy.md`). The authored value lands
@@ -49,9 +49,9 @@ Three things are computed, never typed into the workbook:
   sides of one field on one row is an error. Imperial entry columns are
   recognized from release 1.5.0 on, and an older `ulc` binary ignores
   unrecognized columns silently, so check `ulc version` if an
-  Imperial-authored value does not appear in the output. (The schema also
-  defines dual-unit temperature and area families, but no records-sheet
-  column authors them today, and not every field named `*_c` is dual-unit:
+  Imperial-authored value does not appear in the output. (The temperature family has one records-sheet
+  column, the ambient temperature at test; the area family has none.
+  Not every field named `*_c` is dual-unit:
   the schema types the lumen-maintenance-package `test_temperature_c` as a
   scalar `ProvenancedNumber`, which is inconsistent with the dual-unit
   temperature fields, so the converter does not author it pending a schema
@@ -339,6 +339,17 @@ measurements. Use `input_voltage_class` for the supply class or published range
 the product supports, and `input_voltage_at_test` for the supply class or
 published range used during the test. Those two columns are open strings: the
 values shown in the schema are examples, not a closed vocabulary.
+
+## Operating-point columns
+
+The optional `operating_input_voltage_v`, `operating_input_frequency_hz`
+and `operating_ambient_temperature_c` columns describe the conditions at
+test. The temperature is not the ambient operating range. Enter Celsius in
+`operating_ambient_temperature_c` or Fahrenheit in
+`operating_ambient_temperature_f`, exactly one side per row. The converter
+writes both temperature leaves. These three columns default to value type
+`rated`, source `datasheet_pdf` and method `extracted`; their provenance
+override companions remain available.
 
 ## Power-input column
 

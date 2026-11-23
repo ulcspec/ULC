@@ -70,7 +70,7 @@ func TestSIValueInverse(t *testing.T) {
 
 // TestImperialCompanionColumns pins the generated Imperial entry columns: the
 // suffix convention the derivation depends on, one companion per SI column with
-// everything but the header and kind copied, the exact ten headers this release
+// everything but the header and kind copied, the exact eleven headers this release
 // adds, and the uniqueness of the merged column set.
 func TestImperialCompanionColumns(t *testing.T) {
 	// (a) Every KindDualUnitSI header carries its family's SI suffix, so header
@@ -120,12 +120,13 @@ func TestImperialCompanionColumns(t *testing.T) {
 		}
 	}
 
-	// (c) Exactly these ten headers.
+	// (c) Exactly these eleven headers.
 	want := []string{
 		"ceiling_aperture_in",
 		"connection_cable_length_in",
 		"linear_mass_per_foot_lb_per_ft",
 		"luminaire_mass_lb",
+		"operating_ambient_temperature_f",
 		"overall_diameter_in",
 		"overall_height_in",
 		"overall_length_in",

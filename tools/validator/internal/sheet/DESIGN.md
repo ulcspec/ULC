@@ -33,13 +33,13 @@ field has an SI and an Imperial entry column; you author exactly one, see sectio
   their fixed defaults and have no companion headers in this release. A declared companion may
   be blank; any unsupported double-underscore header is refused before assembly.
 - **DualUnit columns** are authored on **exactly one side per field**: the SI column (`*_mm`,
-  `*_kg`, `*_kg_per_m`) or its generated Imperial companion column (`*_in`, `*_lb`,
-  `*_lb_per_ft`). The header names the authored leaf explicitly; the converter writes both
+  `*_kg`, `*_kg_per_m`, `*_c`) or its generated Imperial companion column (`*_in`, `*_lb`,
+  `*_lb_per_ft`, `*_f`). The header names the authored leaf explicitly; the converter writes both
   leaves, computing the companion (authoring both sides of one field on one row is an error).
   The Imperial columns are derived from the SI column spec (see `imperialCompanions` in
   columns.go), so a new SI dual-unit column gains its Imperial sibling automatically; the
-  temperature and area families are dual-unit in the schema but have no records-sheet column
-  today, and a future SI column in either family gains its companion the same way. The
+  temperature family has one records-sheet column, the ambient temperature at test;
+  the area family has none, and a future SI column gains its companion the same way. The
   `declared_by_length` sheet's `length_mm` column is SI-only: it is read outside
   `recordColumns`, so no companion is generated for it.
 - **Enum-list / string-list scalars** with a single value are authored inline on `records` as a
@@ -131,7 +131,8 @@ Author exactly one side; the converter computes the companion and writes both ke
 schema-required `value_type`. The authored value is written verbatim; only the computed leaf
 is rounded (round half away from zero). The policy is published at `docs/conversion-policy.md`
 and shipped in the release archive; the constants live in units.go. Leaf pairs per family
-(the temperature and area families currently have no records-sheet columns, and the
+(the temperature family has one records-sheet column with `*_c` / `*_f` entry headers;
+the area family has none, and the
 `declared_by_length` sheet's `length_mm` is SI-only, read outside `recordColumns`):
 
 | Authored leaf | Companion leaf | SI authored: computed companion | Imperial authored: computed SI |

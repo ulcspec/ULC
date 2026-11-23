@@ -97,6 +97,8 @@ var recordColumnHeaders = []string{
 	"mounting_types",
 	"nominal_cct_at_test",
 	"nominal_cct_k",
+	"operating_ambient_temperature_c",
+	"operating_ambient_temperature_f",
 	"operating_input_frequency_hz",
 	"operating_input_voltage_v",
 	"outdoor_distribution_type",

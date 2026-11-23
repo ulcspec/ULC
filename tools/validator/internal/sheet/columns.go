@@ -217,6 +217,8 @@ var baseRecordColumns = []Column{
 	{Header: "operating_input_voltage_v", Path: "operating_point.input_voltage_v", Kind: KindProvNumber, Unit: "V", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 	{Header: "operating_input_frequency_hz", Path: "operating_point.input_frequency_hz", Kind: KindProvNumber, Unit: "Hz", ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
 
+	{Header: "operating_ambient_temperature_c", Path: "operating_point.ambient_temperature", Kind: KindDualUnitSI, DualKind: dualTemperature, ProvSource: "datasheet_pdf", ProvMethod: "extracted", ProvValueType: "rated"},
+
 	// --- referenced color-tuning baseline ---
 	{Header: "color_tuning_baseline_role", Path: "color_tuning.baseline_role", Kind: KindEnum},
 	{Header: "color_tuning_baseline_label", Path: "color_tuning.baseline_label", Kind: KindString},
