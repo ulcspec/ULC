@@ -19,7 +19,7 @@ These guides describe, per PIM platform, how the typical PIM data model maps int
 
 ## Shared translation concerns
 
-Every PIM mapping faces the same seven problems. The per-PIM guides cover each system's specifics; the high-level pattern is common.
+Every PIM mapping faces the same problems. The per-PIM guides cover each system's specifics; the high-level pattern is common.
 
 ### 1. Product identity and the ULC record-per-scenario model
 
