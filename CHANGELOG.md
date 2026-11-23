@@ -20,6 +20,61 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
+## 1.21.0 (2026-11-22)
+
+This additive release adds the TM65 program, its embodied-carbon boundary scope,
+workbook columns for embodied-carbon figures and the ambient temperature at
+test. No grading rule, required set, gating table or golden changes.
+
+### For consumers
+
+By default, newly converted records declare 1.21.0. Builder 0.12.0 is unchanged
+because no valid stored index moves, so stored records need no rebuild.
+The `tm65` program contributes to the existing `embodied_carbon` theme.
+A documented theme means a document is attached, not that the figure is verified.
+
+A 1.20.0 engine refuses `tm65` and `a1_a4_b3_c2_c4`. A 1.20.0 converter
+drops the new workbook columns without a message. Use a 1.21.0 converter or
+newer to preserve them. No schema rule ties the new scope to a program; existing
+`tm65_2` records with older scopes remain valid.
+
+The ambient temperature at test is a third workbook qualifier of the existing
+Full `/operating_point` row, alongside input voltage and frequency at test.
+Any one meets that row. An operating point also brings the two existing
+enrichment rows for device-under-test operating mode and case-temperature
+monitoring point. These rules are unchanged.
+
+### Schema
+
+`AttestationProgram` grows from 150 to 151 tokens with `tm65`, immediately
+before `tm65_2`. Use `tm65` for CIBSE TM65 with or without a regional
+addendum, and `tm65_2` for the lighting addendum CIBSE TM65.2. A regional
+addendum such as TM65NA is named in `sustainability_metric.method_variant`.
+
+`EmbodiedCarbonScope` adds `a1_a4_b3_c2_c4`, the CIBSE TM65 boundary:
+A1 to A4, B3 and C2 to C4, with the method's buffer factor. A figure calculated
+to TM65 or one of its addenda carries this scope.
+
+### Validator and workbook
+
+The `attestations` sheet gains `embodied_carbon_kgco2e`,
+`embodied_carbon_scope`, `embodied_carbon_functional_unit` and
+`method_variant`, writing the existing `sustainability_metric` payload.
+A figure needs its scope and functional unit. These columns are not available
+on `shared_attestations`.
+
+The `records` sheet gains `operating_ambient_temperature_c` and
+`operating_ambient_temperature_f`. Author exactly one side; the converter
+writes both temperature leaves with the existing provenance defaults and
+override companions. This is the condition at test, not the ambient operating
+range. Synthetic Go fixtures prove the new conversions and refusals.
+
+### Documentation
+
+The glossary distinguishes TM65 from its lighting addendum and names regional
+addenda consistently. Workbook and PIM mapping guidance cover the new columns.
+One example's family description, and the matching sentence in the authoring patterns, no longer list factors whose product differs from the file count; the example's index is unchanged.
+
 ## 1.20.0 (2026-10-29)
 
 This additive release adds eight catalog and search capabilities: Buy America,
