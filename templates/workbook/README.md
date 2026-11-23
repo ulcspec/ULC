@@ -289,6 +289,19 @@ payload belongs to its attestation and carries no separate `value_type`.
 Derived methods (`scaled`, `optical_simulation`, and `extended_photometry`) are
 refused because this payload cannot name a base attestation.
 
+## Embodied-carbon columns
+
+On `attestations` only, the optional `embodied_carbon_kgco2e`,
+`embodied_carbon_scope`, `embodied_carbon_functional_unit` and
+`method_variant` columns write `sustainability_metric`. A figure is a
+number in kg CO2e and needs its scope and functional unit. A figure calculated
+to TM65 or one of its addenda carries `a1_a4_b3_c2_c4`. Use `tm65`
+for TM65 with or without a regional addendum, and `tm65_2` for the lighting
+addendum; name a regional addendum such as TM65NA in `method_variant`
+under either program. One figure is one attestation. ULC infers no program
+from the product type. Four blank cells write no metric. These columns are
+not available on `shared_attestations`, which accepts no source document.
+
 The four authoring patterns are detected for you from which sheets carry rows: a
 record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes`, `applicable_sku_count_estimate` or `field_selectable_axes`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
 is Pattern B; a `declared_by_length` sheet or a `per_foot_linear_scaling`

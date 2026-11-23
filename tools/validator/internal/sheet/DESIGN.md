@@ -179,6 +179,9 @@ provenance-only companion family: `__prov_source` and `__prov_method`. The
 payload has no value type or separate attestation reference; it inherits the
 attestation that contains it.
 
+The four embodied-carbon columns on `attestations` write the existing
+`sustainability_metric` payload; they are not on `shared_attestations`.
+
 The spectrum sheet has one row per wavelength sample. Its `value` companions and
 other block-level cells apply to the whole spectrum: the first non-blank cell
 wins, and conflicting non-blank cells are refused. Provenance resolves once for
