@@ -20,7 +20,7 @@ Releases are automated. To ship a release:
 
 For emergency manual releases (bypassing the PR flow), trigger the `Release on merge` workflow manually via `workflow_dispatch`, providing the version input.
 
-## 1.21.0 (2026-11-22)
+## 1.21.0 (2026-11-23)
 
 This additive release adds the TM65 program, its embodied-carbon boundary scope,
 workbook columns for embodied-carbon figures and the ambient temperature at
