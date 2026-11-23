@@ -2122,7 +2122,7 @@
         },
         "sustainability_metric": {
           "title": "Sustainability metric payload",
-          "description": "Optional quantitative payload for a sustainability attestation, hanging off the attestation so the numbers inherit its status, evidence, and expiry. `ceam_score` is the TM66 CEAM design score (0 to 4). `embodied_carbon_kgco2e` is a declared embodied-carbon figure; when it is present, `embodied_carbon_scope` and `embodied_carbon_functional_unit` are required so the number is never ambiguous about its life-cycle boundary or its declared unit. `c2c_overall_level` carries a Cradle to Cradle overall rating. `method_variant` records a regional or method sub-variant (for example a TM65 national annex such as TM65NA).",
+          "description": "Optional quantitative payload for a sustainability attestation, hanging off the attestation so the numbers inherit its status, evidence, and expiry. `ceam_score` is the TM66 CEAM design score (0 to 4). `embodied_carbon_kgco2e` is a declared embodied-carbon figure; when it is present, `embodied_carbon_scope` and `embodied_carbon_functional_unit` are required so the number is never ambiguous about its life-cycle boundary or its declared unit. `c2c_overall_level` carries a Cradle to Cradle overall rating. `method_variant` records a regional or method sub-variant (for example a TM65 regional addendum such as TM65NA).",
           "type": "object",
           "properties": {
             "ceam_score": { "type": "number", "minimum": 0, "maximum": 4 },

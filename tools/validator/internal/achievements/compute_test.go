@@ -511,3 +511,18 @@ func TestLineCardProgramsRouteToThemes(t *testing.T) {
 		}
 	}
 }
+
+func TestTM65RoutesToEmbodiedCarbon(t *testing.T) {
+	got := Compute(rec(att("tm65", map[string]any{
+		"attestation_id": "tm65-carbon",
+		"sustainability_metric": map[string]any{
+			"embodied_carbon_kgco2e":          43.82,
+			"embodied_carbon_scope":           "a1_a4_b3_c2_c4",
+			"embodied_carbon_functional_unit": "one luminaire",
+			"method_variant":                  "TM65NA",
+		},
+	}))).Themes[ThemeEmbodiedCarbon]
+	if got.State != StateClaimed || len(got.Programs) != 1 || got.Programs[0] != "tm65" || got.BestMetricRef != "tm65-carbon" {
+		t.Fatalf("TM65 theme = %+v, want claimed with only tm65 and its metric reference", got)
+	}
+}

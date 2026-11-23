@@ -910,6 +910,26 @@ func buildDomesticContent(row Row) (map[string]any, error) {
 	return payload, nil
 }
 
+// buildSustainabilityMetric assembles optional embodied-carbon cells.
+// The schema checks the scope and functional unit when a figure is present.
+func buildSustainabilityMetric(row Row) (map[string]any, error) {
+	payload := map[string]any{}
+	if raw := row["embodied_carbon_kgco2e"]; raw != "" {
+		number, err := parseNumber(raw)
+		if err != nil {
+			return nil, fmt.Errorf("embodied_carbon_kgco2e: %w", err)
+		}
+		payload["embodied_carbon_kgco2e"] = number
+	}
+	for _, member := range []string{"embodied_carbon_scope", "embodied_carbon_functional_unit", "method_variant"} {
+		copyIf(payload, row, member, member)
+	}
+	if len(payload) == 0 {
+		return nil, nil
+	}
+	return payload, nil
+}
+
 // buildAttestation maps an attestations-sheet row onto an Attestation object.
 // The schema requires program and value_type; the rest are optional.
 func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
@@ -956,6 +976,14 @@ func buildAttestation(row Row, hasher *fileHasher) (map[string]any, error) {
 	}
 	if domestic != nil {
 		att["domestic_content"] = domestic
+	}
+
+	metric, err := buildSustainabilityMetric(row)
+	if err != nil {
+		return nil, err
+	}
+	if metric != nil {
+		att["sustainability_metric"] = metric
 	}
 
 	if doc := row["source_document_file"]; doc != "" {

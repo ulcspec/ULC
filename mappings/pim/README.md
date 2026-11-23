@@ -19,7 +19,7 @@ These guides describe, per PIM platform, how the typical PIM data model maps int
 
 ## Shared translation concerns
 
-Every PIM mapping faces the same seven problems. The per-PIM guides cover each system's specifics; the high-level pattern is common.
+Every PIM mapping faces the same problems. The per-PIM guides cover each system's specifics; the high-level pattern is common.
 
 ### 1. Product identity and the ULC record-per-scenario model
 
@@ -148,6 +148,23 @@ Map these optional fields at the scope shown below; they do not add a completene
 | `origin_country` | `attestations[].origin_country` or `product_family.shared_attestations[].origin_country` | `attestations.origin_country` or `shared_attestations.origin_country` |
 | `power_input_kind` | `electrical.power_input_kind` | `records.power_input_kind` |
 | `field_selectable_axes` | `applicability.field_selectable_axes` | `records.field_selectable_axes` |
+
+### 9. The 1.21.0 embodied-carbon and operating-point fields
+
+Map the program to the document used: `tm65` for TM65 with or without a
+regional addendum, or `tm65_2` for its lighting addendum. Name the regional
+addendum in `method_variant`. A figure needs its scope and functional unit;
+a TM65 figure carries `a1_a4_b3_c2_c4`. The ambient temperature is the
+condition at test, not the ambient operating range.
+
+| PIM data | Authoritative ULC field | Workbook authoring equivalent |
+| --- | --- | --- |
+| TM65 program | `attestations[].program` = `tm65` | `attestations.program` = `tm65` |
+| Embodied-carbon figure (kg CO2e) | `attestations[].sustainability_metric.embodied_carbon_kgco2e` | `attestations.embodied_carbon_kgco2e` |
+| Embodied-carbon scope | `attestations[].sustainability_metric.embodied_carbon_scope` | `attestations.embodied_carbon_scope` |
+| Embodied-carbon functional unit | `attestations[].sustainability_metric.embodied_carbon_functional_unit` | `attestations.embodied_carbon_functional_unit` |
+| Method variant | `attestations[].sustainability_metric.method_variant` | `attestations.method_variant` |
+| Ambient temperature at test | `operating_point.ambient_temperature` | `records.operating_ambient_temperature_c` (or `records.operating_ambient_temperature_f`, one side only) |
 
 ## Out of scope
 

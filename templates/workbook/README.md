@@ -40,8 +40,8 @@ Three things are computed, never typed into the workbook:
   `conformance_level`).
 - Every computed companion leaf on a dual-unit field. Each dual-unit field
   on the records sheet has two entry columns, an SI column (`*_mm`, `*_kg`,
-  `*_kg_per_m`) and an Imperial companion column (`*_in`, `*_lb`,
-  `*_lb_per_ft`); the `declared_by_length` sheet's `length_mm` stays
+  `*_kg_per_m`, `*_c`) and an Imperial companion column (`*_in`, `*_lb`,
+  `*_lb_per_ft`, `*_f`); the `declared_by_length` sheet's `length_mm` stays
   SI-only. Author exactly one side per field and leave the other blank; the
   converter writes both leaves, computing the companion per the published
   conversion policy (`docs/conversion-policy.md`). The authored value lands
@@ -49,9 +49,9 @@ Three things are computed, never typed into the workbook:
   sides of one field on one row is an error. Imperial entry columns are
   recognized from release 1.5.0 on, and an older `ulc` binary ignores
   unrecognized columns silently, so check `ulc version` if an
-  Imperial-authored value does not appear in the output. (The schema also
-  defines dual-unit temperature and area families, but no records-sheet
-  column authors them today, and not every field named `*_c` is dual-unit:
+  Imperial-authored value does not appear in the output. (The temperature family has one records-sheet
+  column, the ambient temperature at test; the area family has none.
+  Not every field named `*_c` is dual-unit:
   the schema types the lumen-maintenance-package `test_temperature_c` as a
   scalar `ProvenancedNumber`, which is inconsistent with the dual-unit
   temperature fields, so the converter does not author it pending a schema
@@ -289,6 +289,19 @@ payload belongs to its attestation and carries no separate `value_type`.
 Derived methods (`scaled`, `optical_simulation`, and `extended_photometry`) are
 refused because this payload cannot name a base attestation.
 
+## Embodied-carbon columns
+
+On `attestations` only, the optional `embodied_carbon_kgco2e`,
+`embodied_carbon_scope`, `embodied_carbon_functional_unit` and
+`method_variant` columns write `sustainability_metric`. A figure is a
+number in kg CO2e and needs its scope and functional unit. A figure calculated
+to TM65 or one of its addenda carries `a1_a4_b3_c2_c4`. Use `tm65`
+for TM65 with or without a regional addendum, and `tm65_2` for the lighting
+addendum; name a regional addendum such as TM65NA in `method_variant`
+under either program. One figure is one attestation. ULC infers no program
+from the product type. Four blank cells write no metric. These columns are
+not available on `shared_attestations`, which accepts no source document.
+
 The four authoring patterns are detected for you from which sheets carry rows: a
 record with no `covered_axes`, `cct_multipliers` or `declared_by_length` rows is a fixed-axes pin (Pattern A or, with derived photometry provenance, C) and carries the `applicability` block when its records row states `applicable_catalog_pattern`, `fixed_axes`, `applicable_sku_count_estimate` or `field_selectable_axes`, or `excluded_combinations` has rows for it; a `cct_multipliers` table
 is Pattern B; a `declared_by_length` sheet or a `per_foot_linear_scaling`
@@ -339,6 +352,17 @@ measurements. Use `input_voltage_class` for the supply class or published range
 the product supports, and `input_voltage_at_test` for the supply class or
 published range used during the test. Those two columns are open strings: the
 values shown in the schema are examples, not a closed vocabulary.
+
+## Operating-point columns
+
+The optional `operating_input_voltage_v`, `operating_input_frequency_hz`
+and `operating_ambient_temperature_c` columns describe the conditions at
+test. The temperature is not the ambient operating range. Enter Celsius in
+`operating_ambient_temperature_c` or Fahrenheit in
+`operating_ambient_temperature_f`, exactly one side per row. The converter
+writes both temperature leaves. These three columns default to value type
+`rated`, source `datasheet_pdf` and method `extracted`; their provenance
+override companions remain available.
 
 ## Power-input column
 

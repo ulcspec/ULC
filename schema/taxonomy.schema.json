@@ -887,6 +887,7 @@
         "liasc_plus",
         "performance_verified",
         "tm66_assured",
+        "tm65",
         "tm65_2",
         "icel",
         "iso_9001",
@@ -1322,12 +1323,13 @@
 
     "EmbodiedCarbonScope": {
       "title": "Embodied carbon life-cycle scope",
-      "description": "Life-cycle stages a declared embodied-carbon figure (`sustainability_metric.embodied_carbon_kgco2e`) covers, following EN 15804 module boundaries. `a1_a3` is cradle-to-gate (raw material supply, transport, and manufacturing). `a1_a4` extends to delivery to site. `a1_c4` adds the end-of-life stages to the cradle-to-gate figure. `cradle_to_grave` covers the full life cycle. The scope must accompany any kgCO2e figure so consumers never compare numbers declared against different boundaries.",
+      "description": "Life-cycle stages a declared embodied-carbon figure (`sustainability_metric.embodied_carbon_kgco2e`) covers, following EN 15804 module boundaries. `a1_a3` is cradle-to-gate (raw material supply, transport, and manufacturing). `a1_a4` extends to delivery to site. `a1_c4` adds the end-of-life stages to the cradle-to-gate figure. `a1_a4_b3_c2_c4` is the boundary of the CIBSE TM65 calculation methodology: the product stage and transport to site (A1 to A4), repair (B3), and end-of-life transport, waste processing and disposal (C2 to C4), with the buffer factor the method applies. The method also counts refrigerant leakage (B1 and C1), which a luminaire does not have. The method is the source of this scope, so a figure calculated to TM65 or one of its addenda carries it. `cradle_to_grave` covers the full life cycle. The scope must accompany any kgCO2e figure so consumers never compare numbers declared against different boundaries.",
       "type": "string",
       "enum": [
         "a1_a3",
         "a1_a4",
         "a1_c4",
+        "a1_a4_b3_c2_c4",
         "cradle_to_grave"
       ]
     },
